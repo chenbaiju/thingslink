@@ -1,0 +1,14 @@
+# G3-SEC-1：生产安全默认值；秘密由外部配置注入，启动守卫拒绝开发默认值。
+server:
+  forward-headers-strategy: native
+spring:
+  mail:
+    properties:
+      mail.smtp.ssl.checkserveridentity: true
+things-link:
+  security:
+    session:
+      cookie-secure: true
+springdoc:
+  api-docs:
+    enabled: false

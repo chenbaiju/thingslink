@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  租户与项目模块：租户、项目、项目成员、配额策略与用量计量。
+
+  隔离模型见架构文档第 7 节：tenant -> project -> resource 三级。
+  本模块拥有 tenant / project / project_member / quota_policy /
+  usage_counter_daily 等表，是全系统租户边界的定义者。
+
+  两个不可回退的设计点，S1 实现时必须落地（架构文档 7.1、14 阶段 1）：
+    - project.region 一经创建不可变更，跨区域迁移是导出-导入流程而不是改字段
+    - 所有业务表的唯一约束与索引，必须把 tenant_id / project_id 放在前部
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.things.link</groupId>
+		<artifactId>things-link</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>things-link-project</artifactId>
+	<name>things-link-project</name>
+	<description>租户、项目、成员、配额与计量</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-shared</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-support</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-entitlement</artifactId>
+		</dependency>
+		<!-- S7-3 策略失效使用 Redis Pub/Sub；显式声明，禁止依赖其他模块的传递依赖。 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+</project>

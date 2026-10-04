@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  架构文档 13.4 的独立设备模拟器。它属于联调与压测工具，不进入主服务生产依赖树；
+  否则失控的模拟负载会和管理 API 争用同一进程资源，也容易通过内部服务绕开真实接入链路。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 继承统一的 Java 21、Spring Boot BOM、测试与构建基线。 -->
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>things-link-simulator</artifactId>
+    <description>独立设备模拟器：通过真实 MQTT Broker 模拟连接与周期属性上报</description>
+
+    <dependencies>
+        <!-- 仅复用与框架无关的 UUIDv7；禁止依赖 device、telemetry 等业务模块。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-shared</artifactId>
+        </dependency>
+
+        <!-- 独立控制面用于本地启停压测，不复用 ThingsLink 管理 API。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- 在建连前限制设备数、Broker URI 和 Topic 标识符，避免无界任务与通配符注入。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- MQTT 3.1.1 与低端通信模组兼容；版本由根 POM 集中固定。 -->
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>${paho-mqtt.version}</version>
+        </dependency>
+
+        <!-- S7-5 用真实 Mosquitto 进程验证异常断线与重连，禁止内存 Broker 掩盖 TCP 生命周期。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+          S13-4d-2a：只为让测试把设备侧线格式与平台权威编解码器逐字节对比而存在。
+          设备侧合同必须能脱离平台实现独立成立，生产代码不得依赖 OTA 模块，所以这里必须是
+          test scope：它永远不会进入 simulator 的生产依赖树，bootstrap 的架构规则因此看不到
+          任何 simulator 生产类引用 ota.domain/infrastructure/api。
+
+          排除 JPA/JDBC/Redis：OTA 的 application 编解码器是纯 JSON 与密码学代码，用不到持久化；
+          而这些传输依赖会经 things-link-support 进入 simulator 的测试类路径，让原本没有数据源的
+          Spring 上下文测试因 DataSourceAutoConfiguration 直接启动失败。排除项只影响测试类路径，
+          不放宽任何生产边界。
+        -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-ota</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-jdbc</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-data-jpa</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-data-redis</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+              生成独立可执行 JAR。**必须带 exec 分类器**：bootstrap 以 test 作用域依赖本模块
+              （D-016：让架构规则测试看得见模拟器的 internal 包），而 repackage 默认会用
+              `BOOT-INF/classes` 胖 JAR **替换主构件**；一旦替换，同一次 `package`/`verify` 运行里
+              bootstrap 的测试编译就会解析不到 `com.things.link.simulator.*`（verify-6 实测失败）。
+              加分类器后主构件仍是普通 JAR（可作依赖），可执行 JAR 为 `*-exec.jar`；
+              运行模拟器的脚本（run-a4-qualification.sh / run-c3b-l0.sh / run-c3d-l1.sh）
+              相应改为取 `-exec.jar`。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.things.link.simulator.SimulatorApplication</mainClass>
+                    <classifier>exec</classifier>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

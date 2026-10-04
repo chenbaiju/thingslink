@@ -1,0 +1,245 @@
+<template>
+  <el-button
+    class="console-fragment"
+    v-if="canManage"
+    data-testid="grants-open"
+    :disabled="!available"
+    @click="openDialog"
+    >用户读取授权</el-button
+  >
+  <el-dialog
+    class="console-dialog"
+    v-if="canManage"
+    data-testid="grants-dialog"
+    v-model="opened"
+    title="用户读取授权"
+    width="680px"
+    :close-on-click-modal="false"
+    @close="closeDialog"
+  >
+    <p class="console-description"
+      >本操作仅允许选定项目用户读取当前看板，不创建用户、不修改项目角色，也不授予设备访问或匿名分享能力。</p
+    >
+    <p class="console-description"
+      >实际运行还须应用包含该看板、用户角色有效并满足设备授权；单独授予READ不保证完整运行可用。</p
+    >
+    <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" />
+    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" />
+    <el-button data-testid="grants-refresh-users" :disabled="!usable || busy" @click="grants.open()"
+      >刷新用户目录</el-button
+    >
+    <p class="console-description" v-if="state.listLoaded && !state.users.length"
+      >当前页没有项目用户。</p
+    >
+    <ul
+      ><li v-for="user in state.users" :key="user.id">
+        {{ user.displayName }}（{{ user.username }}）·
+        {{ user.status === 'ACTIVE' ? '账号有效' : '账号不可写' }} /
+        {{ user.roleStatus === 'ACTIVE' ? '项目角色有效' : '项目角色不可写' }}
+        <el-button
+          :disabled="
+            !usable || busy || (!!state.pending && state.pending.intent.appUserId !== user.id)
+          "
+          @click="grants.selectUser(user.id)"
+          >选择用户 {{ user.username }}</el-button
+        >
+      </li></ul
+    >
+    <el-button v-if="state.nextCursor" :disabled="!usable || busy" @click="grants.loadMore()"
+      >下一页用户</el-button
+    >
+    <section v-if="state.selectedUser">
+      <h4 class="console-heading"
+        >目标用户：{{ state.selectedUser.displayName }}（{{ state.selectedUser.username }}）</h4
+      >
+      <p class="console-description" v-if="!activeUser"
+        >用户或项目角色非有效状态，仅查看历史，不允许授予或撤销。</p
+      >
+      <el-button data-testid="grants-refresh" :disabled="!usable || busy" @click="grants.refresh()"
+        >刷新授权记录</el-button
+      >
+      <p
+        class="console-description"
+        v-if="state.grant"
+        data-testid="grants-status"
+        :data-status="state.grant.status"
+        :data-revision="state.grant.revision"
+      >
+        当前记录：{{ state.grant.status === 'ACTIVE' ? '已授予读取权限' : '已撤销读取权限' }} · 修订
+        {{ state.grant.revision }}
+      </p>
+      <p class="console-description" v-if="state.missingEligible"
+        >未读到可确认的授权事实。可明确尝试首次授予，服务端仍会核对用户、角色及看板。</p
+      >
+      <div class="console-actions">
+        <el-button
+          data-testid="grants-grant"
+          type="primary"
+          :disabled="!canGrant"
+          @click="confirmChange('ACTIVE')"
+          >{{ state.missingEligible ? '尝试首次授予读取权限' : '授予读取权限' }}</el-button
+        >
+        <el-button
+          data-testid="grants-revoke"
+          :disabled="!canRevoke"
+          @click="confirmChange('REVOKED')"
+          >撤销读取权限</el-button
+        >
+      </div>
+    </section>
+    <section v-if="state.pending">
+      <p class="console-description">待恢复原用户：{{ state.pending.intent.appUserId }}</p>
+      <p class="console-description" v-if="state.pending.status === 'UNKNOWN'"
+        >原操作结果未知；读取当前事实不能证明原操作从未执行，不会自动换用新操作。</p
+      >
+      <p class="console-description" v-else
+        >原操作已有完成记录，仍需成功读取当前事实；不能把读取失败理解为未授权。</p
+      >
+      <div class="console-actions">
+        <el-button
+          v-if="state.pending.status === 'UNKNOWN'"
+          data-testid="grants-retry"
+          :disabled="!usable || busy || state.retryBlocked"
+          @click="grants.retry()"
+          >重试原授权操作</el-button
+        >
+        <el-button
+          data-testid="grants-recover"
+          :disabled="!usable || busy"
+          @click="grants.refresh()"
+          >读取原用户当前事实</el-button
+        >
+      </div>
+    </section>
+    <template #footer><el-button @click="closeDialog">关闭</el-button></template>
+  </el-dialog>
+</template>
+<script setup lang="ts">
+  import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+  import { ElMessageBox } from 'element-plus'
+  import { useUserStore } from '@/store/modules/user'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
+  import { createDashboardGrants } from '@/features/dashboard/grant-model'
+  import {
+    fetchGrantUsers,
+    fetchDashboardGrant,
+    writeDashboardGrantIntent
+  } from '@/api/dashboard-grants'
+  const props = defineProps<{
+    projectId: string
+    dashboardId: string
+    available: boolean
+    canManage: boolean
+  }>()
+  const user = useUserStore(),
+    opened = ref(false),
+    visible = ref(!document.hidden),
+    confirming = ref(false)
+  let epoch = 0
+  const usable = computed(() => opened.value && visible.value && props.available && props.canManage)
+  const context = () => ({ ...props, available: usable.value, identity: currentIdentityEpoch() })
+  const grants = createDashboardGrants({
+    context,
+    users: fetchGrantUsers,
+    detail: fetchDashboardGrant,
+    write: writeDashboardGrantIntent,
+    newKey: () => crypto.randomUUID(),
+    changed: (snapshot) => {
+      state.value = snapshot
+    }
+  })
+  const state = shallowRef(grants.getSnapshot())
+  const busy = computed(
+    () =>
+      state.value.loading || state.value.detailLoading || state.value.writing || confirming.value
+  )
+  const activeUser = computed(
+    () =>
+      state.value.selectedUser?.status === 'ACTIVE' &&
+      state.value.selectedUser.roleStatus === 'ACTIVE' &&
+      !!state.value.selectedUser.role
+  )
+  const canWrite = computed(
+    () => usable.value && !busy.value && !state.value.pending && activeUser.value
+  )
+  const canGrant = computed(
+    () => canWrite.value && (state.value.grant?.status === 'REVOKED' || state.value.missingEligible)
+  )
+  const canRevoke = computed(() => canWrite.value && state.value.grant?.status === 'ACTIVE')
+  function openDialog() {
+    if (!props.available || !props.canManage) return
+    opened.value = true
+    void grants.open()
+  }
+  function closeDialog() {
+    opened.value = false
+    epoch++
+    grants.suspend()
+  }
+  watch(
+    () => [props.projectId, props.dashboardId, user.info.userId],
+    () => {
+      epoch++
+      grants.reset()
+      if (usable.value) void grants.open()
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    () => [props.available, visible.value, props.canManage],
+    () => {
+      epoch++
+      grants.suspend()
+      if (usable.value) void grants.open()
+    },
+    { flush: 'sync' }
+  )
+  const visibility = () => {
+    visible.value = !document.hidden
+  }
+  document.addEventListener('visibilitychange', visibility)
+  onBeforeUnmount(() => {
+    document.removeEventListener('visibilitychange', visibility)
+    epoch++
+    grants.reset()
+  })
+  async function confirmChange(status: 'ACTIVE' | 'REVOKED') {
+    if (status === 'ACTIVE' ? !canGrant.value : !canRevoke.value) return
+    const before = JSON.stringify({
+        context: context(),
+        user: state.value.selectedUser?.id,
+        revision: state.value.grant?.revision ?? '0'
+      }),
+      generation = epoch
+    confirming.value = true
+    try {
+      await ElMessageBox.confirm(
+        status === 'ACTIVE'
+          ? '授予该用户当前看板的只读权限？这不会增加设备权限或修改项目角色。'
+          : '撤销该用户当前看板的读取权限？后续运行请求将重新校验授权。',
+        status === 'ACTIVE' ? '确认授予读取权限' : '确认撤销读取权限',
+        {
+          confirmButtonText: status === 'ACTIVE' ? '授予读取权限' : '撤销读取权限',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      if (
+        generation !== epoch ||
+        !usable.value ||
+        before !==
+          JSON.stringify({
+            context: context(),
+            user: state.value.selectedUser?.id,
+            revision: state.value.grant?.revision ?? '0'
+          })
+      )
+        return
+      await grants.change(status)
+    } catch {
+      /* 取消不发写请求；错误由授权模型提供固定安全文案。 */
+    } finally {
+      confirming.value = false
+    }
+  }
+</script>

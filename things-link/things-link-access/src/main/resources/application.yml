@@ -1,0 +1,19 @@
+# 仅保存设备进程角色与端口覆盖。业务默认值由 things-link-runtime 同源资源提供。
+spring:
+  application:
+    name: things-link-access
+  flyway:
+    enabled: false
+server:
+  port: 8081
+springdoc:
+  api-docs:
+    enabled: false
+things-link:
+  deployment:
+    role: device-access
+  runtime:
+    defaults: true
+  access:
+    http:
+      port: 8081

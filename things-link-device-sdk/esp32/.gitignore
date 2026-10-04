@@ -1,0 +1,11 @@
+# 本地凭据、配置与测试私钥；公开示例不能包含真实秘密。
+/.local/
+
+# 构建和运行产物；可复现的 sdkconfig.defaults 不在此排除。
+/build/
+/.pio/
+/logs/
+/sdkconfig
+/sdkconfig.old
+# ESP-IDF component-manager output; fixed source commits live in dependencies.lock.json.
+/dependencies.lock

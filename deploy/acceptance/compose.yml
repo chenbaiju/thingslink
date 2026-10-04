@@ -1,0 +1,167 @@
+name: tc-acceptance
+x-core: &core
+  restart: unless-stopped
+  networks: [internal]
+  security_opt: [no-new-privileges:true]
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
+networks:
+  internal:
+    external: true
+    name: tc-acceptance-internal
+volumes:
+  pg-data:
+  redis-data:
+  kafka-data:
+  emqx-data:
+  emqx-log:
+  minio-data:
+services:
+  postgres:
+    <<: *core
+    networks:
+      internal:
+        ipv4_address: ${ACCEPTANCE_POSTGRES_IP:-172.29.240.11}
+    image: timescale/timescaledb-ha:${TIMESCALEDB_TAG:?}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      PGDATA: /home/postgres/pgdata/data
+    command: [postgres, -c, "shared_preload_libraries=timescaledb,pg_stat_statements", -c, max_connections=100]
+    volumes: ["pg-data:/home/postgres/pgdata", "./postgres/init.sql:/acceptance-init.sql:ro"]
+    mem_limit: 2g
+    cpus: 1.5
+    pids_limit: 256
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 45s
+  redis:
+    <<: *core
+    networks:
+      internal:
+        ipv4_address: ${ACCEPTANCE_REDIS_IP:-172.29.240.12}
+    image: redis:${REDIS_TAG:?}
+    command: [redis-server, /usr/local/etc/redis/redis.conf]
+    volumes: ["redis-data:/data", "${ACCEPTANCE_RUNTIME_DIR:?}/redis.conf:/usr/local/etc/redis/redis.conf:ro"]
+    mem_limit: 768m
+    cpus: 0.5
+    pids_limit: 128
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH=$$(sed -n "s/^requirepass //p" /usr/local/etc/redis/redis.conf) redis-cli ping | grep -qx PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  redpanda:
+    <<: *core
+    networks:
+      internal:
+        ipv4_address: ${ACCEPTANCE_REDPANDA_IP:-172.29.240.13}
+    image: redpandadata/redpanda:${REDPANDA_TAG:?}
+    command: [redpanda, start, --mode=dev-container, --smp=1, --memory=1G, --overprovisioned, --kafka-addr=internal://0.0.0.0:9092, "--advertise-kafka-addr=internal://${ACCEPTANCE_REDPANDA_IP:-172.29.240.13}:9092", --rpc-addr=redpanda:33145, --advertise-rpc-addr=redpanda:33145]
+    volumes: ["kafka-data:/var/lib/redpanda/data", "./redpanda/bootstrap.yaml:/etc/redpanda/.bootstrap.yaml:ro"]
+    mem_limit: 1536m
+    cpus: 1
+    pids_limit: 256
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: [CMD-SHELL, "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 45s
+  emqx:
+    <<: *core
+    extra_hosts: ["backend:${ACCEPTANCE_BACKEND_IP:-172.29.240.1}"]
+    networks:
+      internal:
+        ipv4_address: ${ACCEPTANCE_EMQX_IP:-172.29.240.14}
+    image: emqx/emqx:${EMQX_TAG:?}
+    environment:
+      EMQX_NODE__NAME: emqx@127.0.0.1
+      EMQX_NODE__COOKIE: ${EMQX_COOKIE:?}
+      EMQX_DASHBOARD__DEFAULT_USERNAME: ${EMQX_DASHBOARD_USER:?}
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:?}
+      EMQX_CLUSTER__DISCOVERY_STRATEGY: singleton
+      EMQX_ALLOW_ANONYMOUS: "false"
+    volumes: ["${ACCEPTANCE_EMQX_CONFIG_FILE:-${ACCEPTANCE_RUNTIME_DIR:?}/emqx-base.hocon}:/opt/emqx/etc/base.hocon:ro", "${ACCEPTANCE_RUNTIME_DIR:?}/emqx-api-keys.conf:/opt/emqx/etc/acceptance-api-keys.conf:ro", "emqx-data:/opt/emqx/data", "emqx-log:/opt/emqx/log"]
+    mem_limit: 1536m
+    cpus: 1
+    pids_limit: 512
+    healthcheck:
+      test: [CMD, /opt/emqx/bin/emqx, ctl, status]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 45s
+  minio:
+    <<: *core
+    networks:
+      internal:
+        ipv4_address: ${ACCEPTANCE_MINIO_IP:-172.29.240.15}
+    image: quay.io/minio/minio:${MINIO_TAG:?}
+    command: [server, /data, --console-address, ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+    volumes: ["minio-data:/data"]
+    mem_limit: 768m
+    cpus: 0.5
+    pids_limit: 256
+    healthcheck:
+      test: [CMD, mc, ready, local]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+  minio-init:
+    image: quay.io/minio/mc:${MINIO_MC_TAG:?}
+    profiles: [init]
+    networks: [internal]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+      MINIO_APP_USER: ${MINIO_APP_USER:?}
+      MINIO_APP_PASSWORD: ${MINIO_APP_PASSWORD:?}
+    volumes: ["./minio/app-policy.json:/acceptance-app-policy.json:ro"]
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        mc alias set tc http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" >/dev/null
+        for bucket in firmware device-image export backup; do
+          mc mb --ignore-existing "tc/$$bucket" >/dev/null
+          mc anonymous set none "tc/$$bucket" >/dev/null
+        done
+        [ "$${MINIO_APP_USER}" = acceptance_app ] || { echo 'Unexpected application identity' >&2; exit 1; }
+        users=$$(mc admin user list --json tc)
+        case "$$users" in
+          *'"accessKey":"acceptance_app"'*) :;;
+          '') mc admin user add tc "$${MINIO_APP_USER}" "$${MINIO_APP_PASSWORD}" >/dev/null;;
+          *) echo 'Unrecognized existing user list; refusing identity mutation' >&2; exit 1;;
+        esac
+        info=$$(mc admin user info --json tc "$${MINIO_APP_USER}")
+        case "$$info" in
+          *'"policyName":"tc-acceptance-app"'*) policy=tc-acceptance-app;;
+          *'"policyName":""'*) policy='';;
+          *'"policyName":'*) echo 'Unexpected existing application policy' >&2; exit 1;;
+          *) policy='';;
+        esac
+        mc admin policy create tc tc-acceptance-app /acceptance-app-policy.json >/dev/null
+        if [ "$$policy" != tc-acceptance-app ]; then
+          mc admin policy attach tc tc-acceptance-app --user "$${MINIO_APP_USER}" >/dev/null
+        fi
+        # Existing users are never updated: wrong supplied password must fail, not rotate.
+        mc alias set app http://minio:9000 "$${MINIO_APP_USER}" "$${MINIO_APP_PASSWORD}" >/dev/null
+        mc ls app/export >/dev/null
+        echo 'Four private buckets and scoped application identity initialized'
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+    restart: "no"

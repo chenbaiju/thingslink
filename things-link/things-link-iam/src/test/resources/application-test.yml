@@ -1,0 +1,41 @@
+# iam 模块集成测试配置。
+# 数据源由 AbstractIntegrationTest 的 Testcontainers 在运行时注入。
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    # iam 的表依赖 project 的 tenant，因此两个目录都要列上。
+    # Flyway 按版本号全局排序：1000 tenant → 1100 account → 1110 tenant_member
+    locations:
+      - classpath:db/migration/support
+      - classpath:db/migration/project
+      - classpath:db/migration/iam
+    placeholders:
+      app_role_password: thingslink
+
+things-link:
+  iam:
+    token-cleanup:
+      # 仓储清理语义由专项单测验证；共享数据库测试不运行后台维护线程。
+      enabled: false
+  quota:
+    # IAM 独立测试会在方法间重建项目夹具；关闭跨用例 REST 事实，Bootstrap 真实链路仍保持默认开启并单独验收。
+    daily-usage-recording-enabled: false
+    daily-reconciliation:
+      # 后台扫描会跨测试方法生成账务事实；服务本身仍由真实 PostgreSQL 专项测试显式调用。
+      enabled: false
+  security:
+    jwt:
+      secret: test-only-secret-key-at-least-32-bytes-long
+      access-token-ttl: 15m
+    # Broker 回调共享密钥（S3.5-1）。缺了它整个 iam 测试上下文都起不来 ——
+    # BrokerCallbackAuthenticationFilter 在构造期就会抛 IllegalStateException。
+    #
+    # 这个「不给密钥就启动失败」是刻意设计：一个悄悄退化成无鉴权的回调端点没有任何
+    # 症状，等它被伪造时才发现就太晚了。第一次跑本模块测试时正是这样红的。
+    broker-callback:
+      secret: test-only-broker-callback-secret-at-least-32-bytes

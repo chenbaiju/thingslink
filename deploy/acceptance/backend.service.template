@@ -1,0 +1,27 @@
+# Replace every @PLACEHOLDER@ after checking the existing host. Do not install as-is.
+[Unit]
+Description=ThingsLink independent acceptance backend
+After=network.target
+
+[Service]
+Type=simple
+User=@DEDICATED_NONROOT_USER@
+Group=@DEDICATED_NONROOT_GROUP@
+WorkingDirectory=@PRIVATE_WORKING_DIRECTORY@
+Environment=LOG_PATH=@ABSOLUTE_LOG_DIRECTORY@
+ExecStart=@ABSOLUTE_JAVA21_EXECUTABLE@ -Xms256m -Xmx1024m -jar @ABSOLUTE_IMMUTABLE_JAR@ --spring.config.additional-location=file:@ABSOLUTE_PRIVATE_DIRECTORY@/application-acceptance.properties
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=60
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+LimitNOFILE=65536
+# The selected nonroot user must read its 0600 configuration and write only its logs/workdir.
+# Keep configuration/registry/logs outside /home if ProtectHome=true; registry must be readonly.
+# Verify dependency health + initialization before starting; startup is not full qualification.
+
+[Install]
+WantedBy=multi-user.target

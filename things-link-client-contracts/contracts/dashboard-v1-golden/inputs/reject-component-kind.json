@@ -1,0 +1,1 @@
+{"schemaVersion":"tc.dashboard/v1","presentation":{"mode":"RESPONSIVE_GRID"},"pages":[{"id":"main","title":"主页","components":[{"id":"button","kind":"COMMAND_BUTTON","componentVersion":"1.0.0","layout":{"x":0,"y":0,"w":1,"h":1},"props":{},"bindings":{}}]}]}

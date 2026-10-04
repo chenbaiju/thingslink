@@ -1,0 +1,46 @@
+server {
+    listen 8080;
+    server_name _;
+
+    root /srv/things-link-platform/current;
+    index index.html;
+
+    gzip on;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/xml image/svg+xml;
+
+    # Astro 带内容哈希的资源可长期缓存；文件名变化即失效。
+    location ^~ /_astro/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
+    # 字体与 favicon 当前没有内容哈希，只使用短缓存并要求重新验证。
+    location ~* \.(?:woff2|svg)$ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=3600, must-revalidate" always;
+    }
+
+    location = /robots.txt {
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
+    }
+
+    location = /sitemap.xml {
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
+    }
+
+    # 先查目录索引，使 /docs 与 /docs/getting-started 可直接返回对应 HTML。
+    # 不回退首页；未知路径必须进入真实 404。
+    location / {
+        try_files $uri/index.html $uri $uri.html =404;
+        add_header Cache-Control "no-cache" always;
+    }
+
+    error_page 404 /404.html;
+    location = /404.html {
+        internal;
+        add_header Cache-Control "no-cache" always;
+    }
+}

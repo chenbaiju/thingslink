@@ -1,0 +1,54 @@
+# G1-C4a-1c 一次性故障资格 overlay。
+#
+# 必须与 docker-compose.yml 共同使用；本文件只改资源身份、宿主端口和 Redpanda 广播地址，
+# 业务中间件参数继续由基础文件持有。固定 c4a1c-* 名称让清理可以精确命中，禁止复用或停止 tc-* 开发栈。
+name: c4a1c
+
+services:
+  postgres:
+    container_name: c4a1c-postgres
+    ports: !override
+      - "127.0.0.1:25432:5432"
+
+  redis:
+    container_name: c4a1c-redis
+    ports: !override
+      - "127.0.0.1:26379:6379"
+
+  redpanda:
+    container_name: c4a1c-redpanda
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+      - --overprovisioned
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:29092
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --schema-registry-addr=internal://0.0.0.0:8081
+      - --default-log-level=info
+    ports: !override
+      - "127.0.0.1:29092:19092"
+      - "127.0.0.1:29644:9644"
+
+  redpanda-init:
+    container_name: c4a1c-redpanda-init
+
+  emqx:
+    container_name: c4a1c-emqx
+    ports: !override
+      - "127.0.0.1:21883:1883"
+      - "127.0.0.1:28883:8883"
+      - "127.0.0.1:28083:18083"
+
+  minio:
+    container_name: c4a1c-minio
+    ports: !override
+      - "127.0.0.1:29000:9000"
+      - "127.0.0.1:29001:9001"
+
+  minio-init:
+    container_name: c4a1c-minio-init

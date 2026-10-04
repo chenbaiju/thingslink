@@ -1,0 +1,3 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+com.things.link.runtime.ThingsLinkDefaultsEnvironmentPostProcessor,\
+com.things.link.runtime.ProductionEnvironmentPostProcessor

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  日志配置：控制台 + 按级别分文件（error / warn / info / debug 各一个），按天+大小滚动，文件名带日期。
+
+  级别路由规则（LevelFilter 精确匹配，四个文件互不重叠）：
+    - error.log   → 只记 ERROR
+    - warn.log    → 只记 WARN
+    - info.log    → 只记 INFO
+    - debug.log   → 只记 DEBUG
+
+  日志根目录由 LOG_PATH 决定：默认 ./logs；生产可用 -DLOG_PATH=/opt/azy/logs 或环境变量覆盖。
+
+  文件输出统一由 AsyncAppender 包装，避免磁盘 I/O 阻塞业务线程；控制台保持同步输出。
+-->
+<configuration scan="true" scanPeriod="60 seconds">
+
+    <!-- 日志根目录（可被系统属性/环境变量 LOG_PATH 覆盖，默认 ./logs） -->
+    <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
+
+    <!--
+      统一输出格式。
+      %X{traceId:-no-trace} 与 TraceContext.MDC_KEY 对应：有 traceId 则输出，
+      没有则输出 "no-trace"，方便区分后台线程与请求线程的日志。
+    -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-no-trace}] [%thread] %-5level %logger{50} - %msg%n"/>
+
+    <!-- ============ 滚动策略参数 ============ -->
+    <property name="MAX_FILE_SIZE" value="100MB"/>
+    <property name="MAX_HISTORY" value="30"/>
+
+    <!--
+      totalSizeCap 按 appender 独立计算，四个文件合计约 10GB。
+    -->
+    <property name="ERROR_TOTAL_SIZE_CAP" value="2GB"/>
+    <property name="WARN_TOTAL_SIZE_CAP"  value="2GB"/>
+    <property name="INFO_TOTAL_SIZE_CAP"  value="3GB"/>
+    <property name="DEBUG_TOTAL_SIZE_CAP" value="3GB"/>
+
+    <!-- ============ 控制台（INFO 及以上，避免 DEBUG 淹没终端） ============ -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ============ ERROR 文件（只记 ERROR） ============ -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/error/error.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/error/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${ERROR_TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="FILE_ERROR"/>
+    </appender>
+
+    <!-- ============ INFO 文件（只记 INFO） ============ -->
+    <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/info/info.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/info/info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${INFO_TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_INFO" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="FILE_INFO"/>
+    </appender>
+
+    <!-- ============ WARN 文件（只记 WARN） ============ -->
+    <appender name="FILE_WARN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/warn/warn.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/warn/warn-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${WARN_TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_WARN" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="FILE_WARN"/>
+    </appender>
+
+    <!-- ============ DEBUG 文件（只记 DEBUG） ============ -->
+    <appender name="FILE_DEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/debug/debug.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/debug/debug-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${DEBUG_TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_DEBUG" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="FILE_DEBUG"/>
+    </appender>
+
+    <!--
+      业务包设为 DEBUG，DEBUG 事件才会流到 DEBUG 文件；additivity 默认 true，
+      事件会向上传播到 root 的各 appender（含 DEBUG/INFO/ERROR 文件与控制台）。
+    -->
+    <!-- 匿名诊断由独立LoggerContext按显式Spring LOG_PATH装配；主context兜底禁止传播或重复落盘。 -->
+    <logger name="share.security" level="OFF" additivity="false"/>
+    <logger name="com.things.link" level="DEBUG"/>
+    <logger name="org.apache.kafka.clients.consumer.internals.ClassicKafkaConsumer" level="WARN"/>
+    <logger name="org.apache.kafka.common.config.AbstractConfig" level="WARN"/>
+    <logger name="org.apache.kafka.clients.consumer.internals.SubscriptionState" level="WARN"/>
+
+    <!--
+      root：三方库按 INFO，避免 DEBUG 文件被三方 DEBUG 淹没。
+      root 的 appender-ref 指向异步版本，避免磁盘 I/O 阻塞业务线程。
+    -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_ERROR"/>
+        <appender-ref ref="ASYNC_WARN"/>
+        <appender-ref ref="ASYNC_INFO"/>
+        <appender-ref ref="ASYNC_DEBUG"/>
+    </root>
+
+</configuration>

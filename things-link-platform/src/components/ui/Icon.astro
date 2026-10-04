@@ -1,0 +1,44 @@
+---
+/**
+ * 内联 SVG 图标。
+ *
+ * 从注册表按名称取路径，统一线宽与尺寸，替代原先的能力卡片 Emoji。
+ * 默认为装饰性图标（aria-hidden），图标旁应有可见文字；确需独立表意时
+ * 传 label，会转为 role="img" 并输出可访问名称。
+ */
+import { ICONS, type IconName } from './icons'
+
+export interface Props {
+  name: IconName
+  /** 边长档位，对应 Tailwind 的 w/h 尺寸类 */
+  size?: 'sm' | 'md' | 'lg'
+  /** 独立表意时的可访问名称；装饰性图标不传 */
+  label?: string
+  class?: string
+}
+
+const { name, size = 'md', label, class: className = '' } = Astro.props
+const icon = ICONS[name]
+
+/* 尺寸类写成完整字面量，Tailwind 才能在构建时扫描到并生成对应 CSS */
+const SIZE_CLASSES = {
+  sm: 'w-4 h-4',
+  md: 'w-5 h-5',
+  lg: 'w-6 h-6'
+} as const
+---
+
+<svg
+  class:list={[SIZE_CLASSES[size], 'shrink-0', className]}
+  fill="none"
+  stroke="currentColor"
+  viewBox="0 0 24 24"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+>
+  {icon.paths.map((d) => <path d={d} />)}
+</svg>

@@ -1,0 +1,65 @@
+# ThingsLink 官网平台流水线：在干净 Linux 环境安装冻结依赖并执行 Astro 静态构建与生产配置规则测试。
+
+name: platform
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: things-link-platform
+
+jobs:
+  verify:
+    name: Astro 静态构建与检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # 版本由平台 package.json 的 packageManager 字段统一管理。
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          # 仓库根没有 package.json，版本必须从平台官网自己的清单读取。
+          package_json_file: things-link-platform/package.json
+
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: things-link-platform/pnpm-lock.yaml
+
+      - name: 安装冻结依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 生产地址配置规则测试
+        run: pnpm test:production-config
+
+      - name: Astro 静态构建（无需部署地址）
+        env:
+          # 此流水线验证代码；正式发布仍使用 build:production 校验真实 HTTPS 地址。
+          SITE_URL: ''
+          PUBLIC_CONSOLE_URL: ''
+        run: pnpm build
+
+      - name: 静态部署合同验收
+        run: pnpm verify:deployment
+
+      - name: 响应式与无障碍合同验收
+        run: pnpm verify:accessibility
+
+      - name: 静态性能预算验收
+        run: pnpm verify:performance

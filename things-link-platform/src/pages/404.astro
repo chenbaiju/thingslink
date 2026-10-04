@@ -1,0 +1,26 @@
+---
+/**
+ * 404 页面。
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import Button from '@/components/ui/Button.astro'
+import { SITE } from '@/config'
+---
+
+<BaseLayout title="页面未找到" noIndex>
+  <section class="py-20 md:py-32">
+    <div class="container-page text-center">
+      <p class="text-8xl font-extrabold bg-gradient-to-r from-brand-500 to-brand-700 bg-clip-text text-transparent">
+        404
+      </p>
+      <h1 class="mt-4 text-2xl font-bold text-text-primary">页面未找到</h1>
+      <p class="mt-2 text-text-secondary">
+        你访问的页面不存在或已被移动。
+      </p>
+      <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <Button href="/" variant="primary">返回首页</Button>
+        {SITE.docsEnabled && (<Button href={SITE.docsUrl} variant="secondary">查看文档</Button>)}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

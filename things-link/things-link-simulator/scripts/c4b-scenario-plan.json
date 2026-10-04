@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "phaseTimeoutSeconds": {
+    "default": 180,
+    "DB-01/afterProbe": 390,
+    "RW-01/afterProbe": 300,
+    "RW-02/afterProbe": 300,
+    "RW-03/afterProbe": 300,
+    "RW-04/afterProbe": 300,
+    "RW-05/afterProbe": 300
+  },
+  "scenarios": {
+    "DB-01": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}", "--sut-metrics-url", "{sutMetricsUrl}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}", "--sut-metrics-url", "{sutMetricsUrl}"]
+    },
+    "OB-01": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    },
+    "OB-02": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    },
+    "OB-03": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    },
+    "OB-04": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    },
+    "RW-01": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    },
+    "RW-02": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    },
+    "RW-03": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    },
+    "RW-04": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}", "--sut-metrics-url", "{sutMetricsUrl}"]
+    },
+    "RW-05": {
+      "fixture": ["{python}", "{driver}", "fixture", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadBeforeCheckpoint": ["{python}", "{driver}", "workload-before", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "beforeProbe": ["{python}", "{driver}", "before-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "workloadAfterInjection": ["{python}", "{driver}", "workload-after", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"],
+      "afterProbe": ["{python}", "{driver}", "after-probe", "--root", "{root}", "--scenario", "{scenario}", "--project", "{project}"]
+    }
+  }
+}

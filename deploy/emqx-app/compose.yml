@@ -1,0 +1,18 @@
+# Local isolated app Broker. Does not alter the device Broker or its volumes.
+name: thingslink-app-realtime
+services:
+  emqx-app:
+    image: emqx/emqx:6.3.1@sha256:5ecbf93d04e34aaf4096af074e93b773d0838c8ea668cfabdec7976b272d9606
+    profiles: [app-realtime]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports:
+      - "127.0.0.1:1884:1883"
+      - "127.0.0.1:18084:18083"
+    volumes:
+      - ./base.hocon:/opt/emqx/etc/base.hocon:ro
+      - ./dev-api-keys:/opt/emqx/etc/dev-api-keys:ro
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 12

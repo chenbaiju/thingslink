@@ -1,0 +1,668 @@
+{
+  "formatVersion": "tc.dashboard-golden-corpus/v1",
+  "hashAlgorithm": "SHA-256",
+  "schemaVersion": "tc.dashboard/v1",
+  "cases": [
+    {
+      "id": "accept_minimal_text",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/accept-minimal-text.json",
+        "sha256": "ed031ae2aebc8f4f79ea62fbfc5271e49c2861781edcd3dc2f71abd5549c6c38"
+      },
+      "expected": {
+        "outcome": "ACCEPT",
+        "scope": "COMPLETE_INTERNAL_SCHEMA_SEMANTICS",
+        "normalizedUtf8": "{\"schemaVersion\":\"tc.dashboard/v1\",\"presentation\":{\"mode\":\"RESPONSIVE_GRID\",\"theme\":\"LIGHT\",\"columns\":24,\"rowHeight\":8,\"gap\":8},\"pages\":[{\"id\":\"overview\",\"title\":\"设备概览\",\"components\":[{\"id\":\"heading\",\"kind\":\"TEXT\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":0,\"y\":0,\"w\":24,\"h\":8},\"props\":{\"content\":\"设备监测\",\"size\":\"LARGE\",\"align\":\"LEFT\",\"tone\":\"REGULAR\"},\"bindings\":{}}]}],\"models\":[],\"variables\":[]}",
+        "normalizedBytes": 411,
+        "normalizedSha256": "f953d294469c00a7d859eb2ca95516d93717fbcccc50350ad920470da70ba6ea",
+        "unresolvedRequirements": [
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "TEXT",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "accept_external_requirements",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/accept-external-requirements.json",
+        "sha256": "fc7352767a72966573ce206689859537a7ee9e6d8e4f93f44b455e9d3cdce74b"
+      },
+      "expected": {
+        "outcome": "ACCEPT",
+        "scope": "COMPLETE_INTERNAL_SCHEMA_SEMANTICS",
+        "normalizedUtf8": "{\"schemaVersion\":\"tc.dashboard/v1\",\"presentation\":{\"mode\":\"RESPONSIVE_GRID\",\"theme\":\"LIGHT\",\"columns\":24,\"rowHeight\":8,\"gap\":8},\"models\":[{\"key\":\"pump_model\",\"versionId\":\"00000000-0000-0000-0000-000000000001\",\"digestAlgorithm\":\"PG_JSONB_TEXT_V1_SHA256\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"profile\":\"TC_PROPERTY_COMPOSITE_V1\"}],\"variables\":[{\"key\":\"single\",\"type\":\"DEVICE_SINGLE\",\"title\":\"单设备\",\"modelKey\":\"pump_model\",\"defaultDeviceId\":\"00000000-0000-0000-0000-000000000101\",\"required\":true},{\"key\":\"multi\",\"type\":\"DEVICE_MULTI\",\"title\":\"多设备\",\"modelKey\":\"pump_model\",\"defaultDeviceIds\":[\"00000000-0000-0000-0000-000000000102\"],\"required\":true,\"maxItems\":20},{\"key\":\"range\",\"type\":\"TIME_RANGE\",\"title\":\"时间\",\"required\":true,\"defaultPreset\":\"LAST_1_HOUR\",\"allowedPresets\":[\"LAST_1_HOUR\",\"LAST_24_HOURS\",\"LAST_7_DAYS\"]}],\"pages\":[{\"id\":\"main\",\"title\":\"主页\",\"components\":[{\"id\":\"image\",\"kind\":\"IMAGE\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":0,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"resourceId\":\"empty_state\",\"resourceDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"alt\":\"暂无\",\"fit\":\"CONTAIN\"},\"bindings\":{}},{\"id\":\"gauge\",\"kind\":\"GAUGE\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":1,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"scaleMode\":\"MODEL\",\"precision\":2,\"unitMode\":\"MODEL\"},\"bindings\":{\"value\":{\"source\":\"CURRENT_VALUE\",\"device\":{\"variableKey\":\"single\"},\"propertyKey\":\"temperature\"}}},{\"id\":\"line\",\"kind\":\"LINE_CHART\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":2,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"series\":[{\"id\":\"temperature\",\"label\":\"温度\"}],\"showLegend\":true},\"bindings\":{\"series\":[{\"id\":\"temperature\",\"value\":{\"source\":\"HISTORY_SERIES\",\"device\":{\"variableKey\":\"single\"},\"propertyKey\":\"temperature\",\"timeRangeVariableKey\":\"range\",\"granularity\":\"ONE_MINUTE\",\"aggregation\":\"AVG\"}}]}},{\"id\":\"table\",\"kind\":\"TABLE\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":3,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"mode\":\"LIST_VALUE\",\"rowLimit\":20},\"bindings\":{\"value\":{\"source\":\"CURRENT_VALUE\",\"device\":{\"variableKey\":\"single\"},\"propertyKey\":\"records\"}}},{\"id\":\"json\",\"kind\":\"JSON_VIEW\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":4,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"initialExpandDepth\":1},\"bindings\":{\"value\":{\"source\":\"CURRENT_VALUE\",\"device\":{\"variableKey\":\"single\"},\"propertyKey\":\"payload\"}}},{\"id\":\"alarms\",\"kind\":\"ALARM_LIST\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":5,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"pageSize\":20,\"showClearedAt\":true},\"bindings\":{\"alarms\":{\"source\":\"ALARM_LIST\",\"devices\":{\"variableKey\":\"multi\"},\"conditionStates\":[\"ACTIVE\"],\"ackStates\":[\"UNACKNOWLEDGED\"],\"severities\":[\"MAJOR\"]}}},{\"id\":\"selector\",\"kind\":\"DEVICE_SELECTOR\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":6,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"placeholder\":\"请选择设备\",\"pageSize\":20},\"bindings\":{\"directory\":{\"source\":\"DEVICE_DIRECTORY\",\"variableKey\":\"multi\"}}},{\"id\":\"card\",\"kind\":\"VALUE_CARD\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":7,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"precision\":2,\"unitMode\":\"MODEL\"},\"bindings\":{\"value\":{\"source\":\"CURRENT_VALUE\",\"device\":{\"variableKey\":\"single\"},\"propertyKey\":\"pressure\"}}},{\"id\":\"status\",\"kind\":\"STATUS\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":8,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"showLastOnlineAt\":true},\"bindings\":{\"status\":{\"source\":\"DEVICE_STATUS\",\"device\":{\"variableKey\":\"single\"}}}}]}]}",
+        "normalizedBytes": 3323,
+        "normalizedSha256": "5de288a499e12e30f05f67da2109a2103d83d0f7e3febdb7ff139860a93df62e",
+        "unresolvedRequirements": [
+          {
+            "requirementType": "MODEL_REFERENCE",
+            "modelKey": "pump_model",
+            "versionId": "00000000-0000-0000-0000-000000000001",
+            "digestAlgorithm": "PG_JSONB_TEXT_V1_SHA256",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "profile": "TC_PROPERTY_COMPOSITE_V1"
+          },
+          {
+            "requirementType": "DEFAULT_DEVICE",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "deviceId": "00000000-0000-0000-0000-000000000101"
+          },
+          {
+            "requirementType": "DEFAULT_DEVICE",
+            "variableKey": "multi",
+            "variableType": "DEVICE_MULTI",
+            "modelKey": "pump_model",
+            "deviceId": "00000000-0000-0000-0000-000000000102"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "IMAGE",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "BUILTIN_RESOURCE",
+            "resourceId": "empty_state",
+            "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "GAUGE",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "MODEL_PROPERTY",
+            "modelKey": "pump_model",
+            "propertyKey": "temperature",
+            "allowedDataTypes": [
+              "NUMBER"
+            ]
+          },
+          {
+            "requirementType": "MODEL_GAUGE_RANGE",
+            "modelKey": "pump_model",
+            "propertyKey": "temperature"
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "CURRENT_VALUE",
+            "source": "CURRENT_VALUE",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "propertyKey": "temperature"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "LINE_CHART",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "HISTORICAL_PROPERTY",
+            "variableKey": "single",
+            "modelKey": "pump_model",
+            "propertyKey": "temperature",
+            "timeRangeVariableKey": "range",
+            "granularity": "ONE_MINUTE",
+            "aggregation": "AVG"
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "HISTORY_SERIES",
+            "source": "HISTORY_SERIES",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "propertyKey": "temperature"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "TABLE",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "MODEL_PROPERTY",
+            "modelKey": "pump_model",
+            "propertyKey": "records",
+            "allowedDataTypes": [
+              "LIST"
+            ]
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "LIST_SNAPSHOT",
+            "source": "CURRENT_VALUE",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "propertyKey": "records"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "JSON_VIEW",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "MODEL_PROPERTY",
+            "modelKey": "pump_model",
+            "propertyKey": "payload",
+            "allowedDataTypes": [
+              "LIST",
+              "OBJECT"
+            ]
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "COMPOSITE_SNAPSHOT",
+            "source": "CURRENT_VALUE",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "propertyKey": "payload"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "ALARM_LIST",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "BOUNDED_ALARM_PAGE",
+            "source": "ALARM_LIST",
+            "variableKey": "multi",
+            "variableType": "DEVICE_MULTI",
+            "modelKey": "pump_model",
+            "propertyKey": ""
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "DEVICE_SELECTOR",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "BOUNDED_DEVICE_DIRECTORY_PAGE",
+            "source": "DEVICE_DIRECTORY",
+            "variableKey": "multi",
+            "variableType": "DEVICE_MULTI",
+            "modelKey": "pump_model",
+            "propertyKey": ""
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "VALUE_CARD",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "MODEL_PROPERTY",
+            "modelKey": "pump_model",
+            "propertyKey": "pressure",
+            "allowedDataTypes": [
+              "ENUM",
+              "NUMBER",
+              "SWITCH",
+              "TEXT"
+            ]
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "CURRENT_VALUE",
+            "source": "CURRENT_VALUE",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "propertyKey": "pressure"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "STATUS",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "DEVICE_STATUS",
+            "source": "DEVICE_STATUS",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "propertyKey": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "accept_number_normalization",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/accept-number-normalization.json",
+        "sha256": "a7d9f7e71dfedd1d657c317da5a1d2379af615c11e9a1002d293db2394eac775"
+      },
+      "expected": {
+        "outcome": "ACCEPT",
+        "scope": "COMPLETE_INTERNAL_SCHEMA_SEMANTICS",
+        "normalizedUtf8": "{\"schemaVersion\":\"tc.dashboard/v1\",\"presentation\":{\"mode\":\"RESPONSIVE_GRID\",\"theme\":\"LIGHT\",\"columns\":24,\"rowHeight\":8,\"gap\":8},\"models\":[{\"key\":\"pump_model\",\"versionId\":\"00000000-0000-0000-0000-000000000001\",\"digestAlgorithm\":\"PG_JSONB_TEXT_V1_SHA256\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"profile\":\"TC_PROPERTY_COMPOSITE_V1\"}],\"variables\":[{\"key\":\"single\",\"type\":\"DEVICE_SINGLE\",\"title\":\"单设备\",\"modelKey\":\"pump_model\",\"required\":true}],\"pages\":[{\"id\":\"main\",\"title\":\"主页\",\"components\":[{\"id\":\"gauge\",\"kind\":\"GAUGE\",\"componentVersion\":\"1.0.0\",\"layout\":{\"x\":0,\"y\":0,\"w\":1,\"h\":1},\"props\":{\"scaleMode\":\"EXPLICIT\",\"min\":0.00,\"max\":123.00,\"precision\":2,\"unitMode\":\"MODEL\"},\"bindings\":{\"value\":{\"source\":\"CURRENT_VALUE\",\"device\":{\"variableKey\":\"single\"},\"propertyKey\":\"temperature\"}}}]}]}",
+        "normalizedBytes": 830,
+        "normalizedSha256": "58f6119ee1b1cceb8230ab90e40d204a0ee000be7101c870a9e96acd14771018",
+        "unresolvedRequirements": [
+          {
+            "requirementType": "MODEL_REFERENCE",
+            "modelKey": "pump_model",
+            "versionId": "00000000-0000-0000-0000-000000000001",
+            "digestAlgorithm": "PG_JSONB_TEXT_V1_SHA256",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "profile": "TC_PROPERTY_COMPOSITE_V1"
+          },
+          {
+            "requirementType": "HOST_COMPONENT",
+            "kind": "GAUGE",
+            "componentVersion": "1.0.0",
+            "hostRange": {
+              "minInclusive": "1.0.0",
+              "maxExclusive": "1.0.1"
+            }
+          },
+          {
+            "requirementType": "MODEL_PROPERTY",
+            "modelKey": "pump_model",
+            "propertyKey": "temperature",
+            "allowedDataTypes": [
+              "NUMBER"
+            ]
+          },
+          {
+            "requirementType": "DATA_ADAPTER",
+            "capability": "CURRENT_VALUE",
+            "source": "CURRENT_VALUE",
+            "variableKey": "single",
+            "variableType": "DEVICE_SINGLE",
+            "modelKey": "pump_model",
+            "propertyKey": "temperature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parse_raw_too_large",
+      "input": {
+        "kind": "REPEAT_BYTE",
+        "byte": 32,
+        "count": 512001,
+        "sha256": "bc58c264fc2c36fccc8286d916032534c9de43865ce1b35ab16251b92a31555f"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "RAW_TOO_LARGE",
+        "path": "$"
+      }
+    },
+    {
+      "id": "parse_invalid_utf8",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-invalid-utf8.bin",
+        "sha256": "11b23cb1aecb1a46df78f602395fae78f15a675d6e569d0e8cdc10555ea48357"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "INVALID_UTF8",
+        "path": "$"
+      }
+    },
+    {
+      "id": "parse_bom",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-bom.bin",
+        "sha256": "67a7ba33ae490f4407bec65ee363d1e2b40973b5dc221725719df372e41e053b"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "BOM_NOT_ALLOWED",
+        "path": "$"
+      }
+    },
+    {
+      "id": "parse_duplicate_key",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-duplicate-key.json",
+        "sha256": "deb47e734dc7062857a4b3da045aa759229da93bc51d56d0690d0a6174e2f9e6"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "DUPLICATE_KEY",
+        "path": "$.schemaVersion"
+      }
+    },
+    {
+      "id": "parse_trailing_value",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-trailing-value.json",
+        "sha256": "feef05e22838734f7dd610e22fed3f28542b3b678b5b1738a0473da36f646329"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "TRAILING_VALUE",
+        "path": "$"
+      }
+    },
+    {
+      "id": "parse_invalid_json",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-invalid-json.json",
+        "sha256": "7af13f22f155a4977438927131ee0373936acb16a76a31d3b49427d3e81ca087"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "INVALID_JSON",
+        "path": "$"
+      }
+    },
+    {
+      "id": "parse_invalid_exponent",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-invalid-exponent.json",
+        "sha256": "58fdcf1a444f20c47db95f9535bf738653fdebf05791f9d69278bee2d9a840ec"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "INVALID_EXPONENT",
+        "path": "$[\"<unknown>\"]"
+      }
+    },
+    {
+      "id": "parse_invalid_unicode",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-invalid-unicode.json",
+        "sha256": "4e4581e5fd6558f8974df06aacd0096e6c71e12faaf7c4602c7e00f840841f14"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "INVALID_UNICODE",
+        "path": "$.text"
+      }
+    },
+    {
+      "id": "validation_unknown_field",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-unknown-field.json",
+        "sha256": "33bb17c120855a628d95e6341d1f99cbe5f82b5952c58dede9608e565a82619e"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "UNKNOWN_FIELD",
+        "path": "$"
+      }
+    },
+    {
+      "id": "validation_required_pages",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-required-pages.json",
+        "sha256": "e0caec2bf66dcdc0511128cc2599290bc7bc5bcd068ab2f4bbef492ee2388ec3"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "REQUIRED_FIELD_MISSING",
+        "path": "$.pages"
+      }
+    },
+    {
+      "id": "validation_layout_type",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-layout-type.json",
+        "sha256": "70946729760a7ba5478850a8c3d15b38b89596e060f98967a8bd608f618e325c"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "TYPE_MISMATCH",
+        "path": "$.pages[0].components[0].layout.w"
+      }
+    },
+    {
+      "id": "validation_component_kind",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-component-kind.json",
+        "sha256": "36f91af6e4aef68df4551f2ed2f21559faf2b424eea8ae493f781eb8ea060799"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "INVALID_VALUE",
+        "path": "$.pages[0].components[0]"
+      }
+    },
+    {
+      "id": "validation_gauge_missing_max",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-gauge-missing-max.json",
+        "sha256": "bcce164343e3112ad32a2f4cdc76bd64d43ad91ad68484bb0ef92719a5fba6e5"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "REQUIRED_FIELD_MISSING",
+        "path": "$.pages[0].components[0].props.max"
+      }
+    },
+    {
+      "id": "validation_config_number",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-config-number.json",
+        "sha256": "e82a0283f6fd9495f841cb5c8ceff4589ac5f2ae5ad84fc4033465d34d549fcb"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "INVALID_NUMBER",
+        "path": "$.pages[0].components[0].props.min"
+      }
+    },
+    {
+      "id": "validation_duplicate_page",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-duplicate-page.json",
+        "sha256": "1489f8e940d640fd9eda7eb47bac43d67d65d5dccd17c95b771dfc15f3fc277a"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "INVALID_COLLECTION",
+        "path": "$.pages[1]"
+      }
+    },
+    {
+      "id": "validation_overlap",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-overlap.json",
+        "sha256": "af6d3990ff1e5b63febe44033ba6d376303d97d686a5fa9b64bd2c7a7e5ad311"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "INVALID_LAYOUT",
+        "path": "$.pages[0].components[1].layout"
+      }
+    },
+    {
+      "id": "validation_missing_variable",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-missing-variable.json",
+        "sha256": "b1dcb60496754c65c0a5237bb923b64e2a845eadb2287428705f48ca47f912d5"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "INVALID_REFERENCE",
+        "path": "$.pages[0].components[0].bindings.value.device.variableKey"
+      }
+    },
+    {
+      "id": "validation_normalized_too_large",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-normalized-too-large.json",
+        "sha256": "0aa08b78fcba9848b73081aac03a4b8d0b62c77a8801fd69616de688f9e4a575"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "NORMALIZED_TOO_LARGE",
+        "path": "$"
+      }
+    },
+    {
+      "id": "parse_number_too_long",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-number-too-long.json",
+        "sha256": "748de0a067470a24a2ef0b52bbe425bb2b89328b2feda0fc2e4347d5e14d1507"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "NUMBER_TOO_LONG",
+        "path": "$.presentation.mode"
+      }
+    },
+    {
+      "id": "parse_depth_exceeded",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-depth-exceeded.json",
+        "sha256": "14f0661d15894cdd157d316ac78a43064dcc2eff50a1774107227f20669c0945"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "DEPTH_EXCEEDED",
+        "path": "$.pages[0][0][0][0][0][0][0][0][0][0][0][0][0][0][0]"
+      }
+    },
+    {
+      "id": "parse_root_must_be_object",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-root-array.json",
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "ROOT_MUST_BE_OBJECT",
+        "path": "$"
+      }
+    },
+    {
+      "id": "parse_version_required",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-version-required.json",
+        "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "VERSION_REQUIRED",
+        "path": "$.schemaVersion"
+      }
+    },
+    {
+      "id": "parse_version_unsupported",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-version-unsupported.json",
+        "sha256": "05c482c083b55a14999949e67d983e4fdb2c10081855fa39e8d45f7e52ecb441"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "PARSE",
+        "reason": "VERSION_UNSUPPORTED",
+        "path": "$.schemaVersion"
+      }
+    },
+    {
+      "id": "validation_null_not_allowed",
+      "input": {
+        "kind": "FILE",
+        "path": "inputs/reject-null.json",
+        "sha256": "80495ba3657bbafb2fc618753e5881d8babf1d29008f1aa24e676a351b8edf19"
+      },
+      "expected": {
+        "outcome": "REJECT",
+        "phase": "VALIDATION",
+        "reason": "NULL_NOT_ALLOWED",
+        "path": "$.*"
+      }
+    }
+  ]
+}

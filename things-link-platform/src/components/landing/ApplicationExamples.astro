@@ -1,0 +1,63 @@
+---
+import Button from '@/components/ui/Button.astro'
+import { SITE, docsPath } from '@/config'
+
+const examples = [
+  {
+    id: 'monitoring', label: '设备远程监测', audience: '面向设备运维人员',
+    title: '集中查看设备上报数据',
+    description: '查看设备当前值与历史变化，帮助运维人员了解已上报的运行信息。',
+    steps: ['设备上报', '当前值与历史查询', '人工核对运行信息'],
+    note: '需先完成设备接入；已上报的数据应结合采集时间核对。',
+    link: '浏览开发者文档', href: SITE.docsUrl
+  },
+  {
+    id: 'environment', label: '环境数据采集', audience: '面向环境监测人员',
+    title: '观察环境数据变化',
+    description: '采集温度、湿度等环境属性，按时间查看变化；需要异常提醒时，再配置告警条件与通知渠道。',
+    steps: ['环境属性上报', '数据变化查询', '按需配置告警与通知'],
+    note: '属性与单位需匹配物模型；告警事件与通知投递结果需分别核对。',
+    link: '了解接入准备', href: docsPath('getting-started')
+  },
+  {
+    id: 'gateway', label: '网关集中接入', audience: '面向设备接入开发者',
+    title: '经网关汇集子设备数据',
+    description: '按接入契约配置网关与子设备；涉及 Modbus 设备时，先核对点位映射，再查看上报数据。',
+    steps: ['网关与子设备配置', '子设备属性上报', '核对归属与数据'],
+    note: '具体网关型号兼容性需验证，并核对拓扑、点位配置与回执。',
+    link: '浏览开发者文档', href: SITE.docsUrl
+  }
+]
+---
+
+<section id="application-examples" class="scroll-mt-header py-section-sm md:py-section" aria-labelledby="application-examples-title">
+  <div class="container-page">
+    <div class="max-w-2xl">
+      <p class="text-sm font-semibold text-brand-700">应用示例</p>
+      <h2 id="application-examples-title" class="mt-3 text-3xl font-bold text-text-primary md:text-4xl">让设备数据服务于日常工作</h2>
+      <p class="mt-4 leading-relaxed text-text-secondary">以下为能力应用示例，具体设备、配置与效果需按实际项目验证。</p>
+    </div>
+    <div class="mt-8 grid gap-6 lg:grid-cols-3">
+      {examples.map((example) => (
+        <article class="flex flex-col rounded-2xl border border-border bg-bg-secondary p-6" aria-labelledby={`example-${example.id}`}>
+          <p class="text-sm font-semibold text-brand-700">{example.label} · 应用示例</p>
+          <h3 id={`example-${example.id}`} class="mt-3 text-xl font-semibold text-text-primary">{example.title}</h3>
+          <p class="mt-2 text-sm text-text-secondary">{example.audience}</p>
+          <p class="mt-4 leading-relaxed text-text-secondary">{example.description}</p>
+          <ol class="my-6 space-y-3" aria-label={`${example.label}流程`}>
+            {example.steps.map((step, index) => (
+              <li class="flex items-start gap-3 text-sm text-text-primary">
+                <span aria-hidden="true" class="font-semibold text-brand-700">{String(index + 1).padStart(2, '0')}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+          <div class="mt-auto border-t border-border pt-5">
+            <p class="mb-5 text-sm leading-relaxed text-text-secondary">{example.note}</p>
+            {SITE.docsEnabled && (<Button href={example.href} variant="secondary" ariaLabel={`${example.link}：${example.label}`}>{example.link}</Button>)}
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

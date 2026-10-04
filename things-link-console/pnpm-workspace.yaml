@@ -1,0 +1,28 @@
+# pnpm 配置。
+#
+# 【为什么需要这个文件】
+# pnpm 10 起默认**拦截依赖的构建脚本**（postinstall 等），遇到未表态的包直接报
+# ERR_PNPM_IGNORED_BUILDS 并以非零退出。这是供应链安全加固：postinstall 是最常见
+# 的投毒入口。没有这份清单，`pnpm install` 在任何干净环境（包括 CI）上都跑不通。
+#
+# 【格式坑】
+# 键名是 allowBuilds（pnpm 11）。pnpm 10 的写法是 package.json 里的
+# `pnpm.onlyBuiltDependencies`，pnpm 11 既换了文件也换了键名 ——
+# 而且**写错了不会报错，只是静默无效**，install 继续以同样的错误失败，
+# 看不出是配置没生效还是配置不对。踩过一轮才由 `pnpm approve-builds --all`
+# 的实际输出确认了正确格式。
+#
+# 【每个包都必须表态】
+# 只列出想要的是不够的：pnpm 对任何**未表态**的包都会报错。这一点是好事 ——
+# 将来某个新依赖悄悄带了 postinstall，CI 一定会红，而不是被默默放行。
+allowBuilds:
+  # 需要执行构建脚本的：都要在 postinstall 里落地平台相关的原生二进制
+  '@parcel/watcher': true      # 原生文件监听
+  '@tailwindcss/oxide': true   # Tailwind 原生引擎
+  esbuild: true                # vite 依赖它，缺了构建直接失败
+  vue-demi: true               # postinstall 里按 Vue 版本切换 shim
+
+  # 拒绝的：postinstall 只打印赞助信息，没有任何功能作用。
+  # 批准它们等于白白扩大攻击面
+  core-js: false
+  es5-ext: false

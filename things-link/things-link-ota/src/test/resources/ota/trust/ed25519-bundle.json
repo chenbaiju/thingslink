@@ -1,0 +1,1 @@
+{"bundleVersion":1,"contractVersion":"tc-ota-trust-bundle/v1","keys":[{"fingerprint":"5b36d072ef2fd8151ab8123ce578f139ed0c36ec2281670f1f3931528c8b8e20","keyVersion":"test:release/1","notAfter":253402300799,"notBefore":0,"signatureProfile":"TC_OTA_ED25519_V1","spki":"MCowBQYDK2VwAyEAqldMH4DbbvFC5xikVWG2X/z25C0YLsX0QEg6Ya1lmtg=","state":"ACTIVE"}],"trustDomain":"test.domain"}

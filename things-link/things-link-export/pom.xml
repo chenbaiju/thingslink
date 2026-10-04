@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  S12 项目导出模块。
+
+  本模块只编排各事实域公开的流式读取端口，并拥有导出任务、归档格式与对象生命周期；
+  不直接读取其他模块的表。对象存储协议及 MinIO 适配属于 support。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>things-link-export</artifactId>
+    <name>things-link-export</name>
+    <description>项目一致快照导出任务、制品与生命周期编排</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-shared</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-support</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-project</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-device</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-telemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-alarm</artifactId>
+        </dependency>
+
+        <!-- 导出域直接使用 Spring 事务、JDBC、Web API 与校验注解，显式声明其编译依赖。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- 导出请求按账号与项目独立限流，Redis故障时按ADR0075拒绝高成本新任务。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- Controller直接声明OpenAPI注解，不能依赖support传递暴露springdoc。 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+        <!-- ZIP白名单记录与jsonb值直接使用Jackson 3树模型和序列化器。 -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

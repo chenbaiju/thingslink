@@ -1,0 +1,627 @@
+# ThingsLink 后端主配置。
+#
+# 本文件是全平台业务默认配置的唯一来源；库模块不携带第二份默认值。
+# ADR0215 的 access 装配模块仅携带进程角色与端口覆盖，其他值由 runtime 复制本文件。
+#
+# 分环境配置用 application-{profile}.yml，本地个人配置用 application-local.yml
+# （已在根 .gitignore 中忽略）。密钥一律不入库，走环境变量或本地配置文件。
+#
+# 启动前依赖栈必须已运行：cd deploy && make up
+
+server:
+  port: 8080
+
+# ---------------------------------------------------------------------------
+# S3.5-4 最小可观测出口。
+#
+# 只开放健康检查与 Prometheus 文本端点，env、configprops 等可能泄露连接信息的端点
+# 保持关闭。Prometheus 由 deploy 配置从宿主机回环地址抓取，不把 metrics 当业务 API。
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  metrics:
+    tags:
+      # 所有指标统一带服务名；未来拆出 device-access 后可以在同一 Prometheus 中区分实例职责。
+      application: ${spring.application.name}
+# ---------------------------------------------------------------------------
+
+# HTTP 请求日志（RequestLoggingFilter）默认关闭。
+#
+# 该过滤器逐请求打印 method + URL + body + status + 耗时，本地调试很方便，但 body
+# 原样落日志会把密码、密钥一并写进 info.log，生产不能默认开。需要时用环境变量打开：
+#   LOGGING_LEVEL_COM_THINGS_LINK_SUPPORT_WEB_REQUESTLOGGINGFILTER=INFO
+# （IDEA 里 Run Configuration → Environment variables 填，或在启动 shell 里 export）。
+logging:
+  level:
+    com.things.link.support.web.RequestLoggingFilter: OFF
+
+spring:
+  application:
+    # 服务名。后续会作为 Kafka consumer group 前缀、日志字段与 Prometheus
+    # 的 job 标签，改动会影响可观测数据的连续性，不要随手改。
+    name: things-link
+
+  datasource:
+    # 连接 deploy/docker-compose.yml 起的 PostgreSQL + TimescaleDB。
+    # 集成测试不走这里 —— AbstractIntegrationTest 用 Testcontainers 起独立容器，
+    # 并在运行时覆盖下面三项（容器端口是随机分配的，不能写死）。
+    url: jdbc:postgresql://localhost:5432/thingslink
+    # 运行时用 thingslink_app 而不是建表的 thingslink。
+    #
+    # PostgreSQL 的表 owner 默认**绕过**行级安全策略，superuser 永远绕过。
+    # 用 owner 身份连接的话，所有 RLS 策略都形同虚设，而且不会有任何报错 ——
+    # 策略好好地建在那里，一行数据都拦不住。这个账号由迁移
+    # V20260801_0300__row_level_security.sql 创建。
+    username: thingslink_app
+    password: thingslink
+
+  jdbc:
+    template:
+      # G1-C3c / D-048：业务 JDBC 语句的最后保险。关键列表/概要事务另以 3 秒覆盖；
+      # Flyway 不使用 JdbcTemplate，因此长迁移不会被这个值误杀。
+      query-timeout: 5s
+      # 禁止用全局截断掩盖无界 API；高基数列表必须在 SQL 中显式 LIMIT limit+1。
+      max-rows: -1
+      fetch-size: -1
+
+  jpa:
+    hibernate:
+      # 必须是 validate，不能是 update / create / create-drop。
+      #
+      # schema 一律由 Flyway 迁移管理（README.md：never rely on auto-DDL）。
+      # 写成 update 的后果特别隐蔽：本地会「正常工作」，因为 Hibernate 悄悄把表
+      # 建出来了，于是迁移脚本缺失或写错都不会被发现 —— 直到部署到没有 Hibernate
+      # 兜底的环境才暴露。
+      ddl-auto: validate
+    # 不在 web 请求线程里保持 Session 打开。开启会掩盖 N+1 查询，
+    # 并让延迟加载发生在事务边界之外 —— 两者都是生产环境才显现的问题。
+    open-in-view: false
+
+  jackson:
+    # 显式钉住「未知 JSON 字段忽略」（ADR 0042）：/api/v1 请求中未知字段不报错、
+    # 已删除字段（如 tcpBound/defaultDataStreamTcpBound）不产生业务效果。
+    #
+    # Jackson 3 默认本就忽略未知字段，这里显式声明而不是依赖默认：未来 Spring Boot
+    # 或 Jackson 升级若改变该默认值，会在没有设计决策的情况下悄悄改变 /api/v1 的
+    # 契约行为。这是全局契约，不为个别 DTO 开严格校验（ADR 0042 排除项）。
+    deserialization:
+      fail-on-unknown-properties: false
+
+  flyway:
+    enabled: true
+    # 双池路由数据源刻意不暴露物理 URL；迁移必须显式使用 owner 直连地址，不能让 Boot
+    # 尝试从 TenantAwareDataSource 反射复制连接属性。生产可用 FLYWAY_URL 独立覆盖。
+    url: ${FLYWAY_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/thingslink}}
+    # 迁移脚本按模块分目录存放，各模块拥有自己的 schema 变更。
+    # 这里显式列出而不是用 classpath:db/migration 一把抓：显式清单能一眼看出
+    # 哪些模块贡献了迁移，也避免跨 jar 扫描同名路径的不确定性。
+    #
+    # device 等模块已在下方 locations 显式登记；新增迁移目录须同步装配验证。
+    #
+    # locations 的先后不影响执行顺序 —— Flyway 按**版本号**全局排序。
+    # 因此跨模块迁移的依赖只能靠版本号表达，且必须真的排对：
+    #   1000 tenant（project）→ 1100 account（iam）→ 1110 tenant_member（iam，引用前两者）
+    # 排错的症状是「relation does not exist」，错误信息不会提示是顺序问题。
+    #
+    # ⚠️ 版本号必须**全局递增**，不要按模块、历史双轨奇偶或占位迁移分段。
+    #
+    # 早期的编号看起来像「support=0xxx、iam=11xx、project=10xx/12xx」，那是巧合，
+    # 不是规则。照着它给新的 support 迁移编 0310，开发库会直接起不来：
+    #   Detected resolved migration not applied to database: 20260801.0310
+    # 因为库里已经应用到 1210，Flyway 默认拒绝乱序迁移。
+    #
+    # 更要命的是**测试全绿**：Testcontainers 每次起全新库，从零跑一遍顺序总是对的。
+    # 这类问题只在已存在的数据库上出现 —— 已经踩过一次（S1 切片 5c）。
+    #
+    # 加新迁移时遵循开发实施手册6.1：历史V1基线保持不变；VyyyyMMdd_NNNN中的
+    # NNNN是0100至9990间以10递增的排序槽，不是墙钟时分。新日期从0100、同日从
+    # 全仓最大槽位加10；日期/时钟回退也从最大版本推进，槽位耗尽再进入下一有效日期。
+    # 候选须严格大于最新目标分支与当前工作树的共同最大值，提交/合并前再跑base-aware守卫。
+    # 已共享或已被持久库执行的迁移不可为解决冲突而改名；取不到目标基线时不得冒充增量审计通过。
+    locations:
+      - classpath:db/migration/support
+      - classpath:db/migration/project
+      # 自部署发行方登记只属于 ThingsLink 管理进程，不进入 jagonzn 的迁移清单。
+      - classpath:db/migration/issuer
+      # S2 设备域迁移。显式列出是为了避免某个依赖 JAR 意外带 migration 目录就自动改库。
+      - classpath:db/migration/device
+      - classpath:db/migration/telemetry
+      # S6 告警域独立拥有 alarm_ 表；迁移版本仍在全局序列中排序。
+      - classpath:db/migration/alarm
+      # S7 任务域独立拥有 task_ 计划、目标快照和执行事实。
+      - classpath:db/migration/task
+      # S8 规则域独立拥有 rule_ 定义与不可变版本事实。
+      - classpath:db/migration/rule
+      - classpath:db/migration/iam
+      # S11 终端用户与应用域独立拥有 app_ 表；迁移版本仍在全局序列中排序。
+      - classpath:db/migration/enduser
+      # S12 项目导出任务、领取租约与对象清理事实由 export 模块拥有。
+      - classpath:db/migration/export
+      # X-02仅登记未来迁移位置；S12-1首次创建dash_*表时才加入真实不可变迁移。
+      - classpath:db/migration/dashboard
+      # X-02仅登记未来迁移位置；S13-1前不得创建ota_*表或占位版本。
+      - classpath:db/migration/ota
+      - classpath:db/migration/integration
+    # 迁移用表 owner 身份执行，不受 RLS 约束 —— 迁移中的数据回填需要全量访问。
+    # 与上面的 datasource 用不同账号是刻意的，理由见 datasource.username 的注释。
+    user: thingslink
+    password: thingslink
+    placeholders:
+      # 创建应用角色时使用。生产环境从环境变量注入，不要用这里的开发默认值。
+      app_role_password: thingslink
+    # 生产环境禁用 clean，防止误操作清库。本地重置用 `cd deploy && make reset`。
+    clean-disabled: true
+
+  data:
+    redis:
+      # 认证限流的计数存在这里（AuthRateLimiter）。连的是 deploy/ 起的 Redis。
+      #
+      # ⚠️ 该实例的 maxmemory-policy 必须是 noeviction（deploy/docker-compose.yml
+      # 已设）。策略是**实例级**的：设成 LRU 时，内存压力下限流计数器会被悄悄淘汰，
+      # 表现为限流时灵时不灵，日志里什么都没有。
+      #
+      # Redis 不可用时限流**放行**而不是拒绝（fail-open），理由见 AuthRateLimiter
+      # 类注释：一个辅助设施的故障不该升级成整个认证入口的故障。放行时会记 ERROR。
+      #
+      # 集成测试不走这里 —— AbstractIntegrationTest 用 Testcontainers 起独立容器。
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD:thingslink}
+
+  kafka:
+    # 本地宿主机连接 deploy/ 的 external listener；容器化后端改用 redpanda:9092。
+    # Topic 由 deploy 初始化脚本显式创建，禁止依赖 broker 自动创建，否则遥测主题
+    # 会落到默认分区数并破坏 ADR 0007 的 12 分区基线。
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      # 原始上行以 deviceId 字符串作 key，以 JSON 信封作 value。
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      # acks=all 与幂等 producer 防止网络重试制造额外 broker 记录；应用层仍以
+      # messageId 做最终幂等，不能把 producer 幂等误解成端到端 exactly-once。
+      acks: all
+      properties:
+        enable.idempotence: true
+        # G1-C4a-1c 实测 Kafka 停机时 send() 会先按客户端默认 max.block.ms=60s 阻塞，
+        # 从而绕过业务层 2 秒 Future 等待。这里把同步元数据等待压到 1 秒，业务层再以
+        # 同一单调时钟截止时间扣除已消耗时长；两者缺一都会让 manual-ACK 故障恢复失去有界性。
+        max.block.ms: 1000
+    consumer:
+      # 业务 listener 后续可以覆盖 group-id，但不得使用随机组名，否则每次重启都会重放全量历史。
+      group-id: things-link-ingestion
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # S12-4f、D146a/架构§5：标准遥测及网关批量保留精确小数，其他类型及受信包检查保持原行为。
+      value-deserializer: com.things.link.ingestion.infrastructure.UplinkPayloadPrecisionDeserializer
+      properties:
+        # 只允许反序列化仓库内冻结的消息契约，禁止 '*'；开放任意类型会让不可信 Kafka
+        # 数据选择宿主类，扩大反序列化攻击面。
+        # S8-2C retry Topic 只额外信任纯数据 queue 信封包；禁止 * 通配符扩大反序列化攻击面。
+        spring.json.trusted.packages: com.things.link.shared.message,com.things.link.rule.application.queue
+    listener:
+      # 一条记录业务事务成功后才提交 offset；S3-11D 会在此基础上接重试与 DLQ。
+      ack-mode: record
+      missing-topics-fatal: true
+
+  # ---------------------------------------------------------------------------
+  # 出站邮件（SMTP）。
+  #
+  # ⚠️ 本地默认**整段注释掉**，这是刻意的。
+  #
+  # 没有 spring.mail.host，Boot 就不装配 JavaMailSender，应用落到 LoggingMailSender，
+  # 验证链接直接打进日志。本地调注册流程会反复触发发信，而个人/企业邮箱的日发信量
+  # 只有几十到几百封，真发几轮就会把授权码刷进限流 —— 那时的表现是发信静默失败，
+  # 排查方向还会被引到代码上。
+  #
+  # 要在本地验证真实发信效果，两个选择：
+  #   1. deploy 里跑一个 MailHog，host 指 localhost、port 1025，不需要账号密码
+  #   2. 写进 application-local.yml（已被 .gitignore 忽略），不要写进本文件
+  #
+  # 生产环境从环境变量注入。password 对多数国内邮箱是「授权码」而非登录密码。
+  #
+  mail:
+    host: ${MAIL_SMTP_HOST:}
+    port: ${MAIL_SMTP_PORT:}
+    username: ${MAIL_SMTP_USERNAME:}
+    password: ${MAIL_SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      # 465 用 SSL；若服务商给的是 587，改成 mail.smtp.starttls.enable: true
+      mail.smtp.ssl.enable: true
+      # 这三项**必须显式设置**。JavaMail 的默认值是无限等待：
+      # 一个卡住的 SMTP 连接会永久占住调用线程，发信线程池很快被占满，
+      # 之后所有邮件都发不出去，且没有任何异常、没有任何日志。
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+  # ---------------------------------------------------------------------------
+
+things-link:
+  integration:
+    api-key:
+      enabled: ${THINGS_LINK_INTEGRATION_API_KEY_ENABLED:false}
+    webhook:
+      enabled: ${THINGS_LINK_INTEGRATION_WEBHOOK_ENABLED:false}
+      signing-keys-json: ${THINGS_LINK_PUBLIC_WEBHOOK_SIGNING_KEYS_JSON:}
+      current-signing-key-id: ${THINGS_LINK_PUBLIC_WEBHOOK_CURRENT_SIGNING_KEY_ID:}
+    realtime:
+      enabled: ${THINGS_LINK_INTEGRATION_REALTIME_ENABLED:false}
+      ws:
+        allowed-origins: ${THINGS_LINK_REALTIME_WS_ALLOWED_ORIGINS:}
+      mqtt-api:
+        base-url: ${THINGS_LINK_REALTIME_MQTT_API_BASE_URL:}
+        api-key: ${THINGS_LINK_REALTIME_MQTT_API_KEY:}
+        api-secret: ${THINGS_LINK_REALTIME_MQTT_API_SECRET:}
+        session-api-key: ${THINGS_LINK_REALTIME_MQTT_SESSION_API_KEY:}
+        session-api-secret: ${THINGS_LINK_REALTIME_MQTT_SESSION_API_SECRET:}
+  # ADR0101：匿名版本入口默认关闭，配置与机制验收不等于对外启用或部署。
+  dashboard:
+    share-runtime:
+      enabled: ${THINGS_LINK_DASHBOARD_SHARE_ENABLED:false}
+      # 唯一受管页面origin；不接受外部站点白名单或客户端声称的来源。
+      host-origin: ${THINGS_LINK_DASHBOARD_SHARE_HOST_ORIGIN:}
+      # 正式部署要求HTTPS，仅显式开发开关允许loopback HTTP。
+      allow-loopback-http: ${THINGS_LINK_DASHBOARD_SHARE_ALLOW_LOOPBACK_HTTP:false}
+      # 必须显式LOG_PATH且可写，不把通用日志默认./logs冒称持久挂载证据。
+      security-log-path: ${LOG_PATH:}
+  # ADR0092：升级默认不自动执行不可逆清理；显式开启后必须接齐全部11步骤。
+  project:
+    cleanup:
+      enabled: ${THINGS_LINK_PROJECT_CLEANUP_ENABLED:false}
+      # 维护线程每次只领取一个项目执行一批，间隔不改变数据库30秒退避。
+      fixed-delay-millis: 1000
+      # 首次触发延迟一分钟，完整资格仍由5h11c及运维配置保证。
+      initial-delay-millis: 60000
+  # S12-P0-5g / ADR0075：项目导出使用私有 MinIO 桶。
+  #
+  # 内外 endpoint 必须独立配置。预签名 URL 把 host 纳入签名，后端若用容器内部
+  # 地址签名后再把 host 改成公网地址，MinIO 会返回 403。生产必须覆盖全部四项。
+  storage:
+    internal-endpoint: ${THINGS_LINK_STORAGE_INTERNAL_ENDPOINT:http://localhost:9000}
+    external-endpoint: ${THINGS_LINK_STORAGE_EXTERNAL_ENDPOINT:http://localhost:9000}
+    # 凭据没有入库默认值；本地从 deploy/.env 注入，生产由秘密配置提供。
+    access-key: ${THINGS_LINK_STORAGE_ACCESS_KEY}
+    secret-key: ${THINGS_LINK_STORAGE_SECRET_KEY}
+  enduser:
+    push-token-encryption:
+      # ADR 0051：仓库只允许提供可复现的本机开发 key。生产 profile 会识别并拒绝该公开值；
+      # 部署时必须同时覆盖 active key 与完整 keyring，旧 key 在数据库零引用前不得移除。
+      active-key-id: ${THINGS_LINK_PUSH_TOKEN_ACTIVE_KEY_ID:dev-v1}
+      keys:
+        dev-v1: ${THINGS_LINK_PUSH_TOKEN_KEY_DEV_V1:ZGV2LW9ubHktcHVzaC10b2tlbi1rZXktMzJieXRlcyE=}
+  ingress:
+    handoff:
+      # ADR 0046：迁移/测试环境默认不伪造服务密码；删除 HTTP message action 的运行环境必须显式启用。
+      enabled: ${THINGS_LINK_INGRESS_HANDOFF_ENABLED:false}
+      # 本机后端运行在宿主机，连接 Docker 暴露的 MQTT 端口；生产通过环境变量覆盖。
+      broker-uri: ${THINGS_LINK_INGRESS_HANDOFF_BROKER_URI:tcp://localhost:1883}
+      # 服务用户名不是秘密，但只能拥有内部 Topic 的订阅权限，不能复用设备两段式身份。
+      username: ${THINGS_LINK_INGRESS_HANDOFF_USERNAME:thingslink-uplink-ingress}
+      # 无默认值是安全边界：密码不得进入仓库；启用且少于 32 字节时应用拒绝启动 ingress。
+      password: ${THINGS_LINK_INGRESS_HANDOFF_PASSWORD:}
+      qualification:
+        # C4a-1c 本机真实矩阵专用。默认关闭；生产不得设置这些路径。
+        enabled: ${THINGS_LINK_INGRESS_HANDOFF_QUALIFICATION_ENABLED:false}
+        evidence-path: ${THINGS_LINK_INGRESS_HANDOFF_QUALIFICATION_EVIDENCE_PATH:}
+        scenario-path: ${THINGS_LINK_INGRESS_HANDOFF_QUALIFICATION_SCENARIO_PATH:}
+        ack-barrier-path: ${THINGS_LINK_INGRESS_HANDOFF_QUALIFICATION_ACK_BARRIER_PATH:}
+  datasource:
+    # G1-C3c / D-048：控制面与数据面使用同库同账号但不同物理池；总连接 16 是 8C16G 初值，不是容量结论。
+    availability-probe:
+      # G1-C4b-F2：启动即探测，避免数据库已不可用时等待第一个完整周期才产生专用信号。
+      initial-delay-millis: ${THINGS_LINK_DB_AVAILABILITY_INITIAL_DELAY_MS:0}
+      # 五秒一次只产生每池 0.2 QPS 的 SELECT 1；配合 15 秒告警窗口吸收单次连接轮换抖动。
+      fixed-delay-millis: ${THINGS_LINK_DB_AVAILABILITY_FIXED_DELAY_MS:5000}
+    control:
+      pool-name: thingslink-control
+      maximum-pool-size: ${THINGS_LINK_DB_CONTROL_MAX_POOL_SIZE:6}
+      minimum-idle: ${THINGS_LINK_DB_CONTROL_MIN_IDLE:6}
+      connection-timeout-ms: ${THINGS_LINK_DB_CONTROL_CONNECTION_TIMEOUT_MS:500}
+      validation-timeout-ms: ${THINGS_LINK_DB_CONTROL_VALIDATION_TIMEOUT_MS:250}
+      # nightly #15 在约 16 分钟处发现已关闭连接；十分钟主动轮换，避免到流量突发时集中淘汰。
+      max-lifetime-ms: ${THINGS_LINK_DB_CONTROL_MAX_LIFETIME_MS:600000}
+      # 固定池中的空闲连接每两分钟探活；必须小于 max-lifetime，且不会打断借出中的连接。
+      keepalive-time-ms: ${THINGS_LINK_DB_CONTROL_KEEPALIVE_TIME_MS:120000}
+    data:
+      pool-name: thingslink-data
+      maximum-pool-size: ${THINGS_LINK_DB_DATA_MAX_POOL_SIZE:10}
+      minimum-idle: ${THINGS_LINK_DB_DATA_MIN_IDLE:10}
+      # #15 单条补建最长约 782ms；两秒只吸收失效连接补建波动，不扩大池容量或改零 timeout 裁决。
+      connection-timeout-ms: ${THINGS_LINK_DB_DATA_CONNECTION_TIMEOUT_MS:2000}
+      validation-timeout-ms: ${THINGS_LINK_DB_DATA_VALIDATION_TIMEOUT_MS:250}
+      max-lifetime-ms: ${THINGS_LINK_DB_DATA_MAX_LIFETIME_MS:600000}
+      keepalive-time-ms: ${THINGS_LINK_DB_DATA_KEEPALIVE_TIME_MS:120000}
+  kafka:
+    # G1-C3b：每个 group 单独配置，禁止用全局 listener.concurrency 同时放大数据库与外部 I/O。
+    concurrency-guard:
+      # 启动前读取 broker metadata；分区不足或配置越过冻结上限都必须 fail-fast。
+      enabled: ${THINGS_LINK_KAFKA_CONCURRENCY_GUARD_ENABLED:true}
+    concurrency:
+      ingestion-raw: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_RAW:4}
+      ingestion-normalized: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_NORMALIZED:4}
+      ingestion-processed: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_PROCESSED:4}
+      ingestion-batch: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_BATCH:2}
+      ingestion-topology: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_TOPOLOGY:2}
+      ingestion-config-reply: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_CONFIG_REPLY:2}
+      ingestion-modbus-response: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_MODBUS_RESPONSE:2}
+      ingestion-realtime: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_REALTIME:2}
+      ingestion-downlink: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_DOWNLINK:4}
+      tcp-downlink: ${THINGS_LINK_KAFKA_CONCURRENCY_TCP_DOWNLINK:1}
+      ingestion-config: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_CONFIG:2}
+      ingestion-topology-reply: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_TOPOLOGY_REPLY:2}
+      ingestion-modbus-request: ${THINGS_LINK_KAFKA_CONCURRENCY_INGESTION_MODBUS_REQUEST:2}
+      notification-delivery: ${THINGS_LINK_KAFKA_CONCURRENCY_NOTIFICATION_DELIVERY:3}
+      rule-notification: ${THINGS_LINK_KAFKA_CONCURRENCY_RULE_NOTIFICATION:3}
+      rule-retry: ${THINGS_LINK_KAFKA_CONCURRENCY_RULE_RETRY:2}
+      webhook-source: ${THINGS_LINK_KAFKA_CONCURRENCY_WEBHOOK_SOURCE:3}
+      rule-device-terminal: ${THINGS_LINK_KAFKA_CONCURRENCY_RULE_DEVICE_TERMINAL:2}
+  command:
+    # 命令超时扫描使用数据库 30 秒短租约；一秒轮询兼顾响应速度与空扫成本。
+    timeout-scan-millis: 1000
+    # 启动后先等待一秒，让 Flyway、连接池和 Kafka listener 完成初始化再领取到期命令。
+    timeout-scan-initial-delay-millis: 1000
+    # D-037：下行派发失败后的短退避，避免失败重试与 Outbox/Kafka 传递叠加；到期由扫描器续重。
+    dispatch-retry-backoff: 5s
+  notification:
+    # Kafka 入口只持久交接 QUEUED；外部调用由通知 worker 在事务外执行。超时仍须短于
+    # 30 秒 dispatch/租户槽租约，为成功/失败短 CAS 留出余量。
+    request-timeout: 10s
+    # 三次尝试采用 1 分钟、5 分钟两档退避，并在应用层加入确定性抖动。
+    first-retry-delay: 1m
+    second-retry-delay: 5m
+    retry-batch-size: 50
+    retry-lease: 30s
+    retry:
+      enabled: true
+      scan-millis: 1000
+    webhook:
+      # 平台主密钥只用于按项目派生签名密钥，禁止发送、落库或写日志；生产必须环境注入。
+      signing-secret: ${THINGS_LINK_NOTIFICATION_WEBHOOK_SIGNING_SECRET:dev-only-webhook-signing-secret-do-not-use-production}
+
+  overview:
+    # 概要只缓存 PostgreSQL 聚合后的可丢快照；30 秒内同项目高频刷新共用一次事实查询。
+    # 可配置范围由 OverviewCacheProperties 限制为 1 秒到 5 分钟，防止误配成长时间陈旧事实。
+    cache-ttl: 30s
+
+  rule:
+    debug-cleanup:
+      # 调试事件只承担短期排障；每分钟限批清理到期事实，积压由后续轮次追平。
+      initial-delay-millis: 60000
+      fixed-delay-millis: 60000
+    sandbox:
+      # 架构文档第 6 节：租户代码第一行执行前，CPU、堆、输出和宿主能力必须全部收紧。
+      max-cpu-time: 50ms
+      # Worker 就绪后的墙钟兜底不能代替实际子进程 CPU 计时。
+      max-wall-time: 2s
+      # JVM/GraalJS 冷启动单独计时，不能挤占租户脚本的 50ms CPU 预算。
+      max-startup-time: 5s
+      # 一次执行一个 Worker 进程；堆和元空间分别有界，退出即完整回收。
+      max-worker-heap-memory: 64MB
+      max-worker-metaspace: 64MB
+      # S8 首期把源码、输入和输出统一限制为 64 KiB；后续上行入口不得放宽此边界。
+      max-source-bytes: 64KB
+      max-input-bytes: 64KB
+      max-output-bytes: 64KB
+      # stderr 只用于引擎内部分类且不返回调用方，仍限制为 4 KiB 防日志/内存洪泛。
+      max-error-bytes: 4KB
+      # 与 Kafka/HTTP 业务线程完全隔离；固定线程和有界队列满时明确拒绝，不在调用线程执行。
+      pool-size: ${THINGS_LINK_RULE_SANDBOX_POOL_SIZE:4}
+      queue-capacity: ${THINGS_LINK_RULE_SANDBOX_QUEUE_CAPACITY:100}
+
+  ingestion:
+    # D-039：设备发生时间最多允许领先平台可信 receivedAt 五分钟；超限在规则和落库前拒绝。
+    # 迟到/时钟回拨不受此项限制，历史照常保存，影子继续由 occurredAt CAS 防倒退。
+    max-future-skew: ${THINGS_LINK_INGESTION_MAX_FUTURE_SKEW:5m}
+    dashboard-realtime:
+      # ADR0099：默认空列表拒绝新App握手；开发loopback也必须显式配置完整Origin。
+      app-allowed-origins: ${THINGS_LINK_DASHBOARD_APP_ALLOWED_ORIGINS:}
+      # Console新看板同样要求精确Origin；不继承旧设备详情的隐式同源规则。
+      console-allowed-origins: ${THINGS_LINK_DASHBOARD_CONSOLE_ALLOWED_ORIGINS:}
+    realtime:
+      # S4-4 浏览器实时订阅硬上限。队列在满前按 device + property 合并旧增量，仍满即只关闭
+      # 慢会话为 1013；不能调成无界，否则一个后台标签页即可耗尽本实例内存（ADR 0016）。
+      max-global-connections: 1000
+      max-account-connections: 5
+      max-project-connections: 200
+      max-session-subscriptions: 200
+      max-account-subscriptions: 500
+      max-project-subscriptions: 10000
+      outbound-queue-capacity: 256
+      max-text-frame-bytes: 32768
+      send-timeout-millis: 5000
+    emqx-api:
+      # 平台下行通过 EMQX 管理 API 发布 MQTT，不冒用任何设备 Access Token（ADR 0021）。
+      # 容器化后端应把根地址改为 http://emqx:18083；路径 /api/v5/publish 由适配器固定拼接。
+      base-url: ${EMQX_API_BASE_URL:http://localhost:18083}
+      # API Key/Secret 必须由环境注入。开发默认留空只允许不使用下行的场景启动；
+      # 真正消费到命令时会 fail-closed，并由 Kafka/命令状态机有限重试，绝不降级为设备凭据。
+      api-key: ${EMQX_API_KEY:}
+      api-secret: ${EMQX_API_SECRET:}
+      # D-050：下行 EMQX HTTP 发布必须有连接/读取上限；否则 EMQX 挂起（接受连接不响应）会随
+      # 单线程消费端无限阻塞，停滞整条下行链路。默认值对齐通知 request-timeout 的短超时原则。
+      connect-timeout: ${EMQX_API_CONNECT_TIMEOUT:3s}
+      read-timeout: ${EMQX_API_READ_TIMEOUT:5s}
+
+  device:
+    emqx-session-api:
+      # D-038：凭据撤销/轮换提交后通过 EMQX connections 权限踢出旧会话。
+      # 独立凭据避免扩大下行 publish 身份权限；留空时撤销事实仍成立，但指标/日志明确报警。
+      base-url: ${EMQX_SESSION_API_BASE_URL:http://localhost:18083}
+      api-key: ${EMQX_SESSION_API_KEY:}
+      api-secret: ${EMQX_SESSION_API_SECRET:}
+      # 外部管理面故障不得无界占住撤销请求线程；与已验证的 EMQX 下行超时上限保持一致。
+      connect-timeout: ${EMQX_SESSION_API_CONNECT_TIMEOUT:3s}
+      read-timeout: ${EMQX_SESSION_API_READ_TIMEOUT:5s}
+
+  realtime:
+    # 实时增量可由 REST 补拉，因此执行器满时丢弃；绝不让慢 Redis/Kafka 反压遥测事实事务。
+    core-pool-size: ${THINGS_LINK_REALTIME_CORE_POOL_SIZE:2}
+    max-pool-size: ${THINGS_LINK_REALTIME_MAX_POOL_SIZE:4}
+    queue-capacity: ${THINGS_LINK_REALTIME_QUEUE_CAPACITY:500}
+    shutdown-await-seconds: ${THINGS_LINK_REALTIME_SHUTDOWN_AWAIT_SECONDS:5}
+    # 频道按项目隔离，实例只在后续本机订阅索引存在连接时订阅对应频道（ADR 0016）。
+    channel-prefix: ${THINGS_LINK_REALTIME_CHANNEL_PREFIX:things-link:realtime:}
+
+  outbox:
+    publisher:
+      # 事务提交后的可靠投递由轮询恢复，不能用 afterCommit 回调代替；生产可在维护窗口
+      # 临时关闭发布器，但事件仍保留在 sys_outbox_event，恢复后会按租约继续领取。
+      enabled: ${THINGS_LINK_OUTBOX_PUBLISHER_ENABLED:true}
+      # 固定延迟而非固定频率：上一轮 Kafka broker 等待尚未结束时不叠加新一轮，避免故障放大线程数。
+      fixed-delay-millis: ${THINGS_LINK_OUTBOX_PUBLISHER_FIXED_DELAY_MILLIS:1000}
+      # 四条 stripe 各一运行一排队，总领取上限 8；拒绝必须释放租约，不能在 trigger 线程执行。
+      batch-size: ${THINGS_LINK_OUTBOX_PUBLISHER_BATCH_SIZE:8}
+      # 必须大于单条 10 秒 broker 等待、远小于人工恢复窗口；过期后其他实例可安全接管。
+      lease-seconds: ${THINGS_LINK_OUTBOX_PUBLISHER_LEASE_SECONDS:30}
+
+  console:
+    # 控制台对外地址，用于拼接邮件里的验证链接。不带结尾斜杠。
+    #
+    # ⚠️ 必须由服务端配置决定，**不能从请求的 Host 头推导**。那两个头都由客户端
+    # 控制：攻击者对着重置密码接口发一个伪造 Host 的请求，受害者收到的链接就指向
+    # 攻击者的域名，点开即交出令牌（Host Header Injection）。
+    #
+    # 本地默认指向 Vite 开发服务器（pnpm dev 跑在 3006）。
+    base-url: ${THINGS_LINK_CONSOLE_BASE_URL:http://localhost:3006}
+
+  mail:
+    # 发件地址。留空则自动取 spring.mail.username —— 多数服务商要求两者一致，
+    # 不一致会被拒收或判为伪造，所以默认让它们自动相等。
+    # from: ${MAIL_FROM:}
+
+    # 收件箱列表里显示的发件人名称。
+    from-name: ThingsLink
+
+  security:
+    # ADR0107浏览器Cookie身份适配默认关闭，不使用App/Console/PUSH密钥兜底。
+    app-browser:
+      enabled: ${THINGS_LINK_APP_BROWSER_ENABLED:false}
+      # 唯一精确公共Origin，启用时必填；不从请求Host或代理头推断。
+      origin: ${THINGS_LINK_APP_BROWSER_ORIGIN:}
+      # 只允许显式loopback HTTP开发例外，正式环境保持false。
+      allow-loopback-http: ${THINGS_LINK_APP_BROWSER_ALLOW_LOOPBACK_HTTP:false}
+      # active必须为独立32随机字节规范Base64URL，kid仅本地选择。
+      cookie-active-key-id: ${THINGS_LINK_APP_BROWSER_COOKIE_ACTIVE_KEY_ID:}
+      cookie-active-key-base64url: ${THINGS_LINK_APP_BROWSER_COOKIE_ACTIVE_KEY_BASE64URL:}
+      # retiring仅验证旧Cookie，两个字段必须同时配置，最长保留覆盖旧refresh期限。
+      cookie-retiring-key-id: ${THINGS_LINK_APP_BROWSER_COOKIE_RETIRING_KEY_ID:}
+      cookie-retiring-key-base64url: ${THINGS_LINK_APP_BROWSER_COOKIE_RETIRING_KEY_BASE64URL:}
+    jwt:
+      # HMAC 签名密钥。
+      #
+      # ⚠️ 这里的值是**开发默认值**，已经进了版本库，因此对任何看过本仓库的人
+      #    都是公开的。生产环境必须从环境变量注入：
+      #      THINGS_LINK_SECURITY_JWT_SECRET=<至少 32 字节的随机串>
+      #    密钥泄露等于任何人都能伪造任意用户的令牌，包括 OWNER。
+      #
+      # 长度下限 32 字节由 JwtConfiguration 强制，短于此会在启动时直接失败 ——
+      # 而不是签出一个可被暴力破解的令牌然后若无其事地运行。
+      secret: ${THINGS_LINK_SECURITY_JWT_SECRET:dev-only-secret-do-not-use-in-production-32b}
+
+      # 访问令牌有效期。架构文档 7.3 要求「短时有效」。
+      #
+      # 令牌是无状态校验的（不查库），所以**签发后无法撤销** ——
+      # 这个时长就是「账号被停用后仍能访问」的最长窗口。调长会放大风险，
+      # 调短会增加刷新频率，15 分钟是常见折中。
+      access-token-ttl: 15m
+
+      issuer: things-link
+
+    app-jwt:
+      # App 终端用户令牌的 HMAC 签名密钥（ADR 0036）。
+      #
+      # ⚠️ 与控制台 jwt.secret **必须不同**：两类令牌的密码学互斥靠的是不同密钥，
+      #    复用同一把密钥，互斥就退化成「靠 issuer 字符串区分」—— 而 issuer 只是
+      #    JWT 里一条可被伪造方填写的声明，不是安全边界。两个 decoder 各持一把密钥，
+      #    对方的令牌在签名校验阶段即被拒绝。
+      #
+      # ⚠️ 与 jwt.secret 一样，这里是**开发默认值**，已进版本库因此对所有人公开。
+      #    生产必须从环境变量注入：
+      #      THINGS_LINK_SECURITY_APP_JWT_SECRET=<至少 32 字节的随机串>
+      #    长度下限 32 字节由 AppJwtConfiguration 强制，短于此启动时直接失败。
+      secret: ${THINGS_LINK_SECURITY_APP_JWT_SECRET:dev-only-app-secret-do-not-use-in-production-32b}
+
+      # App 访问令牌有效期。与控制台同为 15 分钟：令牌无状态、签发后不可撤销，
+      # 时长即「终端用户被停用后仍能访问」的最长窗口；停用的立即生效靠刷新时回库复验。
+      access-token-ttl: 15m
+
+      # App 令牌 issuer，与控制台 things-link 不同（互斥的一部分）。
+      issuer: things-link-app
+
+    app-session:
+      # App 刷新令牌有效期。移动端典型为 30 天，长于控制台 7 天：
+      # App 重登摩擦更高（无 Cookie、需重新走登录流程），且令牌存系统安全存储
+      # （Keychain / Keystore），泄露面小于浏览器 Cookie。
+      refresh-token-ttl: 30d
+
+    # Broker → 应用的回调共享密钥（架构文档 8.3，切片 S3.5-1）。
+    #
+    # EMQX 在 /api/v1/emqx/{auth,acl,events/*} 上带 X-Broker-Callback-Token 头，
+    # 应用逐字节常量时间比对，不匹配一律 401（错误码 20030）。
+    #
+    # ⚠️ 用自定义头而不是 Authorization: Bearer。本服务同时是 OAuth2 资源服务器，
+    #    共用 Authorization 会让请求先被 BearerTokenAuthenticationFilter 按 JWT 解析
+    #    并拒掉，症状是「密钥明明是对的却 401，错误码还是 20020 登录已失效」。踩过一次。
+    #
+    # ⚠️ 这个值必须与 deploy/emqx/base.hocon 里五个回调的 X-Broker-Callback-Token
+    #    **完全一致**。不一致的症状是「设备全部连不上、上行全丢、控制台里全部离线」，
+    #    而 EMQX 日志里只有一个 401 —— 改任意一边时务必两边一起改。
+    #
+    # ⚠️ 与 JWT 密钥一样，这里是**开发默认值**，已经进版本库因此对所有人公开。
+    #    生产必须注入：THINGS_LINK_SECURITY_BROKER_CALLBACK_SECRET=<至少 32 字节随机串>
+    #    它比 JWT 密钥更需要长度：不会过期、不会轮换，猜中即等于回调端点重新变回无鉴权。
+    #
+    # 缺失或短于 32 字节时**启动直接失败**，不会带着弱密钥跑起来。
+    #
+    # 注意：共享密钥只是第一道。架构文档 8.3 要求**另外**做端口分离或 IP 白名单，
+    # 两者至少一项 —— 本地开发栈把 8080 只绑在回环地址上已经满足这一条，
+    # 生产不要依赖这个巧合。
+    broker-callback:
+      secret: ${THINGS_LINK_SECURITY_BROKER_CALLBACK_SECRET:dev-only-broker-callback-secret-do-not-use-in-production}
+
+    # 会话与刷新令牌 Cookie（决策 #8 / ADR 0010）。
+    #
+    # 这里没有列出的项都走 SessionProperties 里的默认值，而那些默认值一律取
+    # **更安全**的一侧：cookieSecure=true、SameSite=Strict、allowedOrigins 为空。
+    # 漏配一项时的表现应当是「太严格导致不工作」，而不是「悄悄放松了限制」——
+    # 前者会立刻被发现，后者不会。
+    session:
+      # 刷新令牌有效期，即「多久不用就必须重新登录」的上限。
+      # 单个令牌的实际寿命远短于此：每次刷新都会轮换，旧的立即作废。
+      refresh-token-ttl: 7d
+
+      # ⚠️ 本机开发用。
+      #
+      # Chrome / Firefox 允许在 http://localhost 上设置 Secure Cookie，
+      # 但并非所有浏览器都如此（Safari 会直接丢弃），于是表现为「登录成功却刷新不了」。
+      # 为了本机各浏览器一致，这里显式关掉。
+      #
+      # prod由application-prod.yml开启，启动守卫拒绝外部配置降级为false。
+      cookie-secure: false
+
+      # 允许携带凭据的跨源来源。
+      #
+      # 留空 = 不允许任何跨源请求。开发走 Vite 代理是同源的，生产按 ADR 0010
+      # 要求控制台与 API 同站，两种情况都不需要它。
+      #
+      # 真要填时必须写完整来源（含协议与端口），且必须与前端的
+      # VITE_WITH_CREDENTIALS 成对确定 —— 架构文档 11.2 点名不能一边改一边猜。
+      # allowed-origins:
+      #   - https://console.example.com
+
+springdoc:
+  # 管理 API 契约只包含版本化业务路径。simulator 仅以 test scope 进入 bootstrap 验收
+  # classpath；不限定路径会使其本地 /simulations 端点随测试上下文污染正式契约。
+  paths-to-match: /api/v1/**,/api/open/v1/**
+  api-docs:
+    # /v3/api-docs 暴露全部接口结构。开发期必需，生产环境则是一份现成的
+    # 攻击面地图。
+    #
+    # prod已由application-prod.yml关闭，启动守卫拒绝外部覆盖为true。
+    # 生产关闭由启动期强制，开发配置仍供本地生成契约。
+    enabled: true
+  # 只产出 JSON 文档，不引入 Swagger UI（依赖用的是 -api 而非 -ui）。
+  # UI 既是额外的攻击面，也会让生产包变大。

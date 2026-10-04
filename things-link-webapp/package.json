@@ -1,0 +1,34 @@
+{
+  "name": "@things-link/webapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20.19.0",
+    "pnpm": ">=8.8.0"
+  },
+  "scripts": {
+    "dev": "pnpm build && vite --host localhost --port 3007 --strictPort",
+    "build": "pnpm --dir ../things-link-client-contracts contract:check && pnpm --dir ../things-link-client-contracts build && pnpm run python scripts/host-candidate.py prepare && vue-tsc --noEmit && vite build && pnpm run python scripts/host-candidate.py build",
+    "test": "vitest run",
+    "api:generate": "pnpm run python ../scripts/generate-openapi-contracts.py",
+    "api:check": "node scripts/check-api.mjs",
+    "verify": "pnpm build && pnpm api:check && pnpm test && pnpm run python -m unittest discover -s scripts/tests",
+    "python": "node -e \"const { spawnSync } = require('node:child_process'); const r = spawnSync(process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3'), process.argv.slice(1), { stdio: 'inherit', env: { ...process.env, PYTHONUTF8: '1' } }); if (r.error) console.error(r.error.message); process.exit(r.status ?? 1)\" --"
+  },
+  "dependencies": {
+    "vue": "3.5.22",
+    "@things-link/client-contracts": "link:../things-link-client-contracts"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.1",
+    "@types/node": "24.8.1",
+    "@playwright/test": "1.62.1",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.6.3",
+    "vite": "7.1.7",
+    "vitest": "4.1.11",
+    "vue-tsc": "2.1.10"
+  }
+}

@@ -1,0 +1,58 @@
+# ingestion 集成测试只覆盖 Kafka 基础设施；broker 地址由 AbstractIntegrationTest 动态注入。
+spring:
+  jpa:
+    hibernate:
+      # 与生产一致，schema 只由 Flyway 管理；本切片虽然不建业务表，也不放松基线。
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    # support 基线负责创建受 RLS 约束的应用角色，AbstractIntegrationTest 随后用该角色连接。
+    locations:
+      - classpath:db/migration/support
+    placeholders:
+      app_role_password: thingslink
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: ingestion-infrastructure-tests
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # S12-4f、D146a/架构§5：标准遥测及网关批量保留精确小数，其他类型及受信包检查保持原行为。
+      value-deserializer: com.things.link.ingestion.infrastructure.UplinkPayloadPrecisionDeserializer
+      properties:
+        # 生产配置同步信任 S8-2C 的纯数据重试信封，禁止使用 * 通配符。
+        spring.json.trusted.packages: com.things.link.shared.message,com.things.link.rule.application.queue
+    listener:
+      ack-mode: record
+      missing-topics-fatal: true
+
+# 模块测试不加载 bootstrap 的 application.yml；显式给 S4-4 WebSocket 配额提供与生产一致的基线。
+things-link:
+  # 消息隔离测试只装配握手依赖，不将这些签发方当作生产配置或真实JWT验证。
+  security:
+    jwt:
+      issuer: things-link-test
+    app-jwt:
+      issuer: things-link-app-test
+  ingestion:
+    realtime:
+      max-global-connections: 1000
+      max-account-connections: 5
+      max-project-connections: 200
+      max-session-subscriptions: 200
+      max-account-subscriptions: 500
+      max-project-subscriptions: 10000
+      outbound-queue-capacity: 256
+      max-text-frame-bytes: 32768
+      send-timeout-millis: 5000
+  device:
+    access-request-cleanup:
+      # 本模块不加载设备迁移（接入受理表属 device 域），清理任务由 bootstrap 真库用例显式驱动。
+      enabled: false

@@ -1,0 +1,27 @@
+# Staged device-access process. Replace placeholders after validating the host and candidate.
+# Keep EMQX callbacks on the existing backend until the 2e-2 cutover procedure passes.
+[Unit]
+Description=ThingsLink independent acceptance device access
+After=network.target
+
+[Service]
+Type=simple
+User=@DEDICATED_NONROOT_USER@
+Group=@DEDICATED_NONROOT_GROUP@
+WorkingDirectory=@PRIVATE_WORKING_DIRECTORY@
+Environment=LOG_PATH=@ABSOLUTE_LOG_DIRECTORY@
+ExecStart=@ABSOLUTE_JAVA21_EXECUTABLE@ -Xms256m -Xmx1024m -jar @ABSOLUTE_IMMUTABLE_ACCESS_JAR@ --spring.config.additional-location=file:@ABSOLUTE_PRIVATE_DIRECTORY@/application-device-access.properties
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=60
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+LimitNOFILE=65536
+# The same app database role is used by both processes; Flyway is disabled here.
+# Verify 8081 is bound only to the internal gateway before routing any device traffic.
+
+[Install]
+WantedBy=multi-user.target

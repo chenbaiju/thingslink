@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "verdictVersion": 1,
+  "scenarios": [
+    "anomaly-auth.spec.ts",
+    "journey-1.spec.ts",
+    "journey-2.spec.ts",
+    "journey-3.spec.ts",
+    "journey-6.spec.ts",
+    "journey-7.spec.ts"
+  ],
+  "expectedTestsPerScenario": 1,
+  "expectedContractTests": 9,
+  "scenarioTimeoutSeconds": 900,
+  "cleanupTimeoutSeconds": 90,
+  "combinationTimeoutSeconds": 1200,
+  "expectedCombinationTests": 6,
+  "backendUrl": "http://localhost:8081",
+  "consoleUrl": "http://localhost:3007",
+  "simulatorPort": 8090,
+  "redisDatabase": 15,
+  "isolation": "independent-fixture-and-processes-on-shared-local-middleware",
+  "combinationIsolation": "single-shared-fixture-and-process-set-on-shared-local-middleware"
+}

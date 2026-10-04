@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OTA域包含发布清单/签名合同与草稿生命周期、持久幂等和有界清理。
+  对象上传、正式signer、发布与设备活动仍须各自实施验收，不以草稿管理冒充升级能力。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>things-link-ota</artifactId>
+    <name>things-link-ota</name>
+    <description>OTA固件信任合同、活动与设备作业</description>
+
+    <!-- 仅使用BOM管理的流式解析器，手动实施受限JCS，不启用对象多态绑定。 -->
+    <dependencies>
+        <!-- 本域通知直接使用JVM HTTP实现，不能依赖传递声明。 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp-jvm</artifactId>
+            <version>${okhttp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <!-- 已验真秘密响应的Broker信封使用Jackson 3，不依赖Web starter传递声明。 -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!-- 业务错误、UUIDv7和租户范围使用公共合同。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-shared</artifactId>
+        </dependency>
+        <!-- 同事务审计及通用基础设施，不通过传递依赖声明。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-support</artifactId>
+        </dependency>
+        <!-- 项目角色、ACTIVE持续许可和清理SPI只走公开application。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-project</artifactId>
+        </dependency>
+        <!-- 精确模型投影由device公开端口提供，不跨域读取dev表。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-device</artifactId>
+        </dependency>
+        <!-- 本域JDBC持久化必须参与现有业务事务。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <!-- 提供严格固件HTTP信封与公开白名单响应。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- 分页范围由MVC参数验证拒绝无界查询。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- 通过Controller合同生成OpenAPI，前端类型不手写。 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>

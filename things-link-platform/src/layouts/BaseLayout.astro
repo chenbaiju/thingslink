@@ -1,0 +1,38 @@
+---
+/**
+ * 通用页面布局。
+ *
+ * 包含全局 Head（SEO meta）、Header、主内容区和 Footer。
+ * 所有页面通过 `<BaseLayout>` 继承统一的 chrome。
+ */
+import Header from '@/components/Header.astro'
+import Footer from '@/components/Footer.astro'
+import SeoHead from '@/components/SeoHead.astro'
+import { SITE } from '@/config'
+import '@/styles/global.css'
+
+export interface Props {
+  title?: string
+  description?: string
+  noIndex?: boolean
+}
+
+const { title, description, noIndex = false } = Astro.props
+const pageTitle = title ? `${title} — ${SITE.name}` : SITE.name
+const pageDescription = description ?? SITE.description
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <SeoHead title={pageTitle} description={pageDescription} noIndex={noIndex} />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <Header />
+    <main id="main-content" class="flex-1" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

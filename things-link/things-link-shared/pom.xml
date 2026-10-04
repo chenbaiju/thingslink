@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  横切基础类型模块：ID 生成（UUIDv7）、错误码、事件信封、租户上下文、游标分页。
+
+  【硬性约束】本模块不得依赖 Spring 的任何东西（架构文档 10.2）。
+
+  原因不是洁癖：所有模块都依赖 shared，一旦它引入 spring-web 或 JPA，
+  全部模块就传递性地拿到了它们，10.4 的依赖方向约束当场失效 ——
+  届时 domain 层可以随手 @Autowired，分层就名存实亡了。
+
+  这条约束由下面的 banned-dependencies 规则强制，不靠自觉。
+  需要 Spring 装配的横切能力放 things-link-support，不要放这里。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.things.link</groupId>
+		<artifactId>things-link</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>things-link-shared</artifactId>
+	<name>things-link-shared</name>
+	<description>横切基础类型：ID、错误码、事件信封、租户上下文</description>
+
+	<dependencies>
+		<!--
+		  允许的外部依赖只有两类：序列化与日志门面。
+		  事件信封（架构文档第 5 节）需要 Jackson 注解；日志用 SLF4J 门面，
+		  具体实现由 bootstrap 决定，库模块不绑定实现。
+		-->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<!--
+					  与父 POM 的 enforce-build-baseline 是两个独立 execution，
+					  用不同的 <id> 并存，不会互相覆盖。
+					-->
+					<execution>
+						<id>enforce-shared-has-no-spring</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<bannedDependencies>
+									<searchTransitive>true</searchTransitive>
+									<excludes>
+										<exclude>org.springframework:*</exclude>
+										<exclude>org.springframework.boot:*</exclude>
+										<exclude>org.springframework.security:*</exclude>
+										<exclude>jakarta.persistence:*</exclude>
+										<exclude>jakarta.servlet:*</exclude>
+										<exclude>org.hibernate*:*</exclude>
+									</excludes>
+									<!--
+									  测试期允许用 spring-boot-starter-test（父 POM 下发），
+									  它不会进入生产 classpath，不构成上述风险。
+									-->
+									<includes>
+										<include>*:*:*:*:test</include>
+									</includes>
+									<message>things-link-shared 不得依赖 Spring / JPA（架构文档 10.2）。所有模块都依赖 shared，一旦它引入 Spring，全部模块都会传递性地拿到，10.4 的分层约束将失效。需要 Spring 装配的能力请放到 things-link-support。</message>
+								</bannedDependencies>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

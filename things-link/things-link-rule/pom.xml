@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  S8 规则域。S8-1B 在沙箱内核之上增加规则版本事实与无 UI 应用服务；API 与消息链路仍由后续子切片引入。
+  GraalJS Community 只在独立 Worker JVM 中运行，不在业务 JVM 堆上直接 eval；原因见 ADR 0026。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>things-link-rule</artifactId>
+    <name>things-link-rule</name>
+    <description>消息规则、版本事实与不可信脚本沙箱</description>
+
+    <dependencies>
+        <!-- 规则 ID、项目角色、TenantContext 与统一错误模型必须复用共享契约。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-shared</artifactId>
+        </dependency>
+        <!-- 规则源码变更必须与业务事实处于同一事务写 sys_audit_log。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-support</artifactId>
+        </dependency>
+        <!-- 项目成员角色与 owner tenant 只能通过 project application 公开端口解析。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-project</artifactId>
+        </dependency>
+        <!-- S9-2 只依赖 telemetry application 的设备操作公开端口；rule 不读取 ts_/dev_ 表。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-telemetry</artifactId>
+        </dependency>
+        <!-- S9-3 只调用 alarm application 的可信动作端口，告警状态机与 alarm_ 表仍由 alarm 模块独占。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-alarm</artifactId>
+        </dependency>
+        <!-- S9-4 一键执行前校验目标设备归属，只调用 device 公开应用端口，不直接读取 dev_ 表。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-device</artifactId>
+        </dependency>
+        <!-- rule_ 事实使用显式 JDBC；不引入 JPA 或跨模块表访问。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <!-- S8-2B 的有限退避 Topic 与规则 DLQ 必须由规则模块显式声明，不能依赖 support 的传递 classpath。 -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <!-- Spring 负责配置属性、事务和组件生命周期。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <!-- S9-4 首次开放 HTTP API：MVC 绑定与参数校验必须由规则模块显式声明，不依赖传递 classpath。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- 调试摘要必须按 JSON 结构递归脱敏，不能用字符串替换遗漏嵌套凭据。 -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!-- D-023 的脚本成功、失败、超时必须来自真实执行入口，且只使用固定低基数标签。 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <!-- Polyglot API 在宿主 JVM 暴露 Context；具体 JS 引擎由下面的平台 isolate 运行时提供。 -->
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+        </dependency>
+        <!-- JavaScript Community 运行时只进入 Worker JVM；宿主 API 进程不得直接创建 Context。 -->
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>js-community</artifactId>
+            <type>pom</type>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- 单元测试使用真实 Worker 和服务 mock；数据库约束与 RLS 在 bootstrap 真实 PostgreSQL 中验收。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- S9-1 用 ArchUnit 强制规则模块不得同步调用外部系统、动作节点不得直接写 Outbox 或发 Kafka。 -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- F35 直接读取真实 broker 的消费组 offset，避免 mock 返回值掩盖 RECORD ack 越权提交。 -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

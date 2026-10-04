@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "TODO",
+  "repository": {
+    "commit": "0000000000000000000000000000000000000000"
+  },
+  "artifacts": {
+    "backendJarSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "simulatorJarSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "scriptsSha256": {
+      "a4_qualification.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_distributed_coordinator.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_evidence_manifest.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_environment_inventory.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_fixture.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_machine_verdict.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_metrics.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "run_c3e0.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_atomic_receive.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_ssh_transfer.py": "0000000000000000000000000000000000000000000000000000000000000000",
+      "l2_ssh_phase_bridge.py": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "sut": {
+    "hostId": "TODO",
+    "cloud": {
+      "provider": "TODO",
+      "region": "TODO",
+      "availabilityZone": "TODO",
+      "instanceType": "TODO"
+    },
+    "hardware": {
+      "cpuModel": "TODO",
+      "vcpus": 8,
+      "memoryBytes": 17179869184
+    },
+    "os": {
+      "name": "Ubuntu",
+      "version": "24.04",
+      "imageId": "TODO",
+      "kernel": "TODO",
+      "architecture": "x86_64"
+    },
+    "disks": {
+      "root": {
+        "type": "TODO",
+        "capacityBytes": 0,
+        "baselineIops": 0,
+        "baselineThroughputBytesPerSecond": 0
+      },
+      "data": {
+        "type": "TODO",
+        "capacityBytes": 0,
+        "baselineIops": 0,
+        "baselineThroughputBytesPerSecond": 0
+      }
+    },
+    "runtime": {
+      "dockerClient": "TODO",
+      "dockerServer": "TODO",
+      "jdk": "TODO",
+      "python": "TODO"
+    },
+    "jvm": {
+      "heapInitialBytes": 0,
+      "heapMaxBytes": 0
+    },
+    "network": {
+      "bandwidthMbps": 0,
+      "privateRttPeer": "TODO",
+      "privateRttMillis": 0
+    },
+    "ntp": {
+      "service": "chrony",
+      "synchronized": false,
+      "offsetMillis": 0,
+      "checkedAt": "TODO"
+    },
+    "images": {
+      "timescaledb": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "redis": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "redpanda": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "emqx": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "minio": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "configSha256": {
+      "deploy": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "hikari": {
+      "control": {
+        "maximumPoolSize": 0,
+        "connectionTimeoutMillis": 0
+      },
+      "data": {
+        "maximumPoolSize": 0,
+        "connectionTimeoutMillis": 0
+      }
+    },
+    "postgresql": {
+      "version": "TODO",
+      "parameters": {}
+    },
+    "timescale": {
+      "version": "TODO",
+      "parameters": {}
+    },
+    "redpanda": {
+      "version": "TODO",
+      "smp": 0,
+      "memoryBytes": 0
+    },
+    "redis": {
+      "version": "TODO"
+    },
+    "emqx": {
+      "version": "TODO"
+    },
+    "minio": {
+      "version": "TODO"
+    }
+  },
+  "generators": [
+    {
+      "hostId": "TODO",
+      "cloud": {
+        "provider": "TODO",
+        "region": "TODO",
+        "availabilityZone": "TODO",
+        "instanceType": "TODO"
+      },
+      "hardware": {
+        "cpuModel": "TODO",
+        "vcpus": 0,
+        "memoryBytes": 0
+      },
+      "os": {
+        "name": "Ubuntu",
+        "version": "24.04",
+        "imageId": "TODO",
+        "kernel": "TODO",
+        "architecture": "x86_64"
+      },
+      "disks": {
+        "root": {
+          "type": "TODO",
+          "capacityBytes": 0,
+          "baselineIops": 0,
+          "baselineThroughputBytesPerSecond": 0
+        },
+        "data": {
+          "type": "TODO",
+          "capacityBytes": 0,
+          "baselineIops": 0,
+          "baselineThroughputBytesPerSecond": 0
+        }
+      },
+      "runtime": {
+        "dockerClient": "TODO",
+        "dockerServer": "TODO",
+        "jdk": "TODO",
+        "python": "TODO"
+      },
+      "jvm": {
+        "heapInitialBytes": 0,
+        "heapMaxBytes": 0
+      },
+      "network": {
+        "bandwidthMbps": 0,
+        "privateRttPeer": "TODO",
+        "privateRttMillis": 0
+      },
+      "ntp": {
+        "service": "chrony",
+        "synchronized": false,
+        "offsetMillis": 0,
+        "checkedAt": "TODO"
+      },
+      "images": {
+        "simulator": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "configSha256": {
+        "simulator": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ]
+}

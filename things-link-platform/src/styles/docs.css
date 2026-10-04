@@ -1,0 +1,93 @@
+/* 文档正文专用；不依赖 typography 插件，不影响导航与首页。 */
+.docs-content {
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.docs-content :where(h1, h2, h3, h4, h5, h6) {
+  font-weight: 700;
+  line-height: 1.4;
+  margin-block: 2em 0.75em;
+  scroll-margin-top: calc(var(--spacing-header) + 1rem);
+}
+
+.docs-content h1 { font-size: clamp(1.75rem, 4vw, 2.25rem); }
+.docs-content h2 { font-size: 1.5rem; }
+.docs-content h3 { font-size: 1.25rem; }
+.docs-content :where(h4, h5, h6) { font-size: 1.125rem; }
+.docs-content > :first-child { margin-top: 0; }
+.docs-content > :last-child { margin-bottom: 0; }
+
+.docs-content :where(p, ul, ol, blockquote, pre, table, hr, dl) {
+  margin-block: 1.25rem;
+}
+
+.docs-content :where(ul, ol) { padding-inline-start: 1.75rem; }
+.docs-content ul { list-style-type: disc; }
+.docs-content ol { list-style-type: decimal; }
+.docs-content ul ul { list-style-type: circle; }
+.docs-content li { padding-inline-start: 0.25rem; margin-block: 0.4rem; }
+.docs-content li :where(ul, ol, p) { margin-block: 0.5rem; }
+.docs-content li::marker { color: var(--color-text-secondary); }
+
+.docs-content a {
+  color: var(--color-brand-700);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.docs-content a:hover { color: var(--color-brand-800); }
+.docs-content strong { font-weight: 700; }
+.docs-content :not(pre) > code {
+  color: var(--color-brand-800);
+  background: var(--color-brand-50);
+  padding: 0.15em 0.35em;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+}
+
+/* 长代码保留格式，只在代码区域横向滚动。保留 Shiki 生成的主题色。 */
+.docs-content pre {
+  max-width: 100%;
+  padding: 1rem;
+  background: var(--color-bg-tertiary);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.docs-content pre code { padding: 0; background: none; font-size: inherit; }
+
+.docs-content blockquote {
+  border-inline-start: 3px solid var(--color-brand-300);
+  background: var(--color-brand-50);
+  padding: 0.75rem 1rem;
+}
+.docs-content blockquote > :first-child { margin-top: 0; }
+.docs-content blockquote > :last-child { margin-bottom: 0; }
+
+/* 窄屏限制表格区域宽度；保留原生表头、行列语义。 */
+.docs-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.docs-content :where(th, td) {
+  min-width: 6rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+.docs-content th { font-weight: 600; background: var(--color-bg-secondary); }
+.docs-content tbody tr:nth-child(even) { background: var(--color-bg-secondary); }
+.docs-content hr { border: 0; border-top: 1px solid var(--color-border); }
+.docs-content dt { font-weight: 600; }
+.docs-content dd { margin-inline-start: 1.5rem; }
+.docs-content :where(img, video) { max-width: 100%; height: auto; border-radius: var(--radius-md); }

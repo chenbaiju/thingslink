@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  测试基础设施模块：Testcontainers 容器管理与集成测试基类。
+
+  这是一个**工具模块**，与 things-link-simulator 同类，不属于架构文档 10.2 的
+  业务模块序列，也不进生产依赖树 —— 其他模块只以 <scope>test</scope> 依赖它。
+
+  为什么需要独立模块而不是放在某个模块的测试目录里：AbstractIntegrationTest
+  必须被所有模块的测试复用（S1 的 iam、S2 的 device 都要连真实 PostgreSQL）。
+  放在 bootstrap 的测试目录里业务模块够不着；用 test-jar 又会带来 IDE 解析和
+  传递依赖的麻烦。独立模块是最直接的做法。
+
+  注意本模块的类在 src/main 下而不是 src/test —— 只有 main 产物才会被其他模块
+  依赖。它们是「测试用的生产代码」，这一点看着别扭但是必要的。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.things.link</groupId>
+		<artifactId>things-link</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>things-link-testing</artifactId>
+	<name>things-link-testing</name>
+	<description>集成测试基础设施：Testcontainers 容器管理与测试基类</description>
+
+	<dependencies>
+        <!-- Launcher startup prepares ignored local TLS fixtures before discovery, including IDE runs. -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>compile</scope>
+        </dependency>
+		<!--
+		  下面三项都显式写 compile 作用域，覆盖聚合 POM 继承下来的 test 作用域。
+		  本模块的 src/main 代码要直接用它们，test 作用域会导致编译不过。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<!--
+		  注意坐标带 testcontainers- 前缀。Spring Boot 4.1 的 BOM 引入的是
+		  Testcontainers 2.0.x，而 2.x 把所有模块的 artifactId 从 `postgresql`、
+		  `junit-jupiter` 统一改成了 `testcontainers-postgresql`、
+		  `testcontainers-junit-jupiter`。照抄 1.x 的教程会得到
+		  「'dependencies.dependency.version' is missing」这种指向不明的报错 ——
+		  实际原因是坐标压根不在 BOM 里，而不是版本没配。
+
+		  版本不写，由 BOM 仲裁（架构文档 3.1 的同一条原则，只不过这次踩坑的
+		  不是 Spring 而是 Testcontainers）。
+		-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-kafka</artifactId>
+			<scope>compile</scope>
+		</dependency>
+
+		<!--
+		  Redis 使用 GenericContainer，代码位于 AbstractIntegrationTest；它没有专用模块依赖。
+		  Kafka 已由上方 testcontainers-kafka 提供真实容器。禁止改成嵌入式替身：
+		  差异恰好集中在分区与顺序上，而那正是本项目最关键的部分
+		  （架构文档 5.1、开发手册 6.6）。
+		-->
+	</dependencies>
+
+</project>

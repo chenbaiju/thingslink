@@ -1,0 +1,28 @@
+{
+  "baselines": [
+    {
+      "availableFlashBytes": 67108864,
+      "availableRamBytes": 1024,
+      "baselineVersion": 1,
+      "bootloader": { "maximumVersion": "9.9.9", "minimumVersion": "1.0.0" },
+      "compressionAlgorithms": ["NONE"],
+      "contractVersion": "tc-ota-type-baseline/v1",
+      "deltaModes": ["NONE"],
+      "deviceTypeId": "0192e2e1-0000-7000-8000-000000000003",
+      "evidenceReference": "e2e-fixture-only",
+      "hardware": { "boardRevisionMax": 1, "boardRevisionMin": 1, "model": "E2E-BOARD" },
+      "maximumArtifactBytes": 67108864,
+      "productKey": "e2eotafixed01",
+      "projectId": "0192e2e1-0000-7000-8000-000000000002",
+      "propertyProfile": "TC_PROPERTY_COMPOSITE_V1",
+      "protectedSecurityCounterBits": 53,
+      "rootFingerprint": "a705ec8f95791905020eda56096895ff95a8841ca08d7d53896406a353b74855",
+      "signatureProfiles": ["TC_OTA_ED25519_V1"],
+      "supportsAbSlots": true,
+      "supportsRangeDownload": true,
+      "supportsResumeDownload": true,
+      "tenantId": "0192e2e1-0000-7000-8000-000000000001",
+      "trustDomain": "e2e-ota-lifecycle"
+    }
+  ]
+}

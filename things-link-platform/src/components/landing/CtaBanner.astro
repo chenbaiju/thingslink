@@ -1,0 +1,36 @@
+---
+/**
+ * 底部 CTA 横幅。
+ *
+ * 在页面底部再次引导用户进入控制台。
+ */
+import { SITE, docsPath } from '@/config'
+import Button from '@/components/ui/Button.astro'
+import Icon from '@/components/ui/Icon.astro'
+---
+
+<section class="py-section-sm md:py-section" aria-labelledby="cta-title">
+  <div class="container-page">
+    <div class="relative overflow-hidden rounded-2xl px-8 py-12 md:py-16 text-center bg-brand-gradient-deep">
+      <!-- 装饰光斑 -->
+      <div class="absolute top-[-30%] right-[-10%] w-[300px] h-[300px] rounded-full bg-white/5 blur-2xl" aria-hidden="true"></div>
+      <div class="absolute bottom-[-20%] left-[-5%] w-[250px] h-[250px] rounded-full bg-brand-400/20 blur-2xl" aria-hidden="true"></div>
+
+      <div class="relative">
+        <h2 id="cta-title" class="text-2xl md:text-3xl font-bold text-white">
+          开始准备你的项目与设备
+        </h2>
+        <p class="mt-3 text-brand-100 max-w-md mx-auto">
+          {SITE.consoleUrl ? '先阅读接入准备；已有账号时，可进入对应部署的控制台管理项目与设备。' : '控制台暂未开放，你可以先阅读接入准备。'}
+        </p>
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          {SITE.consoleUrl && <Button href={SITE.consoleUrl} variant="emphasis" size="md">
+            进入控制台
+            <Icon name="arrow-right" size="md" />
+          </Button>}
+          {SITE.docsEnabled && (<Button href={docsPath('getting-started')} variant="outline-light" size="md">阅读接入准备</Button>)}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

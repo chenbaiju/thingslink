@@ -1,0 +1,56 @@
+# 独立WebApp验证，不把前端切片转成全后端clean verify。
+name: webapp
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: webapp-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: 会话反例、构建与真实浏览器入口
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/things-link-webapp/.playwright-browsers
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: things-link-webapp/package.json
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: |
+            things-link-webapp/pnpm-lock.yaml
+            things-link-client-contracts/pnpm-lock.yaml
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: 生成器原子发布反例
+        run: python3 -m unittest scripts.tests.test_generate_openapi_contracts
+      - name: 安装独立共享合同依赖
+        working-directory: things-link-client-contracts
+        run: pnpm install --frozen-lockfile
+      - name: 安装冻结依赖
+        working-directory: things-link-webapp
+        run: pnpm install --frozen-lockfile
+      - name: 类型、会话反例与生产构建
+        working-directory: things-link-webapp
+        run: pnpm verify
+      - name: 安装锁定Chromium、Firefox与WebKit
+        working-directory: things-link-webapp
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: 实际Vue页面与真实PG会话旅程
+        run: >-
+          ./things-link/mvnw -f things-link/pom.xml -B -ntp -pl things-link-bootstrap -am test
+          -Dtest=AppWebAppSessionJourneyTests,AppWebAppStaticCanvasJourneyTests,AppWebAppStaticRecoveryJourneyTests,AppWebAppDeviceCanvasJourneyTests,AppWebAppMultiDeviceCanvasJourneyTests,AppWebAppCompositeCanvasJourneyTests,AppWebAppInteractiveCanvasJourneyTests,AppWebAppRealtimeJourneyTests,AppWebAppShareJourneyTests,AppWebAppPwaJourneyTests,AppWebAppForegroundAlarmJourneyTests,AppWebAppDeviceControlJourneyTests,ManagedWebAppHostQualificationIntegrationTests
+          -Dwebapp.session.verify=true -Dwebapp.static.verify=true -Dwebapp.recovery.verify=true -Dwebapp.device.verify=true -Dwebapp.multi-device.verify=true -Dwebapp.composite.verify=true -Dwebapp.interactive.verify=true -Dwebapp.realtime.verify=true -Dwebapp.share.verify=true -Dwebapp.pwa.verify=true -Dwebapp.foreground-alarm.verify=true -Dwebapp.device-control.verify=true -Dwebapp.host-qualification.verify=true
+          -Dsurefire.failIfNoSpecifiedTests=false

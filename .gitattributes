@@ -1,0 +1,28 @@
+# X-02c1a生成物只由版本化机器合同与确定性生成器维护。
+things-link-client-contracts/src/dashboard/v1/generated.ts linguist-generated=true
+
+# 黄金语料按原始字节计算哈希；所有平台必须检出为 LF，二进制输入不受此规则影响。
+things-link-client-contracts/contracts/dashboard-v1-golden/*.json text eol=lf
+things-link-client-contracts/contracts/dashboard-v1-golden/inputs/*.json text eol=lf
+
+# 自部署批准修订按原始字节校验摘要，禁止 Windows 检出时转换换行。
+things-link/things-link-entitlement/src/main/resources/self-hosted/revisions/*.json text eol=lf
+
+# 测试 TLS 夹具必须在 Windows 与 Unix 检出为一致的 PEM 文本。
+things-link/things-link-ingestion/src/test/resources/tls/*.pem text eol=lf
+
+# 历史MQTT配置是按原始字节摘要冻结的升级输入。
+things-link/things-link-bootstrap/src/test/resources/mqtt/*.hocon text eol=lf
+
+# Native Windows verification entrypoints must be checked out with CRLF.
+verify/cmd/*.cmd text eol=crlf
+
+# 两份历史迁移的槽位例外绑定原始 SHA-256；检出必须保留发行时的 LF 字节。
+things-link/things-link-issuer/src/main/resources/db/migration/issuer/V20260928_0101__self_hosted_enrollment_queue_index.sql text eol=lf
+things-link/things-link-issuer/src/main/resources/db/migration/issuer/V20260928_0102__self_hosted_review_attestation.sql text eol=lf
+
+# Reviewed contract digest must match on Windows and Linux.
+things-link-client-contracts/contracts/dashboard-v1.json text eol=lf
+
+things-link-console/src/types/api/schema.d.ts text eol=lf
+things-link-webapp/src/types/api/schema.d.ts text eol=lf

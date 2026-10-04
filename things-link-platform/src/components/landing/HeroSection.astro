@@ -1,0 +1,65 @@
+---
+/**
+ * Hero 区域。
+ *
+ * 左右结构：左侧价值主张与 CTA，右侧产品视觉位。
+ * 手机上按“标题 → 摘要 → 按钮 → 视觉”的自然顺序排列（DOM 顺序即阅读顺序）。
+ *
+ * 右侧当前是**明确标注的占位块**，不是已上线界面。真实截图属 T05，
+ * 拿到素材前不得把它当作产品界面展示。
+ */
+import { SITE } from '@/config'
+import Button from '@/components/ui/Button.astro'
+import Icon from '@/components/ui/Icon.astro'
+---
+
+<section class="relative overflow-hidden">
+  <!-- 背景渐变 -->
+  <div class="absolute inset-0 -z-10" aria-hidden="true">
+    <div class="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-brand-100/40"></div>
+    <!-- 固定纵向锚点避免流式解析撑高Hero时，热缓存下的光斑发生布局位移。 -->
+    <div class="absolute top-[-120px] right-[-10%] w-[600px] h-[600px] rounded-full bg-brand-100/40 blur-3xl"></div>
+    <div class="absolute top-[440px] left-[-5%] w-[400px] h-[400px] rounded-full bg-brand-50/60 blur-3xl"></div>
+  </div>
+
+  <div class="container-page py-20 md:py-28 lg:py-32">
+    <div class="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-16">
+      <!-- 左列：文案与 CTA -->
+      <div class="text-left">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-text-primary leading-tight tracking-tight">
+          物联网云平台
+          <span class="block mt-2 bg-gradient-to-r from-brand-600 to-brand-500 bg-clip-text text-transparent">
+            让设备连接更简单
+          </span>
+        </h1>
+
+        <p class="mt-6 text-lg md:text-xl text-text-secondary leading-relaxed max-w-2xl">
+          {SITE.description}
+        </p>
+
+        <div class="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          {SITE.consoleUrl ? <Button href={SITE.consoleUrl} variant="primary" size="md">
+            进入控制台
+            <Icon name="arrow-right" size="md" />
+          </Button> : <span class="inline-flex items-center rounded-lg border border-border px-5 py-3 text-sm font-medium text-text-muted" aria-disabled="true">控制台暂未开放</span>}
+
+          {SITE.docsEnabled && (<Button href={SITE.docsUrl} variant="secondary" size="md">
+            <Icon name="book" size="md" />
+            查看文档
+          </Button>)}
+        </div>
+      </div>
+
+      <!-- 右列：产品视觉位（占位，待 T05 替换为真实截图） -->
+      <div class="w-full">
+        <div class="w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] rounded-2xl border border-border bg-bg-secondary shadow-card flex flex-col items-center justify-center gap-3 p-6 text-center">
+          <Icon name="chart" size="lg" class="text-brand-400" />
+          <p class="text-sm font-medium text-text-secondary">产品界面示意图</p>
+          <p class="text-xs text-text-muted max-w-xs">
+            占位区域。真实控制台截图与脱敏演示数据尚未就绪，将在对应阶段替换。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

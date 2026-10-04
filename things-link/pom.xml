@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ThingsLink 后端聚合 POM。
+
+  本文件不含任何代码，只做三件事：聚合子模块、统一版本管理、下发全模块共享的
+  插件与测试依赖。业务代码一律在子模块中。
+
+  模块清单、命名规范与依赖方向约束见 docs/BACKEND_ARCHITECTURE.md 第 10 节。
+  当前实际模块必须全部出现在 docs/BACKEND_ARCHITECTURE.md 10.2；其余模块仍按
+  「引入阶段」在真正需要时创建，空模块不产生约束，只产生维护成本。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<!--
+	  继承 Spring Boot 官方父 POM，由它统一仲裁所有 Spring 生态依赖的版本。
+	  仓库内任何 <dependency> 都不写 <version>（内部模块除外，见 dependencyManagement）——
+	  手写版本会绕过 BOM 仲裁，是 Spring 项目里最常见的依赖冲突来源。
+	-->
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.1.0</version>
+		<relativePath/> <!-- 从远程仓库解析父 POM，不在本地目录树中查找 -->
+	</parent>
+
+	<groupId>com.things.link</groupId>
+	<artifactId>things-link</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<!-- 聚合 POM 必须是 pom 打包，本模块不产出 jar -->
+	<packaging>pom</packaging>
+	<name>things-link</name>
+	<description>ThingsLink 多租户 IoT PaaS 后端服务（聚合模块）</description>
+
+	<!--
+	  声明顺序不影响构建顺序 —— Maven 会按依赖关系自行拓扑排序。
+	  这里按「横切在前、业务居中、启动在最后」排列，纯粹为了可读性。
+	-->
+	<modules>
+		<module>things-link-shared</module>
+		<module>things-link-support</module>
+		<module>things-link-iam</module>
+		<module>things-link-project</module>
+		<!-- 联网与离线部署共用的无密钥申请字节合同。 -->
+		<module>things-link-entitlement</module>
+		<!-- 自部署发行方登记，仅进入原平台管理进程，不交付给外部运行时。 -->
+		<module>things-link-issuer</module>
+		<module>things-link-device</module>
+		<module>things-link-telemetry</module>
+		<module>things-link-ingestion</module>
+		<!-- S6 告警域：拥有 alarm_ 表和告警状态机，不能借 telemetry 表存放告警事实。 -->
+		<module>things-link-alarm</module>
+		<!-- S7 任务域：拥有 task_ 事实，并通过公开端口分页设备、投递命令。 -->
+		<module>things-link-task</module>
+		<!-- S8 规则域：先落不可信脚本沙箱，再逐片接规则事实与消息钩子。 -->
+		<module>things-link-rule</module>
+		<!-- S11 终端用户与应用域：app_user/app_user_role/app_user_device 等表与配网绑定、推送。 -->
+		<module>things-link-enduser</module>
+		<!-- S12 项目导出域：跨域编排一致快照与私有对象制品，不反向污染事实域。 -->
+		<module>things-link-export</module>
+		<!-- X-02 / S12 看板域：本片只建立版本化合同与后续业务装配边界。 -->
+		<module>things-link-dashboard</module>
+		<!-- X-02 / S13 OTA 域：本片只装配ADR0053已冻结的协议类型，不实现业务流程。 -->
+		<module>things-link-ota</module>
+        <module>things-link-integration</module>
+		<!-- 外部应用复用全部业务模块与同源默认配置的普通运行时 JAR。 -->
+		<module>things-link-runtime</module>
+		<module>things-link-bootstrap</module>
+		<!-- G3-CORE-2：设备接入纯装配入口，业务实现仍归原模块。 -->
+		<module>things-link-access</module>
+		<!-- 工具模块，不进生产依赖树，其他模块以 test 作用域依赖 -->
+        <module>things-link-simulator</module>
+		<module>things-link-testing</module>
+	</modules>
+
+	<properties>
+		<!--
+		  Java 版本基线。docs/DEVELOPMENT_ROADMAP.md 决策 #1：JDK 21 LTS。
+		  Spring Boot 父 POM 会把该属性映射到 maven.compiler.release。
+
+		  选 21 而不是停留在 17 的直接动因是虚拟线程（JEP 444）：设备接入层与
+		  通知 / Webhook 投递都是高并发阻塞 IO，虚拟线程让这些场景可以继续用
+		  同步写法，而不必整体转向 WebFlux —— 架构文档第 3 节「管理 API 不需要
+		  全量 WebFlux」的前提正是它。其次 21 才有正式的 record 模式与模式匹配，
+		  领域层建值对象时会用到。
+		-->
+		<java.version>21</java.version>
+
+		<!--
+		  构建环境下限，由下面的 maven-enforcer-plugin 强制。
+		  与 java.version 分开定义：前者是「构建时必须使用的 JDK」，
+		  后者是「编译产物的目标版本」，含义不同，不要合并成一个属性。
+		-->
+		<enforcer.jdk.min>21</enforcer.jdk.min>
+		<enforcer.maven.min>3.9.0</enforcer.maven.min>
+
+		<!-- 不在 Spring Boot BOM 管理范围内的依赖，版本在此集中声明 -->
+		<archunit.version>1.3.0</archunit.version>
+		<!-- Eclipse Paho 提供 MQTT 3.1.1 客户端；模拟器必须走真实 Broker，不能直调业务服务。 -->
+		<paho-mqtt.version>1.2.5</paho-mqtt.version>
+		<!-- GraalJS Community 在独立 Worker JVM 内运行；资源硬边界由子进程而非 Oracle 专有扩展提供。 -->
+		<graalvm.version>25.0.2</graalvm.version>
+		<!--
+		  Californium/Scandium 承载 CoAP 的 DTLS 1.2：JDK 不提供 DTLS，因此这里的"评估"是选一个 DTLS 实现
+		  （不是可与 Netty 类比的选择题）。3.14.0 为稳定版；4.x 目前只有里程碑，冻结§8.2 要求禁用实验套件。
+		  许可证 EPL-2.0（构件清单声明，Californium 系双许可 EPL-2.0/EDL-1.0），仅以未修改依赖方式使用。
+		  版本固定的理由与核实过程见 docs/progress/AX.md 的 AX-4a 记录。
+		-->
+		<californium.version>3.14.0</californium.version>
+		<!--
+		  springdoc 尚无面向 Boot 4 的版本，2.8.6 是实测可用的最新版
+		  （见 things-link-support/pom.xml 中的说明）。
+		  升级 Spring Boot 时必须重新验证 /v3/api-docs 是否仍然正常。
+		-->
+		<springdoc.version>2.8.6</springdoc.version>
+		<!-- MinIO Java SDK 同时兼容部署锁定的 S3 服务端；版本不在 Boot BOM 中，故集中声明。 -->
+		<minio.version>9.0.3</minio.version>
+		<!-- MinIO 9.0.3 的 Maven POM只带OkHttp多平台元数据包，JVM实现必须显式同版引入。 -->
+		<okhttp.version>5.3.2</okhttp.version>
+		<!-- Windows受管宿主核验需读取卷号与文件ID；JDK Windows NIO的fileKey可为空。 -->
+		<jna.version>5.17.0</jna.version>
+	</properties>
+
+	<!--
+	  内部模块互相依赖时不写版本，由此处统一为 ${project.version}。
+	  外部依赖一概不在这里声明 —— 那是 Spring Boot BOM 的职责。
+	-->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>net.java.dev.jna</groupId>
+				<artifactId>jna-platform</artifactId>
+				<version>${jna.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-shared</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-support</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-iam</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-project</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-entitlement</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-issuer</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-device</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-telemetry</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-ingestion</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-alarm</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-task</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-rule</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-enduser</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-export</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-dashboard</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-ota</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-integration</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-runtime</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<!-- Polyglot API 与 JavaScript 运行时必须同版本；跨主版本混用会让宿主访问校验失真。 -->
+			<dependency>
+				<groupId>org.graalvm.polyglot</groupId>
+				<artifactId>polyglot</artifactId>
+				<version>${graalvm.version}</version>
+			</dependency>
+			<dependency><groupId>org.graalvm.polyglot</groupId><artifactId>js-community</artifactId><version>${graalvm.version}</version><type>pom</type></dependency>
+			<dependency>
+					<groupId>com.things.link</groupId>
+					<artifactId>things-link-simulator</artifactId>
+					<version>${project.version}</version>
+			</dependency>
+
+			<!--
+			  测试基础设施。刻意不在这里写死 <scope>test</scope>：
+			  things-link-testing 自身要以 compile 作用域引用它的依赖，
+			  由各使用方在自己的 pom 里声明 test 作用域。
+			-->
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-testing</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<!-- 架构约束测试，见 things-link-bootstrap 的 ArchitectureRulesTests -->
+			<dependency>
+				<groupId>com.tngtech.archunit</groupId>
+				<artifactId>archunit-junit5</artifactId>
+				<version>${archunit.version}</version>
+				<scope>test</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<!--
+	  全模块共享的测试依赖。放在这里而不是每个子模块重复声明 ——
+	  每个模块都要写测试，没有例外（README.md 测试规范）。
+	-->
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<!--
+		  注意是 <plugins> 而不是 <pluginManagement>：前者会被子模块继承并实际执行，
+		  后者只提供配置模板、不会自动生效。版本基线必须在每个子模块上都校验，
+		  所以用前者。
+
+		  spring-boot-maven-plugin 刻意不在这里 —— 它只属于 bootstrap 模块。
+		  给库模块打可执行 JAR 会重排 jar 内部结构，使它无法被其他模块正常依赖。
+		-->
+		<plugins>
+			<!--
+			  把已解析依赖的路径暴露成 Maven 属性（形如 ${groupId:artifactId:jar}），
+			  供下面的 surefire 引用 mockito 的 jar 路径。
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>resolve-dependency-paths</id>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!--
+			  以显式 agent 的方式加载 Mockito。
+
+			  不配的话每次测试都会打印：
+			    Mockito is currently self-attaching to enable the inline-mock-maker.
+			    This will no longer work in future releases of the JDK.
+			  自附加依赖的是 JDK 允许运行时动态加载 agent 的行为，该行为正在被逐步
+			  禁止。等到默认关闭那天，**全部单元测试会一次性失败**，而那时候要在
+			  一堆无关的升级噪音里定位到这个原因并不容易。现在配好，一劳永逸。
+
+			  -Xshare:off 关掉 CDS 类共享，消除另一条与之相伴的告警
+			  （bootstrap classpath 被 agent 追加后，CDS 只对引导类加载器生效）。
+
+			  两个 nonProxyHosts 把 localhost / 127.0.0.1 从系统代理里摘出来。
+			  开发机开着系统代理（如 QuickQ 的 SOCKS）时，JVM 会自动注入
+			  socksProxyHost/http.proxyHost，而 localhost 不在系统默认绕过清单里，
+			  Testcontainers 连本地容器就会被转发到代理而失败（UnknownHostException:
+			  localhost）。在干净机器（无代理）上这两个参数是无害的空操作。
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<!--
+					  Windows 上 Maven 仓库、临时目录与源码仓库可能分属不同盘符。JDK 21.0.11
+					  会拒绝 Surefire 默认生成的跨盘 Boot Manifest-JAR，并在任何测试启动前以
+					  "other has different root" 退出。改用 Surefire 官方的普通 classpath
+					  启动方式，保留真实 fork（不能用 forkCount=0，因为脚本沙箱 Worker 依赖
+					  fork JVM 的真实 java.class.path）。
+					-->
+					<useManifestOnlyJar>false</useManifestOnlyJar>
+					<!--
+					  两个 nonProxyHosts 值含 Windows cmd.exe 的管道字符，不能拼进 argLine：
+					  Surefire 解析 argLine 时会剥掉手工引号。用结构化系统属性交给命令构造器
+					  转义，避免 cmd 在 JVM 启动前截断命令。
+					-->
+					<systemPropertyVariables>
+						<socksNonProxyHosts>localhost|127.0.0.1</socksNonProxyHosts>
+						<http.nonProxyHosts>localhost|127.0.0.1</http.nonProxyHosts>
+						<!--
+						  测试 JVM 的日志根必须与业务运行分开。
+
+						  logback-spring.xml 的默认日志根是相对路径 logs，锚点是 JVM 工作目录；
+						  而 Surefire 的 fork 工作目录是各模块自己的 basedir。不显式覆盖，每个跑过
+						  Spring 上下文的模块都会在源码树里生成 <module>/logs/ ——
+						  things-link-bootstrap/logs 曾这样累积到 1.2G 的纯测试日志。
+
+						  这里指向该模块的 target/logs：属于构建产物，既被 .gitignore 的 target/
+						  排除，也会被 mvn clean 一起清掉，不会混进业务日志目录。
+
+						  只改 LOG_PATH，刻意不动 fork 的工作目录：bootstrap 的多进程证据测试用
+						  相对路径 ../.. 定位 <仓库根>/logs/verify，改 cwd 会让那批证据错位。
+						-->
+						<LOG_PATH>${project.build.directory}/logs</LOG_PATH>
+					</systemPropertyVariables>
+					<argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>enforce-build-baseline</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireJavaVersion>
+									<version>[${enforcer.jdk.min},)</version>
+									<message>需要 JDK ${enforcer.jdk.min} 或更高版本（docs/DEVELOPMENT_ROADMAP.md 决策 #1），当前 JDK 不符合基线。</message>
+								</requireJavaVersion>
+								<requireMavenVersion>
+									<version>[${enforcer.maven.min},)</version>
+									<message>需要 Maven ${enforcer.maven.min} 或更高版本，请使用仓库自带的 ./mvnw 而不是系统 mvn。</message>
+								</requireMavenVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

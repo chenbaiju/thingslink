@@ -1,0 +1,30 @@
+{
+  "name": "@things-link/client-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "exports": {
+    "./dashboard/v1": {
+      "types": "./dist/dashboard/v1/index.d.ts",
+      "import": "./dist/dashboard/v1/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "contract:generate": "node scripts/generate-dashboard-v1.mjs",
+    "contract:check": "node scripts/check-dashboard-v1.mjs",
+    "clean": "node scripts/clean.mjs",
+    "build": "pnpm run clean && tsc -p tsconfig.json",
+    "test": "pnpm run build && tsc -p tsconfig.type-tests.json && node --test tests/*.test.mjs",
+    "verify": "pnpm run contract:check && pnpm run test"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.3"
+  }
+}

@@ -1,0 +1,80 @@
+---
+import { docsPath } from '@/config'
+import type { Props as DocsNavProps } from '@/components/docs/DocsNavLinks.astro'
+
+export interface Props {
+  previous?: DocsNavProps['docs'][number]
+  next?: DocsNavProps['docs'][number]
+}
+
+const { previous, next } = Astro.props
+---
+
+{(previous || next) && (
+  <nav aria-label="文档前后篇" class="docs-pagination">
+    {previous && (
+      <a href={docsPath(previous.id)} rel="prev" class="docs-pagination-link">
+        <span class="docs-pagination-direction"><span aria-hidden="true">← </span>上一篇</span>
+        <span class="docs-pagination-title">{previous.data.title}</span>
+      </a>
+    )}
+    {next && (
+      <a href={docsPath(next.id)} rel="next" class="docs-pagination-link docs-pagination-next">
+        <span class="docs-pagination-direction">下一篇<span aria-hidden="true"> →</span></span>
+        <span class="docs-pagination-title">{next.data.title}</span>
+      </a>
+    )}
+  </nav>
+)}
+
+<style>
+  .docs-pagination {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .docs-pagination-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow-wrap: anywhere;
+  }
+
+  .docs-pagination-link:hover,
+  .docs-pagination-link:focus-visible {
+    border-color: var(--color-brand-500);
+    background: var(--color-brand-50);
+  }
+
+  .docs-pagination-direction {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .docs-pagination-title {
+    color: var(--color-brand-700);
+    font-weight: 600;
+  }
+
+  .docs-pagination-next {
+    text-align: right;
+  }
+
+  @media (min-width: 640px) {
+    .docs-pagination {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .docs-pagination-next {
+      grid-column: 2;
+    }
+  }
+</style>

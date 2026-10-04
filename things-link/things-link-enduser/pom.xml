@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  终端用户与应用域模块（S11）：终端用户账号、项目角色、设备绑定、推送令牌。
+
+  「终端用户」是与控制台 sys_account 完全分离的第二类身份（架构文档 7.2）：
+    - app_user 是租户级登录身份，用 tenant_id 隔离（enable_tenant_rls）
+    - app_user_role / app_user_device 是项目事实，用 project_id 隔离（enable_project_rls）
+  本模块只依赖 project 的 application 包（跨模块契约），不碰 device/iam 的内部包。
+
+  依赖方向：enduser -> project -> support -> shared，与 iam -> project 同向。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.things.link</groupId>
+		<artifactId>things-link</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>things-link-enduser</artifactId>
+	<name>things-link-enduser</name>
+	<description>终端用户、项目角色、设备绑定与推送</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-shared</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-support</artifactId>
+		</dependency>
+		<!--
+		  跨模块只引用 project 的 application 包（ProjectService 的 requireRoutingContext /
+		  requireRoleInProject）。方向与 iam -> project 一致，避免循环依赖。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-project</artifactId>
+		</dependency>
+
+		<!--
+		  S11-2b：App 设备数据面复用 device/telemetry 的 application 数据面端口
+		  （AppDeviceDataPlaneService / AppTelemetryDataPlaneService），只引用这两个模块的
+		  application 包 DTO，不碰 domain/infrastructure。方向 enduser -> device/telemetry，
+		  与 device/telemetry 均不依赖 enduser，无环。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-device</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-telemetry</artifactId>
+		</dependency>
+
+		<!--
+		  G2-A2b：实现 alarm 定义的 PUSH audience application port。依赖方向保持
+		  enduser -> alarm；alarm 不依赖 enduser，因此不会形成模块环，也不会允许 alarm
+		  越权读取 app_* 表（ADR 0038）。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-alarm</artifactId>
+		</dependency>
+
+		<!--
+		  ADR0100：App运行入口只能经dashboard application公开描述复核精确发布版本。
+		  X-02只登记单向依赖，不在enduser中复制看板定义或读取dash_*表。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-dashboard</artifactId>
+		</dependency>
+
+		<!--
+		  infrastructure 层用 JdbcTemplate 实现仓储。虽然 support 的 data-jpa 会传递
+		  spring-jdbc，但本模块直接 import 了 org.springframework.jdbc.*，按「用什么就
+		  声明什么」显式声明，避免 support 收窄依赖时无预兆编译失败（见 bootstrap pom）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+
+		<!--
+		  App 独立认证链（S11-2a）：终端用户令牌与控制台令牌互斥，走独立的
+		  SecurityFilterChain + JWT（issuer=things-link-app）。与 iam 的安全链共存：
+		  两根链按 @Order 排序，App 链用 securityMatcher("/api/v1/app/**") 先匹配，
+		  iam 的无 matcher 链兜底其余路径。PasswordEncoder 随本 starter 传递提供。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<!--
+		  App JWT 的签发与校验（Nimbus）。与控制台共走标准 resource server 校验链路，
+		  只是用独立的 HMAC 密钥与 issuer，保证两类令牌密码学互斥。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
+
+		<!--
+		  Redis：AppAuthRateLimiter 直接 import StringRedisTemplate，必须自己声明，
+		  不能靠 support 的传递依赖（与 iam 的 AuthRateLimiter 同一条约束）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+        <!-- 浏览器刷新Cookie独立使用标准JWS，不依赖resource-server偶然传递Nimbus；版本显式对齐当前Spring Security JOSE。 -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <!-- Boot BOM不管理此直接依赖；与现有Spring Security 7.1.0的JOSE基线10.9一致。 -->
+            <version>10.9</version>
+        </dependency>
+	</dependencies>
+
+</project>

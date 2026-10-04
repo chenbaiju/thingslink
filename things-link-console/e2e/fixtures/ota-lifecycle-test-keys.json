@@ -1,0 +1,11 @@
+{
+  "banner": "TEST-ONLY throwaway Ed25519 keys for the E2E OTA lifecycle fixture; never use in production",
+  "trustDomain": "e2e-ota-lifecycle",
+  "releaseKeyVersion": "e2e-release-v1",
+  "releaseFingerprint": "5c689e7e6e7d12abffef28d7af50695ed25185cb332aed8d58143023650100ba",
+  "releaseSpkiBase64": "MCowBQYDK2VwAyEA6k429kkedb0Uy4wzEeEo4LzMBDWjZBzfWSi385i/+kY=",
+  "releasePrivateKeyPkcs8Base64": "MC4CAQAwBQYDK2VwBCIEICUaCxesvsglFFfSdJyH11sy+wrc+0ZsQ1F/ZhO9JirI",
+  "rootFingerprint": "a705ec8f95791905020eda56096895ff95a8841ca08d7d53896406a353b74855",
+  "rootSpkiBase64": "MCowBQYDK2VwAyEABr3Ss26BgXpx4EOU8kI8s9mzfvVD0a2xfPhUH+lBjdM=",
+  "rootPrivateKeyPkcs8Base64": "MC4CAQAwBQYDK2VwBCIEIBt0+/PVCR7haEM6wJiB9rQuuPsL67Qn+tCcu6IVnFWR"
+}

@@ -1,0 +1,102 @@
+---
+/**
+ * 功能亮点卡片网格。
+ *
+ * 4 个卡片，图标 + 标题 + 描述，hover 微动效。
+ */
+
+import Card from '@/components/ui/Card.astro'
+import Icon from '@/components/ui/Icon.astro'
+import type { IconName } from '@/components/ui/icons'
+import { SITE, docsPath } from '@/config'
+
+interface Feature {
+  icon: IconName
+  title: string
+  benefit: string
+  description: string
+  href: string
+  linkLabel: string
+}
+
+const features: Feature[] = [
+  {
+    icon: 'plug',
+    title: '设备接入',
+    benefit: '让设备快速上线。',
+    description: '支持 MQTT 直连，并可通过网关接入子设备与 Modbus 设备。接入资料与最小示例随发布完善。',
+    href: docsPath('getting-started'),
+    linkLabel: '查看快速开始'
+  },
+  {
+    icon: 'chart',
+    title: '数据采集',
+    benefit: '集中查看设备状态与历史变化。',
+    description: '设备数据实时入库，可按时间范围查询，并自动选择合适的聚合粒度。',
+    href: SITE.docsUrl,
+    linkLabel: '浏览文档'
+  },
+  {
+    icon: 'sliders',
+    title: '远程控制',
+    benefit: '随时下发控制指令。',
+    description: '双向消息通道支持属性读写与命令调用，并可查看指令执行结果。',
+    href: SITE.docsUrl,
+    linkLabel: '浏览文档'
+  },
+  {
+    icon: 'bolt',
+    title: '规则与告警',
+    benefit: '让数据处理自动发生。',
+    description: '配置消息规则与脚本处理，命中后触发告警、通知、Webhook 或设备动作。',
+    href: SITE.docsUrl,
+    linkLabel: '浏览文档'
+  }
+]
+---
+
+<section id="features" class="scroll-mt-header py-section-sm md:py-section bg-bg-secondary">
+  <div class="container-page">
+    <!-- 区域标题 -->
+    <div class="text-center mb-12 md:mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-text-primary">
+        核心能力
+      </h2>
+      <p class="mt-3 text-text-secondary max-w-xl mx-auto">
+        从设备接入、数据采集到远程控制与规则告警
+      </p>
+    </div>
+
+    <!-- 卡片网格 -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {
+        features.map((feature) => (
+          <Card hoverable class="group relative flex flex-col p-6">
+            <!-- 图标 -->
+            <div class="w-12 h-12 flex items-center justify-center text-brand-600 rounded-lg bg-brand-50 group-hover:bg-brand-100 transition-colors">
+              <Icon name={feature.icon} size="lg" />
+            </div>
+            <!-- 标题 -->
+            <h3 class="mt-4 text-lg font-semibold text-text-primary">
+              {feature.title}
+            </h3>
+            <p class="mt-3 text-sm font-medium text-text-primary">
+              {feature.benefit}
+            </p>
+            <!-- 能力说明与真实入口；专项指南尚未交付时不伪造链接。 -->
+            <p class="mt-2 text-sm text-text-secondary leading-relaxed">
+              {feature.description}
+            </p>
+            <div class="mt-auto pt-6">
+              {SITE.docsEnabled && (<a href={feature.href} class="inline-flex items-center gap-2 rounded text-sm font-medium text-brand-600 hover:underline focus-visible:underline">
+                {feature.linkLabel}
+                <span class="sr-only">：{feature.title}</span>
+                <Icon name="arrow-right" size="sm" />
+              </a>)}
+            </div>
+          </Card>
+        ))
+      }
+    </div>
+  </div>
+</section>

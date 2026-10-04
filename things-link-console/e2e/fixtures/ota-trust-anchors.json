@@ -1,0 +1,14 @@
+{
+  "anchors": [
+    {
+      "allowedDeviceTypeIds": ["0192e2e1-0000-7000-8000-000000000003"],
+      "policyRevision": 1,
+      "projectId": "0192e2e1-0000-7000-8000-000000000002",
+      "rootFingerprint": "a705ec8f95791905020eda56096895ff95a8841ca08d7d53896406a353b74855",
+      "rootProfile": "TC_OTA_ED25519_V1",
+      "rootSpki": "MCowBQYDK2VwAyEABr3Ss26BgXpx4EOU8kI8s9mzfvVD0a2xfPhUH+lBjdM=",
+      "tenantId": "0192e2e1-0000-7000-8000-000000000001",
+      "trustDomain": "e2e-ota-lifecycle"
+    }
+  ]
+}

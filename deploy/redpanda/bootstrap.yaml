@@ -1,0 +1,3 @@
+# 集群首次启动时即关闭 Kafka 自动建主题，避免宿主机已有后端抢在 redpanda-init 前创建单分区主题。
+# 架构文档 5.1 要求设备消息按固定 deviceId 分区；主题扩分区会改变历史哈希映射，不能事后补救。
+auto_create_topics_enabled: false

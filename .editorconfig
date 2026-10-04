@@ -1,0 +1,12 @@
+# 编辑器通用约定：让"行尾空白 / 结尾换行 / 行尾符"这类低级问题在保存时就被编辑器修掉，
+# 而不是推到远端后才由 CI 的 git diff --check 报出来。
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = true

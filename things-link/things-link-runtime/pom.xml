@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 平台维护的普通运行时 JAR：完整模块依赖与外部应用装配，不打可执行包。 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>things-link-runtime</artifactId>
+    <description>ThingsLink 全量业务运行时的普通 JAR 复用入口</description>
+    <dependencies>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
+        <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-prometheus</artifactId><scope>runtime</scope></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-shared</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-support</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-iam</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-project</artifactId></dependency>
+        <!-- 部署端可生成同一联网/离线申请；发行方登记与未来私钥模块不进入外部依赖树。 -->
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-entitlement</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-device</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-telemetry</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-ingestion</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-alarm</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-task</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-rule</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-enduser</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-export</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-dashboard</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-ota</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-integration</artifactId></dependency>
+        <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
+        <dependency><groupId>org.apache.tomcat.embed</groupId><artifactId>tomcat-embed-core</artifactId></dependency>
+        <dependency><groupId>io.minio</groupId><artifactId>minio</artifactId><version>${minio.version}</version></dependency>
+    </dependencies>
+    <build>
+        <resources>
+            <resource><directory>src/main/resources</directory></resource>
+            <!-- 同一源文件进入运行时 JAR，避免复制 bootstrap 默认值后漂移。 -->
+            <resource>
+                <directory>${project.basedir}/../things-link-bootstrap/src/main/resources</directory>
+                <targetPath>META-INF/things-link</targetPath>
+                <includes>
+                    <include>application.yml</include>
+                    <include>application-prod.yml</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+</project>

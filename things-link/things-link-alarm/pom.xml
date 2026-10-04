@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  S6 告警领域模块。只拥有 alarm_ 前缀事实表；对外仅暴露 application 端口，
+  使 telemetry 能在已验证的上行事务中触发评估而不越过表所有权边界。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>things-link-alarm</artifactId>
+    <name>things-link-alarm</name>
+    <description>项目告警规则、实例状态机与不可变事件</description>
+    <dependencies>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-shared</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-support</artifactId></dependency>
+        <!-- 只调用项目公开应用端口完成 HTTP 角色与租户归属判定。 -->
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-project</artifactId></dependency>
+        <!-- 创建规则通过设备公开端口校验设备归属与数值属性契约，禁止保存跨项目 originatorId。 -->
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-device</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
+        <!-- S6-3 消费专用通知主题；显式声明避免 IDE 与 Maven 对传递依赖判断不一致。 -->
+        <dependency><groupId>org.springframework.kafka</groupId><artifactId>spring-kafka</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,220 @@
+groups:
+  # S7-5 收口现有运行能力的 13.1 信号；尚不存在真实运行时的脚本指标明确留到 S8 接入。
+  - name: thingslink-data-plane
+    rules:
+      # EMQX 指标按节点输出；平台只需要集群当前总数，recording rule 避免看板和告警重复聚合口径。
+      - record: thingslink:device_connections:current
+        expr: sum(emqx_connections_count)
+
+      - alert: ThingsLinkKafkaConsumerLagHigh
+        expr: max by (group) (thingslink_kafka_consumer_lag) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka 消费组 {{ $labels.group }} 持续积压"
+          description: "最大 lag 已连续 5 分钟超过 1000，请先检查消费者错误与下游数据库延迟。"
+
+      - alert: ThingsLinkDeadLetterDetected
+        expr: increase(thingslink_ingestion_dlq_messages_total[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "设备数据面出现新的死信"
+          description: "来源主题 {{ $labels.source_topic }} 在最近 5 分钟产生死信，请检查异常头和原始 Topic。"
+
+      - alert: ThingsLinkUplinkRateLimited
+        expr: increase(thingslink_ingestion_uplink_rate_limited_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "设备上行持续触发单设备限流"
+          description: "最近 5 分钟持续出现令牌桶丢弃；设备明细保留在 Redis dropped 计数键中。"
+
+      - alert: ThingsLinkUplinkLatencyHigh
+        expr: histogram_quantile(0.99, sum by (le) (rate(thingslink_ingestion_uplink_end_to_end_seconds_bucket[5m]))) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "设备上行端到端 P99 延迟过高"
+          description: "设备发生到影子提交可见的 P99 已连续 5 分钟超过架构文档 13.1 的 2 秒阈值。"
+
+      - alert: ThingsLinkEmqxCallbackFailureRateHigh
+        expr: sum(rate(thingslink_emqx_callback_seconds_count{result="failure"}[5m])) / clamp_min(sum(rate(thingslink_emqx_callback_seconds_count[5m])), 0.000001) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "EMQX 回调失败率过高"
+          description: "五个 Broker 回调的整体失败率已连续 5 分钟超过架构文档 13.1 的 1% 阈值。"
+
+      - alert: ThingsLinkEmqxCallbackLatencyHigh
+        expr: histogram_quantile(0.99, sum by (le) (rate(thingslink_emqx_callback_seconds_bucket[5m]))) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "EMQX 回调 P99 延迟过高"
+          description: "Broker 回调 P99 已连续 5 分钟超过架构文档 13.1 的 100ms 阈值。"
+
+      # 在线连接数以 EMQX 集群权威 gauge 为准；应用事件计数器只负责解释变化原因，不能替代 Broker 事实。
+      - alert: ThingsLinkOnlineConnectionsDrop
+        expr: thingslink:device_connections:current > 0 and thingslink:device_connections:current < 0.8 * thingslink:device_connections:current offset 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "设备在线连接数五分钟下降超过 20%"
+          description: "EMQX 当前连接数低于五分钟前的 80%，请核对 Broker 节点、认证回调与网络变化。"
+
+      # 与稳定吞吐绝对值相比，当前两分钟相对五分钟前放大三倍更能识别异常重连风暴。
+      - alert: ThingsLinkDeviceReconnectStorm
+        expr: sum(rate(thingslink_device_connection_events_total[2m])) > 1 and sum(rate(thingslink_device_connection_events_total[2m])) > 3 * clamp_min(sum(rate(thingslink_device_connection_events_total[2m] offset 5m)), 0.1)
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "设备上下线速率突增"
+          description: "最近两分钟连接事件速率超过每秒 1 次且达到五分钟前基线的三倍，请检查重连风暴。"
+
+      - alert: ThingsLinkCommandAcceptanceLatencyHigh
+        expr: histogram_quantile(0.95, sum by (le) (rate(thingslink_command_acceptance_seconds_bucket[5m]))) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "设备命令受理 P95 延迟过高"
+          description: "命令 API 到命令事实和 Outbox 写入完成的 P95 已连续 5 分钟超过 200ms。"
+
+      # D-037：TIMED_OUT 终态按原因拆分，设备响应超时与平台派发失败分别告警，避免互相污染。
+      - alert: ThingsLinkCommandTimeoutRateHigh
+        expr: sum(increase(thingslink_command_terminal_total{reason="response_timeout"}[15m])) / clamp_min(sum(increase(thingslink_command_acceptance_seconds_count[15m])), 1) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "设备命令响应超时率过高"
+          description: "最近 15 分钟因设备未在响应窗口内回复而 TIMED_OUT 的命令占受理命令的比例持续超过架构文档 13.1 的 2% 阈值。"
+
+      - alert: ThingsLinkCommandDispatchExhaustedRateHigh
+        expr: sum(increase(thingslink_command_terminal_total{reason="dispatch_retry_exhausted"}[15m])) / clamp_min(sum(increase(thingslink_command_acceptance_seconds_count[15m])), 1) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "设备命令下行派发耗尽率过高"
+          description: "最近 15 分钟三次派发均未交给 Broker 而 TIMED_OUT(DISPATCH_RETRY_EXHAUSTED) 的命令占受理命令的比例持续超过 2% 阈值，请检查 EMQX 可用性与 API 凭据。派发失败尝试数另见 thingslink_command_dispatch_failure_total。"
+
+      # S8-1A 的脚本指标来自真实 Worker 裁决；kind/result 均为冻结枚举，不携带租户或规则标识。
+      - alert: ThingsLinkScriptExecutionTimeoutRateHigh
+        expr: sum(rate(thingslink_script_execution_seconds_count{result="timeout"}[5m])) / clamp_min(sum(rate(thingslink_script_execution_seconds_count[5m])), 0.000001) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "租户脚本执行超时率过高"
+          description: "脚本 Worker 最近五分钟的真实超时比例持续超过架构文档 13.1 的 1% 阈值。"
+
+      - alert: ThingsLinkTimeSeriesWriteFailure
+        expr: sum(increase(thingslink_telemetry_timeseries_write_total{result="failure"}[2m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "TimescaleDB 时序写入持续失败"
+          description: "时序属性点连续一分钟出现写入失败，Kafka 不应提交对应 offset，请检查数据库与连接池。"
+
+      # G3-T3 / D-042：回补只有三层聚合刷新、raw 对账与 revision 稳定同时满足才记 success。
+      - alert: ThingsLinkPropertyAggregateBackfillFailure
+        expr: sum(increase(thingslink_telemetry_aggregate_backfill_total{result="failure"}[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "属性连续聚合回补持续失败"
+          description: "最近五分钟属性聚合指定窗口刷新或 raw/1m/1h/1d 对账失败，请检查 TimescaleDB 策略并等待有界退避重试。"
+
+      # G1-C4b-F2：两个固定物理池各自执行 SELECT 1；任一池连续不可用即证明数据库访问链已失效。
+      # 使用 bool 后再 max，避免另一个池仍为启动期 -1 时把已确认的 0 掩盖；指标完全缺失由 target-down 告警负责。
+      - alert: ThingsLinkDatabaseUnavailable
+        expr: max by (application) (thingslink_database_available == bool 0) == 1
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "数据库主动探测持续失败"
+          description: "CONTROL 或 DATA 物理连接池连续 15 秒无法完成 SELECT 1；请检查 PostgreSQL、网络与连接池，恢复后指标会自动归一。"
+
+      # Spring Boot 自动暴露 Hikari 指标；pool 标签是固定连接池名，不加入 SQL 或租户维度。
+      - alert: ThingsLinkDatabaseConnectionPending
+        expr: max(hikaricp_connections_pending) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "数据库连接池出现持续等待"
+          description: "至少一个 Hikari 连接池连续一分钟存在等待线程，请检查慢查询、事务持有时间与池容量。"
+
+      - alert: ThingsLinkDatabaseConnectionAcquireSlow
+        expr: sum(rate(hikaricp_connections_acquire_seconds_sum[5m])) / clamp_min(sum(rate(hikaricp_connections_acquire_seconds_count[5m])), 0.000001) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "数据库连接平均获取时间过高"
+          description: "Hikari 获取连接的五分钟平均耗时持续超过 100ms，请优先排查慢事务和连接池等待。"
+
+      # 配额依赖异常只按冻结的故障决策聚合；业务 ID 留在结构化日志，禁止成为指标标签。
+      - alert: ThingsLinkQuotaDependencyDegraded
+        expr: (sum(increase(thingslink_quota_rate_limit_total{result=~"fail_open|fail_closed"}[5m])) or vector(0)) + (sum(increase(thingslink_quota_rest_rate_limit_fail_open_total[5m])) or vector(0)) + (sum(increase(thingslink_quota_rest_policy_safe_default_total[5m])) or vector(0)) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "配额运行时依赖发生降级"
+          description: "最近 5 分钟出现限流 fail-open、fail-closed 或安全默认策略，请检查 Redis 与 PostgreSQL。"
+
+      - alert: ThingsLinkQuotaPolicyCacheInvalidationFailure
+        expr: sum(increase(thingslink_quota_policy_cache_total{result=~"invalidation_publish_failure|version_lag"}[5m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "配额策略缓存失效异常"
+          description: "策略失效发布失败或权威版本落后；本机 LKG/TTL 仍会兜底，但应检查 Redis 与数据库版本。"
+
+      # S4-5：三个 best-effort 扇出边界都不得使用项目/设备标签，明细依靠结构化日志追查。
+      - alert: ThingsLinkRealtimeFanoutFailure
+        expr: sum(increase(thingslink_realtime_kafka_publish_total{result="failure"}[5m])) + sum(increase(thingslink_realtime_redis_publish_total{result="failure"}[5m])) + sum(increase(thingslink_realtime_dispatch_rejected_total[5m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "实时增量扇出出现失败"
+          description: "最近 5 分钟 Kafka、Redis 或有界分发队列至少丢失一次实时增量；客户端可通过 REST 当前值补拉。"
+
+      # 慢客户端只影响自身，但持续丢弃或底层发送失败意味着在线体验已经降级。
+      - alert: ThingsLinkRealtimeWebSocketBackpressure
+        expr: sum(increase(thingslink_realtime_websocket_queue_dropped_total[5m])) + sum(increase(thingslink_realtime_websocket_send_failure_total[5m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket 实时推送出现背压或发送失败"
+          description: "最近 5 分钟至少一个会话触发有界队列拒绝或底层发送异常；会话将被隔离关闭并由客户端重连补拉。"
+
+      # S6：评估异常会使告警状态机无法可靠推进；reason 是代码冻结的低基数分类，不带项目或设备标识。
+      - alert: ThingsLinkAlarmEvaluationFailure
+        expr: sum by (reason) (increase(thingslink_alarm_evaluation_total{result="failure"}[5m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "告警规则评估出现失败"
+          description: "最近 5 分钟出现 {{ $labels.reason }} 类告警评估失败，请通过链路日志和告警事件事实排查。"
+
+      # S6-3：只按 EMAIL/WEBHOOK 聚合，目标地址和投递 ID 绝不能成为时序标签。
+      - alert: ThingsLinkAlarmNotificationFailureRateHigh
+        expr: sum by (channel) (rate(thingslink_alarm_notification_delivery_total{result="failed"}[5m])) / clamp_min(sum by (channel) (rate(thingslink_alarm_notification_delivery_total[5m])), 0.000001) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "告警通知 {{ $labels.channel }} 渠道失败率过高"
+          description: "最近 5 分钟外部投递失败率持续超过 5%，请检查渠道配置、供应商可用性与死信事实。"

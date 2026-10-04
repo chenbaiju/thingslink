@@ -1,0 +1,5 @@
+#!/bin/sh
+# 文档维护指南§5.1：校验Git实际提交的最终消息；依赖缺失或校验失败均终止提交。
+set -eu
+repository_root=$(git rev-parse --show-toplevel)
+exec node "$repository_root/scripts/check-commit-message.cjs" "$1"

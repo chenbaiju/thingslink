@@ -1,0 +1,67 @@
+---
+/**
+ * 文档左侧边栏导航。
+ *
+ * 接收文档路由统一排序后的目录，桌面显示为固定侧栏，
+ * 小屏（lg 以下）改由展开式菜单提供入口，保证手机和平板也能跳转其他文档。
+ * 两处共用 DocsNavLinks，当前项与高亮逻辑只有一份。
+ */
+import DocsNavLinks from '@/components/docs/DocsNavLinks.astro'
+import type { Props as DocsNavProps } from '@/components/docs/DocsNavLinks.astro'
+import MobileMenu from '@/components/MobileMenu.astro'
+import { NAV, normalizePath, isCurrentPath } from '@/config'
+
+export interface Props {
+  docs: DocsNavProps['docs']
+}
+
+const { docs } = Astro.props
+
+const currentPath = normalizePath(Astro.url.pathname)
+
+/** 面板内同时给出顶部导航，落点与桌面端一致 */
+const panelNav = NAV.map((item) => ({
+  ...item,
+  /* 首页锚点在文档页不构成“当前页” */
+  isCurrent: item.href.startsWith('/#') ? false : isCurrentPath(currentPath, item.href)
+}))
+---
+
+<!-- 桌面侧栏 -->
+<aside class="hidden lg:block w-64 shrink-0 border-r border-border overflow-y-auto sticky top-header h-[calc(100vh-4rem)]">
+  <nav class="p-6" aria-label="文档导航">
+    <h2 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">
+      文档目录
+    </h2>
+    <DocsNavLinks docs={docs} currentPath={currentPath} />
+  </nav>
+</aside>
+
+<!-- 小屏文档目录入口 -->
+<div class="lg:hidden border-b border-border bg-white">
+  <div class="container-page py-3">
+    <MobileMenu panelId="docs-menu" label="切换文档目录" hideAt="lg">
+      <div class="flex flex-col gap-2">
+        <h2 class="text-xs font-semibold text-text-muted uppercase tracking-wider">
+          文档目录
+        </h2>
+        <DocsNavLinks docs={docs} currentPath={currentPath} />
+
+        <div class="border-t border-border-light mt-2 pt-3 flex flex-col gap-2">
+          {
+            panelNav.map((item) => (
+              <a
+                href={item.href}
+                aria-current={item.isCurrent ? 'page' : undefined}
+                class="px-4 py-3 text-sm font-medium text-text-secondary hover:text-brand-600 rounded-lg
+                  transition-colors text-center aria-[current=page]:text-brand-600"
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </MobileMenu>
+  </div>
+</div>

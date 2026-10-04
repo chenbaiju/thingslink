@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  设备领域模块，按架构文档第 10.2 节在 S2 首次引入。
+  本模块拥有 dev_ 前缀的设备域表；跨模块只调用 project 的应用服务，绝不查询其表。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>things-link-device</artifactId>
+    <name>things-link-device</name>
+    <description>设备类型、物模型、设备档案、凭据与影子</description>
+    <dependencies>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-shared</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-support</artifactId></dependency>
+        <!-- 只使用 ProjectService 的公开应用接口解析实时项目角色，不触碰 project 表。 -->
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-project</artifactId></dependency>
+        <!-- S7-5 连接事件指标属于 device 模块自身；显式声明，避免依赖 support 的传递依赖。 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <!-- 动态注册公开入口按来源 IP 使用 Redis 共享限流，多实例不能各自计数。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- D-038 使用 EMQX 管理 API 断开旧凭据已建会话；显式声明，不借用 bootstrap 的传递依赖。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <!-- ADR0058 仅按 PostgreSQL 服务器的约束名与 SQLSTATE 分类拓扑守卫错误；需编译期类型，不匹配异常消息文本。 -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+</project>

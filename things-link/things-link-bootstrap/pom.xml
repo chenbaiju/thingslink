@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  原平台管理/API 启动与装配模块。ADR0215 另设纯装配的设备接入可执行 JAR；
+  本模块仍是全量平台默认 application.yml 的唯一来源。
+
+  【不要在这里写业务代码】。它依赖所有业务模块，因此在这里写代码不受任何
+  分层约束 —— 一旦开始承载业务，它会变成绕过 10.4 全部规则的后门。
+
+  本模块另一个职责是承载架构约束测试（ArchitectureRulesTests）：因为它依赖
+  所有模块，是唯一能一次看到全部字节码、从而验证跨模块依赖方向的地方。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.things.link</groupId>
+		<artifactId>things-link</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>things-link-bootstrap</artifactId>
+	<name>things-link-bootstrap</name>
+	<description>启动类、装配与架构约束测试</description>
+
+	<properties>
+		<!--
+		  X-02e：默认仍校验仓库内契约；唯一生成入口通过-Dopenapi.output覆盖为租约内临时文件。
+		  canonical路径由测试类加载位置推导，不暴露可被Maven CLI覆盖的同名属性。
+		-->
+		<openapi.output>${project.basedir}/../../docs/openapi.json</openapi.output>
+	</properties>
+
+	<dependencies>
+		<!--
+		  显式声明 Spring Boot 核心 starter。
+
+		  本模块的 ThingsLinkApplication 直接 import 了 org.springframework.boot.*，
+		  所以必须自己声明 —— 「用什么就声明什么」。
+
+		  靠 things-link-support 的传递依赖也能编译通过（Maven 的 compile 作用域
+		  是传递的），但那样有两个问题：一是 support 哪天收窄依赖，这里就会毫无
+		  预兆地编译失败；二是 IDE 对传递依赖的 classpath 解析方式与 Maven 命令行
+		  不同，会出现「mvn 能编译、IDEA 报『程序包 org.springframework.boot 不存在』」
+		  这种两边不一致的情况。
+
+		  同一条规则适用于业务模块：S1 给 iam / project 写下第一个 Spring 注解时，
+		  也要在各自的 pom 里显式声明，不要依赖 support 的传递。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+		<!--
+		  S3.5-4 开放健康检查与 Prometheus 抓取端点。Actuator 只提供端点与 Micrometer
+		  自动装配，Prometheus registry 才负责把层级指标转换成 Prometheus 文本格式。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!--
+		  依赖全部模块。新增业务模块时必须同步加到这里，否则它的 Bean 不会
+		  进入运行时 classpath，表现为「组件扫描不到」——而扫描配置本身是对的，
+		  很容易查错方向。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-shared</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-support</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-iam</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-project</artifactId>
+		</dependency>
+		<!-- 发行方独有的自部署申请登记；普通 runtime/Jagonzn 依赖树不包含它。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-issuer</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-device</artifactId>
+		</dependency>
+            <dependency>
+                <groupId>com.things.link</groupId>
+                <artifactId>things-link-telemetry</artifactId>
+            </dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-ingestion</artifactId>
+		</dependency>
+		<!-- S6 告警状态机：启动模块必须显式带入，组件扫描才会装配告警 API 与评估端口。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-alarm</artifactId>
+		</dependency>
+		<!-- S7 任务调度：装配计划扫描、批量执行和任务管理 API。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-task</artifactId>
+		</dependency>
+		<!-- S8 脚本沙箱与规则内核；首片只装配纯执行能力，不开放规则 API。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-rule</artifactId>
+		</dependency>
+		<!-- S11 终端用户与应用域；首片只落 app_user 事实与预置/角色服务。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-enduser</artifactId>
+		</dependency>
+		<!-- S12 项目导出：装配一致快照编排、导出任务 API 与后台领取器。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-export</artifactId>
+		</dependency>
+		<!-- X-02：装配看板合同内核；持久化、HTTP与发布流程由S12后续切片交付。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-dashboard</artifactId>
+		</dependency>
+		<!-- X-02：让OTA冻结协议进入统一classpath；本片不装配上传、签名或活动。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-ota</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-integration</artifactId>
+		</dependency>
+		<!-- 原应用也使用正式运行时制品，以共享生产启动保护与默认配置来源。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-runtime</artifactId>
+		</dependency>
+		<!-- 架构约束测试框架，版本由聚合 POM 的 dependencyManagement 管理 -->
+		<dependency>
+			<groupId>com.tngtech.archunit</groupId>
+			<artifactId>archunit-junit5</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!--
+		  MockMvc 的测试自动配置。Boot 4.x 把它从 spring-boot-test-autoconfigure
+		  拆到了独立 artifact，starter-test 不再包含，必须显式声明
+		  （架构文档 3.1 的迁移陷阱表）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- ADR0058升级测试读取PG结构化SQLSTATE/DETAIL；runtime也保留启动包必需的驱动，不能以test作用域遮蔽生产传递依赖。 -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- 独立真实 Servlet 验收直接使用 Tomcat；保留 compile 避免遮蔽生产传递依赖。 -->
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-core</artifactId>
+		</dependency>
+		<!-- 集成测试基类与 Testcontainers。工具模块，只在测试期可见 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-testing</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!--
+		  5g1 真实对象验收直接调用 MinIO SDK，测试模块不得依赖 support 的传递暴露；
+		  Bootstrap 可执行包也会实例化 support 的 MinIO 适配器，因此这里必须保留 compile
+		  作用域。降为 test 会按 Maven 就近原则遮蔽 support 的 compile 传递依赖，最终胖 JAR
+		  缺少 MinioClient，只有默认 profile 的真实启动才会暴露。
+		-->
+		<dependency>
+			<groupId>io.minio</groupId>
+			<artifactId>minio</artifactId>
+			<version>${minio.version}</version>
+		</dependency>
+		<!--
+		  模拟器不进入生产依赖树，但必须进入架构测试 classpath；否则它引用业务模块
+		  internal 包时 ArchitectureRulesTests 看不见，测试会错误地保持全绿（D-016）。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-simulator</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!--
+			  把契约文件的绝对路径注入测试。不在代码里拼相对路径：
+			  测试的工作目录取决于用 Maven 跑还是用 IDE 跑，硬编码 ../../docs
+			  在 IDE 里会指到别处。
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<systemPropertyVariables>
+						<!-- 默认校验canonical；根生成入口只把本属性覆盖到受租约保护的临时文件。 -->
+						<openapi.output>${openapi.output}</openapi.output>
+						<!-- 缓存上下文各有两组连接池；限制存活数，防止共享测试 PG 耗尽连接槽。 -->
+						<spring.test.context.cache.maxSize>16</spring.test.context.cache.maxSize>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
+
+			<!--
+			  只有本模块打可执行 JAR，并提供 spring-boot:run。
+			  库模块不能加这个插件 —— 它会重排 jar 内部结构（类挪到 BOOT-INF/），
+			  导致其他模块依赖它时找不到类。
+			-->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<!-- 显式指定启动类，避免多模块下的自动探测歧义 -->
+					<mainClass>com.things.link.ThingsLinkApplication</mainClass>
+					<!--
+					  spring-boot:run 的工作目录是执行 mvnw 的目录（deploy/README.md 让开发者在
+					  things-link/ 下执行），而 logback 的默认日志根 logs 是相对工作目录的，
+					  于是同一次应用启动会因为「IDE 跑」还是「mvnw 跑」落到两个不同的 logs。
+
+					  这里把日志根固定到仓库根（bootstrap 上溯两级）的 logs，
+					  使 IDE、mvnw 两种启动方式只写一处。
+					  java -jar 场景没有插件可挂，仍按 logback 注释用 -DLOG_PATH=/绝对路径 覆盖。
+					-->
+					<systemPropertyVariables>
+						<LOG_PATH>${project.basedir}/../../logs</LOG_PATH>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<!--
+	  S12-P0-5h-VERIFY1：显式功能组验证，仅缩小Bootstrap的真实集成场景，其他模块仍完整verify。
+	  默认不激活；不改变CI的clean verify，也不代表5h所有尚未交付步骤已经完成。
+	  覆盖清单及补充规则见docs/delivery/S12-P0-5h-verification.md。
+	-->
+	<profiles>
+        <!-- ADR0148：独立operator工具仍由bootstrap打包，库模块保持普通JAR；不启动Spring。 -->
+        <profile>
+            <id>host-tools</id>
+            <build><plugins><plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions><execution>
+                    <id>host-tools</id><goals><goal>repackage</goal></goals>
+                    <configuration>
+                        <classifier>host-tools</classifier>
+                        <mainClass>com.things.link.dashboard.infrastructure.qualification.HostDeploymentCli</mainClass>
+                    </configuration>
+                </execution></executions>
+            </plugin></plugins></build>
+        </profile>
+		<profile>
+			<id>verify-project-cleanup</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<!-- 拒绝整组空选；未来新增清理验收统一使用ProjectCleanup前缀并同步覆盖表。 -->
+							<failIfNoTests>true</failIfNoTests>
+							<includes>
+								<include>**/ProjectCleanup*Tests.java</include>
+								<!-- ADR0093：语义命名的告警回执测试覆盖新增清理事实，必须显式纳入。 -->
+								<include>**/AlarmInboxPersistenceTests.java</include>
+								<!-- ADR0101：分享四类事实的501行清理和封存边界。 -->
+								<include>**/DashboardSharePersistenceTests.java</include>
+								<include>**/ModelVersionRawCleanupGuardTests.java</include>
+								<include>**/PropertyAggregateRetentionSafetyTests.java</include>
+								<include>**/ProjectExport*Tests.java</include>
+								<include>**/ProjectRecoveryLifecycleTests.java</include>
+								<include>**/ProjectLifecycleAccessIntegrationTests.java</include>
+								<include>**/DeviceTopology*Tests.java</include>
+								<include>**/DeviceModelBinding*Tests.java</include>
+								<include>**/PropertyIngestionTests.java</include>
+								<include>**/DeviceApiTests.java</include>
+								<include>**/ProjectApiTests.java</include>
+								<include>**/ProjectMemberApiTests.java</include>
+								<include>**/ArchitectureRulesTests.java</include>
+								<include>**/SourceArchitectureRulesTests.java</include>
+								<include>**/DatabaseNamingConventionTests.java</include>
+								<include>**/FlywayMigrationVersionUniquenessTests.java</include>
+								<include>**/FlywayCompatibilityConfigurationTests.java</include>
+								<include>**/OpenApiSpecTests.java</include>
+								<include>**/DocumentationConsistencyTests.java</include>
+							</includes>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+</project>

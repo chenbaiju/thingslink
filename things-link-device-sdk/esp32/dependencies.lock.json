@@ -1,0 +1,27 @@
+{
+  "cjson": {
+    "version": "1.7.19",
+    "commit": "c859b25da02955fef659d658b8f324b5cde87be3",
+    "base_url": "https://raw.githubusercontent.com/DaveGamble/cJSON/c859b25da02955fef659d658b8f324b5cde87be3/",
+    "license": "MIT",
+    "files": {
+      "cJSON.c": "298581a04a36c0165da4b0aade235c23088cb2faa58651d720ea2f3706ed0b0d",
+      "cJSON.h": "25b0145150d500498e4d209cec69c18c42cf818bffcc54690be3b895a2a16dee",
+      "LICENSE": "a36dda207c36db5818729c54e7ad4e8b0c6fba847491ba64f372c1a2037b6d5c"
+    }
+  },
+  "target_candidates": {
+    "esp_idf": {
+      "version": "6.1",
+      "commit": "fff9895c82d744c7237be8847347bdd1b07c6643"
+    },
+    "esp_mqtt": {
+      "version": "1.1.0",
+      "tag_ref": "1a1e5788a5cf57a0f44a3c6c061407f6c9be1026"
+    }
+  },
+  "host_tools": {
+    "esptool": "5.4.0",
+    "pyserial": "3.5"
+  }
+}

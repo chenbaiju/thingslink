@@ -1,0 +1,108 @@
+# 后端流水线：编译、单元测试、集成测试、架构约束检查。
+#
+# 集成测试用 Testcontainers 起真实 PostgreSQL + TimescaleDB（架构文档 13.4：
+# 不用嵌入式替身，差异所在正是本项目最关键的部分）。GitHub 托管的 runner 自带
+# Docker 守护进程与 /var/run/docker.sock，因此不需要本地开发时那份
+# ~/.testcontainers.properties。
+
+name: backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一分支再次手动运行时取消尚在运行的旧任务。集成测试要起容器，比较费时，
+# 没必要为已经过时的提交跑完。
+concurrency:
+  group: backend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Maven 全量验证
+    runs-on: ubuntu-latest
+    # S12-CI-2：第117次运行全部已完成测试无失败，但旧30分钟总预算提前取消最后测试；
+    # #127 隔离实时订阅协议参数用例后，40 分钟步骤预算又在上次全量验证末尾被取消。
+    # #7 在第85分钟仍运行 bootstrap 的真实过期/冷却窗口用例，且后续测试尚未执行；
+    # 保留真实墙钟验证，并给套件及失败报告上传留足预算。
+    timeout-minutes: 150
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          # Flyway 增量门禁必须读取目标提交，浅克隆不能证明历史迁移未被改写。
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 校验生成治理守卫
+        env:
+          # PR 对目标分支，push 对推送前提交；手动运行没有增量基线，只执行当前树静态守卫。
+          FLYWAY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          # PR 使用checkout生成的合并候选，保证版本守卫与随后全量验证针对同一Git树。
+          FLYWAY_HEAD_REF: ${{ github.sha }}
+        run: |
+          python3 -m unittest scripts.tests.test_workflow_contracts
+          python3 -m unittest scripts.tests.test_ci_resource_monitor
+          python3 -m unittest scripts.tests.test_check_flyway_migrations
+          python3 -m unittest scripts.tests.test_generate_openapi_contracts
+          python3 -m unittest discover -s deploy/scripts -p test_saas_utc_midnight.py -v
+          # 新仓库或新分支首次推送没有历史基线；仅全零 SHA 转为当前树静态检查。
+          # 其他不可达基线仍交由守卫拒绝，不能把历史读取失败当作首次推送。
+          if [ "$FLYWAY_BASE_REF" = "0000000000000000000000000000000000000000" ]; then
+            FLYWAY_BASE_REF=""
+          fi
+          python3 scripts/check-flyway-migrations.py \
+            --base-ref "$FLYWAY_BASE_REF" \
+            --head-ref "$FLYWAY_HEAD_REF"
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v5
+        with:
+          # 与 docs/DEVELOPMENT_ROADMAP.md 决策 #1 一致。
+          # 版本不符时 maven-enforcer-plugin 会在构建最开始直接失败，
+          # 而不是等到某个依赖报字节码版本错误
+          java-version: '21'
+          distribution: 'temurin'
+          # 缓存 ~/.m2，省掉每次重新下载依赖
+          cache: 'maven'
+
+      # Docker Hub 已撤回原 MinIO 仓库；与其他隔离栈工作流使用相同固定摘要。
+      - name: 准备固定 MinIO 镜像
+        shell: bash
+        run: |
+          set -euo pipefail
+          server=ghcr.io/teableio/minio@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+          client=ghcr.io/teableio/minio-mc@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
+          docker pull "$server"
+          docker tag "$server" minio/minio:RELEASE.2025-04-22T22-12-26Z
+          docker pull "$client"
+          docker tag "$client" minio/mc:RELEASE.2025-04-16T18-13-26Z
+
+      - name: 构建与测试
+        # 步骤先到期使失败报告仍有上传窗口，不能只耗尽job总预算。
+        timeout-minutes: 143
+        working-directory: things-link
+        # verify 而不是 test：它还会跑打包与 enforcer 的全部规则。
+        # -B 关掉进度条输出，日志才可读
+        run: |
+          # Runner被关闭时artifact步骤可能无法运行，故将有界资源快照直接写入步骤日志。
+          # 只记录容量/进程名，不输出命令行、环境变量或容器配置；采样失败不改变Maven结果。
+          python3 ../scripts/ci-resource-monitor.py &
+          monitor_pid=$!
+          trap 'kill "$monitor_pid" 2>/dev/null || true; wait "$monitor_pid" 2>/dev/null || true' EXIT
+          # master 的真实 TLS 用例从源码生成本轮临时证书，失败时不进入 Maven。
+          bash ../scripts/prepare-test-tls.sh
+          ./mvnw -B clean verify
+
+      # 测试报告只在失败时才有价值，成功时上传纯属浪费额度
+      - name: 上传测试报告（仅失败时）
+        timeout-minutes: 5
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: surefire-reports
+          path: things-link/**/target/surefire-reports/
+          retention-days: 7

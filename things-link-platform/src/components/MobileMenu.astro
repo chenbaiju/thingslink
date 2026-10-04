@@ -1,0 +1,75 @@
+---
+import { CONSOLE_URL } from '@/config'
+import Button from '@/components/ui/Button.astro'
+import Icon from '@/components/ui/Icon.astro'
+
+interface Props {
+  panelId: string
+  label?: string
+  hideAt?: 'md' | 'lg'
+}
+
+const { panelId, label = '切换菜单', hideAt = 'md' } = Astro.props
+const hideClasses = { md: 'md:hidden', lg: 'lg:hidden' }
+---
+
+<!-- summary 的展开状态由浏览器维护；不写会在无脚本时失真的 aria-expanded。 -->
+<details class:list={['mobile-menu relative', hideClasses[hideAt]]} data-breakpoint={hideAt}>
+  <summary class="inline-flex cursor-pointer list-none items-center gap-2 rounded-lg p-2 hover:bg-gray-100" aria-controls={panelId}>
+    <span class="menu-open-icon"><Icon name="menu" /></span>
+    <span class="menu-close-icon"><Icon name="close" /></span>
+    <span class:list={{ 'sr-only': hideAt === 'md' }}>{label}</span>
+  </summary>
+  <nav id={panelId} aria-label={label} class="menu-panel fixed inset-x-0 top-header z-40 max-h-[calc(100dvh-var(--spacing-header))] overflow-y-auto border-b border-border-light bg-white shadow-lg">
+    <div class="container-page py-4">
+      <slot />
+      {CONSOLE_URL && <div class="mt-2 border-t border-border-light pt-3">
+        <Button href={CONSOLE_URL} variant="primary" size="sm" external>进入控制台</Button>
+      </div>}
+    </div>
+  </nav>
+</details>
+
+<style>
+  summary::-webkit-details-marker { display: none; }
+  .menu-close-icon { display: none; }
+  details[open] > summary .menu-open-icon { display: none; }
+  details[open] > summary .menu-close-icon { display: inline; }
+  /* 关闭触发项保持在面板上方，文档目录使用流内面板，避免覆盖自身触发项。 */
+  details[data-breakpoint='lg'] > .menu-panel { position: static; max-height: 60dvh; }
+  @media (max-width: 47.999rem) {
+    :global(body:has(.mobile-menu[data-breakpoint='md'][open])) { overflow: hidden; }
+  }
+</style>
+
+<script>
+  // 只增强关闭和焦点行为；原生展开、链接与可访问状态不依赖本脚本。
+  document.querySelectorAll<HTMLDetailsElement>('details.mobile-menu').forEach((menu) => {
+    const summary = menu.querySelector('summary')!
+    const close = (restoreFocus = false) => {
+      menu.open = false
+      if (restoreFocus) summary.focus()
+    }
+    menu.addEventListener('toggle', () => {
+      if (!menu.open) return
+      document.querySelectorAll<HTMLDetailsElement>('details.mobile-menu[open]').forEach((other) => {
+        if (other !== menu) other.open = false
+      })
+      menu.querySelector<HTMLAnchorElement>('nav a')?.focus()
+    })
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        event.preventDefault()
+        close(true)
+      }
+    })
+    menu.querySelector('nav')?.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('a')) close(true)
+    })
+    document.addEventListener('click', (event) => {
+      if (menu.open && event.target instanceof Node && !menu.contains(event.target)) close()
+    })
+    const desktop = matchMedia(menu.dataset.breakpoint === 'lg' ? '(min-width: 64rem)' : '(min-width: 48rem)')
+    desktop.addEventListener('change', () => { if (desktop.matches) close() })
+  })
+</script>

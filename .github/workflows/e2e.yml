@@ -1,0 +1,201 @@
+# 平台单仓库 Console E2E；静态与单元前置通过后运行完整隔离栈。
+name: console-e2e
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: console-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: 构建与静态检查
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: things-link-console
+    steps:
+      - name: 检出平台与 Console 同一候选
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: 记录统一候选
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C things-link-console rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"
+          echo "Platform / Console / Backend: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 校验 OpenAPI 唯一生成入口
+        working-directory: .
+        run: python3 -m unittest scripts.tests.test_generate_openapi_contracts
+
+      # pnpm/action-setup 从 package.json 的 packageManager 读取 11.9.0，避免 CI 与本地锁文件语义漂移。
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          # Action 步骤不继承 defaults.run.working-directory，必须显式指向子项目清单。
+          package_json_file: things-link-console/package.json
+
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: |
+            things-link-console/pnpm-lock.yaml
+            things-link-client-contracts/pnpm-lock.yaml
+
+      # Console设计器与WebApp消费同一版本化纯合同，独立锁文件必须先安装。
+      - name: 安装共享合同冻结依赖
+        working-directory: things-link-client-contracts
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装冻结依赖
+        run: pnpm install --frozen-lockfile
+
+      # 先构建共享合同，再由Vite生成声明后进行类型检查。
+      - name: 生产构建与类型检查
+        run: pnpm build
+
+      - name: 控制台单元测试
+        run: pnpm test
+
+      - name: 校验 OpenAPI 生成类型
+        run: pnpm api:check
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: Stylelint
+        run: pnpm lint:stylelint:check
+
+  e2e:
+    needs: verify
+    name: 隔离栈 E2E + 契约复验
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # run-e2e-tests.sh 固定用仓库内 .playwright-browsers 作为浏览器目录；
+    # 安装步骤必须装到同一路径，否则运行时找不到浏览器。
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/things-link-console/.playwright-browsers
+      # S12-4l实时旅程使用独立Console WS；来源必须注入实际Java进程并保持精确匹配。
+      THINGS_LINK_DASHBOARD_CONSOLE_ALLOWED_ORIGINS: http://localhost:3006
+    steps:
+      - name: 检出平台与 Console 同一候选
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: 记录统一候选
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C things-link-console rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"
+          echo "Platform / Console / Backend: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      # ubuntu-latest 预装 Android SDK 等大型工具；本项目不使用它们，而 Redpanda 默认在可用空间
+      # 低于 5GiB 时 fail-closed 拒绝写入。只在一次性 Runner 删除经过 realpath/类型校验的精确目录，
+      # 不把降低 broker 磁盘保护阈值当成 CI 修复。
+      - name: 释放 E2E Runner 磁盘空间
+        shell: bash
+        run: |
+          set -euo pipefail
+          android_sdk_path="$(realpath /usr/local/lib/android)"
+          if [[ "${android_sdk_path}" != "/usr/local/lib/android" || ! -d "${android_sdk_path}" || -L "${android_sdk_path}" ]]; then
+            echo "::error::Android SDK 清理目标校验失败：${android_sdk_path}"
+            exit 1
+          fi
+          sudo du -sh "${android_sdk_path}"
+          sudo rm -rf --one-file-system -- "${android_sdk_path}"
+          docker image prune --all --force
+          available_bytes="$(df --output=avail -B1 / | tail -1 | tr -d '[:space:]')"
+          if [[ ! "${available_bytes}" =~ ^[0-9]+$ || "${available_bytes}" -lt 16106127360 ]]; then
+            echo "::error::Runner 清理后根分区可用空间不足 15GiB：${available_bytes} bytes"
+            df -h /
+            exit 1
+          fi
+          df -h /
+
+      # Docker Hub 已撤回原 MinIO 仓库；镜像摘要与原固定版本完全相同。
+      - name: 准备固定 MinIO 镜像
+        shell: bash
+        run: |
+          set -euo pipefail
+          server=ghcr.io/teableio/minio@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+          client=ghcr.io/teableio/minio-mc@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
+          docker pull "$server"
+          docker tag "$server" minio/minio:RELEASE.2025-04-22T22-12-26Z
+          docker pull "$client"
+          docker tag "$client" minio/mc:RELEASE.2025-04-16T18-13-26Z
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # pnpm/action-setup 从 package.json 的 packageManager 读取 11.9.0，与 console.yml 同一口径；
+      # 必须在 setup-node 之前（setup-node 的 pnpm 缓存依赖 pnpm 已就绪）。
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: things-link-console/package.json
+
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: |
+            things-link-console/pnpm-lock.yaml
+            things-link-client-contracts/pnpm-lock.yaml
+            things-link-webapp/pnpm-lock.yaml
+
+      # Console设计器与WebApp消费同一版本化纯合同，独立锁文件必须先安装。
+      - name: 安装共享合同冻结依赖
+        working-directory: things-link-client-contracts
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装控制台依赖
+        run: cd things-link-console && pnpm install --frozen-lockfile
+
+      # 发布旅程由Runner真实构建并登记宿主，干净CI不能依赖本机已有node_modules。
+      - name: 安装WebApp宿主冻结依赖
+        working-directory: things-link-webapp
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装 Playwright Chromium 及系统依赖
+        run: cd things-link-console && pnpm exec playwright install --with-deps chromium
+
+      - name: 起隔离栈并复验契约及完整Console旅程
+        run: cd things-link-console && ./scripts/run-e2e-tests.sh --with-simulator
+
+      - name: 上传失败产物与报告
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-artifacts
+          if-no-files-found: warn
+          path: |
+            things-link-console/playwright-report/
+            things-link-console/test-results/
+            things-link-console/logs/target-e2e-backend.log
+            things-link-console/logs/target-e2e-simulator.log
+            things-link-console/logs/target-e2e-vite.log
+            things-link-console/logs/target-e2e-dependencies.log
+            things-link-console/logs/target-e2e-stack.log
+            things-link-console/logs/target-e2e-signer.log
+            things-link-console/logs/target-e2e-webapp.log

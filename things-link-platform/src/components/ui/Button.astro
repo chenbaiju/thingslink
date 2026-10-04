@@ -1,0 +1,45 @@
+---
+/**
+ * 基础按钮（链接形态）。
+ *
+ * 站点当前所有按钮都是跳转动作，因此渲染为 <a> 而非 <button>，
+ * 保持零客户端 JavaScript。样式全部来自 styles.ts，组件不写渐变或色值。
+ */
+import { buttonClasses, type ButtonSize, type ButtonVariant } from './styles'
+
+export interface Props {
+  href: string
+  variant?: ButtonVariant
+  size?: ButtonSize
+  /** 站外或新窗口打开时补 noopener noreferrer */
+  external?: boolean
+  /** 暂不可用时输出 aria-disabled 并降级视觉，不输出 href */
+  disabled?: boolean
+  class?: string
+  /** 可访问名称与内容不一致时使用 */
+  ariaLabel?: string
+}
+
+const {
+  href,
+  variant = 'primary',
+  size = 'md',
+  external = false,
+  disabled = false,
+  class: className = '',
+  ariaLabel
+} = Astro.props
+
+const classes = buttonClasses({ variant, size, disabled })
+---
+
+<a
+  href={disabled ? undefined : href}
+  class:list={[classes, className]}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noopener noreferrer' : undefined}
+  aria-disabled={disabled ? 'true' : undefined}
+  aria-label={ariaLabel}
+>
+  <slot />
+</a>

@@ -1,0 +1,1260 @@
+/* 此文件由 scripts/generate-dashboard-v1.mjs 生成，请勿手工修改。 */
+
+/** 递归冻结机器合同，避免宿主进程改写共享注册表。 */
+function deepFreeze<const T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+      deepFreeze(nested);
+    }
+    Object.freeze(value);
+  }
+  return value;
+}
+
+export const dashboardV1Contract = deepFreeze({
+  "formatVersion": "tc.dashboard-client-contract/v1",
+  "schemaVersion": "tc.dashboard/v1",
+  "componentVersion": "1.0.0",
+  "hostRange": {
+    "minInclusive": "1.0.0",
+    "maxExclusive": "1.0.1"
+  },
+  "rejectionReasons": {
+    "parse": [
+      "RAW_TOO_LARGE",
+      "INVALID_UTF8",
+      "BOM_NOT_ALLOWED",
+      "INVALID_JSON",
+      "DUPLICATE_KEY",
+      "NUMBER_TOO_LONG",
+      "INVALID_EXPONENT",
+      "INVALID_UNICODE",
+      "DEPTH_EXCEEDED",
+      "TRAILING_VALUE",
+      "ROOT_MUST_BE_OBJECT",
+      "VERSION_REQUIRED",
+      "VERSION_UNSUPPORTED"
+    ],
+    "validation": [
+      "UNKNOWN_FIELD",
+      "NULL_NOT_ALLOWED",
+      "REQUIRED_FIELD_MISSING",
+      "TYPE_MISMATCH",
+      "INVALID_VALUE",
+      "INVALID_NUMBER",
+      "INVALID_COLLECTION",
+      "INVALID_LAYOUT",
+      "INVALID_REFERENCE",
+      "NORMALIZED_TOO_LARGE"
+    ]
+  },
+  "atomicValueRules": {
+    "localKey": {
+      "jsonType": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$",
+      "minimumCodeUnits": 1,
+      "maximumCodeUnits": 64
+    },
+    "propertyKey": {
+      "jsonType": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "minimumCodeUnits": 1,
+      "maximumCodeUnits": 64,
+      "topLevelOnly": true
+    },
+    "uuid": {
+      "jsonType": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "canonicalLowercase": true
+    },
+    "sha256": {
+      "jsonType": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "algorithmPrefixAllowed": false
+    },
+    "semVer": {
+      "jsonType": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "segments": 3,
+      "maximumSegment": 65535,
+      "prereleaseAllowed": false,
+      "buildMetadataAllowed": false
+    },
+    "title": {
+      "jsonType": "string",
+      "minimumCodePoints": 1,
+      "maximumCodePoints": 80,
+      "blankAllowed": false,
+      "c0ControlsAllowed": false,
+      "c1ControlsAllowed": false
+    },
+    "shortText": {
+      "jsonType": "string",
+      "minimumCodePoints": 0,
+      "maximumCodePoints": 256,
+      "c0ControlsAllowed": false,
+      "c1ControlsAllowed": false
+    },
+    "textContent": {
+      "jsonType": "string",
+      "minimumCodePoints": 0,
+      "maximumCodePoints": 4096,
+      "allowedControlCodePoints": [
+        9,
+        10
+      ]
+    },
+    "configNumber": {
+      "jsonType": "number",
+      "zeroAllowed": true,
+      "minimumNonZeroAbsolute": "1e-12",
+      "maximumAbsolute": "1e12",
+      "maximumSignificantDecimalDigitsAfterTrailingZeroRemoval": 15
+    }
+  },
+  "enumSets": {
+    "canvasModes": [
+      "RESPONSIVE_GRID",
+      "FIXED_SCREEN"
+    ],
+    "themes": [
+      "LIGHT",
+      "DARK"
+    ],
+    "variableTypes": [
+      "DEVICE_SINGLE",
+      "DEVICE_MULTI",
+      "TIME_RANGE",
+      "TEXT_ENUM"
+    ],
+    "timeRangePresets": [
+      "LAST_1_HOUR",
+      "LAST_24_HOURS",
+      "LAST_7_DAYS"
+    ],
+    "bindingSources": [
+      "CURRENT_VALUE",
+      "HISTORY_SERIES",
+      "DEVICE_STATUS",
+      "ALARM_LIST",
+      "DEVICE_DIRECTORY",
+      "ENUM_TEXT"
+    ],
+    "historyGranularities": [
+      "RAW",
+      "ONE_MINUTE",
+      "ONE_HOUR",
+      "ONE_DAY"
+    ],
+    "historyAggregations": [
+      "AVG",
+      "MIN",
+      "MAX",
+      "SUM",
+      "COUNT"
+    ],
+    "alarmConditionStates": [
+      "PENDING",
+      "ACTIVE",
+      "CLEARED"
+    ],
+    "alarmAckStates": [
+      "UNACKNOWLEDGED",
+      "ACKNOWLEDGED"
+    ],
+    "alarmSeverities": [
+      "CRITICAL",
+      "MAJOR",
+      "MINOR",
+      "WARNING",
+      "INFO"
+    ],
+    "textAlignments": [
+      "LEFT",
+      "CENTER",
+      "RIGHT"
+    ],
+    "textSizes": [
+      "SMALL",
+      "MEDIUM",
+      "LARGE"
+    ],
+    "textTones": [
+      "REGULAR",
+      "SECONDARY",
+      "PRIMARY"
+    ],
+    "imageFits": [
+      "CONTAIN",
+      "COVER"
+    ],
+    "unitModes": [
+      "MODEL",
+      "NONE"
+    ],
+    "gaugeScaleModes": [
+      "MODEL",
+      "EXPLICIT"
+    ],
+    "tableModes": [
+      "LIST_VALUE",
+      "DEVICE_VALUES"
+    ],
+    "propertyDataTypes": [
+      "NUMBER",
+      "TEXT",
+      "SWITCH",
+      "ENUM",
+      "OBJECT",
+      "LIST"
+    ],
+    "modelDigestAlgorithms": [
+      "PG_JSONB_TEXT_V1_SHA256"
+    ],
+    "modelProfiles": [
+      "TC_PROPERTY_COMPOSITE_V1"
+    ]
+  },
+  "valueRanges": {
+    "precision": {
+      "minimum": 0,
+      "maximum": 6,
+      "default": 2
+    },
+    "initialExpandDepth": {
+      "minimum": 0,
+      "maximum": 2,
+      "default": 1
+    },
+    "tableRowLimit": {
+      "minimum": 1,
+      "maximum": 256,
+      "default": 20
+    },
+    "alarmPageSize": {
+      "minimum": 1,
+      "maximum": 50,
+      "default": 20
+    },
+    "deviceSelectorPageSize": {
+      "minimum": 1,
+      "maximum": 50,
+      "default": 20
+    },
+    "deviceMultiMaxItems": {
+      "minimum": 1,
+      "maximum": 20,
+      "default": 20
+    }
+  },
+  "limits": {
+    "parser": {
+      "rawBytes": 512000,
+      "normalizedBytes": 512000,
+      "maximumDepth": 16,
+      "numericTokenAsciiBytes": 64,
+      "maximumAbsoluteExponent": 12,
+      "exponentDigitsMinimum": 1,
+      "exponentDigitsMaximum": 2,
+      "exponentLeadingZeroAllowed": false
+    },
+    "collections": {
+      "responsivePagesMinimum": 1,
+      "responsivePagesMaximum": 5,
+      "fixedPagesExact": 1,
+      "componentsPerPageMinimum": 0,
+      "componentsPerPageMaximum": 50,
+      "variablesMinimum": 0,
+      "variablesMaximum": 20,
+      "modelsMinimum": 0,
+      "modelsMaximum": 20,
+      "deviceDefaultsMinimum": 0,
+      "deviceDefaultsMaximum": 20,
+      "enumOptionsMinimum": 1,
+      "enumOptionsMaximum": 20,
+      "tableColumnsMinimum": 1,
+      "tableColumnsMaximum": 10,
+      "lineSeriesMinimum": 1,
+      "lineSeriesMaximum": 4
+    },
+    "canvases": {
+      "RESPONSIVE_GRID": {
+        "pageMinimum": 1,
+        "pageMaximum": 5,
+        "layout": {
+          "xMinimum": 0,
+          "xMaximum": 23,
+          "yMinimum": 0,
+          "yMaximum": 999,
+          "widthMinimum": 1,
+          "widthMaximum": 24,
+          "heightMinimum": 1,
+          "heightMaximum": 1000,
+          "rightEdgeMaximum": 24,
+          "bottomEdgeMaximum": 1000
+        },
+        "presentationDefaults": {
+          "theme": "LIGHT",
+          "columns": 24,
+          "rowHeight": 8,
+          "gap": 8
+        }
+      },
+      "FIXED_SCREEN": {
+        "pageMinimum": 1,
+        "pageMaximum": 1,
+        "layout": {
+          "xMinimum": 0,
+          "xMaximum": 1919,
+          "yMinimum": 0,
+          "yMaximum": 1079,
+          "widthMinimum": 1,
+          "widthMaximum": 1920,
+          "heightMinimum": 1,
+          "heightMaximum": 1080,
+          "rightEdgeMaximum": 1920,
+          "bottomEdgeMaximum": 1080
+        },
+        "presentationDefaults": {
+          "theme": "LIGHT",
+          "width": 1920,
+          "height": 1080,
+          "scaleMode": "FIT"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "kind": "TEXT",
+      "componentVersion": "1.0.0",
+      "props": {
+        "content": {
+          "type": "TEXT_CONTENT",
+          "required": false,
+          "default": ""
+        },
+        "align": {
+          "type": "TEXT_ALIGN",
+          "required": false,
+          "default": "LEFT"
+        },
+        "size": {
+          "type": "TEXT_SIZE",
+          "required": false,
+          "default": "MEDIUM"
+        },
+        "tone": {
+          "type": "TEXT_TONE",
+          "required": false,
+          "default": "REGULAR"
+        }
+      },
+      "slots": {
+        "text": {
+          "valueType": "BINDING",
+          "required": false,
+          "sources": [
+            "ENUM_TEXT"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "IMAGE",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "resourceId": {
+          "type": "LOCAL_KEY",
+          "required": true
+        },
+        "resourceDigest": {
+          "type": "SHA256",
+          "required": true
+        },
+        "alt": {
+          "type": "SHORT_TEXT",
+          "required": true
+        },
+        "fit": {
+          "type": "IMAGE_FIT",
+          "required": false,
+          "default": "CONTAIN"
+        }
+      },
+      "slots": {},
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "VALUE_CARD",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "precision": {
+          "type": "PRECISION",
+          "required": false,
+          "default": 2
+        },
+        "unitMode": {
+          "type": "UNIT_MODE",
+          "required": false,
+          "default": "MODEL"
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER",
+          "TEXT",
+          "SWITCH",
+          "ENUM"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "STATUS",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "showLastOnlineAt": {
+          "type": "BOOLEAN",
+          "required": false,
+          "default": true
+        }
+      },
+      "slots": {
+        "status": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "DEVICE_STATUS"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "GAUGE",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "scaleMode": {
+          "type": "GAUGE_SCALE_MODE",
+          "required": false,
+          "default": "MODEL"
+        },
+        "min": {
+          "type": "CONFIG_NUMBER",
+          "required": false
+        },
+        "max": {
+          "type": "CONFIG_NUMBER",
+          "required": false
+        },
+        "precision": {
+          "type": "PRECISION",
+          "required": false,
+          "default": 2
+        },
+        "unitMode": {
+          "type": "UNIT_MODE",
+          "required": false,
+          "default": "MODEL"
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "LINE_CHART",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "showLegend": {
+          "type": "BOOLEAN",
+          "required": false,
+          "default": true
+        },
+        "series": {
+          "type": "SERIES_DEFINITIONS",
+          "required": true
+        }
+      },
+      "slots": {
+        "series": {
+          "valueType": "BINDING_ARRAY",
+          "required": true,
+          "sources": [
+            "HISTORY_SERIES"
+          ],
+          "cardinality": "MULTIPLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "TABLE",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "mode": {
+          "type": "TABLE_MODE",
+          "required": true
+        },
+        "rowLimit": {
+          "type": "ROW_LIMIT",
+          "required": false,
+          "default": 20
+        },
+        "columns": {
+          "type": "COLUMN_DEFINITIONS",
+          "required": false
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": false,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        },
+        "columns": {
+          "valueType": "BINDING_ARRAY",
+          "required": false,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "MULTIPLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER",
+          "TEXT",
+          "SWITCH",
+          "ENUM",
+          "LIST"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "JSON_VIEW",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "initialExpandDepth": {
+          "type": "EXPAND_DEPTH",
+          "required": false,
+          "default": 1
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "OBJECT",
+          "LIST"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "ALARM_LIST",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "pageSize": {
+          "type": "PAGE_SIZE",
+          "required": false,
+          "default": 20
+        },
+        "showClearedAt": {
+          "type": "BOOLEAN",
+          "required": false,
+          "default": true
+        }
+      },
+      "slots": {
+        "alarms": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "ALARM_LIST"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "DEVICE_SELECTOR",
+      "componentVersion": "1.0.0",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "placeholder": {
+          "type": "SHORT_TEXT",
+          "required": false,
+          "default": "请选择设备"
+        },
+        "pageSize": {
+          "type": "PAGE_SIZE",
+          "required": false,
+          "default": 20
+        }
+      },
+      "slots": {
+        "directory": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "DEVICE_DIRECTORY"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.0.0",
+        "maxExclusive": "1.0.1"
+      }
+    },
+    {
+      "kind": "TEXT",
+      "componentVersion": "1.0.1",
+      "props": {
+        "content": {
+          "type": "TEXT_CONTENT",
+          "required": false,
+          "default": ""
+        },
+        "align": {
+          "type": "TEXT_ALIGN",
+          "required": false,
+          "default": "LEFT"
+        },
+        "size": {
+          "type": "TEXT_SIZE",
+          "required": false,
+          "default": "MEDIUM"
+        },
+        "tone": {
+          "type": "TEXT_TONE",
+          "required": false,
+          "default": "REGULAR"
+        }
+      },
+      "slots": {
+        "text": {
+          "valueType": "BINDING",
+          "required": false,
+          "sources": [
+            "ENUM_TEXT"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "IMAGE",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "resourceId": {
+          "type": "LOCAL_KEY",
+          "required": true
+        },
+        "resourceDigest": {
+          "type": "SHA256",
+          "required": true
+        },
+        "alt": {
+          "type": "SHORT_TEXT",
+          "required": true
+        },
+        "fit": {
+          "type": "IMAGE_FIT",
+          "required": false,
+          "default": "CONTAIN"
+        }
+      },
+      "slots": {},
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "VALUE_CARD",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "precision": {
+          "type": "PRECISION",
+          "required": false,
+          "default": 2
+        },
+        "unitMode": {
+          "type": "UNIT_MODE",
+          "required": false,
+          "default": "MODEL"
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER",
+          "TEXT",
+          "SWITCH",
+          "ENUM"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "STATUS",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "showLastOnlineAt": {
+          "type": "BOOLEAN",
+          "required": false,
+          "default": true
+        }
+      },
+      "slots": {
+        "status": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "DEVICE_STATUS"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "GAUGE",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "scaleMode": {
+          "type": "GAUGE_SCALE_MODE",
+          "required": false,
+          "default": "MODEL"
+        },
+        "min": {
+          "type": "CONFIG_NUMBER",
+          "required": false
+        },
+        "max": {
+          "type": "CONFIG_NUMBER",
+          "required": false
+        },
+        "precision": {
+          "type": "PRECISION",
+          "required": false,
+          "default": 2
+        },
+        "unitMode": {
+          "type": "UNIT_MODE",
+          "required": false,
+          "default": "MODEL"
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "LINE_CHART",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "showLegend": {
+          "type": "BOOLEAN",
+          "required": false,
+          "default": true
+        },
+        "series": {
+          "type": "SERIES_DEFINITIONS",
+          "required": true
+        }
+      },
+      "slots": {
+        "series": {
+          "valueType": "BINDING_ARRAY",
+          "required": true,
+          "sources": [
+            "HISTORY_SERIES"
+          ],
+          "cardinality": "MULTIPLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "TABLE",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "mode": {
+          "type": "TABLE_MODE",
+          "required": true
+        },
+        "rowLimit": {
+          "type": "ROW_LIMIT",
+          "required": false,
+          "default": 20
+        },
+        "columns": {
+          "type": "COLUMN_DEFINITIONS",
+          "required": false
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": false,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        },
+        "columns": {
+          "valueType": "BINDING_ARRAY",
+          "required": false,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "MULTIPLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "NUMBER",
+          "TEXT",
+          "SWITCH",
+          "ENUM",
+          "LIST"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "JSON_VIEW",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "initialExpandDepth": {
+          "type": "EXPAND_DEPTH",
+          "required": false,
+          "default": 1
+        }
+      },
+      "slots": {
+        "value": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "CURRENT_VALUE"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "PROPERTY_TYPED",
+        "values": [
+          "OBJECT",
+          "LIST"
+        ]
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "ALARM_LIST",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "pageSize": {
+          "type": "PAGE_SIZE",
+          "required": false,
+          "default": 20
+        },
+        "showClearedAt": {
+          "type": "BOOLEAN",
+          "required": false,
+          "default": true
+        }
+      },
+      "slots": {
+        "alarms": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "ALARM_LIST"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    },
+    {
+      "kind": "DEVICE_SELECTOR",
+      "componentVersion": "1.0.1",
+      "props": {
+        "title": {
+          "type": "TITLE",
+          "required": false
+        },
+        "placeholder": {
+          "type": "SHORT_TEXT",
+          "required": false,
+          "default": "请选择设备"
+        },
+        "pageSize": {
+          "type": "PAGE_SIZE",
+          "required": false,
+          "default": 20
+        }
+      },
+      "slots": {
+        "directory": {
+          "valueType": "BINDING",
+          "required": true,
+          "sources": [
+            "DEVICE_DIRECTORY"
+          ],
+          "cardinality": "SINGLE"
+        }
+      },
+      "supportedDataTypes": {
+        "applicability": "NOT_APPLICABLE",
+        "values": []
+      },
+      "supportedCanvasModes": [
+        "RESPONSIVE_GRID",
+        "FIXED_SCREEN"
+      ],
+      "hostRange": {
+        "minInclusive": "1.1.0",
+        "maxExclusive": "1.1.2"
+      }
+    }
+  ]
+} as const);
+
+/** Dashboard v1机器合同的只读字面量类型。 */
+export type DashboardV1Contract = typeof dashboardV1Contract;
+
+/** Dashboard v1支持的组件种类。 */
+export type DashboardComponentKind = DashboardV1Contract["components"][number]["kind"];
+
+/** Dashboard v1解析阶段稳定拒绝原因。 */
+export type DashboardParseRejectionReason = DashboardV1Contract["rejectionReasons"]["parse"][number];
+
+/** Dashboard v1语义校验阶段稳定拒绝原因。 */
+export type DashboardValidationRejectionReason = DashboardV1Contract["rejectionReasons"]["validation"][number];
+
+/** Dashboard v1全部稳定拒绝原因。 */
+export type DashboardRejectionReason = DashboardParseRejectionReason | DashboardValidationRejectionReason;
+
+/** Dashboard v1支持的画布模式。 */
+export type DashboardCanvasMode = keyof DashboardV1Contract["limits"]["canvases"];
+
+/** Dashboard v1组件支持的模型属性数据类型。 */
+export type DashboardPropertyDataType = Exclude<DashboardV1Contract["components"][number]["supportedDataTypes"]["values"][number], never>;

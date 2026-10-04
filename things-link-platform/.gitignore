@@ -1,0 +1,5 @@
+# Astro 特定产物目录
+.astro/
+
+# 环境变量（本地覆盖）
+.env.local

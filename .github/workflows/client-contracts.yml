@@ -1,0 +1,62 @@
+# 跨前端共享合同独立验证；该包不继承Console、Platform或未来WebApp的构建状态。
+
+name: client-contracts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-contracts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: things-link-client-contracts
+
+jobs:
+  verify:
+    name: 生成、构建与纯合同测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: things-link-client-contracts/package.json
+
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: things-link-client-contracts/pnpm-lock.yaml
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 安装冻结依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 验证共享合同
+        run: pnpm verify
+
+      - name: 检查发布文件边界
+        run: pnpm pack --dry-run
+
+      - name: 校验Java完整看板合同
+        working-directory: things-link
+        # 干净 Runner 没有本地 SNAPSHOT；-am 让 Maven 从当前提交构建看板的直接 reactor 依赖。
+        run: ./mvnw -B -pl things-link-dashboard -am clean test

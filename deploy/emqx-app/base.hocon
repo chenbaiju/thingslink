@@ -1,0 +1,56 @@
+# ADR0179: application-only EMQX 6.3.1; internal development, not production qualification.
+cluster.discovery_strategy = singleton
+dashboard.listeners.http.bind = 18083
+api_key.bootstrap_file = "/opt/emqx/etc/dev-api-keys"
+durable_sessions.enable = false
+listeners.tcp.default { bind = "0.0.0.0:1883", zone = tc_application, max_connections = 1000 }
+listeners.ssl.default.enable = false
+listeners.ws.default.enable = false
+listeners.wss.default.enable = false
+zones.tc_application.mqtt {
+  session_expiry_interval = 0s
+  max_session_expiry_interval = 0s
+  max_mqueue_len = 256
+  max_inflight = 32
+  max_packet_size = 32KB
+  max_subscriptions = 1
+  max_topic_alias = 0
+  max_qos_allowed = 1
+  retain_available = false
+  wildcard_subscription = false
+  shared_subscription = false
+}
+authentication_settings.node_cache.enable = false
+authentication = [{
+  mechanism = password_based
+  backend = http
+  method = post
+  url = "http://host.docker.internal:8080/api/v1/emqx/auth"
+  headers {
+    "Content-Type" = "application/json"
+    "X-Broker-Callback-Token" = "dev-only-broker-callback-secret-do-not-use-in-production"
+  }
+  body { username = "${username}", password = "${password}", clientid = "${clientid}", zone = "${zone}", peerhost = "${peerhost}" }
+  connect_timeout = 2s
+  request_timeout = 3s
+  pool_size = 8
+}]
+authorization {
+  no_match = deny
+  deny_action = disconnect
+  cache.enable = false
+  node_cache.enable = false
+  sources = [{
+    type = http
+    method = post
+    url = "http://host.docker.internal:8080/api/v1/emqx/acl"
+    headers {
+      "Content-Type" = "application/json"
+      "X-Broker-Callback-Token" = "dev-only-broker-callback-secret-do-not-use-in-production"
+    }
+    body { username = "${username}", clientid = "${clientid}", zone = "${zone}", peerhost = "${peerhost}", topic = "${topic}", access = "${action}", qos = "${qos}" }
+    connect_timeout = 2s
+    request_timeout = 3s
+    pool_size = 8
+  }]
+}

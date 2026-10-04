@@ -1,0 +1,69 @@
+# G1-C4b 数据库与 Worker 故障注入隔离 overlay。
+#
+# 必须与 docker-compose.yml 共同使用。所有资源名和宿主端口均由本次 UUIDv7 manifest 注入；
+# 禁止使用默认 tc-* 名称，确保精确清理不会触碰开发栈或 C4a 资格栈。
+name: ${C4B_PROJECT:?C4B_PROJECT is required}
+
+services:
+  postgres:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-postgres
+    ports: !override
+      - "127.0.0.1:${C4B_POSTGRES_PORT:?C4B_POSTGRES_PORT is required}:5432"
+
+  redis:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-redis
+    ports: !override
+      - "127.0.0.1:${C4B_REDIS_PORT:?C4B_REDIS_PORT is required}:6379"
+
+  redpanda:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-redpanda
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+      - --overprovisioned
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:${C4B_REDPANDA_PORT:?C4B_REDPANDA_PORT is required}
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --schema-registry-addr=internal://0.0.0.0:8081
+      - --default-log-level=info
+    ports: !override
+      - "127.0.0.1:${C4B_REDPANDA_PORT:?C4B_REDPANDA_PORT is required}:19092"
+      - "127.0.0.1:${C4B_REDPANDA_ADMIN_PORT:?C4B_REDPANDA_ADMIN_PORT is required}:9644"
+
+  redpanda-init:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-redpanda-init
+
+  emqx:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-emqx
+    ports: !override
+      - "127.0.0.1:${C4B_EMQX_MQTT_PORT:?C4B_EMQX_MQTT_PORT is required}:1883"
+      - "127.0.0.1:${C4B_EMQX_TLS_PORT:?C4B_EMQX_TLS_PORT is required}:8883"
+      - "127.0.0.1:${C4B_EMQX_DASHBOARD_PORT:?C4B_EMQX_DASHBOARD_PORT is required}:18083"
+
+  minio:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-minio
+    ports: !override
+      - "127.0.0.1:${C4B_MINIO_PORT:?C4B_MINIO_PORT is required}:9000"
+      - "127.0.0.1:${C4B_MINIO_CONSOLE_PORT:?C4B_MINIO_CONSOLE_PORT is required}:9001"
+
+  minio-init:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-minio-init
+
+  prometheus:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-prometheus
+    ports: !override
+      - "127.0.0.1:${C4B_PROMETHEUS_PORT:?C4B_PROMETHEUS_PORT is required}:9090"
+    # 每次运行挂载工具生成的专属后端抓取端口；不复用或改写开发栈的 prometheus.yml。
+    volumes: !override
+      - "${C4B_PROMETHEUS_CONFIG:?C4B_PROMETHEUS_CONFIG is required}:/etc/prometheus/prometheus.yml:ro"
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    container_name: ${C4B_PROJECT:?C4B_PROJECT is required}-grafana
+    ports: !override
+      - "127.0.0.1:${C4B_GRAFANA_PORT:?C4B_GRAFANA_PORT is required}:3000"

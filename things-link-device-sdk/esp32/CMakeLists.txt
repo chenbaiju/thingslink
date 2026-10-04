@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.22)
+set(COMPONENTS main)
+set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/.local/esp-mqtt")
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+if(NOT DEFINED SDK_APP)
+    set(SDK_APP "probe")
+endif()
+if(NOT SDK_APP MATCHES "^(probe|device)$")
+    message(FATAL_ERROR "SDK_APP must be probe or device")
+endif()
+project(baijulink_${SDK_APP})
+# Custom outbox must live in the MQTT archive, per its component contract. A
+# protocol-only probe can discard MQTT and cannot expose an archive-order error.
+idf_component_get_property(mqtt_component esp-mqtt COMPONENT_LIB)
+target_sources(${mqtt_component} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/src/mqtt_outbox_policy.c")

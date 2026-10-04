@@ -1,0 +1,4 @@
+#!/bin/sh
+# 验证由人工提前运行 verify/sh/verify-all.sh，再根据日志决定是否推送。
+# push 不重复执行本地验证；GitHub CI 仍独立验证实际推送的提交。
+exit 0

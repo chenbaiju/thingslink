@@ -1,0 +1,6 @@
+*.html linguist-detectable=false
+*.vue linguist-detectable=true
+
+# 由 OpenAPI 契约生成，不要手改（README.md：前端类型由 OpenAPI 生成，不手写）。
+# 标记为 generated 后，GitHub 的 diff 默认折叠，评审时不会被它淹没。
+src/types/api/schema.d.ts linguist-generated=true diff=generated

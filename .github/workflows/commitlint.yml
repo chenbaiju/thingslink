@@ -1,0 +1,75 @@
+# 提交信息规范检查。
+#
+# 独立安装 commitlint；平台提交检查不依赖 Console 仓库或其本地钩子。
+# 只精确豁免启用工作流前已发布的旧 Android 骨架删除消息。
+
+name: commitlint
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 检出完整提交历史
+        uses: actions/checkout@v6
+        with:
+          # 必须拉全部历史：只有浅克隆的话，下面比较 base..head 时
+          # 找不到 base 提交，校验会静默地一条都不检查
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 安装 Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: 安装 commitlint
+        # 固定 commitlint 19，不跟随 latest 跨主版本漂移。
+        run: npm install --no-save @commitlint/cli@19 @commitlint/config-conventional@19
+
+      # PR：校验该分支引入的全部提交
+      - name: 校验 PR 的提交信息
+        if: github.event_name == 'pull_request'
+        run: >-
+          npx commitlint
+          --from ${{ github.event.pull_request.base.sha }}
+          --to ${{ github.event.pull_request.head.sha }}
+          --verbose
+
+      # 直接推 master：只校验本次推送带来的提交
+      #
+      # 【为什么不能直接用 github.event.before】
+      # 它在两种情况下不是一个可用的提交：
+      #   1. 仓库/分支的**首次推送** —— 值是全零 SHA，没有「上一次」
+      #   2. 强推或变基之后 —— 旧提交已不可达
+      # 直接拼成 before..sha 会得到 "fatal: Invalid revision range"，
+      # 而这个错误发生在校验开始**之前**，表现是流水线红了但一条提交都没检查。
+      # 本仓库迁到 GitHub 的第一次推送就栽在这里。
+      #
+      # 【为什么兜底是 --last 而不是校验全部历史】
+      # 历史里有两条早于本约定的提交（f6a1b06 "first commit"、
+      # ce1b08f "配置Mail出站邮件SMTP"）。校验全量必然失败，而且修不了 ——
+      # 改老提交要重写整个历史，代价远大于收益。只校验最新一条即可。
+      - name: 校验推送的提交信息
+        # 不写 == 'push'：手动触发时同样要走这一步，否则是一次什么都没查的绿灯。
+        # workflow_dispatch 没有 event.before，下面的判断会自动退到 --last
+        if: github.event_name != 'pull_request'
+        env:
+          BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$BEFORE" ] \
+            || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+            || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "base 提交不可用（首次推送或历史被重写），改为只校验最新一条提交"
+            npx commitlint --last --verbose
+          else
+            npx commitlint --from "$BEFORE" --to "$HEAD_SHA" --verbose
+          fi

@@ -1,0 +1,42 @@
+---
+/**
+ * 文档右侧目录锚点（Table of Contents）。
+ *
+ * 从 Markdown 渲染的 headings 自动生成。
+ * 仅显示 h2 和 h3。
+ */
+
+export interface Props {
+  headings?: Array<{
+    depth: number
+    slug: string
+    text: string
+  }>
+}
+
+const { headings = [] } = Astro.props
+const filtered = headings.filter((h) => h.depth >= 2 && h.depth <= 3)
+---
+
+{filtered.length > 0 && (
+  <aside class="hidden xl:block w-48 shrink-0">
+    <nav class="sticky top-20 p-4" aria-label="页面目录">
+      <h2 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+        本页目录
+      </h2>
+      <ul class="flex flex-col gap-1 border-l-2 border-border-light">
+        {filtered.map((heading) => (
+          <li>
+            <a
+              href={`#${heading.slug}`}
+              class={`block text-sm text-text-muted hover:text-brand-600 transition-colors leading-relaxed py-0.5
+                ${heading.depth === 3 ? 'pl-4' : 'pl-3'}`}
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </aside>
+)}

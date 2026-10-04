@@ -1,0 +1,41 @@
+---
+/**
+ * 文档目录链接列表。
+ *
+ * 桌面侧栏与移动菜单面板共用同一份渲染，避免两处各写一遍导航树。
+ * 当前项由 `isCurrentPath` 判定并输出 `aria-current="page"` —— 下方 class 里的
+ * `aria-[current=page]:` 变体就靠这个属性生效，属性缺失时高亮不会出现。
+ */
+import { docsPath, isCurrentPath } from '@/config'
+
+export interface Props {
+  /** 来自 getCollection('docs')，需已按 order 排序 */
+  docs: Array<{ id: string; data: { title: string } }>
+  /** 当前页面路径，通常是 Astro.url.pathname */
+  currentPath: string
+}
+
+const { docs, currentPath } = Astro.props
+---
+
+<ul class="flex flex-col gap-1">
+  {
+    docs.map((doc) => {
+      const href = docsPath(doc.id)
+      const isCurrent = isCurrentPath(currentPath, href)
+      return (
+        <li>
+          <a
+            href={href}
+            aria-current={isCurrent ? 'page' : undefined}
+            class="block px-3 py-2 text-sm rounded-lg transition-colors
+              text-text-secondary hover:text-brand-600 hover:bg-brand-50
+              aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-600 aria-[current=page]:font-medium"
+          >
+            {doc.data.title}
+          </a>
+        </li>
+      )
+    })
+  }
+</ul>

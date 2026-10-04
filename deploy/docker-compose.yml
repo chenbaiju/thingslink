@@ -1,0 +1,364 @@
+# ThingsLink 本地开发依赖栈
+#
+# 用法见 deploy/README.md。常用命令：
+#   make up        启动核心栈（pg / redis / redpanda / emqx / minio）
+#   make up-all    启动核心栈 + 管理 UI + 可观测
+#   make reset     删除所有数据卷重来
+#
+# 说明：
+# - 所有服务只监听 127.0.0.1，不对局域网暴露。
+# - 核心服务默认启动；管理 UI 与可观测组件放在 profile 里，按需启动。
+# - 镜像 tag 全部固定在 .env，不用 latest（latest 会在某天静默升级并弄坏本地环境）。
+
+name: thingslink
+
+x-common: &common
+  restart: unless-stopped
+  networks: [thingslink]
+  extra_hosts:
+    # 让容器内的服务能回连宿主机上跑的 Spring Boot（EMQX 认证回调、Prometheus 抓取都要用）。
+    # macOS/Windows 的 Docker Desktop 自带该解析，Linux 需要这一行。
+    - "host.docker.internal:host-gateway"
+
+networks:
+  thingslink:
+    driver: bridge
+
+volumes:
+  pg-data:
+  redis-data:
+  redpanda-data:
+  emqx-data:
+  emqx-log:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+
+services:
+
+  # ---------------------------------------------------------------- PostgreSQL + TimescaleDB
+  # 业务数据 + 时序数据（架构文档 3 节：不额外引入 InfluxDB）。
+  # 镜像用 timescaledb-ha 而不是 timescaledb：前者是 multi-arch（含 arm64），
+  # 后者的部分 tag 只发布了 amd64，在 Apple Silicon 上会走 QEMU 模拟，慢且不稳。
+  postgres:
+    <<: *common
+    image: timescale/timescaledb-ha:${TIMESCALEDB_TAG}
+    container_name: tc-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # 关掉 timescaledb-ha 镜像里默认开启的 Patroni/HA 逻辑，本地只要单实例
+      PGDATA: /home/postgres/pgdata/data
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb
+      - -c
+      - max_connections=200
+      # 本地开发打开慢查询日志，方便 S5 之后定位问题
+      - -c
+      - log_min_duration_statement=500
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+    volumes:
+      - pg-data:/home/postgres/pgdata
+      # 这里挂进去只是常规做法（数据卷为空时自动执行一次）。
+      # 但不依赖它：Makefile 的 `make up` 会显式跑一次 db-bootstrap 把同样的 SQL
+      # 灌进去。原因有二 —— timescaledb-ha 是 Patroni 基础镜像，对 initdb.d 的
+      # 支持不像标准 postgres 镜像那样有保证；而且改了脚本后不必 reset 才生效。
+      # 脚本里所有语句都是幂等的（IF NOT EXISTS），重复执行安全。
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  # ---------------------------------------------------------------- Redis
+  # 用途：设备在线态、热影子缓存、限流令牌桶、分布式锁。
+  #
+  # 淘汰策略这里定为 noeviction，理由见 deploy/README.md「Redis 淘汰策略」一节：
+  # maxmemory-policy 是实例级而非 db 级，限流键被 LRU 淘汰会导致限流静默失效，
+  # 比影子缓存 miss 危险得多。影子缓存靠显式 TTL 控制体积，不靠淘汰。
+  redis:
+    <<: *common
+    image: redis:${REDIS_TAG}
+    container_name: tc-redis
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD}
+      - --maxmemory
+      - ${REDIS_MAXMEMORY}
+      - --maxmemory-policy
+      - noeviction
+      - --appendonly
+      - "yes"
+    ports:
+      - "127.0.0.1:${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ---------------------------------------------------------------- Redpanda（Kafka 协议）
+  # 决策 #6：本地用 Redpanda（单容器、无 ZooKeeper、Kafka 协议兼容），
+  # 应用侧只依赖 Kafka 协议，生产可无缝换成 Kafka。
+  #
+  # 双 listener 是必配项：
+  #   internal  redpanda:9092    容器之间用（Redpanda Console、未来容器化的后端）
+  #   external  localhost:19092  宿主机上跑的 Spring Boot 用
+  # 只配一个的话，要么后端连不上，要么容器间连不上，且报错信息很有迷惑性
+  # （能建连接但拿到的 broker 地址不可达，表现为超时而不是拒绝）。
+  redpanda:
+    <<: *common
+    image: redpandadata/redpanda:${REDPANDA_TAG}
+    container_name: tc-redpanda
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+      - --overprovisioned
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:${REDPANDA_PORT}
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --schema-registry-addr=internal://0.0.0.0:8081
+      - --default-log-level=info
+    ports:
+      - "127.0.0.1:${REDPANDA_PORT}:19092"   # Kafka bootstrap（宿主机后端用这个）
+      - "127.0.0.1:9644:9644"                # Admin API
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+      # 首次选主前载入集群配置，确保任何客户端连接前已经禁止自动建主题。
+      - ./redpanda/bootstrap.yaml:/etc/redpanda/.bootstrap.yaml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  # 一次性任务：按决策 #7 创建主题并固定分区数。
+  # 不能依赖自动创建主题——自动创建出来的分区数是 broker 默认值（通常 1），
+  # 而分区数事后无法安全调整（架构文档 5.1：扩分区会打断历史顺序）。
+  #
+  # 放在 init profile 里，不随 `up` 自动启动 —— `docker compose up --wait` 会把
+  # 「跑完就退出的容器」判定为失败，混在核心栈里会让 make up 永远红。
+  # 由 Makefile 用 `run --rm` 显式调用，同步等待其完成。
+  redpanda-init:
+    image: redpandadata/redpanda:${REDPANDA_TAG}
+    container_name: tc-redpanda-init
+    profiles: [init]
+    networks: [thingslink]
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        RPK="rpk --brokers redpanda:9092"
+        create() {
+          # 幂等只允许吞掉“主题已存在”。连接失败、选主失败或参数错误必须让 bootstrap 红灯，
+          # 否则 `make up` 会在缺主题时假成功，直到第一条真实业务消息才暴露 BrokerNotAvailable。
+          local output rc
+          if output="$$( $$RPK topic create "$$1" -p "$$2" -r 1 -c retention.ms="$$3" 2>&1 )"; then
+            printf '%s\n' "$$output"
+            return 0
+          else
+            rc=$$?
+          fi
+          if printf '%s\n' "$$output" | grep -qE 'TOPIC_ALREADY_EXISTS|already exists'; then
+            printf 'topic %s already exists\n' "$$1"
+            return 0
+          fi
+          printf 'failed to create topic %s (exit %s):\n%s\n' "$$1" "$$rc" "$$output" >&2
+          return "$$rc"
+        }
+        #      主题                          分区  保留期(ms)
+        create tc.device.uplink.raw          12    604800000     # 7d  设备原始上行
+        create tc.device.uplink.normalized   12    604800000     # 7d  标准化后的上行消息
+        create tc.device.uplink.processed    12    604800000     # 7d  规则成功后待物模型摄入
+        create tc.device.topo                12    604800000     # 7d  网关拓扑/子设备上下线（key=网关ID）
+        create tc.device.batch               12    604800000     # 7d  网关批量属性上报（key=网关ID）
+        create tc.device.topo.reply          12    604800000     # 7d  网关拓扑上报回执（key=网关ID）
+        create tc.device.config              12    604800000     # 7d  网关配置下发（key=网关ID）
+        create tc.device.config.reply        12    604800000     # 7d  网关配置回执（key=网关ID）
+        create tc.device.modbus.request      12    604800000     # 7d  Modbus 读请求下发（key=网关ID）
+        create tc.device.modbus.response     12    604800000     # 7d  Modbus 响应（key=网关ID）
+        create tc.device.downlink            12    604800000     # 7d  下行命令/属性设置
+        create tc.device.command.terminal    12    604800000     # 7d  设备操作终态回写
+        create tc.device.realtime            12    86400000      # 1d  可丢失实时增量；断线后由 REST 补拉
+        create tc.device.lifecycle            6    2592000000    # 30d 上下线等生命周期事件
+        create tc.domain.event                6    2592000000    # 30d 领域事件（outbox 投递目标）
+        create tc.notification                6    604800000     # 7d  通知投递
+        create tc.retry                       6    604800000     # 7d  重试主题
+        create tc.rule.retry.1m               6    604800000     # 7d  规则首次退避重试
+        create tc.rule.retry.5m               6    604800000     # 7d  规则末次退避重试
+        create tc.rule.automation.property.accepted 6 604800000 # 7d 合格属性自动化事件
+        create tc.integration.webhook.source 6 604800000 # 7d 原事务Webhook来源
+        create tc.rule.notification           6    604800000     # 7d  规则通知投递
+        create tc.rule.dlq                     3    2592000000    # 30d 规则永久失败与重试耗尽
+        create tc.dlq                         3    2592000000    # 30d 死信
+        echo "--- topics ---"
+        $$RPK topic list
+    restart: "no"
+
+  # ---------------------------------------------------------------- EMQX
+  # MQTT 接入。S3 起默认关闭匿名连接，并从 base.hocon 加载 fail-closed 的 HTTP 认证与 ACL。
+  emqx:
+    <<: *common
+    image: emqx/emqx:${EMQX_TAG}
+    container_name: tc-emqx
+    environment:
+      EMQX_NODE__NAME: emqx@127.0.0.1
+      EMQX_NODE__COOKIE: ${EMQX_COOKIE}
+      EMQX_DASHBOARD__DEFAULT_USERNAME: ${EMQX_DASHBOARD_USER}
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD}
+      # ADR 0048 的 G1 资格固定单节点；生产集群还必须另有 Commercial License receipt。
+      EMQX_CLUSTER__DISCOVERY_STRATEGY: singleton
+      # 没有可用认证器时也不得回退匿名连接；故障期间拒绝比开放无鉴权入口安全。
+      EMQX_ALLOW_ANONYMOUS: "false"
+    ports:
+      - "127.0.0.1:${EMQX_MQTT_PORT}:1883"    # MQTT
+      - "127.0.0.1:8883:8883"                 # MQTT over TLS
+      - "127.0.0.1:${EMQX_DASHBOARD_PORT}:18083"  # Dashboard
+    volumes:
+      # 认证与 ACL 由源码管理，避免开发机 Dashboard 的临时配置成为唯一事实来源。
+      - ./emqx/base.hocon:/opt/emqx/etc/base.hocon:ro
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  # ---------------------------------------------------------------- MinIO
+  # 对象存储：固件、设备图片、导出文件。
+  #
+  # 预签名 URL 的内外 endpoint 陷阱（架构缺口/手册 S0-2）：
+  # 后端如果用 http://minio:9000 签名，浏览器访问 http://localhost:9000 会因为
+  # host 不匹配而签名校验失败（403）。所以从第一天就要区分两个配置项：
+  #   things-link.storage.internal-endpoint = http://localhost:9000  （宿主机后端连接用）
+  #   things-link.storage.external-endpoint = http://localhost:9000  （签发给浏览器/设备用）
+  # 本地两者恰好相同，生产会不同 —— 但代码里必须是两个独立配置，不能只有一个。
+  minio:
+    <<: *common
+    image: minio/minio:${MINIO_TAG}
+    container_name: tc-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:${MINIO_CONSOLE_PORT}
+    ports:
+      - "127.0.0.1:${MINIO_PORT}:9000"          # S3 API
+      - "127.0.0.1:${MINIO_CONSOLE_PORT}:9001"  # Console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  # 一次性任务：建桶。同样放 init profile，理由见上。
+  minio-init:
+    image: minio/mc:${MINIO_MC_TAG}
+    container_name: tc-minio-init
+    profiles: [init]
+    networks: [thingslink]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mc alias set tc http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+        for b in firmware device-image export backup; do
+          mc mb --ignore-existing tc/$$b
+        done
+        # 固件桶禁止匿名读：分发一律走短时效预签名 URL（架构文档 12.1）
+        mc anonymous set none tc/firmware
+        # ADR0119/D-153：平台不建桶也不借用他桶，固件桶版本化由部署侧负责。存储资格要求
+        # 桶版本化为 ENABLED；`mc version enable` 对已开启的桶幂等，可重复执行。
+        mc version enable tc/firmware
+        mc ls tc
+    restart: "no"
+
+  # ---------------------------------------------------------------- 管理 UI（profile: tools）
+  redpanda-console:
+    <<: *common
+    image: redpandadata/console:${REDPANDA_CONSOLE_TAG}
+    container_name: tc-redpanda-console
+    profiles: [tools]
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "127.0.0.1:${REDPANDA_CONSOLE_PORT}:8080"
+
+  pgadmin:
+    <<: *common
+    image: dpage/pgadmin4:${PGADMIN_TAG}
+    container_name: tc-pgadmin
+    profiles: [tools]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT}:80"
+
+  # ---------------------------------------------------------------- 可观测（profile: obs）
+  # 抓取宿主机上 Spring Boot 的 /actuator/prometheus。
+  # S7 之前基本用不上，但配置先就位，免得到时候「补埋点的 Sprint 永远不会到来」。
+  prometheus:
+    <<: *common
+    image: prom/prometheus:${PROMETHEUS_TAG}
+    container_name: tc-prometheus
+    profiles: [obs]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT}:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    <<: *common
+    image: grafana/grafana:${GRAFANA_TAG}
+    container_name: tc-grafana
+    profiles: [obs]
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT}:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro

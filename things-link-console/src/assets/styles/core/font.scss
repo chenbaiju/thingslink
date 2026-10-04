@@ -1,0 +1,13 @@
+// ThingsLink Cereal 品牌字体（可变字体 - 支持连续字重）
+@font-face {
+  font-family: 'ThingsLink Cereal';
+  src: url('/fonts/ThingsLink_Cereal_VF_W_Wght.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+// 全局默认字体
+body {
+  font-family: 'ThingsLink Cereal', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+}

@@ -1,0 +1,2057 @@
+{
+  "contract": "G3-LOCAL-4a",
+  "operations": [
+    {
+      "method": "get",
+      "path": "/api/v1/operations/self-hosted/enrollment-requests",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/operations/self-hosted/enrollment-requests",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/operations/self-hosted/enrollment-requests/{requestId}/review",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/operations/self-hosted/enrollment-requests/{requestId}/review",
+      "idempotency": "operations-body"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/webhooks/{subscriptionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/webhooks/{subscriptionId}",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/task-jobs/{jobId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/task-jobs/{jobId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/uploads/{sessionId}/content",
+      "idempotency": "upload-content"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/dashboard-grants/{dashboardId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/dashboard-grants/{dashboardId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{id}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/devices/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/devices/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/tags",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/tags",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/shadow/desired",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/modbus-points/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/modbus-points/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/access-config",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/access-config",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/device-types/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/device-types/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/properties/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/properties/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/events/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/events/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/commands/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/commands/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/device-groups/{groupId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/device-groups/{groupId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-groups/{groupId}/devices",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/device-groups/{groupId}/devices",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/draft",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/draft",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/automations/{id}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/automations/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/automations/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/draft",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/draft",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-rules/{ruleId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/alarm-rules/{ruleId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/alarm-rules/{ruleId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-templates/{templateId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-templates/{templateId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-recipients/{recipientId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-recipients/{recipientId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-groups/{groupId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-groups/{groupId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-bindings/{bindingId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-bindings/{bindingId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/app/push-tokens",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/shares/{shareId}/devices/snapshots/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/shares/{shareId}/devices/current-values/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/shares/{shareId}/alarms/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/webhooks",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/webhooks",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/webhooks/{subscriptionId}/rotate",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/webhooks/{subscriptionId}/revoke",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/webhooks/{subscriptionId}/resume",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/webhooks/{subscriptionId}/pause",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/webhooks/deliveries/{deliveryId}/recover",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/task-jobs",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/task-jobs",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/task-jobs/{jobId}/runs",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/task-jobs/{jobId}/enable",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/task-jobs/{jobId}/disable",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scenes",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/scenes",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}/versions/{versionId}/activate",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}/pause",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}/executions",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/restore",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/realtime-tickets",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/trust-domains/{trustDomain}/bundles",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/uploads",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/uploads",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/uploads/{sessionId}/cancel",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/revocations",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/release/downloads",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/publications",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/publications",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/deprecations",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/cancel",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/device-types/{deviceTypeId}/baseline/registrations",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/starting",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/scheduling",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/resumptions",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/pauses",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/cancellation",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/batch-advancements",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/message-rules",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/message-rules",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}/versions/{versionId}/debug",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}/versions/{versionId}/activate",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}/pause",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/members",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/members",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/members/{accountId}/transfer-owner",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/exports",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/exports/{exportId}/download-url",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/end-users",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/end-users",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/suspend",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/role",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "patch",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/role",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/restore",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/end-users/device-claim-tokens",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/modbus-points",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/modbus-points",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/modbus-points/publish",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/credentials",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/credentials",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/commands",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices/snapshots/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices/current-values/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/devices/current-value-snapshots/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-types",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-types",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-types/{id}/publish",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-types/{id}/product-credential",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/properties",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/properties",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/events",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/events",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/commands",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-types/{deviceTypeId}/commands",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-topologies",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-topologies",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-groups",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/device-groups",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/dashboards",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/dashboards",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/withdraw",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/versions",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/versions",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/versions/{versionId}/rollback",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/soft-delete",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/shares",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/shares",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/shares/{shareId}/revoke",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/automations",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/automations",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/automations/{id}/versions/{versionId}/activate",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/automations/{id}/pause",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/applications",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/applications",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/withdraw",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/versions",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/versions",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/versions/{versionId}/rollback",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/soft-delete",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/api-keys",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/api-keys",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/api-keys/{keyId}/rotate",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/api-keys/{keyId}/revoke",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarms/{instanceId}/clear",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarms/{instanceId}/ack",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarms/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-rules",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarm-rules",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-rules/{ruleId}/notification-bindings",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarm-rules/{ruleId}/notification-bindings",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarm-notifications/read",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-templates",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-templates",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-groups",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-groups",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-groups/{groupId}/recipients",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-groups/{groupId}/recipients",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/operations/tenants/{tenantId}/adjustments",
+      "idempotency": "operations-body"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/operations/tenants/{tenantId}/adjustments/{adjustmentId}/revoke",
+      "idempotency": "operations-body"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/emqx/register",
+      "idempotency": "broker-callback"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/emqx/events/message-published",
+      "idempotency": "broker-callback"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/emqx/events/disconnected",
+      "idempotency": "broker-callback"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/emqx/events/connected",
+      "idempotency": "broker-callback"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/emqx/auth",
+      "idempotency": "broker-callback"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/emqx/acl",
+      "idempotency": "broker-callback"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/switch-project",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/register",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/refresh",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/password/reset",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/password/forgot",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/logout",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/login",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/email/verify",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/email/resend",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/realtime-tickets",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/devices/{deviceId}/transfer-tokens",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/devices/{deviceId}/share-tokens",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/devices/{deviceId}/commands",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/devices/snapshots/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/devices/current-values/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/device-transfers",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/device-shares",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/device-claims",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/browser-auth/refresh",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/browser-auth/logout",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/browser-auth/login",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/auth/refresh",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/auth/password",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/auth/logout",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/auth/login",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/alarms/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/open/v1/realtime/tickets",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/open/v1/devices/{deviceId}/commands",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/open/v1/devices/current-values/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/open/v1/alarms/query",
+      "idempotency": "read"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "patch",
+      "path": "/api/v1/projects/{projectId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/members/{accountId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "patch",
+      "path": "/api/v1/projects/{projectId}/members/{accountId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "patch",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "patch",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/system/status",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/system/menus",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/shares/{shareId}/schema",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/shares/{shareId}/devices/{deviceId}/properties/{propertyKey}/history",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/shares/{shareId}/devices/catalog",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/shares/{shareId}/context",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/webhooks/recovery-operations/{operationId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/webhooks/operations/{operationId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/webhooks/events",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/webhooks/deliveries",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/webhooks/deliveries/{deliveryId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/task-jobs/{jobId}/executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}/versions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}/versions/{versionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scenes/{sceneId}/version-history",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scene-executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scene-executions/{executionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/scene-executions/scene-options",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/rule-node-types",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/rule-executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/rule-executions/rule-options",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/rule-executions/attempts",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/quota",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/overview",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/trust-domains",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/trust-domains/{trustDomain}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/trust-domains/{trustDomain}/keys",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/uploads/{sessionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/release",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/publications/{publicationId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/firmwares/{firmwareId}/lifecycle",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/devices/{deviceId}/jobs",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/devices/{deviceId}/eligibility",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/device-types/{deviceTypeId}/baseline",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/device-types/{deviceTypeId}/baseline/versions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/jobs",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/jobs/{jobId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/jobs/{jobId}/rollback-preflight",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/execution",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/campaigns/{campaignId}/batches",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/ota/audits",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/messages",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}/versions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}/versions/{versionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/message-rules/{ruleId}/version-history",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/exports/{exportId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/devices",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/dashboard-grants",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/telemetry/property",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/telemetry/property/history",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/telemetry/property/history/versioned",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/shadow",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/messages",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/messages/{logId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/connections",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/commands/{commandId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/binding-metadata",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/access-diagnostics",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/search",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/catalog",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-types/{id}/thing-model-versions/latest",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-types/search",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/versions/{versionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/dashboards/{dashboardId}/shares/configuration",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/automations/{id}/versions/{versionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/automations/{id}/version-history",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/automation-executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/automation-executions/{executionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/applications/{applicationId}/versions/{versionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/api-keys/{keyId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/api-keys/operations/{operationId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarms",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarms/{instanceId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarms/{instanceId}/events",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-notifications",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-notifications/unread-count",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarm-notification-deliveries",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/recycle-bin",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/project-regions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/plans",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/plans/{planCode}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/operations/tenants/{tenantId}/adjustments/context",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/operations/tenants/{tenantId}/adjustments/by-key/{key}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/auth/me",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices/{deviceId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices/{deviceId}/telemetry/history",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices/{deviceId}/properties/{propertyKey}/history/versioned",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices/{deviceId}/current-values",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices/{deviceId}/commands/{commandId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices/{deviceId}/command-definitions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/devices/catalog",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/applications/{appKey}/versions/{applicationVersionId}/dashboards/{dashboardVersionId}/schema",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/applications/{appKey}/resolve",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/applications/{appKey}/current",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/open/v1/models/{versionId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/open/v1/devices",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/open/v1/devices/{deviceId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/open/v1/devices/{deviceId}/history",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/open/v1/devices/{deviceId}/commands/{commandId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/open/v1/devices/{deviceId}/commands/by-key",
+      "idempotency": "read"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/members/me",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/devices/{deviceId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/tags/{key}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/credentials/{id}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/device-topologies/{subDeviceId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/app/push-tokens/{installationId}",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/app/devices/{deviceId}/binding",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{id}/location-point",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/devices/{id}/location-point",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/alarms/device-status",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/invitations",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/invitations",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/invitations/{invitationId}/resend",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/invitations/{invitationId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/project-invitations",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/project-invitations/{invitationId}/accept",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/project-invitation/preview",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/auth/project-invitation/register",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/commands",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/end-users",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/task-jobs",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/task-executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/automations",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/automation-executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/scene-candidates",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/scene-executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/message-rule-candidates",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/message-rule-executions",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/message-rule-actions",
+      "idempotency": "read"
+    }
+  ],
+  "pages": [
+    {
+      "name": "DashboardShareAlarmQueryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "AlarmDeviceQueryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "WebAppAlarmQueryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAlarmDeviceQueryItem",
+      "hasMore": true
+    },
+    {
+      "name": "DashboardShareDeviceCatalogResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageWebhookSubscriptionView",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageEventView",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeliveryView",
+      "hasMore": true
+    },
+    {
+      "name": "RuleManagementPageRuleSceneView",
+      "hasMore": false
+    },
+    {
+      "name": "RuleManagementPageRuleSceneVersionView",
+      "hasMore": false
+    },
+    {
+      "name": "CursorPageRuleSceneExecutionResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageRuleExecutionSummaryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaTrustDomainSummaryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaTrustKeyResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaFirmwareResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaUploadResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaPublicationResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaDeviceJobSummaryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaTypeBaselineVersionResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaCampaignSummaryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageOtaAuditResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageMessageLogResponse",
+      "hasMore": true
+    },
+    {
+      "name": "RuleManagementPageMessageRuleView",
+      "hasMore": false
+    },
+    {
+      "name": "RuleManagementPageMessageRuleVersionView",
+      "hasMore": false
+    },
+    {
+      "name": "CursorPageEndUserResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAppUserDashboardGrantResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceResponse",
+      "hasMore": true
+    },
+    {
+      "name": "DeviceRuntimeCatalogResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceTypeResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDashboardCatalogResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDashboardVersionSummaryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDashboardShareSummaryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "RuleManagementPageAutomationView",
+      "hasMore": false
+    },
+    {
+      "name": "RuleManagementPageAutomationVersionView",
+      "hasMore": false
+    },
+    {
+      "name": "RuleManagementPageAutomationExecutionView",
+      "hasMore": false
+    },
+    {
+      "name": "CursorPageApplicationCatalogResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageApplicationVersionSummaryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageApiKeyView",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAlarmInstanceResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAlarmEventResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAlarmRuleResponse",
+      "hasMore": true
+    },
+    {
+      "name": "AlarmInboxPageResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAlarmNotificationTemplateResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAlarmNotificationGroupResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAlarmNotificationDeliveryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageAppDeviceResponse",
+      "hasMore": true
+    },
+    {
+      "name": "WebAppDeviceCatalogResponse",
+      "hasMore": true
+    },
+    {
+      "name": "OpenDevicePage",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageProjectInvitationView",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceCommandHistoryResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceEndUserResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceTaskJobResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceTaskExecutionResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceAutomationResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceAutomationExecutionResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceSceneResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceSceneExecutionResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceMessageRuleResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceMessageRuleExecutionResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPageDeviceMessageRuleActionResponse",
+      "hasMore": true
+    }
+  ]
+}

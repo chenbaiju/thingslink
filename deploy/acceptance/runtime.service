@@ -1,0 +1,16 @@
+[Unit]
+Description=ThingsLink isolated acceptance Docker daemon
+After=network.target
+[Service]
+Type=simple
+Environment=PATH=/opt/thingslink-acceptance/runtime/docker:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/thingslink-acceptance/runtime/docker/dockerd --config-file /opt/thingslink-acceptance/runtime/daemon.json
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=1048576
+LimitNPROC=infinity
+Delegate=yes
+KillMode=process
+TimeoutStopSec=60
+[Install]
+WantedBy=multi-user.target

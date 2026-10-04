@@ -1,0 +1,14 @@
+dist
+node_modules
+public
+.husky
+.vscode
+
+# Playwright 产物不是源码，Stylelint 不校验 ESLint 已忽略的生成物
+.playwright-browsers
+test-results
+playwright-report
+
+src/components/Layout/MenuLeft/index.vue
+src/assets
+stats.html

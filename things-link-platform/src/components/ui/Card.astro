@@ -1,0 +1,22 @@
+---
+/**
+ * 基础卡片容器。
+ *
+ * 只负责表面样式（底色、圆角、阴影、可选悬停抬升），
+ * 内边距与布局由调用方通过 class 决定。
+ */
+import { cardClasses } from './styles'
+
+export interface Props {
+  /** 可交互卡片启用悬停抬升；纯展示卡片保持静止 */
+  hoverable?: boolean
+  class?: string
+}
+
+const { hoverable = false, class: className = '' } = Astro.props
+const classes = cardClasses({ hoverable })
+---
+
+<div class:list={[classes, className]}>
+  <slot />
+</div>

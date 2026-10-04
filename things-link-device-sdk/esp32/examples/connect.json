@@ -1,0 +1,12 @@
+{
+  "ssid": "REPLACE_WIFI_SSID",
+  "wifiPassword": "REPLACE_WIFI_PASSWORD",
+  "projectKey": "REPLACE_PROJECT_KEY",
+  "deviceKey": "REPLACE_DEVICE_KEY",
+  "host": "REPLACE_BROKER_HOST",
+  "port": 8883,
+  "accessToken": "REPLACE_ACCESS_TOKEN",
+  "caPem": "REPLACE_CA_PEM",
+  "modelVersion": "1.0.0",
+  "mode": "connect"
+}

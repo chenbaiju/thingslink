@@ -1,0 +1,60 @@
+---
+/**
+ * 文档页面专用布局。
+ *
+ * Header + 侧边栏 + 内容区 + 页脚。
+ */
+import Header from '@/components/Header.astro'
+import Footer from '@/components/Footer.astro'
+import DocsSidebar from '@/components/docs/DocsSidebar.astro'
+import DocsToc from '@/components/docs/DocsToc.astro'
+import DocsPagination from '@/components/docs/DocsPagination.astro'
+import SeoHead from '@/components/SeoHead.astro'
+import type { Props as DocsNavProps } from '@/components/docs/DocsNavLinks.astro'
+import { SITE } from '@/config'
+import '@/styles/global.css'
+import '@/styles/docs.css'
+
+export interface Props {
+  title: string
+  description?: string
+  docs: DocsNavProps['docs']
+  currentDocId: string
+  /** 当前文档页面的 headings，供 DocsToc 使用 */
+  headings?: Array<{ depth: number; slug: string; text: string }>
+}
+
+const { title, description, headings = [], docs, currentDocId } = Astro.props
+const currentIndex = docs.findIndex((doc) => doc.id === currentDocId)
+const previous = currentIndex > 0 ? docs[currentIndex - 1] : undefined
+const next = currentIndex >= 0 ? docs[currentIndex + 1] : undefined
+const pageTitle = title === '文档' ? `${title} — ${SITE.name}` : `${title} — 文档 — ${SITE.name}`
+const pageDescription = description ?? SITE.description
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <SeoHead title={pageTitle} description={pageDescription} />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <Header />
+    <div class="flex-1 flex flex-col lg:flex-row">
+      <!-- 左侧导航 -->
+      <DocsSidebar docs={docs} />
+      <!-- 主内容 -->
+      <main id="main-content" class="flex-1 min-w-0" tabindex="-1">
+        <div class="flex">
+          <article class="flex-1 min-w-0 px-6 py-10 md:px-12 lg:px-16 max-w-3xl mx-auto">
+            <slot />
+            <DocsPagination previous={previous} next={next} />
+          </article>
+          <!-- 右侧目录 -->
+          <DocsToc headings={headings} />
+        </div>
+      </main>
+    </div>
+    <Footer />
+  </body>
+</html>

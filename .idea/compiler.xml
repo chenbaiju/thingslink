@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="things-link-entitlement" />
+        <module name="things-link-simulator" />
+        <module name="things-link-access" />
+        <module name="jagonzn-cloud" />
+        <module name="things-link-rule" />
+        <module name="things-link-integration" />
+        <module name="jagonzn-service" />
+        <module name="things-link-ota" />
+        <module name="things-link-device" />
+        <module name="things-link-testing" />
+        <module name="things-link-export" />
+        <module name="things-link-iam" />
+        <module name="things-link-ingestion" />
+        <module name="things-link-support" />
+        <module name="things-link-shared" />
+        <module name="things-link-dashboard" />
+        <module name="things-link-telemetry" />
+        <module name="things-link-enduser" />
+        <module name="things-link-bootstrap" />
+        <module name="things-link-runtime" />
+        <module name="things-link-task" />
+        <module name="things-link-alarm" />
+        <module name="things-link-project" />
+        <module name="things-link-issuer" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="jagonzn-cloud" options="-parameters" />
+      <module name="jagonzn-service" options="-parameters" />
+      <module name="things-link-access" options="-parameters" />
+      <module name="things-link-alarm" options="-parameters" />
+      <module name="things-link-bootstrap" options="-parameters" />
+      <module name="things-link-dashboard" options="-parameters" />
+      <module name="things-link-device" options="-parameters" />
+      <module name="things-link-enduser" options="-parameters" />
+      <module name="things-link-entitlement" options="-parameters" />
+      <module name="things-link-export" options="-parameters" />
+      <module name="things-link-iam" options="-parameters" />
+      <module name="things-link-ingestion" options="-parameters" />
+      <module name="things-link-integration" options="-parameters" />
+      <module name="things-link-issuer" options="-parameters" />
+      <module name="things-link-ota" options="-parameters" />
+      <module name="things-link-project" options="-parameters" />
+      <module name="things-link-rule" options="-parameters" />
+      <module name="things-link-runtime" options="-parameters" />
+      <module name="things-link-shared" options="-parameters" />
+      <module name="things-link-simulator" options="-parameters" />
+      <module name="things-link-support" options="-parameters" />
+      <module name="things-link-task" options="-parameters" />
+      <module name="things-link-telemetry" options="-parameters" />
+      <module name="things-link-testing" options="-parameters" />
+    </option>
+  </component>
+</project>

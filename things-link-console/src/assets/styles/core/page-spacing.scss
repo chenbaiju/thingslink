@@ -1,0 +1,64 @@
+// Console 页面间距：外层左右各 10px + 页面内边距 10px = 内容实际左右各 20px。
+:root {
+  --console-page-spacing: 10px;
+}
+
+.console-page {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--art-full-height);
+  padding: var(--console-page-spacing) !important;
+}
+
+.console-auth-page,
+.console-exception-page {
+  box-sizing: border-box;
+  padding: var(--console-page-spacing) !important;
+}
+
+// 主要页面卡片共用留白；表单项、菜单和画布内容仍由组件自己的布局负责。
+.console-page .el-card > .el-card__body,
+.console-page .el-card > .el-card__header {
+  padding: var(--console-page-spacing);
+}
+
+// 筛选行沿用模板的左右留白；上下留白继续与页面卡片保持一致。
+.console-page .console-list-filter > .el-card__body {
+  padding-inline: 20px;
+}
+
+// 筛选卡片与提示区保持独立间隔。
+.console-page > .console-list-filter + .el-alert {
+  margin-top: var(--console-page-spacing);
+}
+
+.console-page > .el-card + .el-card {
+  margin-top: var(--console-page-spacing);
+}
+
+// 列表筛选与数据卡片保持同一间隔，也覆盖执行记录等嵌套子面板。
+.console-page .console-list-filter + .console-list-data {
+  margin-top: var(--console-page-spacing);
+}
+
+// 单主要框体填充页面剩余高度；使用最小高度，让长列表仍按内容自然增长。
+.console-page--single-panel {
+  display: flex;
+  flex-direction: column;
+  > * {
+    flex-shrink: 0;
+  }
+  > .console-page__main-panel {
+    flex: 1 0 auto;
+    width: 100%;
+  }
+}
+
+.console-iframe-page {
+  display: flex;
+  flex-direction: column;
+  > iframe {
+    flex: 1;
+    min-height: calc(var(--art-full-height) - 20px);
+  }
+}

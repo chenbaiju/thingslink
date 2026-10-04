@@ -1,0 +1,70 @@
+---
+/**
+ * 全局顶栏。
+ *
+ * 左侧 Logo + 中间导航 + 右侧 CTA 按钮。
+ * 移动端显示汉堡菜单（原生 details/summary，无脚本可用）。
+ */
+import { SITE, NAV, normalizePath, isCurrentPath } from '@/config'
+import Button from '@/components/ui/Button.astro'
+import MobileMenu from '@/components/MobileMenu.astro'
+
+const currentPath = normalizePath(Astro.url.pathname)
+
+/*
+ * 当前项判定：`/#features` 是跨页锚点，在任何页面都不算“当前页”，
+ * 因此只有站内路径参与比较。
+ */
+const navItems = NAV.map((item) => ({
+  ...item,
+  isCurrent: item.href.startsWith('/#') ? false : isCurrentPath(currentPath, item.href)
+}))
+---
+
+<header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
+  <nav class="container-wide flex items-center justify-between h-header" aria-label="主导航">
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-2 font-bold text-xl text-text-primary">
+      <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-brand-gradient-logo">
+        TC
+      </span>
+      <span>{SITE.name}</span>
+    </a>
+
+    <!-- 桌面导航 -->
+    <div class="hidden md:flex items-center gap-4 lg:gap-8">
+      {navItems.map(item => (
+        <a
+          href={item.href}
+          aria-current={item.isCurrent ? 'page' : undefined}
+          class="text-sm text-text-secondary hover:text-brand-600 transition-colors
+            aria-[current=page]:text-brand-600 aria-[current=page]:font-medium">
+          {item.label}
+        </a>
+      ))}
+    </div>
+
+    <!-- 桌面 CTA -->
+    {SITE.consoleUrl && <div class="hidden md:flex items-center gap-3">
+      <Button href={SITE.consoleUrl} variant="primary" size="sm" external>进入控制台</Button>
+    </div>}
+
+    <!-- 移动端汉堡按钮 -->
+    <MobileMenu panelId="site-menu">
+      <div class="flex flex-col gap-2">
+        {
+          navItems.map((item) => (
+            <a
+              href={item.href}
+              aria-current={item.isCurrent ? 'page' : undefined}
+              class="px-4 py-3 text-sm text-text-secondary hover:text-brand-600 hover:bg-gray-50 rounded-lg
+                transition-colors aria-[current=page]:text-brand-600"
+            >
+              {item.label}
+            </a>
+          ))
+        }
+      </div>
+    </MobileMenu>
+  </nav>
+</header>

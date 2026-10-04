@@ -1,0 +1,182 @@
+# S3 设备认证基线。EMQX 6.2.3 会先读取本文件，再叠加 Dashboard 写入的 cluster.hocon。
+# 回调不可用时 HTTP backend 返回 ignore；认证链没有后续 authenticator，因此连接被拒绝。
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+# G1-C4a-1 / ADR 0046：非 clean MQTT 3 会话与匹配 QoS 1 消息必须落盘，普通内存 session
+# 不能跨 EMQX 重启恢复。1d 是本机消息恢复窗口；它不是生产 RPO/RTO，G3 必须按磁盘容量重算。
+durable_sessions {
+  enable = true
+  message_retention_period = 1d
+}
+
+# ADR 0048 的本机资格固定为单节点内部开发；生产/集群还必须先取得 Commercial License receipt。
+# 显式 singleton 既符合当前用途，也防止默认发现策略把单机资格误报为集群资格。
+cluster.discovery_strategy = singleton
+
+# EMQX 6 镜像把 Dashboard listener 默认值放在镜像自带 base.hocon；本仓库以只读卷覆盖整份文件，
+# 若不显式补回该根，Erlang 节点会健康但 18083 没有 listener，资格器只能看到连接被提前关闭。
+dashboard.listeners.http.bind = 18083
+
+# MQTT 3.1.1 没有 CONNECT Session Expiry 属性，EMQX 从该值派生非 clean session 生命周期。
+# 48h 必须长于 24h 消息保留，避免短会话先删除订阅进度而让恢复窗口名存实亡。
+mqtt.session_expiry_interval = 48h
+# ADR0194：服务器认证属性决定设备主题空间，内部ingress明确签发空挂载点。
+listeners.tcp.default.mountpoint = "${client_attrs.tc_auth_mountpoint}"
+listeners.ssl.default.mountpoint = "${client_attrs.tc_auth_mountpoint}"
+listeners.ws.default.mountpoint = "${client_attrs.tc_auth_mountpoint}"
+listeners.wss.default.mountpoint = "${client_attrs.tc_auth_mountpoint}"
+# S3.5-1：下面五个回调全部带 X-Broker-Callback-Token（架构文档 8.3，架构缺口 G-01）。
+#
+# 在此之前应用侧这些端点是无鉴权的：知道 projectKey/deviceKey 就能伪造任意设备的
+# 上行消息、把设备打成离线，/auth 还能当成绕开 MQTT 限速的设备密钥暴破入口。
+# 应用侧现在对无凭据或凭据错误一律返回 401（错误码 20030）。
+#
+# ⚠️ 这个值必须与后端 things-link.security.broker-callback.secret **完全一致**。
+#    不一致的症状是：设备全部连不上、上行全部丢失、控制台里所有设备离线，
+#    而 EMQX 日志里只有一个 401 —— 改任意一边时务必两边一起改。
+#
+# ⚠️ 用的是自定义头而不是 Authorization: Bearer。后端同时是 OAuth2 资源服务器，
+#    共用 Authorization 会让请求先被 JWT 解析拦下，症状是「密钥明明对却 401」。
+#
+# ⚠️ 这里是**开发默认值**，已进版本库因此对所有人公开。生产不要用本文件的字面量：
+#    改用 EMQX 的配置管理注入，并同步注入后端的
+#    THINGS_LINK_SECURITY_BROKER_CALLBACK_SECRET。
+#
+# 共享密钥只是第一道。架构文档 8.3 要求**另外**做端口分离或 IP 白名单，两者至少一项。
+# ─────────────────────────────────────────────────────────────────────────────
+# ADR0192：后端凭据缓存仍复核当前平面；Broker不得缓存旧认证allow绕过该查询。
+authentication_settings.node_cache.enable = false
+authentication = [
+  {
+    mechanism = password_based
+    backend = http
+    method = post
+    url = "http://host.docker.internal:8080/api/v1/emqx/auth"
+    headers {
+      "Content-Type" = "application/json"
+      "X-Broker-Callback-Token" = "dev-only-broker-callback-secret-do-not-use-in-production"
+    }
+    body {
+      username = "${username}"
+      password = "${password}"
+      clientid = "${clientid}"
+    }
+    connect_timeout = 2s
+    request_timeout = 3s
+    pool_size = 16
+  }
+]
+
+# 文件 authorizer 默认尾部允许全部，必须由唯一的 HTTP authorizer 替换，并将未匹配动作设为拒绝。
+authorization {
+  no_match = deny
+  deny_action = ignore
+  # ADR0192：配置已切原生协议时，旧连接下一次操作必须查询当前许可。
+  cache.enable = false
+  node_cache.enable = false
+  sources = [
+    {
+      type = http
+      method = post
+      url = "http://host.docker.internal:8080/api/v1/emqx/acl"
+      headers {
+        "Content-Type" = "application/json"
+        "X-Broker-Callback-Token" = "dev-only-broker-callback-secret-do-not-use-in-production"
+      }
+      body {
+        username = "${username}"
+        clientid = "${clientid}"
+        topic = "${topic}"
+        access = "${action}"
+        tc_auth_tenant_id = "${client_attrs.tc_auth_tenant_id}"
+        tc_auth_project_id = "${client_attrs.tc_auth_project_id}"
+        tc_auth_device_id = "${client_attrs.tc_auth_device_id}"
+        tc_auth_credential_version = "${client_attrs.tc_auth_credential_version}"
+        tc_auth_config_version = "${client_attrs.tc_auth_config_version}"
+        tc_auth_connection_id = "${client_attrs.tc_auth_connection_id}"
+      }
+      connect_timeout = 2s
+      request_timeout = 3s
+      pool_size = 16
+    }
+  ]
+}
+
+# ADR 0046 用 Broker 内建 republish 在应用处理前接管全部 QoS 1 非 retained 上行。
+# SELECT 结果由 ${.} 统一 JSON 编码，避免手拼模板未转义 username/topic/clientId 破坏信封边界；
+# payload 先 Base64，任意设备字节不会被规则引擎当成 JSON 或 UTF-8 改写。
+# ADR0123：认证属性四项全缺失才表示旧连接null；半套保留空字符串，由严格v2消费者隔离。
+# 只读取认证器覆盖的client_attrs，不采纳payload或MQTT User Properties自报的认证代际。
+rule_engine.rules.tc_durable_uplink = {
+  enable = true
+  description = "durable v2 envelope for the single manual-ack ingress owner"
+  sql = """SELECT 2 AS schemaVersion, id AS handoffId, username, substr(topic, strlen(client_attrs.tc_auth_mountpoint)) AS topic, base64_encode(payload) AS payloadBase64, qos, flags.retain AS retained, client_attrs.tc_auth_wire_client_id AS clientId, publish_received_at AS publishedAtMs, node AS brokerNode, CASE WHEN is_null(client_attrs.tc_auth_tenant_id) AND is_null(client_attrs.tc_auth_project_id) AND is_null(client_attrs.tc_auth_device_id) AND is_null(client_attrs.tc_auth_credential_version) THEN json_decode('null') ELSE map_put('credentialVersion', map_get('tc_auth_credential_version', client_attrs, ''), map_put('deviceId', map_get('tc_auth_device_id', client_attrs, ''), map_put('projectId', map_get('tc_auth_project_id', client_attrs, ''), map_put('tenantId', map_get('tc_auth_tenant_id', client_attrs, ''), json_decode('{}'))))) END AS authenticatedIdentity FROM "tc/private/device/+/+/tc/v1/+/+/up/#" WHERE qos = 1 AND flags.retain = false"""
+  actions = [
+    {
+      function = republish
+      args = {
+        topic = "tc/internal/v1/ingress/uplink"
+        qos = 1
+        retain = false
+        payload = "${.}"
+        direct_dispatch = false
+      }
+    }
+  ]
+}
+
+# S3-11F 连接事件必须由 Broker 的真实会话生命周期驱动；认证成功只说明凭据有效，不能替代上线事件。
+# EMQX 6 已删除 Bridges V1。一个 connector 只保存公共连接/密钥参数，两项 action 分别保存路径和事件模板；
+# 这既避免重复秘密，又让规则输出仍能独立演进。旧 bridges 根不得恢复，否则 6.x 会静默忽略生命周期回调。
+connectors.http.tc_device_lifecycle = {
+  enable = true
+  url = "http://host.docker.internal:8080"
+  headers = {
+    "content-type" = "application/json"
+    "X-Broker-Callback-Token" = "dev-only-broker-callback-secret-do-not-use-in-production"
+  }
+  connect_timeout = 2s
+  pool_size = 16
+  enable_pipelining = 1
+}
+
+actions.http.tc_client_connected = {
+  enable = true
+  connector = tc_device_lifecycle
+  parameters = {
+    path = "/api/v1/emqx/events/connected"
+    method = post
+    body = "${.}"
+    max_retries = 5
+  }
+  resource_opts = { request_ttl = 3s }
+}
+
+actions.http.tc_client_disconnected = {
+  enable = true
+  connector = tc_device_lifecycle
+  parameters = {
+    path = "/api/v1/emqx/events/disconnected"
+    method = post
+    body = "${.}"
+    max_retries = 5
+  }
+  resource_opts = { request_ttl = 3s }
+}
+
+# ADR0200：固定选择服务器认证五属性及原连接票据，安全JSON编码，不外传整个CONNECT或client_attrs。
+rule_engine.rules.tc_client_connected = {
+  enable = true
+  description = "S3-11F device online event"
+  sql = """SELECT username, clientid, peername AS peerhost, node, client_attrs.tc_auth_tenant_id AS tc_auth_tenant_id, client_attrs.tc_auth_project_id AS tc_auth_project_id, client_attrs.tc_auth_device_id AS tc_auth_device_id, client_attrs.tc_auth_credential_version AS tc_auth_credential_version, client_attrs.tc_auth_config_version AS tc_auth_config_version, client_attrs.tc_auth_connection_id AS tc_auth_connection_id FROM "$events/client_connected" """
+  actions = ["http:tc_client_connected"]
+}
+
+# 断开规则与连接规则成对固化；应用层仅在同一设备已无活跃会话时置为 OFFLINE，支持多连接防抖。
+rule_engine.rules.tc_client_disconnected = {
+  enable = true
+  description = "S3-11F device offline event"
+  sql = """SELECT username, clientid, reason, client_attrs.tc_auth_tenant_id AS tc_auth_tenant_id, client_attrs.tc_auth_project_id AS tc_auth_project_id, client_attrs.tc_auth_device_id AS tc_auth_device_id, client_attrs.tc_auth_credential_version AS tc_auth_credential_version, client_attrs.tc_auth_config_version AS tc_auth_config_version, client_attrs.tc_auth_connection_id AS tc_auth_connection_id FROM "$events/client_disconnected" """
+  actions = ["http:tc_client_disconnected"]
+}

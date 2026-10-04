@@ -1,0 +1,194 @@
+/* ===== 品牌字体 ===== */
+@font-face {
+  font-family: 'ThingsLink Cereal';
+  src: url('/fonts/ThingsLink_Cereal_VF_W_Wght.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Tailwind CSS 4 — https://tailwindcss.com/docs */
+@import 'tailwindcss';
+
+/* ===== 设计 Token ===== */
+@theme {
+  /* 品牌色 — 科技蓝为主色调 */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
+
+  /* 文字色 */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #667085;
+
+  /* 背景 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+
+  /* 边框 */
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+
+  /* 状态色 — 成功/警示/危险，供告警与表单状态使用 */
+  --color-success-50: #ecfdf5;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-warning-50: #fffbeb;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-danger-50: #fef2f2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+
+  /* 字体 */
+  --font-sans: 'ThingsLink Cereal', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+  /* 圆角 */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+
+  /* 阴影 */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-nav: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1.5px 2px -1px rgb(0 0 0 / 0.03);
+
+  /* 间距 */
+  --spacing-section: 5rem;
+  --spacing-section-sm: 3rem;
+  /* 固定顶栏高度，供 top/h 与锚点 scroll-mt 复用，避免散落的 top-16 魔数 */
+  --spacing-header: 4rem;
+
+  /* 动效时长 — 落实视觉规范建议的 150—220ms 区间 */
+  --transition-duration-fast: 150ms;
+  --transition-duration-base: 200ms;
+  --transition-duration-slow: 300ms;
+
+  /*
+   * 渐变定义 — 单一来源。
+   * 工具类与组件内联引用都指向这里，改一处即改全站。
+   */
+  --gradient-brand: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600));
+  --gradient-brand-deep: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800));
+  --gradient-brand-logo: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-700));
+}
+
+/* ===== 全局基础样式 ===== */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+}
+
+/* 链接 */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+/* 选择文本颜色 */
+::selection {
+  background-color: var(--color-brand-200);
+  color: var(--color-brand-900);
+}
+
+/* 代码块基础样式 */
+pre {
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+/* 聚焦样式 */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-800);
+  color: white;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== 工具类 ===== */
+
+/* 品牌渐变 — 收敛原先散落在组件内联 style 里的渐变定义 */
+@utility bg-brand-gradient {
+  background-image: var(--gradient-brand);
+}
+
+/* 深色区块使用的品牌渐变 */
+@utility bg-brand-gradient-deep {
+  background-image: var(--gradient-brand-deep);
+}
+
+/* Logo 方块使用的更深一档品牌渐变 */
+@utility bg-brand-gradient-logo {
+  background-image: var(--gradient-brand-logo);
+}
+
+/* 固定顶栏下的锚点偏移，避免跳转后标题被顶栏遮挡 */
+@utility scroll-mt-header {
+  scroll-margin-top: var(--spacing-header);
+}
+
+@utility container-page {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@utility container-wide {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}

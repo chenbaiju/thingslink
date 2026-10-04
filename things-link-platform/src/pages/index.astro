@@ -1,0 +1,25 @@
+---
+/**
+ * 平台首页 — /
+ *
+ * Hero + 功能亮点 + 产品功能示意 + 接入流程 + 应用示例 + 开发者资源 + CTA
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import HeroSection from '@/components/landing/HeroSection.astro'
+import FeatureGrid from '@/components/landing/FeatureGrid.astro'
+import CtaBanner from '@/components/landing/CtaBanner.astro'
+import ProductDemo from '@/components/landing/ProductDemo.astro'
+import OnboardingSteps from '@/components/landing/OnboardingSteps.astro'
+import ApplicationExamples from '@/components/landing/ApplicationExamples.astro'
+import DeveloperResources from '@/components/landing/DeveloperResources.astro'
+---
+
+<BaseLayout>
+  <HeroSection />
+  <FeatureGrid />
+  <ProductDemo />
+  <OnboardingSteps />
+  <ApplicationExamples />
+  <DeveloperResources />
+  <CtaBanner />
+</BaseLayout>

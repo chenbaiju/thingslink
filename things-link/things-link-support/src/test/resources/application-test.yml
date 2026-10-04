@@ -1,0 +1,43 @@
+# support 模块集成测试的配置。
+#
+# 数据源不在这里配 —— AbstractIntegrationTest 用 Testcontainers 起容器，
+# 端口是随机的，只能在运行时通过 @DynamicPropertySource 注入。
+#
+# 用 application-test.yml 而非 application.yml：test/resources 下的 application.yml
+# 会整体覆盖 main/resources 的同名文件而不是与之合并。support 目前没有 main 配置，
+# 覆盖不成问题，但保持与 bootstrap 一致可以避免将来加了 main 配置后突然失效。
+# profile 由 AbstractIntegrationTest 的 @ActiveProfiles 激活。
+
+spring:
+  jpa:
+    hibernate:
+      # 与生产保持一致：schema 只由 Flyway 管理。
+      # 测试里写成 update 的话，迁移脚本写错也不会被发现 —— 这正是
+      # DatabaseBaselineTests 要防的那类问题，不能在测试配置里自己破坏它。
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    # 与 bootstrap 的 application.yml 保持一致：显式列出各模块的迁移目录
+    locations:
+      - classpath:db/migration/support
+      # 测试专用：RLS 探针表。不在生产迁移路径里（bootstrap 只列 support 一项）
+      - classpath:db/migration-test
+    placeholders:
+      app_role_password: thingslink
+
+things-link:
+  storage:
+    # support上下文只验证适配器装配；连接在具体对象测试调用时才建立。
+    internal-endpoint: http://127.0.0.1:19000
+    external-endpoint: http://127.0.0.1:19000
+    access-key: export-test-access
+    secret-key: export-test-secret-2026
+  scheduling:
+    # 测试上下文没有必须等待的真实业务请求；关闭时立即中断后台触发器，避免周期任务让 Surefire
+    # 在 System.exit 后等待完整 30 秒。生产默认仍是 30 秒，可靠性由数据库租约承接。
+    shutdown-await-seconds: 0
+  outbox:
+    publisher:
+      # repository 集成测试只验证 PostgreSQL 租约函数；不启动后台线程避免它抢走断言中的测试事件。
+      enabled: false

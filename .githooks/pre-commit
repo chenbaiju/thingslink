@@ -1,0 +1,29 @@
+#!/bin/sh
+# 提交前守卫：Jagonzn 隔离、Console 单仓库边界与暂存区空白检查。
+# 激活方式：`git config core.hooksPath .githooks`（已在本地设置；新克隆需重跑一次，见 README.md）。
+
+# Jagonzn 仍独立；Console 直接由平台跟踪普通文件。
+if git ls-files -- jagonzn | grep -q .; then
+  echo "⚠️  jagonzn/ 仍被父仓库跟踪，请先从索引移除。" >&2
+  exit 1
+fi
+if git ls-files --stage -- things-link-console | grep -q '^160000 '; then
+  echo "⚠️  Console gitlink 不能被父仓库跟踪，请保留普通源文件。" >&2
+  exit 1
+fi
+
+if [ -e things-link-console/.git ]; then
+  echo "⚠️  Console 已归入平台仓库，请先归档并移出其独立 .git。" >&2
+  exit 1
+fi
+if git ls-files -- things-link-console/.git | grep -q .; then
+  echo "⚠️  Console Git 元数据不能被父仓库跟踪。" >&2
+  exit 1
+fi
+
+# 只检查暂存区，不运行前端格式化、自动暂存或业务验证。
+if ! git diff --cached --check; then
+  echo "" >&2
+  echo "⚠️  存在行尾空白，已中止提交。保存文件即可自动去除（.editorconfig 已开启 trim_trailing_whitespace）。" >&2
+  exit 1
+fi

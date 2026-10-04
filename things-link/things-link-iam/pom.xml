@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  身份与访问控制模块：控制台账号、认证、角色、权限点、数据范围。
+
+  职责边界见架构文档 7.2「三类身份必须分离」—— 本模块只管**控制台账号**
+  （平台运营者、Owner、管理员、操作员、访客）。另外两类身份不在这里：
+    - 终端用户账号  → things-link-enduser（S11 引入）
+    - 设备身份      → things-link-device（S2 引入）
+  把三者混在一张表里是这类系统最常见也最难回退的设计错误。
+
+  依赖方向说明：授权判定需要项目成员关系（架构文档 7.2 的
+  Decision = 角色权限 ∩ 项目成员关系 ∩ 数据范围 ∩ 套餐能力 ∩ 资源状态），
+  因此 iam → project 是预期中的单向依赖。等 S1 真正实现授权判定时再声明，
+  现在不加未使用的依赖。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.things.link</groupId>
+		<artifactId>things-link</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>things-link-iam</artifactId>
+	<name>things-link-iam</name>
+	<description>控制台账号、认证、角色、权限点与数据范围</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-shared</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-support</artifactId>
+		</dependency>
+
+		<!--
+		  认证与授权。架构文档 7.3：JWT 访问令牌短时有效，密码哈希，接口限流。
+		  实测 Spring Security 7.1 + Boot 4.1 可用（S1 切片 1a 的探针）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<!--
+		  提供 JwtEncoder / JwtDecoder（Nimbus 实现）。
+		  即使令牌由本服务自己签发，也走标准的 resource server 校验链路 ——
+		  自己写令牌解析是最容易出安全漏洞的地方之一（算法混淆、过期不校验、
+		  签名不校验都曾是真实 CVE）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
+
+		<!--
+		  Redis。AuthRateLimiter 直接 import StringRedisTemplate，因此必须自己声明，
+		  不能靠 support 的传递依赖 —— Maven 那样能编过，IDE 却会报「找不到包」
+		  （见 README.md 的多模块注意事项）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<!--
+		  REST 配额限流需要直接创建低基数 Micrometer 指标；显式声明避免依赖 bootstrap 的
+		  actuator 传递依赖，保证模块独立编译与 IDE 解析一致（README.md 多模块约束）。
+		-->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+		</dependency>
+		<!--
+		  S7-5 系统状态页复用 Actuator 已注册的真实健康贡献者，只读取状态而不复制
+		  数据库、Redis 等探针实现。Boot 4.x 已把健康 SPI 拆到独立 artifact；iam
+		  的适配器直接 import 该 SPI，因此必须显式声明，不能依赖 bootstrap 传递。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-health</artifactId>
+		</dependency>
+
+		<!-- 测试期需要 @WithMockUser 等；Boot 4 同样拆成了独立 artifact -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-testing</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!--
+		  iam -> project 是**预期中的单向依赖**（架构文档 10.4 规则 2 允许，
+		  且 7.2 的判定式需要项目成员关系）。
+
+		  S1 切片 5b 起从 test 提升为编译期依赖：注册要在一个事务内创建
+		  「租户 + 账号 + 成员关系」（ADR 0008），而租户属于 project 模块，
+		  只能通过它的 application 包入口 TenantProvisioning 创建。
+
+		  约束仍在：只能引用 project 的 application 包，不得碰它的 domain /
+		  infrastructure / api。ArchUnit 的规则 2/3/4 会强制这一点。
+		  反向依赖（project -> iam）是禁止的，会形成循环。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-project</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+</project>

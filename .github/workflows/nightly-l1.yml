@@ -1,0 +1,127 @@
+# G1-C3d L1 nightly：干净 Runner 上按当前 durable republish 接入执行 1,000 台回归并归档原始证据。
+# 本轮 correctness 与历史五次中位数均由机器报告 fail-closed，单次性能抖动只告警。
+name: nightly-l1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nightly-l1-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  l1:
+    name: L1 1000 台正确性与原始证据
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: 释放并校验 Runner 磁盘
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$(realpath /usr/local/lib/android)"
+          if [[ "${target}" != "/usr/local/lib/android" || ! -d "${target}" || -L "${target}" ]]; then
+            echo "::error::Android SDK 清理目标校验失败：${target}"
+            exit 1
+          fi
+          sudo rm -rf --one-file-system -- "${target}"
+          docker image prune --all --force
+          available="$(df --output=avail -B1 / | tail -1 | tr -d '[:space:]')"
+          if [[ ! "${available}" =~ ^[0-9]+$ || "${available}" -lt 16106127360 ]]; then
+            echo "::error::根分区可用空间不足 15GiB：${available} bytes"
+            exit 1
+          fi
+
+      # Docker Hub 已撤回原 MinIO 仓库；镜像摘要与原固定版本完全相同。
+      - name: 准备固定 MinIO 镜像
+        shell: bash
+        run: |
+          set -euo pipefail
+          server=ghcr.io/teableio/minio@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+          client=ghcr.io/teableio/minio-mc@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
+          docker pull "$server"
+          docker tag "$server" minio/minio:RELEASE.2025-04-22T22-12-26Z
+          docker pull "$client"
+          docker tag "$client" minio/mc:RELEASE.2025-04-16T18-13-26Z
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+          cache-dependency-path: things-link/pom.xml
+
+      - name: 前置校验 L1 编排工具
+        shell: bash
+        run: |
+          python3 -m py_compile \
+            things-link/things-link-simulator/scripts/a4_qualification.py \
+            things-link/things-link-simulator/scripts/l1_steady_probe.py \
+            things-link/things-link-simulator/scripts/l1_machine_verdict.py
+          python3 -m unittest \
+            things-link/things-link-simulator/scripts/test_a4_qualification.py
+          python3 -m unittest discover \
+            -s things-link/things-link-simulator/scripts/tests -p 'test_*.py'
+          bash -n things-link/things-link-simulator/scripts/run-c3d-l1.sh
+
+      - name: 构建 backend 与 simulator
+        run: cd things-link && ./mvnw -q -pl things-link-bootstrap,things-link-simulator -am package -DskipTests
+
+      - name: 执行 L1 正确性与证据采集
+        id: l1_run
+        continue-on-error: true
+        shell: bash
+        run: ./things-link/things-link-simulator/scripts/run-c3d-l1.sh
+
+      - name: 下载历史机器报告
+        id: history
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 things-link/things-link-simulator/scripts/l1_history.py \
+            --repository "${GITHUB_REPOSITORY}" --current-run-id "${GITHUB_RUN_ID}" \
+            --output-dir things-link/target/c3d-l1-history
+
+      - name: 生成当前与历史机器裁决
+        if: always()
+        shell: bash
+        run: |
+          python3 things-link/things-link-simulator/scripts/l1_machine_verdict.py \
+            --evidence-dir things-link/target/c3d-l1 \
+            --history-dir things-link/target/c3d-l1-history \
+            --runner-outcome "${{ steps.l1_run.outcome }}" \
+            --output things-link/target/c3d-l1/machine-report.json \
+            --markdown-output things-link/target/c3d-l1/machine-report.md \
+            --job-summary "${GITHUB_STEP_SUMMARY}"
+
+      - name: 上传紧凑历史报告
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: g1-c3d-l1-report-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: warn
+          path: |
+            things-link/target/c3d-l1/machine-report.json
+            things-link/target/c3d-l1/machine-report.md
+
+      - name: 上传完整 L1 证据
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: g1-c3d-l1-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: warn
+          include-hidden-files: false
+          path: |
+            things-link/target/c3d-l1/
+            things-link/target/c3d-l1-history/history-index.json

@@ -1,0 +1,10 @@
+.playwright-browsers/
+playwright-report/
+test-results/
+
+# 平台候选资产与旁置清单由受控资源和当前构建生成。
+public/assets/
+artifacts/
+# PWA清单和Worker由构建从受控源码生成，不手工维护第二份。
+public/manifest.webmanifest
+public/sw.js

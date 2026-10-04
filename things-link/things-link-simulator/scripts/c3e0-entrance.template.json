@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "runId": "REPLACE_ME",
+  "evidenceDir": "REPLACE_ME_WITH_NEW_PUBLIC_EVIDENCE_DIRECTORY",
+  "environmentInventoryInput": "l2-environment-inventory.template.json",
+  "runMetadata": "REPLACE_ME_WITH_RUN_METADATA_JSON",
+  "distributedPlan": "REPLACE_ME_WITH_DISTRIBUTED_PLAN_JSON",
+  "ownerSecrets": "REPLACE_ME_WITH_EXISTING_OWNER_SECRET_JSON_OUTSIDE_EVIDENCE",
+  "secretTempRoot": "REPLACE_ME_WITH_PRIVATE_TEMP_ROOT_OUTSIDE_EVIDENCE",
+  "fixtureAssignmentPlan": "REPLACE_ME_WITH_FIXTURE_ASSIGNMENT_PLAN_JSON",
+  "metricsSourcePlan": "REPLACE_ME_WITH_TYPED_METRICS_SOURCE_PLAN_JSON",
+  "runnerOutcome": "failure",
+  "confirmIsolatedDisposableEnvironmentOrSnapshot": false,
+  "confirmProfilesCompleteOrFixtureCleaned": false,
+  "coordination": {
+    "readyTimeoutSeconds": 300,
+    "completeTimeoutSeconds": 3600,
+    "pollSeconds": 1
+  },
+  "fixture": {
+    "baseUrl": "REPLACE_ME_WITH_PRIVATE_SUT_URL",
+    "policyId": "REPLACE_ME_WITH_L2_CAPACITY_POLICY_UUID",
+    "postgresContainer": "tc-postgres",
+    "postgresUser": "REPLACE_ME",
+    "postgresDb": "REPLACE_ME"
+  }
+}

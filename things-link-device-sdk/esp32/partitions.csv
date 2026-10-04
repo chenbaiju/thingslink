@@ -1,0 +1,10 @@
+# Probe/runtime state layout. Remaining flash awaits protected credentials/OTA design.
+# Name, Type, SubType, Offset, Size, Flags
+nvs, data, nvs, 0x9000, 0x6000,
+phy_init, data, phy, 0xf000, 0x1000,
+factory, app, factory, 0x10000, 2M,
+# Operational snapshots only; never write Wi-Fi secrets or AccessTokens here.
+bl_state, data, nvs, 0x210000, 512K,
+bl_creds, data, nvs, 0x290000, 64K,
+# Provisioned outside this SDK only; the SDK never generates or flashes this key partition.
+bl_keys, data, nvs_keys, 0x2a0000, 4K, encrypted

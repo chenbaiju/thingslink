@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Spring 横切与技术适配模块：数据源、Redis、Kafka、对象存储客户端、
+  统一异常处理、Idempotency-Key、traceId 贯穿、游标分页的 Web 层封装。
+
+  【硬性约束】本模块不得依赖任何业务模块（架构文档 10.2）。
+
+  依赖方向永远是「业务模块 → support」。反向依赖一次，support 就成了
+  循环依赖的中心，之后任何模块的改动都会牵动它。
+
+  命名说明：叫 support 而不是 infrastructure，是为了避开与每个业务模块内部
+  `com.things.link.<domain>.infrastructure` 分层包的撞名 —— 那是两个不同的
+  概念，共用一个词会让每一次讨论都要先澄清指的是哪个。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.things.link</groupId>
+		<artifactId>things-link</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>things-link-support</artifactId>
+	<name>things-link-support</name>
+	<description>Spring 横切与技术适配：数据源、缓存、消息、对象存储、Web 层横切</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-shared</artifactId>
+		</dependency>
+
+		<!--
+		  S12-P0-5g 的私有导出制品使用 S3 兼容接口；support 只暴露中立存储端口，
+		  bucket、对象键、保留期与业务授权继续由 export 域决定。
+		-->
+		<dependency>
+			<groupId>io.minio</groupId>
+			<artifactId>minio</artifactId>
+			<version>${minio.version}</version>
+		</dependency>
+		<!-- MinIO 9的okhttp坐标是多平台元数据空壳；Maven编译需显式引入JVM实现。 -->
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp-jvm</artifactId>
+			<version>${okhttp.version}</version>
+		</dependency>
+
+		<!--
+		  Kafka 横切基础设施。使用 Boot 4.1 的 starter 而不是只引 spring-kafka：
+		  starter 同时带入拆分后的 spring-boot-kafka 自动配置；只引客户端库会让
+		  KafkaTemplate 与 listener factory 静默不装配，与 Flyway 的坑属于同一类。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-kafka</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+		<!--
+		  G1-C3c / D-048 用切面在 Kafka、调度和显式数据面入口进入事务前建立数据库工作负载路由。
+		  路由晚于事务会让连接已经固定到 CONTROL 池，因此不能只在仓储内部临时判断。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aspectj</artifactId>
+		</dependency>
+		<!--
+		  S3.5-4 的数据面指标由 support 提供统一门面。这里显式依赖 Micrometer API，
+		  运行时注册表仍由 bootstrap 的 Actuator 与 Prometheus registry 装配。
+		-->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+		</dependency>
+		<!--
+		  G1-C3d / B-002 的量程回归必须检查真实 Prometheus bucket，而不是只看
+		  SimpleMeterRegistry 中的 Timer 配置；仅测试使用，不进入 support 生产依赖。
+		-->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!--
+		  Redis。当前唯一用途是认证限流（AuthRateLimiter），S4 起是硬需求：
+		  进程内计数在多实例下会变成「配置值 × 实例数」，而且不会有任何症状。
+
+		  starter 自带 spring-boot-data-redis（Boot 4.x 拆出来的自动配置模块）
+		  与 Lettuce 客户端，核对过依赖树，不存在 Flyway 那种静默不生效的情况。
+
+		  ⚠️ 淘汰策略必须是 noeviction（deploy/docker-compose.yml 已设）。
+		  策略是**实例级**的：设成 LRU 时，内存压力下限流计数器会被悄悄淘汰，
+		  表现为限流时灵时不灵，而日志里什么都没有。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+		<!--
+		  Web 层。统一错误响应、traceId 过滤器、租户上下文过滤器都依赖它。
+
+		  用 MVC 而不是 WebFlux：架构文档第 3 节「管理 API 不需要全量 WebFlux」。
+		  高并发阻塞 IO 的场景（设备接入、通知投递）靠 Java 21 的虚拟线程解决，
+		  不需要把整个管理 API 改成响应式写法。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<!-- Bean Validation。参数校验失败由全局异常处理器转成 10001 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
+		<!--
+		  出站邮件（notification/mail 包）。首个用途是 IAM 的邮箱验证，
+		  S6 的告警通知渠道会复用同一套设施。
+
+		  这个 starter 不存在 Flyway 那种「静默不生效」的坑：它自己就带上了
+		  spring-boot-mail（Boot 4.x 拆分出来的自动配置模块）和 angus-mail
+		  （jakarta.mail 的实现），核对过依赖树，不需要额外手工声明。
+
+		  ⚠️ 未配置 spring.mail.host 时 Boot 不会装配 JavaMailSender，
+		  应用会落到 LoggingMailSender —— 这是本地开发的正常状态，
+		  但生产环境落到那里等于邮件全丢，见 MailConfiguration 的启动告警。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+		<!--
+		  Boot 4.x 把 Health / HealthIndicator / ConditionalOnEnabledHealthIndicator
+		  从 spring-boot-actuator 拆到了独立 artifact spring-boot-health。
+		  MailConfiguration 用这些类型提供自定义邮件健康检查（host 为空时跳过连接测试），
+		  必须显式声明。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-health</artifactId>
+		</dependency>
+
+		<!--
+		  OpenAPI 文档生成。架构文档 11.1：OpenAPI 是唯一契约来源，
+		  前端类型与 SDK 由其生成，不手写。
+
+		  【为什么选 code-first 而不是手写 spec】
+		  两种做法都能满足「契约先行」——开发手册 2.1 的流程是先写 Controller
+		  签名与 DTO（返回 501），再实现。code-first 下这一步同时就产出了契约，
+		  且**契约永远不可能与实现漂移**，而手写 spec 的主要弱点正是漂移。
+		  单人开发下同时维护 spec 与实现是双份工作，收益不足以抵消。
+
+		  【版本说明】springdoc 最新只到 2.8.6，标称面向 Boot 3 / Spring 6，
+		  尚无对应 Boot 4 的版本。实测可用：应用正常启动，/v3/api-docs 返回
+		  合法的 OpenAPI 3.1.0，Controller 与 record DTO 均能正确提取为
+		  path 与 schema。将来升级 Boot 时要重新验证这一点。
+
+		  用 -api 而非 -ui：只需要 JSON 文档，不需要把 Swagger UI 打进产物。
+		  UI 是额外的攻击面，也会让生产包变大。
+		-->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+			<version>${springdoc.version}</version>
+		</dependency>
+
+		<!--
+		  持久化。业务模块的 infrastructure 层通过 support 拿到 JPA，
+		  但各自仍要显式声明（「用什么就声明什么」，见 bootstrap 的 pom 注释）。
+
+		  ddl-auto 固定为 validate，schema 一律由 Flyway 管理 —— 配置在
+		  bootstrap 的 application.yml，不靠自觉（README.md：never rely on auto-DDL）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!--
+		  Flyway 需要三个依赖，缺任何一个的失败方式都很有迷惑性：
+
+		  1. flyway-core —— 引擎本身
+		  2. flyway-database-postgresql —— 从 Flyway 10.x 起 PostgreSQL 支持被拆到
+		     独立 artifact，缺了会在启动时报「Unsupported Database: PostgreSQL」
+		  3. spring-boot-flyway —— Spring Boot 4.x 把各组件的自动配置从
+		     spring-boot-autoconfigure 拆成了独立 artifact。缺了不会有任何报错，
+		     Flyway 就是**静默地完全不执行**：没有 flyway_schema_history 表，
+		     没有一行日志，表现为「迁移写了但数据库里什么都没有」。
+
+		  第 3 条是 Boot 3.x 升 4.x 最容易漏的一类问题（架构文档 3.1 明确警告过
+		  「不要照抄 Boot 3.x 的教程和依赖清单」）。同类的 spring-boot-data-jpa 与
+		  spring-boot-jdbc 由 starter-data-jpa 自动带入，唯独 Flyway 没有对应 starter，
+		  必须手工声明。
+		-->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-flyway</artifactId>
+		</dependency>
+
+		<!--
+		  集成测试基类与 Testcontainers。幂等机制依赖数据库唯一约束的并发行为
+		  与 NULLS NOT DISTINCT 语义，用替身测不出来，必须连真实 PostgreSQL。
+		-->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-testing</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!--
+		  MockMvc 的测试自动配置（@AutoConfigureMockMvc、@WebMvcTest）。
+
+		  Boot 4.x 把它从 spring-boot-test-autoconfigure 拆到了独立 artifact，
+		  包名也从 org.springframework.boot.test.autoconfigure.web.servlet
+		  变成 org.springframework.boot.webmvc.test.autoconfigure。
+		  starter-test 不再包含它，必须显式声明 —— 与 spring-boot-flyway 是同一类
+		  变化（架构文档 3.1）。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!--
+			  Q13最低层永久门禁：默认测试不运行退出夹具，随后两个专用fork依次退出/验收。
+			  后置验收绑定test阶段而非verify，普通聚焦test也必须消费真实退出结果。
+			  仅本模块生效，不改变根POM的普通fork复用、预算或失败处理；显式skip不构成验证。
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>default-test</id>
+						<configuration>
+							<!-- tag不受-Dtest覆盖includes/excludes的语义影响，避免污染普通复用fork。 -->
+							<excludedGroups>q13-dedicated-exit</excludedGroups>
+						</configuration>
+					</execution>
+					<execution>
+						<id>q13-natural-fork-exit</id>
+						<phase>test</phase>
+						<goals><goal>test</goal></goals>
+						<configuration>
+							<!-- 固定test参数，不使用${test}；普通选择器不能省略此最低层。 -->
+							<test>SchedulingShutdownExitFixture#leaveContextForNaturalForkExit</test>
+							<groups>q13-dedicated-exit</groups>
+							<failIfNoSpecifiedTests>true</failIfNoSpecifiedTests>
+							<forkCount>1</forkCount>
+							<reuseForks>false</reuseForks>
+							<reportsDirectory>${project.build.directory}/surefire-q13-exit/m${session.request.startTime.time}</reportsDirectory>
+							<systemPropertyVariables>
+								<q13.gate.stage>exit</q13.gate.stage>
+								<q13.gate.build>m${session.request.startTime.time}</q13.gate.build>
+							</systemPropertyVariables>
+						</configuration>
+					</execution>
+					<execution>
+						<id>q13-accept-exited-fork</id>
+						<phase>test</phase>
+						<goals><goal>test</goal></goals>
+						<configuration>
+							<!-- 上个goal等待其fork结束才返回；本fork的断言直接决定Maven结果。 -->
+							<test>SchedulingShutdownExitFixture#acceptExitedFork</test>
+							<groups>q13-dedicated-exit</groups>
+							<failIfNoSpecifiedTests>true</failIfNoSpecifiedTests>
+							<forkCount>1</forkCount>
+							<reuseForks>false</reuseForks>
+							<reportsDirectory>${project.build.directory}/surefire-q13-accept/m${session.request.startTime.time}</reportsDirectory>
+							<systemPropertyVariables>
+								<q13.gate.stage>accept</q13.gate.stage>
+								<q13.gate.build>m${session.request.startTime.time}</q13.gate.build>
+							</systemPropertyVariables>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<!--
+					  实际有两道防线，触发顺序如下：
+
+					  1. Maven reactor 的循环依赖检测。当被依赖的业务模块本身依赖
+					     support 时（目前 iam、project 都是），加反向依赖会直接构成
+					     环，Maven 在 validate 之前就报 ProjectCycleException。
+					  2. 下面这条 enforcer 规则。它覆盖的是**不构成环**的情况 ——
+					     support 依赖了一个恰好不依赖 support 的业务模块。此时 Maven
+					     不会有任何意见，只有这条规则会拦。
+
+					  两者都验证过确实会让构建失败，不是摆设。
+					-->
+					<execution>
+						<id>enforce-support-has-no-business-module</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<bannedDependencies>
+									<searchTransitive>true</searchTransitive>
+									<excludes>
+										<!--
+										  禁止依赖所有内部模块，再单独放行 shared。
+										  用通配符而不是逐个列出，这样将来新增业务模块
+										  时自动受约束，不必回来改这里。
+										-->
+										<exclude>com.things.link:*</exclude>
+									</excludes>
+									<includes>
+										<include>com.things.link:things-link-shared</include>
+										<!--
+										  things-link-testing 是工具模块，不是业务模块，
+										  且只以 test 作用域引入，不进生产依赖树。
+										  规则本意是禁止「support 依赖业务模块」，它不在其列。
+										-->
+										<include>com.things.link:things-link-testing</include>
+									</includes>
+									<message>things-link-support 不得依赖任何业务模块（架构文档 10.2）。依赖方向永远是「业务模块 → support」，反向依赖会让 support 成为循环依赖的中心。</message>
+								</bannedDependencies>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

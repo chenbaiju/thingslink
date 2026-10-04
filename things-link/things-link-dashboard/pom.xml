@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  X-02 看板与WebApp发布域装配槽。
+
+  X-02先建立版本化Schema合同和纯解析能力；S12-1a1开始加入本模块独占的应用持久事实。
+  S12-1d1将应用目录和草稿只读HTTP边界收回本模块；后续写入、分享及数据适配仍按切片交付。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>things-link-dashboard</artifactId>
+    <name>things-link-dashboard</name>
+    <description>看板Schema、发布版本、分享与WebApp应用目录</description>
+
+    <dependencies>
+        <!--
+          应用目录使用共享的不透明游标与分页结果；dashboard必须显式声明直接消费，
+          不能依赖project清理SPI偶然传递shared。
+        -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-shared</artifactId>
+        </dependency>
+
+        <!-- 应用管理写入与业务事实同事务落审计，必须直接声明support而非借project传递。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-support</artifactId>
+        </dependency>
+
+        <!--
+          S12-1a1a：dashboard作为独立领域贡献项目清理阶段，只依赖project公开的
+          application清理SPI，不读取project持久层或反向依赖enduser。
+        -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-project</artifactId>
+        </dependency>
+
+        <!--
+          S12-1b2b：看板草稿只通过device公开应用端口核验不可变物模型版本摘要，
+          不读取device表或依赖其持久适配器实现；直接依赖使编译期模块边界可见。
+        -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-device</artifactId>
+        </dependency>
+
+        <!--
+          清理适配器直接使用JdbcTemplate并加入调用方已有物理事务，因此显式声明
+          JDBC starter，不能依赖其他业务模块的传递依赖。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- S12-1d1应用管理Controller直接使用Spring MVC与请求参数校验注解。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- 匿名数据通过领域公开端口取版本化历史和过滤后告警，不读取其他模块私有表。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-telemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-alarm</artifactId>
+        </dependency>
+        <!-- 匿名分享自持精确安全链，不借IAM传递依赖或伪造Console认证身份。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <!-- 分享保护直接消费真实Redis原子预算，不能通过support偶然取得客户端。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- 有界独立安全日志与低基数丢失指标由dashboard拥有并直接声明。 -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
+        <!-- Controller直接声明OpenAPI注解，不依赖support传递暴露springdoc。 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- 看板Schema必须从原始字节流识别重复键和数字词法，不能先绑定为普通DTO再校验。 -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!-- Windows NIO不提供稳定fileKey时，通过原生文件句柄读取卷号和文件ID。 -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+        </dependency>
+        <!-- 真实Redis预算最低层与Spring测试工具直接声明，不能借support的测试传递依赖。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

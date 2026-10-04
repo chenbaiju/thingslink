@@ -1,0 +1,17 @@
+{
+  "hosts": ["unix:///run/thingslink-docker.sock"],
+  "data-root": "/opt/thingslink-acceptance/runtime/data",
+  "exec-root": "/run/thingslink-docker",
+  "pidfile": "/run/thingslink-docker.pid",
+  "bridge": "none",
+  "iptables": false,
+  "ip6tables": false,
+  "ip-forward": false,
+  "ip-masq": false,
+  "userland-proxy": false,
+  "storage-driver": "overlay2",
+  "features": {"containerd-snapshotter": false},
+  "exec-opts": ["native.cgroupdriver=cgroupfs"],
+  "log-driver": "json-file",
+  "log-opts": {"max-size": "10m", "max-file": "3"}
+}

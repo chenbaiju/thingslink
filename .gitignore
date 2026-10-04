@@ -1,0 +1,99 @@
+# --- 构建产物 ---
+target/
+build/
+out/
+dist/
+*.class
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# --- 依赖 ---
+node_modules/
+.pnpm-store/
+
+# --- 独立的本机工程，不属于 ThingsLink 仓库 ---
+/jagonzn/
+
+# --- Gradle / Maven ---
+.gradle/
+local.properties
+.mvn/timing.properties
+
+# --- 本地配置与密钥（README.md 安全条款：不入库）---
+deploy/.env
+/deploy/.local/
+.env.local
+*.local
+**/application-local.yml
+**/application-local.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+!deploy/**/*.example.pem
+
+# --- 日志与临时文件 ---
+# 模拟器本机消息确认记录按目录排除，覆盖将来新增的非日志产物。
+/manifest/
+*.log
+logs/
+tmp/
+*.pid
+
+# 故障注入展开目录保留在本机便于复核；Git 只归档同级不可变 zip，避免文本换行转换破坏内部 SHA。
+artifacts/c4b/*/
+
+# --- 本地智能体运行状态 ---
+# oh-my-codex/ultrawork 会在此保存锁、进程钩子和一次性验收日志；这些内容与当前机器和会话绑定。
+.omx/
+
+# --- IDE ---
+# .idea/ 本身是入库的（模块结构、编码、代码风格需要在克隆后就正确），
+# 但其中的本机状态与凭据必须排除。
+#
+# dataSources.local.xml 尤其重要：IDEA 里配置数据库连接后，**口令会存在这里**。
+# 这些规则原本在 .idea/.gitignore 中，IDEA 重新生成时把那个文件删掉了 ——
+# 统一收到根 .gitignore，只保留一处，避免再次因为它被删而出现缺口。
+.idea/workspace.xml
+.idea/tasks.xml
+# 本机生成的 C/C++ 编辑器格式偏好；共享格式规则使用 .editorconfig 与 codeStyles。
+.idea/editor.xml
+.idea/usage.statistics.xml
+.idea/shelf/
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/dataSources.xml
+.idea/queries/
+*.iws
+*.iml
+.vscode/
+!.vscode/extensions.json
+
+# --- Obsidian ---
+.obsidian/
+docs/.obsidian/workspace.json
+# 图谱缩放、布局与面板折叠属于个人视图状态，不作为项目知识库配置共享。
+docs/.obsidian/graph.json
+
+# --- 系统 ---
+.DS_Store
+Thumbs.db
+
+# --- Python 生成缓存 ---
+__pycache__/
+*.py[cod]
+
+# Local test TLS preparation lock and interrupted staging; never production credentials.
+/things-link/things-link-ingestion/src/test/resources/tls/.prepare*
+
+# Console 由平台统一管理；防止误建嵌套仓库时纳入 Git 元数据。
+/things-link-console/.git/
+
+# Local-only startup, test tooling and generated isolation configuration.
+/.local-tools/
+
+# Private database SQL and Flyway sidecars stay local; never publish to Git.
+*.[sS][qQ][lL]
+*.[sS][qQ][lL].[cC][oO][nN][fF]

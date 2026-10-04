@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # S3.5-4 先交付数据面最小告警，S7 再补齐架构文档 13.1 的完整指标表。
+  # 验收标准是「规则文件存在且能被触发」，不是「Grafana 上有图」。
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # 宿主机上跑的 Spring Boot。
+  # 需要在 application.yml 里开启：
+  #   management.endpoints.web.exposure.include: health,info,prometheus
+  - job_name: things-link-backend
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels:
+          service: platform-api
+
+  - job_name: redpanda
+    metrics_path: /public_metrics
+    static_configs:
+      - targets: ["redpanda:9644"]
+
+  # EMQX 5 内置 Prometheus 端点（默认在 Dashboard 端口下）
+  - job_name: emqx
+    metrics_path: /api/v5/prometheus/stats
+    static_configs:
+      - targets: ["emqx:18083"]
+
+  - job_name: minio
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: ["minio:9000"]

@@ -1,0 +1,20 @@
+{
+  "expectedRevision": "0",
+  "bundle": {
+    "contractVersion": "tc-ota-trust-bundle/v1",
+    "trustDomain": "e2e-ota-lifecycle",
+    "bundleVersion": 1,
+    "keys": [
+      {
+        "keyVersion": "e2e-release-v1",
+        "signatureProfile": "TC_OTA_ED25519_V1",
+        "spki": "MCowBQYDK2VwAyEA6k429kkedb0Uy4wzEeEo4LzMBDWjZBzfWSi385i/+kY=",
+        "fingerprint": "5c689e7e6e7d12abffef28d7af50695ed25185cb332aed8d58143023650100ba",
+        "state": "ACTIVE",
+        "notBefore": 0,
+        "notAfter": 253402300799
+      }
+    ]
+  },
+  "signature": "0Hs/bClGSmConos5HlObuakshTxhRyOPjnjkeXO6lmnavTzWzEUzrDvs+Bw9a4uI3aHocqenve/q9VKgK0XrDA=="
+}

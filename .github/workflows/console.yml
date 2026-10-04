@@ -1,0 +1,81 @@
+# 平台单仓库 Console 静态与单元验证；仅手动运行 master。
+name: console
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: console-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: 构建与静态检查
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: things-link-console
+    steps:
+      - name: 检出平台与 Console 同一候选
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: 记录统一候选
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C things-link-console rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"
+          echo "Platform / Console / Backend: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 校验 OpenAPI 唯一生成入口
+        working-directory: .
+        run: python3 -m unittest scripts.tests.test_generate_openapi_contracts
+
+      # pnpm/action-setup 从 package.json 的 packageManager 读取 11.9.0，避免 CI 与本地锁文件语义漂移。
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          # Action 步骤不继承 defaults.run.working-directory，必须显式指向子项目清单。
+          package_json_file: things-link-console/package.json
+
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: |
+            things-link-console/pnpm-lock.yaml
+            things-link-client-contracts/pnpm-lock.yaml
+
+      # Console设计器与WebApp消费同一版本化纯合同，独立锁文件必须先安装。
+      - name: 安装共享合同冻结依赖
+        working-directory: things-link-client-contracts
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装冻结依赖
+        run: pnpm install --frozen-lockfile
+
+      # 先构建共享合同，再由Vite生成声明后进行类型检查。
+      - name: 生产构建与类型检查
+        run: pnpm build
+
+      - name: 控制台单元测试
+        run: pnpm test
+
+      - name: 校验 OpenAPI 生成类型
+        run: pnpm api:check
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: Stylelint
+        run: pnpm lint:stylelint:check

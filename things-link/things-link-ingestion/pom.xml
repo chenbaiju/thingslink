@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  设备接入与消息摄入模块。S3-11B 先建立 Kafka 工程底座；后续切片再增加
+  EMQX 上行入口、原始消息 producer、标准化 consumer 与失败重试/DLQ。
+
+  跨模块只能引用 application 公共契约，禁止直接写 device/telemetry 的表
+  （架构文档 10.4）。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.things.link</groupId>
+        <artifactId>things-link</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>things-link-ingestion</artifactId>
+    <name>things-link-ingestion</name>
+    <description>消息标准化、Kafka 消费与 EMQX 上下行接入</description>
+
+    <dependencies>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-integration</artifactId></dependency>
+        <!-- OTA报告通过application事务端口消费，不跨域查询OTA或device表。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-ota</artifactId>
+        </dependency>
+        <!-- 三层上行消息信封与 UUIDv7，不依赖任何协议适配实现。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-shared</artifactId>
+        </dependency>
+        <!-- Kafka、traceId 与 Spring 技术适配由横切模块提供。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-support</artifactId>
+        </dependency>
+        <!-- 数据面单设备令牌桶直接使用 Redis Lua；显式声明，禁止依赖 support 的传递依赖碰巧可见。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- EMQX HTTP Publish API 使用 Spring RestClient；显式声明，禁止依赖 support 的传递依赖。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- S4-4 使用 Spring MVC 的标准 WebSocket 握手与帧适配；业务订阅索引仍留在 ingestion。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        <!-- 握手拦截器直接使用 JwtDecoder，必须由本模块显式声明而非依赖 iam 的传递 classpath。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <!-- 仅调用 application 层的接入身份解析契约，不读取 device 表或领域对象。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-device</artifactId>
+        </dependency>
+        <!-- WebSocket 订阅复验项目成员资格，只依赖 project application 公开服务。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-project</artifactId>
+        </dependency>
+        <!-- ADR 0046：生产 ingress 使用 MQTT 3.1.1 持久会话与 manual ACK，版本由根 POM 固定。 -->
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>${paho-mqtt.version}</version>
+        </dependency>
+        <!-- 标准消费者只调用 telemetry application 批量摄入契约，禁止引用其 domain/infrastructure。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-telemetry</artifactId>
+        </dependency>
+        <!-- S8-2C 只通过 rule application 契约冻结活动版本并提交公平队列；禁止接触规则表或沙箱基础设施。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-rule</artifactId>
+        </dependency>
+        <!--
+          ADR0100：未来App看板实时入口复核enduser公开会话/发布上下文；方向固定为
+          ingestion -> enduser，禁止enduser反向依赖ingestion形成装配环。
+        -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-enduser</artifactId>
+        </dependency>
+        <!-- ADR0101：分享WS仅调用dashboard公开确权端口，不能反向依赖或读分享表。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-dashboard</artifactId>
+        </dependency>
+        <!-- 真实 Kafka 集成测试基类，只进入测试 classpath。 -->
+        <dependency>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--
+		  CoAP 的 DTLS 1.2：JDK 没有 DTLS，CoAP 必须由 DTLS 实现承载（冻结 §3.4）。
+		  californium-core 提供 CoAP 端点与资源模型，scandium 提供 DTLS；版本在聚合 POM 固定。
+		  不引入 PSK：冻结§2 明确排除 DTLS-PSK，只走服务端证书。
+		-->
+        <dependency>
+            <groupId>org.eclipse.californium</groupId>
+            <artifactId>californium-core</artifactId>
+            <version>${californium.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.californium</groupId>
+            <artifactId>scandium</artifactId>
+            <version>${californium.version}</version>
+        </dependency>
+
+    </dependencies>
+</project>

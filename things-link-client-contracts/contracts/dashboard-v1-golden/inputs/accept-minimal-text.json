@@ -1,0 +1,1 @@
+{"schemaVersion":"tc.dashboard/v1","presentation":{"mode":"RESPONSIVE_GRID"},"pages":[{"id":"overview","title":"设备概览","components":[{"id":"heading","kind":"TEXT","componentVersion":"1.0.0","layout":{"x":0,"y":0,"w":24,"h":8},"props":{"content":"设备监测","size":"LARGE"},"bindings":{}}]}]}

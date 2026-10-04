@@ -1,0 +1,32 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.cursorrules
+
+# Auto-generated files
+src/types/import/auto-imports.d.ts
+src/types/import/components.d.ts
+.auto-import.json
+
+# Playwright E2E 产物（本地浏览器与运行输出，不提交）
+.playwright-browsers/
+test-results/
+playwright-report/
+target-e2e-*.log
+target-contract-*.log
+
+# G2 每个候选/场景独立原始证据；只通过校验器导出受控 ZIP，禁止提交 JAR、trace 或凭据截图。
+.e2e-evidence/
+
+# 独立仓库不继承平台根忽略规则，显式排除本机文件和日志。
+.idea/
+logs/
+*.log
+.integration/
+*.pem
+*.key
+__pycache__/
+*.py[cod]
+/manifest/

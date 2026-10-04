@@ -1,0 +1,10 @@
+[
+  {
+    "resourceId": "device_mark",
+    "digestAlgorithm": "SHA-256",
+    "digest": "5977f591d5eeb691ee85c7656468a8b5dd1378b70b02a55af574331a0f0f0eaa",
+    "assetPath": "assets/5977f591d5eeb691ee85c7656468a8b5dd1378b70b02a55af574331a0f0f0eaa.png",
+    "mediaType": "image/png",
+    "byteLength": 191
+  }
+]

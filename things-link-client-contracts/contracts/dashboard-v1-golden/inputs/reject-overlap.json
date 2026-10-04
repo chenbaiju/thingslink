@@ -1,0 +1,1 @@
+{"schemaVersion":"tc.dashboard/v1","presentation":{"mode":"RESPONSIVE_GRID"},"pages":[{"id":"main","title":"主页","components":[{"id":"first","kind":"TEXT","componentVersion":"1.0.0","layout":{"x":0,"y":0,"w":2,"h":2},"props":{},"bindings":{}},{"id":"second","kind":"TEXT","componentVersion":"1.0.0","layout":{"x":1,"y":1,"w":2,"h":2},"props":{},"bindings":{}}]}]}

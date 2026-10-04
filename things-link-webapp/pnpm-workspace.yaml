@@ -1,0 +1,3 @@
+# pnpm 11：只允许Vite必需的esbuild平台二进制安装，不开放任意依赖脚本。
+allowBuilds:
+  esbuild: true
