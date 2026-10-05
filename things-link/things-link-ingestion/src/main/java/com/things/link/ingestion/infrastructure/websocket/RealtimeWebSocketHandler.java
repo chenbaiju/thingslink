@@ -42,7 +42,7 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler {
         this.properties = properties;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         Object principal = session.getAttributes().get(RealtimeHandshakeInterceptor.PRINCIPAL_ATTRIBUTE);
@@ -60,7 +60,7 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         RealtimeConnection connection = connections.get(session.getId());
@@ -71,7 +71,7 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler {
         subscriptionService.handle(connection, message.getPayload());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         connections.remove(session.getId());

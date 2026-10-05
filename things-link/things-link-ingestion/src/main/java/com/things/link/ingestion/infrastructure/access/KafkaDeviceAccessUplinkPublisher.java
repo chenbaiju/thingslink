@@ -23,7 +23,7 @@ public class KafkaDeviceAccessUplinkPublisher implements DeviceAccessUplinkPubli
     /** 等待 broker 确认的上限，与既有标准发布路径保持一致，避免请求线程无界占用。 */
     private static final long SEND_TIMEOUT_SECONDS = 10L;
 
-    /** 继承 support 模块 trace producer interceptor 的 Kafka 模板。 */
+    /** 继承 support 模块 追踪生产者拦截器 的 Kafka 模板。 */
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     /**

@@ -1,6 +1,7 @@
 package com.things.link.integration.domain;
 import java.time.Instant;
 import java.util.*;
+/** Webhook 投递及尝试持久端口；状态推进需匹配认领令牌，人工恢复另有轮次条件。 */
 public interface WebhookDeliveryRepository {
     List<Candidate> candidates(int limit);
     Optional<Delivery> find(UUID id);

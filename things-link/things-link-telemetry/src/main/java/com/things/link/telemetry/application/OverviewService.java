@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-/** 编排 device 与 telemetry 各自事实端口，生成项目概要并提供 Redis read-through。 */
+/** 编排 device 与 telemetry 各自事实端口，生成项目概要并提供 Redis 穿透式读取缓存。 */
 @Service
 public class OverviewService {
     /** 统计窗口；与响应字段 messages24h/active24h 的语义一致。 */

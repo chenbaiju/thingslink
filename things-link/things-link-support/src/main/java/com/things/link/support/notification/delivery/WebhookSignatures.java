@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.UUID;
 
-/** Only the wire primitive is shared; each caller retains its separately derived purpose key. */
+/** 仅共享传输原语；各调用方分别持有按用途派生的密钥。 */
 public final class WebhookSignatures {
     private WebhookSignatures() {}
     public static String sign(byte[] derivedKey, long timestamp, String nonce, UUID deliveryId, byte[] body) {

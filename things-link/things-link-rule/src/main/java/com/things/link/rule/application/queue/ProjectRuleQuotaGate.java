@@ -17,7 +17,7 @@ public class ProjectRuleQuotaGate implements RuleQuotaGate {
         this.quotaDecisionService = quotaDecisionService;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean allows(RuleExecutionEnvelope envelope) {
         QuotaStatus executions = quotaDecisionService.decideTrustedProject(

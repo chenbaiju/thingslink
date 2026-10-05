@@ -142,6 +142,7 @@ class ProjectCleanupFinalizationTests {
                 proxy(new DashboardProjectCleanupContributor(new JdbcDashboardProjectCleanupRepository(app))),
                 proxy(new OtaProjectCleanupContributor(new JdbcOtaProjectCleanupRepository(app))),
                 ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner),
+                ProjectCleanupDashboardCompatibilityFixture.emptyAssistantContributor(owner),
                 proxy(new TelemetryProjectCleanupContributor(new JdbcTelemetryProjectCleanupRepository(app))),
                 proxy(new DeviceProjectCleanupContributor(new JdbcDeviceProjectCleanupRepository(app))),
                 proxy(new IamProjectCleanupContributor(new JdbcIamProjectCleanupRepository(app))),
@@ -393,7 +394,7 @@ class ProjectCleanupFinalizationTests {
         assertThat(prerequisites).extracting(ProjectCleanupContributor::stage)
                 .containsExactly(ProjectCleanupStage.WAIT_EXPORT, ProjectCleanupStage.TASK,
                         ProjectCleanupStage.RULE, ProjectCleanupStage.ALARM, ProjectCleanupStage.ENDUSER,
-                        ProjectCleanupStage.DASHBOARD, ProjectCleanupStage.OTA, ProjectCleanupStage.INTEGRATION, ProjectCleanupStage.TELEMETRY,
+                        ProjectCleanupStage.DASHBOARD, ProjectCleanupStage.OTA, ProjectCleanupStage.INTEGRATION, ProjectCleanupStage.ASSISTANT, ProjectCleanupStage.TELEMETRY,
                         ProjectCleanupStage.DEVICE, ProjectCleanupStage.IAM, ProjectCleanupStage.SUPPORT);
         for (ProjectCleanupContributor prerequisite : prerequisites) {
             ProjectCleanupClaim current = admission.claimNext().orElseThrow();

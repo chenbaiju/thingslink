@@ -40,7 +40,7 @@ public final class WebAppRuntimeDataRequestParser {
             "deviceId", "expectedModelVersionId", "propertyKeys");
     /** 告警设备闭集。 */ private static final Set<String> ALARM_DEVICE_FIELDS = Set.of(
             "deviceId", "expectedModelVersionId");
-    /** UTF-8 BOM。 */ private static final byte[] BOM = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+    /** UTF-8 字节顺序标记。 */ private static final byte[] BOM = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
     /** token层启用递归重复键拒绝，树层再执行字段闭集。 */
     private final ObjectReader reader = JsonMapper.builder(JsonFactory.builder()
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build())

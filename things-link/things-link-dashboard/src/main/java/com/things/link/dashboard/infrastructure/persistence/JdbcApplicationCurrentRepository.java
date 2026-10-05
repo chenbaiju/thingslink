@@ -130,7 +130,7 @@ public class JdbcApplicationCurrentRepository implements ApplicationRuntimeCurre
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<CurrentApplicationRuntimeProjection> findCurrent(

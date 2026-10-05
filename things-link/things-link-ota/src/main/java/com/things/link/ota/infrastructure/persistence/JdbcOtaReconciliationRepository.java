@@ -23,7 +23,7 @@ public class JdbcOtaReconciliationRepository implements OtaReconciliationReposit
     private final JdbcTemplate jdbc;
     /** 注入当前数据平面连接。 */
     public JdbcOtaReconciliationRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaJobProgressRepository.Context> nextCandidate() {
         return jdbc.query("SELECT * FROM ota_reconciliation_next_candidate()", (r,row) ->
                 new OtaJobProgressRepository.Context(id(r,"tenant_id"),id(r,"project_id"),id(r,"campaign_id"),
@@ -32,16 +32,16 @@ public class JdbcOtaReconciliationRepository implements OtaReconciliationReposit
                         r.getString("manifest_sha256"),id(r,"authorization_id"),at(r,"deadline_at")))
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean deferCandidate(OtaJobProgressRepository.Context c) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_reconciliation_defer_candidate(?,?)",
                 Boolean.class,c.jobId(),c.revision()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean expireQuery(UUID queryId) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_reconciliation_expire(?)",Boolean.class,queryId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean createQuery(OtaJobProgressRepository.Context c, OtaReconciliationQuery q) {
         if (!c.jobId().equals(q.jobId()) || c.revision() != q.recoveryRevision()) return false;
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_reconciliation_create("
@@ -50,38 +50,38 @@ public class JdbcOtaReconciliationRepository implements OtaReconciliationReposit
                 q.credentialVersion(),q.recoveryRevision(),q.authorizationId(),q.permitId(),q.queryNonce(),
                 q.commitBootId(),q.manifestSha256(),q.canonical(),q.payloadHash(),time(q.createdAt()),time(q.deadlineAt())));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaReconciliationQuery> findQuery(UUID id) {
         return jdbc.query("SELECT * FROM ota_reconciliation_query WHERE id=?",JdbcOtaReconciliationRepository::query,id)
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaReconciliationQuery> currentQuery(UUID job,int attempt) {
         return jdbc.query("SELECT q.* FROM ota_reconciliation_control c JOIN ota_reconciliation_query q"
                 + " ON q.id=c.current_query_id WHERE c.job_id=? AND c.attempt_no=?",
                 JdbcOtaReconciliationRepository::query,job,attempt).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaReconciliationReceipt> findReport(UUID device,UUID report) {
         return jdbc.query("SELECT * FROM ota_reconciliation_report WHERE device_id=? AND report_id=?",
                 JdbcOtaReconciliationRepository::receipt,device,report).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaReconciliationReceipt> findReportForQuery(UUID queryId) {
         return jdbc.query("SELECT * FROM ota_reconciliation_report WHERE query_id=?",
                 JdbcOtaReconciliationRepository::receipt,queryId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean hasSendReservation(UUID query) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM ota_reconciliation_transport WHERE event_id=?)",
                 Boolean.class,query));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean adoptionAllowed(OtaJobProgressRepository.Context c,UUID query,Instant brokerAt) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_reconciliation_adoption_allowed(?,?,?)",
                 Boolean.class,query,c.revision(),time(brokerAt)));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean acceptReport(OtaJobProgressRepository.Context c,OtaReconciliationReceipt r,
             boolean succeeded,String reason,UUID deviceReceiptId) {
         if (!c.jobId().equals(r.jobId())) return false;

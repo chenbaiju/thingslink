@@ -14,7 +14,7 @@ import jakarta.validation.constraints.NotNull;
  * @param username 已认证 MQTT 用户名，格式为 projectKey/deviceKey
  * @param topic Broker 实际接收的 Topic
  * @param payloadBase64 原始 MQTT payload 的 Base64 文本
- * @param qos MQTT QoS
+ * @param qos MQTT 服务质量等级
  * @param retained MQTT retained 标志
  * @param clientId Broker 观察到的客户端 ID
  * @param publishedAtMs Broker 接收消息的 Unix 毫秒时间

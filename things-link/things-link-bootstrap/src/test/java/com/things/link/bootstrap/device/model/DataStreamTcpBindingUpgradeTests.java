@@ -63,7 +63,7 @@ class DataStreamTcpBindingUpgradeTests {
             "classpath:db/migration/iam",
             "classpath:db/migration/enduser",
             // verify-11：完整升级必须包含授权外键的看板父表，并与生产迁移域保持一致。
-            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration"
+            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration", "classpath:db/migration/assistant"
     };
 
     /** 冻结迁移的全局前驱版本：V20260820_0100（alarm）。Flyway 目标版本用点号分隔。 */

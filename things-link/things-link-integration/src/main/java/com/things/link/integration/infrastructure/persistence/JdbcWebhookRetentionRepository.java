@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import java.util.*;
+/** Webhook 保留清理 JDBC 仓储，按范围及预算删除过期数据。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcWebhookRetentionRepository implements WebhookRetentionRepository {

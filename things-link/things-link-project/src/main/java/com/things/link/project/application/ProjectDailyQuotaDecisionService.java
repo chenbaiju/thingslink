@@ -65,7 +65,7 @@ public class ProjectDailyQuotaDecisionService {
         return decisionTrustedProject(tenantId, projectId, metric).status();
     }
 
-    /** Trusted consumers that must distinguish explicit zero from an ordinary soft hard-limit threshold. */
+    /** 供可信调用方区分显式零额度与普通软硬限制阈值。 */
     @Transactional(readOnly = true)
     public Decision decisionTrustedProject(UUID tenantId, UUID projectId, QuotaMetric metric) {
         if (metric == null || !metric.dailyCounter()) {

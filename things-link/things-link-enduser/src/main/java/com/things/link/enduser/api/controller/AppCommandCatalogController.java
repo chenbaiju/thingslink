@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /** 独立App控制目录，不改旧命令受理/状态路径；ADR0110先完整有界编码才发送。 */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "App 命令目录", description = "当前绑定设备的可控制命令目录")
 @RestController
 public class AppCommandCatalogController {
     /** 完整包装UTF-8上限，包含转义膨胀及元数据。 */
@@ -38,7 +39,14 @@ public class AppCommandCatalogController {
         this.service = service;
         this.mapper = mapper;
     }
-    /** @param jwt 真实App身份 @param deviceId 设备 @param response 提前设置错误响应缓存策略 @return 有界目录 */
+    /**
+     * 读取App设备可控制命令目录。
+     *
+     * @param jwt 真实App身份
+     * @param deviceId 设备
+     * @param response 提前设置错误响应缓存策略
+     * @return 有界目录
+     */
     @GetMapping(value = "/api/v1/app/devices/{deviceId}/command-definitions", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "getAppDeviceCommandCatalog", summary = "读取App设备可控制命令目录",
             description = "PRIMARY/MEMBER可用；仅预览当前定义，不锁定后续提交版本。")
@@ -46,7 +54,7 @@ public class AppCommandCatalogController {
             content = @Content(schema = @Schema(implementation = AppCommandCatalogResponse.class)))
     @ApiResponse(responseCode = "503", description = "目录数量或字节超限（30064）",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    public ResponseEntity<byte[]> list(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID deviceId,
+    public ResponseEntity<byte[]> list(@AuthenticationPrincipal Jwt jwt, @io.swagger.v3.oas.annotations.Parameter(description = "设备") @PathVariable UUID deviceId,
                                         HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-store");
         AppCommandCatalogResponse payload = AppCommandCatalogResponse.from(deviceId,
@@ -66,12 +74,12 @@ public class AppCommandCatalogController {
     static final class BoundedOutput extends OutputStream {
         /** 只有通过预算检查的字节才能入缓冲。 */
         private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override public void write(int value) {
             requireCapacity(1);
             buffer.write(value);
         }
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override public void write(byte[] bytes, int offset, int length) {
             requireCapacity(length);
             buffer.write(bytes, offset, length);

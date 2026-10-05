@@ -41,7 +41,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Set<UUID> findActiveDeviceIds(UUID tenantId, UUID projectId, UUID appUserId,
             Collection<UUID> deviceIds) {
@@ -57,7 +57,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                 .stream().collect(Collectors.toUnmodifiableSet());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<com.things.link.enduser.domain.AppRuntimeDeviceCatalogItem> findRuntimeCatalog(
             UUID tenantId, UUID projectId, UUID appUserId, UUID modelVersionId,
@@ -115,7 +115,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                         """, projectId, appUserId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppUserDevice> findActive(UUID projectId, UUID appUserId, UUID deviceId) {
         return jdbcTemplate.query("""
@@ -128,7 +128,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppUserDevice> findActivePrimary(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
@@ -141,7 +141,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppUserDevice> findActivePrimaryForUpdate(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
@@ -155,7 +155,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppUserDevice> findActiveForUpdate(UUID projectId, UUID appUserId, UUID deviceId) {
         return jdbcTemplate.query("""
@@ -169,7 +169,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int demotePrimaryToMember(UUID projectId, UUID bindingId, UUID appUserId, UUID deviceId) {
         return jdbcTemplate.update("""
@@ -180,7 +180,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                         """, projectId, bindingId, appUserId, deviceId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int promoteActiveToPrimary(UUID projectId, UUID bindingId, UUID appUserId, UUID deviceId) {
         return jdbcTemplate.update("""
@@ -213,7 +213,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int createActivePrimary(AppUserDevice binding) {
         return jdbcTemplate.update("""
@@ -227,7 +227,7 @@ public class JdbcAppUserDeviceRepository implements AppUserDeviceRepository {
                 Timestamp.from(binding.createdAt()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int createActiveShared(AppUserDevice binding) {
         if (binding.relationRole() != AppUserDevice.RelationRole.MEMBER

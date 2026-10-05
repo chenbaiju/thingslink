@@ -46,7 +46,7 @@ public class RealtimeWebSocketConfiguration implements WebSocketConfigurer {
         this.properties = properties;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(new RealtimeWebSocketHandler(this.registry, subscriptionService, properties),
@@ -56,4 +56,21 @@ public class RealtimeWebSocketConfiguration implements WebSocketConfigurer {
                 .setHandshakeHandler(new RealtimeHandshakeHandler());
     }
 
+
+    /**
+     * 描述原生 HTTP 升级入口，生产关闭文档时不创建此文档 Bean。
+     *
+     * @return 只维护契约、不注册运行路由的文档修正器
+     */
+    @org.springframework.context.annotation.Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "springdoc.api-docs.enabled", havingValue = "true", matchIfMissing = true)
+    public org.springdoc.core.customizers.OpenApiCustomizer consoleRealtimeHandshakeDocumentation() {
+        return api -> {
+            com.things.link.support.openapi.HttpTransportOpenApiDocumentation.webSocket(api,
+                    "/api/v1/realtime/ws", "upgradeConsoleRealtime", "建立控制台实时连接",
+                    "仅同源；原控制台 JWT 经握手校验项目成员及设备访问范围。",
+                    "按顺序发送 tc-v1 与 bearer.<控制台JWT>，禁止通过 URL 查询串传递 JWT", false);
+        };
+    }
 }

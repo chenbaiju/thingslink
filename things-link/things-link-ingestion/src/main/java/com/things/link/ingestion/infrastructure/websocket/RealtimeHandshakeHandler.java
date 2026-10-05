@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class RealtimeHandshakeHandler extends DefaultHandshakeHandler {
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     protected Principal determineUser(ServerHttpRequest request, WebSocketHandler webSocketHandler,
                                       Map<String, Object> attributes) {
@@ -26,7 +26,7 @@ public class RealtimeHandshakeHandler extends DefaultHandshakeHandler {
         return null;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     protected String selectProtocol(List<String> requestedProtocols, WebSocketHandler webSocketHandler) {
         return requestedProtocols.contains(RealtimeHandshakeInterceptor.APPLICATION_PROTOCOL)

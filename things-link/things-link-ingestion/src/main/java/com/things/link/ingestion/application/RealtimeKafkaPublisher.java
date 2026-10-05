@@ -34,7 +34,7 @@ public class RealtimeKafkaPublisher {
     private final RealtimeMetrics metrics;
 
     /**
-     * @param kafkaTemplate 继承统一 trace producer interceptor 的 Kafka 模板
+     * @param kafkaTemplate 继承统一 追踪生产者拦截器 的 Kafka 模板
      * @param metrics 实时链路指标
      */
     public RealtimeKafkaPublisher(KafkaTemplate<String, Object> kafkaTemplate, RealtimeMetrics metrics) {

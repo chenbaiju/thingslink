@@ -51,7 +51,7 @@ public class JacksonThingModelSchemaValidator implements ThingModelSchemaValidat
     /** @param objectMapper Spring 统一配置的 JSON 解析器 */
     public JacksonThingModelSchemaValidator(ObjectMapper objectMapper) { this.objectMapper = objectMapper; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String validateDefinition(String schema, Profile profile) {
         String normalized = schema.strip();
@@ -74,7 +74,7 @@ public class JacksonThingModelSchemaValidator implements ThingModelSchemaValidat
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void validateInstance(String schema, JsonNode instance, Profile profile) {
         if (schema == null || schema.isBlank()) return;
@@ -94,7 +94,7 @@ public class JacksonThingModelSchemaValidator implements ThingModelSchemaValidat
         validateInstanceNode(definition, value, 0);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String validateCompositeDefinition(String schema, String expectedRootType) {
         String normalized = validateDefinition(schema, Profile.PROPERTY_COMPOSITE_V1);

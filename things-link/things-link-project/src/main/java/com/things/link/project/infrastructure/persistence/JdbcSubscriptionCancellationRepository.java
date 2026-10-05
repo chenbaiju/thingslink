@@ -22,7 +22,7 @@ public class JdbcSubscriptionCancellationRepository implements SubscriptionCance
     /** @param jdbc 原事务数据库连接 */
     public JdbcSubscriptionCancellationRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<SubscriptionCancellationReceipt> find(UUID tenant, UUID operation) {
         return jdbc.query("""
@@ -34,13 +34,13 @@ public class JdbcSubscriptionCancellationRepository implements SubscriptionCance
                 tenant,operation).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Instant currentTime() {
         return Objects.requireNonNull(jdbc.queryForObject("SELECT clock_timestamp()",Timestamp.class)).toInstant();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean cancelActive(UUID tenant, UUID subscription, Instant at) {
         return jdbc.update("""
@@ -49,7 +49,7 @@ public class JdbcSubscriptionCancellationRepository implements SubscriptionCance
                 """,Timestamp.from(at),tenant,subscription,Timestamp.from(at))==1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void record(SubscriptionCancellationReceipt receipt) {
         int inserted=jdbc.update("""

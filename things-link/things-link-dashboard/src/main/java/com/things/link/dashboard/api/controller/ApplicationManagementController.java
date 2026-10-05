@@ -121,8 +121,8 @@ public class ApplicationManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = CreateApplicationRequest.class)))
     public ResponseEntity<ApplicationCreationResponse> create(
-            @PathVariable UUID projectId,
-            @Parameter(required = true)
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @Parameter(required = true, description = "客户端生成且在当前项目创建范围内唯一的幂等键")
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
         authorization.requireManage(projectId);
@@ -144,9 +144,9 @@ public class ApplicationManagementController {
     @GetMapping
     @Operation(summary = "应用目录分页", description = "使用不透明游标读取当前项目的未删除应用")
     public ResponseEntity<CursorPage<ApplicationCatalogResponse>> list(
-            @PathVariable UUID projectId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "上一页返回的不透明游标；首页为空") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "单页数量，默认50，允许1至200") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.list(projectId, cursor, limit).map(ApplicationCatalogResponse::from));
     }
@@ -161,8 +161,8 @@ public class ApplicationManagementController {
     @GetMapping("/{applicationId}")
     @Operation(summary = "应用目录详情", description = "读取当前项目内的单个未删除应用")
     public ResponseEntity<ApplicationCatalogResponse> find(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(ApplicationCatalogResponse.from(service.find(projectId, applicationId)));
     }
@@ -177,8 +177,8 @@ public class ApplicationManagementController {
     @GetMapping("/{applicationId}/draft")
     @Operation(summary = "应用草稿详情", description = "读取当前项目内未删除应用的可变草稿")
     public ResponseEntity<ApplicationDraftResponse> getDraft(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(ApplicationDraftResponse.from(service.getDraft(projectId, applicationId)));
     }
@@ -196,10 +196,10 @@ public class ApplicationManagementController {
     @Operation(operationId = "listApplicationVersions", summary = "应用历史版本分页",
             description = "按版本号倒序读取未删除应用的轻量不可变版本元数据")
     public ResponseEntity<CursorPage<ApplicationVersionSummaryResponse>> listApplicationVersions(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "上一页返回的不透明版本号游标；首页为空") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "单页数量，默认50，允许1至200") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.listVersions(projectId, applicationId, cursor, limit)
                 .map(ApplicationVersionSummaryResponse::from));
@@ -217,9 +217,9 @@ public class ApplicationManagementController {
     @Operation(operationId = "getApplicationVersion", summary = "应用历史版本详情",
             description = "读取未删除应用的精确不可变版本快照与摘要")
     public ResponseEntity<ApplicationVersionResponse> getApplicationVersion(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
-            @PathVariable UUID versionId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "精确应用版本ID") @PathVariable UUID versionId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(ApplicationVersionResponse.from(
                 service.getVersion(projectId, applicationId, versionId)));
@@ -253,8 +253,8 @@ public class ApplicationManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = PublishApplicationVersionRequest.class)))
     public ResponseEntity<ApplicationVersionResponse> publishApplicationVersion(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -297,9 +297,9 @@ public class ApplicationManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApplicationPublicationRevisionRequest.class)))
     public ResponseEntity<ApplicationVersionResponse> rollbackApplicationVersion(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
-            @PathVariable UUID versionId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标历史版本ID") @PathVariable UUID versionId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -331,8 +331,8 @@ public class ApplicationManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApplicationPublicationRevisionRequest.class)))
     public ResponseEntity<Void> withdrawApplicationPublication(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -361,8 +361,8 @@ public class ApplicationManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApplicationPublicationRevisionRequest.class)))
     public ResponseEntity<Void> softDeleteApplication(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -388,8 +388,8 @@ public class ApplicationManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = RenameApplicationRequest.class)))
     public ResponseEntity<ApplicationCatalogResponse> rename(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
             @RequestBody byte[] body) {
         authorization.requireManage(projectId);
         RenameApplicationRequest request = requestParser.parseRename(body);
@@ -413,8 +413,8 @@ public class ApplicationManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = SaveApplicationDraftRequest.class)))
     public ResponseEntity<ApplicationDraftResponse> saveDraft(
-            @PathVariable UUID projectId,
-            @PathVariable UUID applicationId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "应用内部ID") @PathVariable UUID applicationId,
             @RequestBody byte[] body) {
         authorization.requireManage(projectId);
         SaveApplicationDraftRequest request = requestParser.parseSaveDraft(body);

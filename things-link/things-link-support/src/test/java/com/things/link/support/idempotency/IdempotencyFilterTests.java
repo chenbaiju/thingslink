@@ -304,4 +304,20 @@ class IdempotencyFilterTests extends AbstractIntegrationTest {
         }
     }
 
+    @Test void syntheticProbeUsesOnlyExactSingleUseDomainRoute() {
+        assertThat(IdempotencyFilter.usesDomainIdempotency("POST","/api/v1/projects/p/assistant/model-probes/1")).isTrue();
+        assertThat(IdempotencyFilter.usesDomainIdempotency("POST","/api/v1/projects/p/assistant/model-probes/3")).isTrue();
+        for(String path:java.util.List.of("/api/v1/projects/p/assistant/model-probes/0","/api/v1/projects/p/assistant/model-probes/4",
+                "/api/v1/projects/p/assistant/model-probes/1/retry"))
+            assertThat(IdempotencyFilter.usesDomainIdempotency("POST",path)).isFalse();
+        assertThat(IdempotencyFilter.usesDomainIdempotency("PUT","/api/v1/projects/p/assistant/model-probes/1")).isFalse();
+    }
+    @Test void analysisRunsUseOnlyExactDomainPostAndNeverBroadenExclusion() {
+        String path="/api/v1/projects/p/assistant/analysis-runs";
+        assertThat(IdempotencyFilter.usesDomainIdempotency("POST",path)).isTrue();
+        for(String method:java.util.List.of("GET","PUT","PATCH","DELETE"))
+            assertThat(IdempotencyFilter.usesDomainIdempotency(method,path)).isFalse();
+        for(String extra:java.util.List.of("/","/status","/id","/retry"))
+            assertThat(IdempotencyFilter.usesDomainIdempotency("POST",path+extra)).isFalse();
+    }
 }

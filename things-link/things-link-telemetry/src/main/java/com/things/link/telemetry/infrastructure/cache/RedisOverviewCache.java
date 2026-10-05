@@ -27,7 +27,7 @@ public class RedisOverviewCache implements OverviewCache {
         this.properties = properties;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<OverviewSnapshot> find(UUID projectId) {
         String value = redisTemplate.opsForValue().get(redisKey(projectId));
@@ -48,7 +48,7 @@ public class RedisOverviewCache implements OverviewCache {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void put(UUID projectId, OverviewSnapshot snapshot) {
         redisTemplate.opsForValue().set(redisKey(projectId), objectMapper.writeValueAsString(snapshot),

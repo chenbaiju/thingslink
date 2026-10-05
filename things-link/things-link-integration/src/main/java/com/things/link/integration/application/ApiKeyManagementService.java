@@ -144,7 +144,7 @@ public class ApiKeyManagementService {
         List<String> cidrs;
         try { cidrs=repository.canonicalCidrs(spec.ipCidrs()); }
         catch(DataAccessException ex) {
-            // Only PG's invalid literal / network mask is a user error; all other failures propagate.
+            // 仅 PostgreSQL 的非法字面量或网络掩码错误归为用户输入错误；其他故障继续向上传播。
             Throwable cause=ex;
             while(cause!=null) {
                 if(cause instanceof java.sql.SQLException sql && ("22P02".equals(sql.getSQLState())||"22023".equals(sql.getSQLState())))throw invalid();
@@ -155,7 +155,7 @@ public class ApiKeyManagementService {
         return new Spec(name,spec.scopes().stream().distinct().sorted().toList(),cidrs,spec.expiresAt().truncatedTo(ChronoUnit.MICROS));
     }
     private static String requestDigest(String kind,UUID target,Spec spec) {
-        // Length-prefixed fields avoid delimiter ambiguities in user-provided names.
+        // 字段带长度前缀，避免用户提供的名称引起分隔符歧义。
         List<String> fields=new ArrayList<>(List.of(kind,target==null?"":target.toString()));
         if(spec!=null)fields.addAll(List.of(spec.name(),String.join(",",spec.scopes()),String.join(",",spec.ipCidrs()),spec.expiresAt().toString()));
         StringBuilder value=new StringBuilder();
@@ -170,7 +170,7 @@ public class ApiKeyManagementService {
     private static BusinessException invalid(){return new BusinessException(CommonErrorCode.INVALID_PARAMETER);}
     private static BusinessException conflict(){return new BusinessException(CommonErrorCode.RESOURCE_STATE_CONFLICT);}
     private static BusinessException notFound(){return new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);}
-    /** Input copied by normalization before persistence; secrets cannot be supplied by callers. */
+    /** 持久化前通过规范化复制输入；调用者不能提供秘密字段。 */
     public record Spec(String name,List<String> scopes,List<String> ipCidrs,Instant expiresAt) {}
     /** 首次响应之外secret为空；默认诊断绝不打印secret。 */
     public record Result(ApiKeyView key,String secret,boolean replayed) {

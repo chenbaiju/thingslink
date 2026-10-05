@@ -26,13 +26,13 @@ public class EmailNotificationSender implements NotificationChannelSender {
         this.sender = sender;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public NotificationChannel channel() {
         return NotificationChannel.EMAIL;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String send(AlarmNotificationDelivery delivery) {
         try {

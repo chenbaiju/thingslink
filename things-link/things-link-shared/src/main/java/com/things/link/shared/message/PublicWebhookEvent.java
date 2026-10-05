@@ -2,7 +2,7 @@ package com.things.link.shared.message;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-/** Trusted source fact, not an HTTP input. recordedAt belongs to the original stable fact, never retry time. */
+/** 可信来源事实，不是 HTTP 输入；recordedAt 属于原始稳定事实，不取重试时间。 */
 public record PublicWebhookEvent(UUID eventId,String eventType,UUID tenantId,UUID projectId,long projectGeneration,
     String resourceType,UUID resourceId,UUID deviceId,Instant occurredAt,Instant recordedAt,String traceId,String payloadJson) {
     public static final Set<String> EVENT_TYPES=Set.of("device.online","device.offline","device.property.report","alarm.triggered","alarm.recovered","command.completed","ota.job.completed");

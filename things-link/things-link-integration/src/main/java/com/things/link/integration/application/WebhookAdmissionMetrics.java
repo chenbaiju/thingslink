@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.*;
 import java.util.*;
 
-/** Operational results only; durable delivery facts remain the billing source. */
+/** 仅表示操作结果；计费仍以持久投递事实为依据。 */
 @Component
 public class WebhookAdmissionMetrics {
     public static final String NAME="thingslink.integration.webhook.admission";

@@ -39,7 +39,7 @@ public class ProjectDeviceQuotaContributorAdapter implements ProjectDeviceQuotaC
         this.transactionLocalRlsScope = transactionLocalRlsScope;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
     public ProjectDeviceQuotaUsage countActiveDevices(UUID projectId) {
@@ -53,7 +53,7 @@ public class ProjectDeviceQuotaContributorAdapter implements ProjectDeviceQuotaC
                         resultSet.getLong("tenant_used_value")));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
     public ProjectDeviceQuotaUsage countActiveDevices(UUID trustedTenantId, UUID trustedProjectId) {

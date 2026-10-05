@@ -7,7 +7,6 @@ import com.things.link.shared.message.AuthenticatedDeviceIdentity;
 import com.things.link.support.trace.TraceContext;
 import com.things.link.telemetry.application.DeviceCommandAccessReplyPort;
 import com.things.link.telemetry.application.DeviceCommandClaimPort;
-import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -37,9 +36,9 @@ import java.util.UUID;
  * <p>与属性上报端点的差别只在语义：领取成功是 200（有命令）或 204（无命令，设备按 {@code pollAfterMillis}
  * 再轮询），回复成功与上报同为 202——回复本身是设备提交的**业务结果**，命令终态由命令事实追踪，不由响应码承诺。</p>
  */
-@Hidden
 @ConditionalOnProperty(name = "things-link.deployment.role",
         havingValue = "device-access", matchIfMissing = true)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "设备 HTTP 命令", description = "设备身份认证后的命令领取与业务回复")
 @RestController
 public class DeviceAccessHttpCommandController {
 
@@ -85,6 +84,7 @@ public class DeviceAccessHttpCommandController {
      * @return 200 与命令列表；没有可领取命令时 204
      * @throws IOException 读取请求体失败
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "claimDeviceAccessCommands", summary = "领取待执行命令", description = "领取待执行命令。")
     @PostMapping(COMMAND_CLAIM_PATH)
     public ResponseEntity<Map<String, Object>> claim(HttpServletRequest request) throws IOException {
         AuthenticatedDeviceIdentity identity = identity(request);
@@ -125,6 +125,7 @@ public class DeviceAccessHttpCommandController {
      * @return 202 受理结果；找不到命令 404，同键异结果 409
      * @throws IOException 读取请求体失败
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "replyDeviceAccessCommand", summary = "提交一次业务回复", description = "提交一次业务回复。\n\n 请求体同样按上限自读而不是交给消息转换器：交给框架会把超大请求先完整缓冲再判断，等于把上限\n 挪到内存之后。")
     @PostMapping(COMMAND_REPLY_PATH)
     public ResponseEntity<Map<String, Object>> reply(HttpServletRequest request) throws IOException {
         AuthenticatedDeviceIdentity identity = identity(request);

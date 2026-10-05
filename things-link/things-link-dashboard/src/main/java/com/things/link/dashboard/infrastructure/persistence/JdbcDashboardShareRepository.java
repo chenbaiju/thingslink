@@ -36,13 +36,13 @@ public class JdbcDashboardShareRepository implements DashboardShareRepository {
     /** @param jdbc 服从可信RLS和事务连接的JDBC入口 */
     public JdbcDashboardShareRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Instant databaseNow() {
         return jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardShareCreationResult> findCreationResult(UUID tenantId, UUID projectId, UUID dashboardId,
             UUID accountId, String idempotencyKeyDigest) {
@@ -60,7 +60,7 @@ public class JdbcDashboardShareRepository implements DashboardShareRepository {
                 tenantId, projectId, dashboardId, accountId, idempotencyKeyDigest).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long countActive(UUID projectId, UUID dashboardId, Instant now) {
         // 只需区分0..20与超限；最多读取21行，不把计数变成历史全量加载。
@@ -73,7 +73,7 @@ public class JdbcDashboardShareRepository implements DashboardShareRepository {
                 """, Long.class, projectId, dashboardId, Timestamp.from(now));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void create(DashboardShareToken token, List<DashboardShareVariableScope> scopes,
@@ -113,14 +113,14 @@ public class JdbcDashboardShareRepository implements DashboardShareRepository {
                 creation.idempotencyKeyDigest(), creation.requestDigest(), creation.shareId(), Timestamp.from(creation.createdAt()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardShareToken> find(UUID projectId, UUID dashboardId, UUID shareId) {
         return jdbc.query("SELECT * FROM dash_share_token WHERE project_id = ? AND dashboard_id = ? AND id = ?",
                 JdbcDashboardShareRepository::token, projectId, dashboardId, shareId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DashboardShareSummary> page(UUID projectId, UUID dashboardId, Instant beforeAt, UUID beforeId, int fetchLimit) {
         if ((beforeAt == null) != (beforeId == null) || fetchLimit < 1 || fetchLimit > 51) {
@@ -147,7 +147,7 @@ public class JdbcDashboardShareRepository implements DashboardShareRepository {
                 beforeId, fetchLimit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<DashboardShareToken> revoke(UUID projectId, UUID dashboardId, UUID shareId, UUID accountId) {

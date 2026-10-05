@@ -57,7 +57,7 @@ public class JdbcTenantRefundRepository implements TenantRefundRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID insert(UUID tenantId, UUID orderId, long amountCents, String currency,
                        PaymentProvider provider, String providerRefundId, RefundStatus status,
@@ -73,7 +73,7 @@ public class JdbcTenantRefundRepository implements TenantRefundRepository {
         return refundId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantRefund> findByProviderRefundId(PaymentProvider provider,
                                                         String providerRefundId) {
@@ -83,7 +83,7 @@ public class JdbcTenantRefundRepository implements TenantRefundRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long sumSucceededByOrder(UUID orderId) {
         Long total = jdbcTemplate.queryForObject("""

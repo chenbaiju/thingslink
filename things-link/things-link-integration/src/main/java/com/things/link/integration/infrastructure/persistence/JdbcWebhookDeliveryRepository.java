@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import java.util.*;
+/** Webhook 投递 JDBC 仓储，维护尝试回执、租约、轮次及终态条件更新。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcWebhookDeliveryRepository implements WebhookDeliveryRepository {

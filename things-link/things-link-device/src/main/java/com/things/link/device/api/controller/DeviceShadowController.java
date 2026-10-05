@@ -25,20 +25,33 @@ public class DeviceShadowController {
     /** @param service 影子应用服务 */
     public DeviceShadowController(DeviceShadowService service) { this.service = service; }
 
-    /** @param projectId 项目 ID @param deviceId 设备 ID @return 当前影子 */
+    /**
+     * 读取影子。
+     *
+     * @param projectId 项目 ID
+     * @param deviceId 设备 ID
+     * @return 当前影子
+     */
     @GetMapping
     @Operation(summary = "读取影子",
             description = "获取设备当前影子状态；ACTIVE 项目首次访问创建空影子，归档项目缺失时返回不落库的只读空快照")
-    public ResponseEntity<DeviceShadowResponse> get(@PathVariable UUID projectId,
-                                                     @PathVariable UUID deviceId) {
+    public ResponseEntity<DeviceShadowResponse> get(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                     @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId) {
         return ResponseEntity.ok(DeviceShadowResponse.from(service.get(projectId, deviceId)));
     }
 
-    /** @param projectId 项目 ID @param deviceId 设备 ID @param request 更新请求 @return 更新后的影子 */
+    /**
+     * 更新期望状态。
+     *
+     * @param projectId 项目 ID
+     * @param deviceId 设备 ID
+     * @param request 更新请求
+     * @return 更新后的影子
+     */
     @PutMapping("/desired")
     @Operation(summary = "更新期望状态", description = "更新设备 desired 期望属性值，使用乐观锁版本号防止并发覆盖")
-    public ResponseEntity<DeviceShadowResponse> updateDesired(@PathVariable UUID projectId,
-                                                               @PathVariable UUID deviceId,
+    public ResponseEntity<DeviceShadowResponse> updateDesired(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                               @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId,
                                                                @Valid @RequestBody UpdateDesiredRequest request) {
         return ResponseEntity.ok(DeviceShadowResponse.from(
                 service.updateDesired(projectId, deviceId, request.desired(), request.version())));

@@ -28,7 +28,7 @@ public class JdbcQuotaOverviewRepository implements QuotaOverviewRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<QuotaMetricUsageRow> findDailyUsage(LocalDate usageDate) {
         return jdbcTemplate.query("SELECT * FROM project_quota_overview(?)",
@@ -45,7 +45,7 @@ public class JdbcQuotaOverviewRepository implements QuotaOverviewRepository {
                 usageDate);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceQuotaPolicyRow> findDeviceQuotaPolicy(UUID trustedTenantId, UUID trustedProjectId) {
         return jdbcTemplate.query("SELECT * FROM public.device_project_quota_policy(?, ?)",

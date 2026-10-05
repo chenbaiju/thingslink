@@ -38,13 +38,21 @@ public class OtaCampaignAdvancementController {
         this.authorization = authorization;
         this.service = service;
     }
-    /** 当前人工计划成功批的唯一后继，完成同键返回公共墓碑。 */
+    /**
+     * 当前人工计划成功批的唯一后继，完成同键返回公共墓碑。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param campaignId 升级活动标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaCampaignExecutionResponse>}
+     */
     @PostMapping(value = "/batch-advancements", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "advanceOtaCampaignBatch", summary = "人工放行OTA下一批")
+    @Operation(operationId = "advanceOtaCampaignBatch", summary = "人工放行OTA下一批", description = "当前人工计划成功批的唯一后继，完成同键返回公共墓碑。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = Advancement.class)))
-    public ResponseEntity<OtaCampaignExecutionResponse> advance(@PathVariable UUID projectId, @PathVariable UUID campaignId,
-            @Parameter(required = true) @RequestHeader(value = "Idempotency-Key", required = false) String key,
+    public ResponseEntity<OtaCampaignExecutionResponse> advance(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "升级活动标识") @PathVariable UUID campaignId,
+            @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody byte[] body) {
         manage(projectId);
         var fields = fields(body, Set.of("expectedRevision", "expectedBatchNumber", "reason"));

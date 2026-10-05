@@ -96,7 +96,7 @@ public class RegistrationService {
                     passwordEncoder.encode(command.password()),
                     defaultDisplayName(command, email),
                     Account.Status.ACTIVE,
-                    // lastLoginAt / failedLoginAttempts / lockedUntil / emailVerifiedAt。
+                    // 最近登录时间、登录失败次数、锁定截止时间及邮箱验证时间。
                     // 最后一个为 null 是刻意的：注册这一刻邮箱还没被证实，
                     // 证实发生在用户点开验证链接之后（ADR 0013）
                     null, 0, null, null));

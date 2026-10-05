@@ -1,5 +1,5 @@
 <!--
-  项目设置首屏：只读展示当前 UTC 日的配额与用量，以及同租户成员可见的「我的套餐」摘要。
+  项目设置首屏：管理员可配置项目模型 Key；配额区只读展示当前 UTC 日的配额与用量，以及同租户成员可见的「我的套餐」摘要。
 
   套餐归属与限额按租户共享，项目只是事实拆分维度。普通协作者只能经此项目接口读取
   当前项目的贡献以及共享池余量，不能借助页面反推出同租户其他项目或账单聚合；套餐摘要
@@ -10,6 +10,9 @@
     <ElEmpty v-if="!projectId && !loading" :description="$t('quota.noProject')" />
 
     <template v-else>
+      <AgentModelPanel />
+      <ProjectKnowledgePanel :project-id="projectId" />
+      <PersonalFactCollectionPanel :project-id="projectId" />
       <ElAlert
         type="info"
         show-icon
@@ -84,6 +87,9 @@
 </template>
 
 <script setup lang="ts">
+  import AgentModelPanel from './AgentModelPanel.vue'
+  import ProjectKnowledgePanel from '@/components/agent/ProjectKnowledgePanel.vue'
+  import PersonalFactCollectionPanel from '@/components/agent/PersonalFactCollectionPanel.vue'
   import QuotaUsageTable from './QuotaUsageTable.vue'
   import PlanSummaryPanel from './PlanSummaryPanel.vue'
   import { fetchProjectQuota, type ProjectQuotaOverviewResponse } from '@/api/quota'

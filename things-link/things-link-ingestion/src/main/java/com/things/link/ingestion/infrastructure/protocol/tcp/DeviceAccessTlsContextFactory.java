@@ -46,9 +46,9 @@ public class DeviceAccessTlsContextFactory {
 
     /** 允许的密码套件白名单：只保留 AEAD；TLS 1.2 只用 ECDHE（前向保密），不含 CBC 与静态 RSA 密钥交换。 */
     private static final String[] ALLOWED_CIPHER_SUITES = {
-            // TLS 1.3
+            // TLS 1.3 协议版本
             "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256",
-            // TLS 1.2：ECDHE + AEAD
+            // TLS 1.2 协议版本：ECDHE 密钥交换与 AEAD 认证加密
             "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
@@ -139,7 +139,7 @@ public class DeviceAccessTlsContextFactory {
      * 生成设备面服务端套接字使用的固定 TLS 参数。
      *
      * <p>协议与套件都取「白名单 ∩ JVM 实际支持」：交集为空或缺少 TLS 1.2 时抛出，让接入面拒绝启动。客户端证书
-     * 仍不要求（身份由应用层认证帧证明），因此这里显式关闭 want/need client auth。</p>
+     * 仍不要求（身份由应用层认证帧证明），因此这里显式关闭 可选或强制客户端认证。</p>
      *
      * @param context 由本工厂创建的上下文
      * @return 已固定的服务端参数

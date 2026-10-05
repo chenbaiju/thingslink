@@ -126,7 +126,8 @@ class ProjectCleanupTelemetryTests {
                 proxy(new AppProjectCleanupContributor(new JdbcAppProjectCleanupRepository(app))),
                 ProjectCleanupDashboardCompatibilityFixture.emptyContributor(),
                 ProjectCleanupDashboardCompatibilityFixture.emptyOtaContributor(owner),
-                ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner));
+                ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner),
+                ProjectCleanupDashboardCompatibilityFixture.emptyAssistantContributor(owner));
         telemetry=proxy(new TelemetryProjectCleanupContributor(new JdbcTelemetryProjectCleanupRepository(app)));
         batches=batch(telemetry::clean);
     }

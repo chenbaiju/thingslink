@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "things-link-agent"
+version = "0.1.0"
+description = "ThingsLink isolated Agent analysis contracts"
+requires-python = ">=3.12"
+license-files = ["THIRD_PARTY_NOTICES.txt"]
+dependencies = [
+    "pydantic==2.13.5",
+    "fastapi==0.142.2",
+    "uvicorn==0.54.0",
+    "cryptography==50.0.2",
+    "tokenizers==0.23.2",
+]
+
+[dependency-groups]
+test = ["pytest==9.1.1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"pyproject.toml" = "agent/_runtime_contracts/pyproject.toml"
+"uv.lock" = "agent/_runtime_contracts/uv.lock"
+
+[tool.pytest.ini_options]
+testpaths = ["tests/agent"]
+addopts = "--strict-config --strict-markers"
+
+[tool.uv]
+required-version = "==0.12.23"

@@ -33,12 +33,12 @@ public final class EmailActionNode implements RuleNode {
              "subject":{"type":"string","maxLength":256},"body":{"type":"string","maxLength":4096}}}
             """);
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public String type() { return TYPE; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public JsonNode configSchema() { return SCHEMA.deepCopy(); }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public RuleNodeValidation validate(JsonNode config) {
         if (config == null || !config.isObject() || config.size() != FIELDS.size()
                 || config.properties().stream().anyMatch(entry -> !FIELDS.contains(entry.getKey()))
@@ -51,7 +51,7 @@ public final class EmailActionNode implements RuleNode {
         return RuleNodeValidation.success();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public RuleNodeResult execute(RuleMessage message, JsonNode config, RuleExecutionContext context) {
         JsonNode payload = new ObjectMapper().createObjectNode()
                 .put("channel", "email")

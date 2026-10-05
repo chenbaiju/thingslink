@@ -27,7 +27,7 @@ import java.util.UUID;
 /** App 安装实例 PUSH token 管理接口（G2-A2a）。 */
 @RestController
 @RequestMapping("/api/v1/app/push-tokens")
-@Tag(name = "App PUSH token", description = "注册、轮换或吊销当前终端用户的安装实例 PUSH token")
+@Tag(name = "App 推送令牌", description = "注册、轮换或吊销当前终端用户的安装实例 PUSH token")
 public class AppPushTokenController {
 
     /** 安装实例应用服务。 */
@@ -43,7 +43,7 @@ public class AppPushTokenController {
      *
      * @param jwt 已认证 App JWT，显式提供租户、当前项目与用户身份
      * @param request 安装实例与厂商 token
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PutMapping
     @Operation(summary = "注册或轮换 PUSH 安装实例",

@@ -40,7 +40,7 @@ import java.util.UUID;
  * <p>与控制台 {@code TenantScopeFilter} 是同一职责的第二类身份过滤器，但关键区别在于：
  *
  * <ul>
- *   <li>主体是 {@code app_user_id}（App JWT subject），<b>不是</b> {@code accountId}。
+ *   <li>主体是 {@code app_user_id}（应用 JWT 主体），<b>不是</b> {@code accountId}。
  *       App 身份绝不能冒充控制台账号去写审计日志（ADR 0036），因此本过滤器只写
  *       {@link RlsScopeContext}（数据源驱动 RLS 的输入），<b>不碰</b> {@code TenantContext}
  *       —— 后者携带 accountId，是控制台账号语义。</li>
@@ -140,7 +140,7 @@ public class AppScopeFilter extends OncePerRequestFilter {
     /**
      * 从安全上下文里取出 App 令牌声明的租户/项目范围。
      *
-     * @return 已认证且声明齐全时返回隔离范围与代次，否则为空（RLS fail-closed）
+     * @return 已认证且声明齐全时返回隔离范围与代次，否则为空（行级隔离在缺失条件时拒绝访问）
      */
     private Optional<AppProjectIdentity> resolveIdentity() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

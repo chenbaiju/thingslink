@@ -34,24 +34,24 @@ public class JdbcOtaUploadRepository implements OtaUploadRepository {
     private static final String COLUMNS = "id,tenant_id,project_id,firmware_id,created_by,request_id,project_generation,expected_length,revision,expected_sha256,bucket,object_key,status,version_id,failure_code,key_digest,request_digest,created_at,expires_at,lease_until,write_started_at,write_settled_at,cancel_requested_at,cleanup_completed_at,next_attempt_at,lease_token";
     /** 注入同物理事务的JDBC。 */
     public JdbcOtaUploadRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void lockCreation(UUID tenantId,UUID projectId,UUID firmwareId) {
         jdbc.queryForObject("SELECT 1 FROM pg_advisory_xact_lock(hashtextextended("
                 + "concat_ws(':','ota-upload-create-v1',?::text,?::text,?::text),13017::bigint))",
                 Integer.class,tenantId,projectId,firmwareId);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaUploadSession> findCreation(UUID tenantId,UUID projectId,UUID firmwareId,
             UUID accountId,String keyDigest) {
         return query("tenant_id=? AND project_id=? AND firmware_id=? AND created_by=? AND key_digest=?",
                 tenantId,projectId,firmwareId,accountId,keyDigest);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaUploadSession> findActive(UUID tenantId,UUID projectId,UUID firmwareId) {
         return query("tenant_id=? AND project_id=? AND firmware_id=? AND status<>'CLEANED'",
                 tenantId,projectId,firmwareId);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaUploadSession> find(UUID projectId,UUID firmwareId,UUID id,boolean lock) {
         return query("project_id=? AND firmware_id=? AND id=?"+(lock?" FOR UPDATE":""),projectId,firmwareId,id);
     }
@@ -87,7 +87,7 @@ public class JdbcOtaUploadRepository implements OtaUploadRepository {
     private static BusinessException invalidCursor() {
         return new BusinessException(CommonErrorCode.INVALID_PARAMETER,"上传会话分页参数不合法");
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(OtaUploadSession s) {
         jdbc.update("INSERT INTO ota_firmware_upload_session ("+COLUMNS+") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 s.id(),
@@ -117,7 +117,7 @@ public class JdbcOtaUploadRepository implements OtaUploadRepository {
                 timestamp(s.nextAttemptAt()),
                 s.leaseToken());
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean claimReceive(OtaUploadSession s,UUID token) {
         return update(s,"status='RECEIVING',revision=revision+1,lease_token=?,"
                 + "lease_until=clock_timestamp()+interval '120 seconds'",
@@ -130,18 +130,18 @@ public class JdbcOtaUploadRepository implements OtaUploadRepository {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT public.ota_upload_renew(?,?,?,?,?)",Boolean.class,
                 s.tenantId(),s.projectId(),s.firmwareId(),s.id(),token));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markWriting(OtaUploadSession s,UUID token) {
         return leased(s,token,"status='WRITING',revision=revision+1,write_started_at=greatest(clock_timestamp(),created_at)",
                 " AND status='RECEIVING' AND cancel_requested_at IS NULL",new Object[]{});
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recordVersion(OtaUploadSession s,UUID token,String versionId) {
         return leased(s,token,"version_id=?,write_settled_at=coalesce(write_settled_at,greatest(clock_timestamp(),write_started_at)),revision=revision+1",
                 " AND status IN ('WRITING','UNKNOWN','CLEANUP_PENDING') AND (version_id IS NULL OR version_id=?)",
                 new Object[]{versionId},versionId);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean finishVerified(OtaUploadSession s,UUID token) {
         return leased(s,token,"status='VERIFIED',revision=revision+1,failure_code=NULL,lease_token=NULL,lease_until=NULL",
                 " AND status IN ('WRITING','UNKNOWN') AND version_id IS NOT NULL AND write_settled_at IS NOT NULL"
@@ -162,7 +162,7 @@ public class JdbcOtaUploadRepository implements OtaUploadRepository {
         return update(s,cancelAssignment()," AND status NOT IN ('CLEANED','ADOPTED') AND revision=?",
                 new Object[]{},new Object[]{expectedRevision});
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public int cancelForFirmware(UUID tenantId,UUID projectId,UUID firmwareId) {
         return jdbc.update("UPDATE ota_firmware_upload_session SET "+cancelAssignment()
                 + " WHERE tenant_id=? AND project_id=? AND firmware_id=? AND status NOT IN ('CLEANED','ADOPTED') AND cancel_requested_at IS NULL",
@@ -173,17 +173,17 @@ public class JdbcOtaUploadRepository implements OtaUploadRepository {
         return jdbc.query("SELECT "+COLUMNS+" FROM public.ota_upload_claim_recovery()",
                 JdbcOtaUploadRepository::map).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean postpone(OtaUploadSession s,UUID token,String reason) {
         return leased(s,token,"revision=revision+1,failure_code=?,lease_token=NULL,lease_until=NULL,next_attempt_at=clock_timestamp()+interval '120 seconds'",
                 " AND status IN ('UNKNOWN','CLEANUP_PENDING')",new Object[]{reason});
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markCleanup(OtaUploadSession s,UUID token,String reason) {
         return leased(s,token,"status='CLEANUP_PENDING',revision=revision+1,failure_code=?",
                 " AND status IN ('WRITING','UNKNOWN','VERIFIED','CLEANUP_PENDING')",new Object[]{reason});
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean finishCleanup(OtaUploadSession s,UUID token) {
         return leased(s,token,"status='CLEANED',revision=revision+1,cleanup_completed_at=clock_timestamp(),"
                 + "lease_token=NULL,lease_until=NULL,failure_code=NULL",

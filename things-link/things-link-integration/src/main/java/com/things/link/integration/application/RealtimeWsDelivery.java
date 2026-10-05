@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.function.Consumer;
+/** 公开 WebSocket 实时交付服务；发送前重验票据权限、实例归属及持久交付状态。 */
 @Service
 public class RealtimeWsDelivery {
     private final RealtimeDeliveryRepository deliveries;private final RealtimeTicketRepository tickets;private final RealtimeOutboundAdmission admission;private final RealtimeTicketService service;private final TransactionLocalRlsScope rls;

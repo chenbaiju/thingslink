@@ -15,7 +15,7 @@ public enum DeviceCommandErrorCode implements ErrorCode {
     DeviceCommandErrorCode(int code, String message, int httpStatus) {
         this.code = code; this.message = message; this.httpStatus = httpStatus;
     }
-    /** {@inheritDoc} */ @Override public int code() { return code; }
-    /** {@inheritDoc} */ @Override public String defaultMessage() { return message; }
-    /** {@inheritDoc} */ @Override public int httpStatus() { return httpStatus; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public int code() { return code; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public String defaultMessage() { return message; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public int httpStatus() { return httpStatus; }
 }

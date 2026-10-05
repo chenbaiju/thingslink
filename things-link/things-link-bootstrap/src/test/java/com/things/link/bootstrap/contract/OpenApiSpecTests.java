@@ -40,9 +40,188 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * 该根入口持有唯一写租约并把本测试的输出导向临时文件；禁止直接写仓库契约。
  */
 @AutoConfigureMockMvc
+@org.springframework.test.context.TestPropertySource(properties =
+        "springdoc.paths-to-match=/api/v1/**,/api/open/v1/**,/device-access/v1/**,/app,/app/**,/simulations/**")
+@org.springframework.context.annotation.Import({com.things.link.simulator.api.controller.SimulatorController.class,
+        OpenApiSpecTests.ToolCatalogConfiguration.class})
 @DisplayName("OpenAPI 契约（BACKEND_ARCHITECTURE.md 11.1）")
 class OpenApiSpecTests extends AbstractIntegrationTest {
 
+    @Autowired
+    private org.springframework.boot.webmvc.actuate.endpoint.web.WebMvcEndpointHandlerMapping managementMapping;
+
+    /** 聚合工具目录时仅装配控制器和替身，不启动模拟设备或改变平台生产扫描。 */
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private com.things.link.simulator.application.DeviceSimulator simulator;
+
+    /** 独立工具的错误处理不借用平台 Advice；此处只校正聚合目录的进程边界。 */
+    @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
+    static class ToolCatalogConfiguration {
+        @org.springframework.context.annotation.Bean
+        org.springdoc.core.customizers.OpenApiCustomizer simulatorCatalogBoundary() {
+            return api -> api.getPaths().forEach((path, item) -> {
+                if (!path.startsWith("/simulations/")) return;
+                item.readOperations().forEach(operation -> {
+                    operation.setSecurity(java.util.List.of());
+                    operation.setDescription(operation.getDescription()
+                            + " 仅由独立模拟器进程提供，默认回环 8090；本目录不是平台运行路由。"
+                            + "含设备凭据的请求不得写入日志，远程使用须先取得受保护测试网络。"
+                            + "本片不代表真实硬件或容量资格。");
+                    operation.addExtension("x-deployment-role", "simulator");
+                    operation.getResponses().forEach((status, response) -> {
+                        if (status.matches("[45][0-9Xx]{2}")) {
+                            response.setContent(null);
+                            response.setDescription("独立工具请求失败；使用该进程的默认 MVC 错误处理，不保证平台 ApiError 结构");
+                        }
+                    });
+                });
+            });
+        }
+    }
+
+
+    /** 新入口、隐藏分组或退回英文说明必须在发布生成物之前失败。 */
+    @Test
+    void httpInventoryRejectsMissingRoutesAndEnglishDocumentation() throws Exception {
+        JsonNode good = PRETTY.readTree(fetchSpec());
+        OpenApiHttpInventoryAssertions.verify(good);
+        for (int mutation = 0; mutation < 6; mutation++) {
+            var broken = (tools.jackson.databind.node.ObjectNode) PRETTY.readTree(fetchSpec());
+            var paths = (tools.jackson.databind.node.ObjectNode) broken.path("paths");
+            var operation = (tools.jackson.databind.node.ObjectNode) paths.path(
+                    "/api/v1/projects/{projectId}/alarm-notification-templates").path("get");
+            if (mutation == 0) paths.remove("/simulations/stats");
+            else if (mutation == 1) paths.remove("/api/open/v1/realtime/ws");
+            else if (mutation == 2) operation.put("summary", "List templates");
+            else if (mutation == 3) operation.remove("description");
+            else if (mutation == 4) operation.putArray("tags").add("alarm-notification-controller");
+            else ((tools.jackson.databind.node.ObjectNode) operation.path("parameters").get(0)).put("description", "project identifier");
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> OpenApiHttpInventoryAssertions.verify(broken))
+                    .isInstanceOf(AssertionError.class);
+        }
+    }
+
+    /** 设备双凭据与原始错误体、静态空错误和独立模拟器不能套用平台管理 API。 */
+    @Test
+    void transportCatalogPreservesProcessAndWireBoundaries() throws Exception {
+        JsonNode spec = PRETTY.readTree(fetchSpec());
+        java.util.Set<String> managementPaths = new java.util.LinkedHashSet<>();
+        managementMapping.getHandlerMethods().keySet().forEach(mapping -> {
+            if (!mapping.getMethodsCondition().getMethods().isEmpty()) mapping.getPatternValues()
+                    .forEach(path -> managementPaths.add(path.replace("/**", "/{componentPath}")));
+        });
+        var documentedManagement = spec.path("paths").propertyNames().stream()
+                .filter(path -> path.startsWith("/actuator")).collect(java.util.stream.Collectors.toSet());
+        assertThat(documentedManagement).containsExactlyInAnyOrderElementsOf(managementPaths);
+        assertThat(spec.path("paths").path("/actuator/health").path("get").path("responses").path("503")
+                .path("content").toString()).doesNotContain("ApiError");
+        assertThat(spec.path("paths").path("/actuator/prometheus").path("get").path("responses").path("200")
+                .path("content").propertyNames()).anyMatch(media -> media.startsWith("text/"));
+        var device = spec.path("paths").path("/device-access/v1/property/report").path("post");
+        assertThat(device.path("security").get(0).propertyNames()).containsExactlyInAnyOrder("deviceHttpKey", "deviceHttpSecret");
+        assertThat(device.path("responses").has("202")).isTrue();
+        assertThat(device.path("responses").has("200")).isFalse();
+        assertThat(device.path("responses").path("400").path("content").path("application/json").path("schema").path("$ref").asString())
+                .isEqualTo("#/components/schemas/DeviceHttpError");
+        assertThat(spec.path("components").path("schemas").path("DeviceHttpError").path("properties").propertyNames())
+                .containsExactlyInAnyOrder("errorCode", "message");
+        assertThat(spec.path("paths").path("/device-access/v1/command/claim").path("post").path("requestBody").path("required").asBoolean()).isFalse();
+        assertThat(spec.path("paths").path("/device-access/v1/command/claim").path("post").path("responses").path("204").has("content")).isFalse();
+        var shell = spec.path("paths").path("/app/{resourcePath}");
+        assertThat(shell.path("get").path("x-spring-path-pattern").asString()).isEqualTo("/app/**");
+        assertThat(shell.path("get").path("responses").path("200").path("content").has("text/html")).isTrue();
+        assertThat(shell.path("get").path("responses").path("404").has("content")).isFalse();
+        assertThat(shell.path("head").path("responses").path("200").has("content")).isFalse();
+        var simulation = spec.path("paths").path("/simulations/start").path("post");
+        assertThat(simulation.path("servers").get(0).path("url").asString()).isEqualTo("http://127.0.0.1:8090");
+        assertThat(simulation.path("x-deployment-role").asString()).isEqualTo("simulator");
+        for (String path : java.util.List.of("/api/v1/realtime/ws", "/api/open/v1/realtime/ws", "/ws/app/properties",
+                "/ws/app/dashboard", "/ws/dashboard/properties", "/ws/shares/{shareId}/properties")) {
+            var handshake = spec.path("paths").path(path).path("get");
+            assertThat(handshake.path("responses").has("101")).as(path).isTrue();
+            assertThat(handshake.path("responses").path("403").has("content")).as(path).isFalse();
+            if (path.contains("/shares/")) {
+                assertThat(handshake.path("responses").has("401")).isFalse();
+                assertThat(handshake.path("responses").has("404")).isTrue();
+                assertThat(handshake.path("responses").has("429")).isTrue();
+            }
+            assertThat(handshake.path("x-transport").asString()).as(path).isEqualTo("websocket-upgrade");
+        }
+    }
+
+    @Test
+    void assistantModelConfigurationHasOnlyMetadataAndWriteOnlySecret() throws Exception {
+        JsonNode doc = PRETTY.readTree(fetchSpec());
+        JsonNode path = doc.path("paths").path("/api/v1/projects/{projectId}/assistant/model-configurations/deepseek-chat");
+        assertThat(path.propertyNames()).contains("get", "put", "patch", "delete");
+        for (String method : List.of("put", "patch")) {
+            assertThat(path.path(method).path("responses").path("200").path("content").path("*/*")
+                .path("schema").path("$ref").asString()).isEqualTo("#/components/schemas/ModelConfigurationView");
+            JsonNode unavailable = path.path(method).path("responses").path("503");
+            assertThat(unavailable.path("description").asString()).contains("50061");
+            assertThat(unavailable.path("content").path("application/json").path("schema").path("$ref").asString())
+                .isEqualTo("#/components/schemas/ApiError");
+        }
+        JsonNode view = doc.path("components").path("schemas").path("ModelConfigurationView");
+        assertThat(view.path("properties").propertyNames()).containsExactlyInAnyOrder("configured", "enabled", "revision", "updatedAt");
+        JsonNode secret = doc.path("components").path("schemas").path("ModelCredentialInput").path("properties").path("apiKey");
+        assertThat(secret.path("writeOnly").asBoolean()).isTrue();
+        assertThat(secret.path("maxLength").asInt()).isEqualTo(4096);
+    }
+
+    @Test void syntheticProbeIsAClosedSingleUseConsoleOperation() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());var op=spec.path("paths").path("/api/v1/projects/{projectId}/assistant/model-probes/{sampleIndex}").path("post");
+        assertThat(op.path("security").toString()).contains("consoleAccessBearer");
+        assertThat(op.has("requestBody")).isFalse();
+        assertThat(op.path("parameters").valueStream().noneMatch(p->"Idempotency-Key".equals(p.path("name").asString()))).isTrue();
+        assertThat(op.path("responses").path("200").path("content").path("*/*").path("schema").path("$ref").asString()).isEqualTo("#/components/schemas/AssistantProbeRunView");
+        assertThat(spec.path("components").path("schemas").path("AssistantProbeRunView").path("properties").propertyNames())
+            .containsExactlyInAnyOrder("attemptId","sampleIndex","status","category","usage");
+        assertThat(spec.path("components").path("schemas").path("AssistantProbeUsage").path("properties").has("content")).isFalse();
+    }
+
+    @Test void analysisRunPublishesRequiredDomainKeyAndTransientResultContract() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());String path="/api/v1/projects/{projectId}/assistant/analysis-runs";
+        var post=spec.path("paths").path(path).path("post");
+        assertThat(post.path("security").toString()).contains("consoleAccessBearer");
+        var key=post.path("parameters").valueStream().filter(p->"Idempotency-Key".equals(p.path("name").asString())).toList();
+        assertThat(key).hasSize(1);assertThat(key.getFirst().path("required").asBoolean()).isTrue();
+        assertThat(post.path("requestBody").path("required").asBoolean()).isTrue();
+        var schemas=spec.path("components").path("schemas");
+        assertThat(schemas.path("AssistantAnalysisRequest").path("additionalProperties").asBoolean(true)).isFalse();
+        assertThat(schemas.path("AssistantAnalysisRequest").path("properties").propertyNames())
+                .containsExactlyInAnyOrder("deviceId","expectedModelVersionId","propertyKeys","template");
+        assertThat(schemas.path("AssistantAnalysisRequest").path("properties").path("propertyKeys").path("maxItems").asInt()).isEqualTo(10);
+        var runView=schemas.path("AssistantAnalysisRunView");
+        assertThat(runView.path("properties").propertyNames()).containsExactlyInAnyOrder("call","category","result");
+        assertThat(runView.path("required").valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("call","category","result");
+        var result=runView.path("properties").path("result");
+        assertThat(result.path("anyOf").get(0).path("$ref").asString()).isEqualTo("#/components/schemas/AssistantAnalysisResult");
+        assertThat(result.path("anyOf").get(1).path("type").asString()).isEqualTo("null");
+        var content=schemas.path("AssistantAnalysisResult");
+        assertThat(content.path("properties").propertyNames()).containsExactlyInAnyOrder("model","promptVersion","summary","findings","limitations","usage");
+        assertThat(content.path("required").size()).isEqualTo(6);assertThat(content.path("additionalProperties").asBoolean(true)).isFalse();
+        assertThat(schemas.path("AssistantAnalysisFinding").path("properties").propertyNames()).containsExactlyInAnyOrder("kind","statement","evidenceIds");
+        assertThat(schemas.path("AssistantAnalysisFinding").path("additionalProperties").asBoolean(true)).isFalse();
+        assertThat(schemas.path("AssistantAnalysisUsage").path("properties").propertyNames()).containsExactlyInAnyOrder("promptTokens","completionTokens","totalTokens","cacheHitTokens","cacheMissTokens");
+        var call=schemas.path("AssistantAnalysisRunView").path("properties").path("call");
+        assertThat(call.has("$ref")).isFalse();assertThat(call.has("type")).isFalse();
+        assertThat(call.path("anyOf").size()).isEqualTo(2);
+        assertThat(call.path("anyOf").get(0).path("$ref").asString()).isEqualTo("#/components/schemas/AssistantAnalysisCallView");
+        assertThat(call.path("anyOf").get(1).path("type").asString()).isEqualTo("null");
+        assertThat(schemas.path("AssistantAnalysisCallView").path("required").size()).isEqualTo(7);
+        assertThat(schemas.path("AssistantAnalysisAvailability").path("properties").propertyNames()).containsExactlyInAnyOrder("businessAvailable","reason");
+        assertThat(schemas.path("AssistantAnalysisCallView").path("properties").propertyNames())
+                .containsExactlyInAnyOrder("id","status","createdAt","deadline","expiresAt","dispatchedAt","finishedAt");
+        assertThat(spec.path("paths").path(path+"/status").has("get")).isTrue();
+        assertThat(spec.path("paths").path(path+"/{callId}").has("get")).isTrue();
+        var lookup=spec.path("paths").path(path+"/by-key").path("get");
+        assertThat(lookup.path("operationId").asString()).isEqualTo("getAssistantAnalysisCallByKey");
+        var lookupKey=lookup.path("parameters").valueStream().filter(p->"Idempotency-Key".equals(p.path("name").asString())).toList();
+        assertThat(lookupKey).hasSize(1);assertThat(lookupKey.getFirst().path("required").asBoolean()).isTrue();
+        assertThat(lookupKey.getFirst().path("in").asString()).isEqualTo("header");
+        assertThat(lookup.has("requestBody")).isFalse();
+    }
 
     @Test void invitationsHaveDistinctPublicProofAndAuthenticatedSingleUseAcceptance() throws Exception {
         JsonNode spec = PRETTY.readTree(fetchSpec());
@@ -59,6 +238,160 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
         var view = spec.path("components").path("schemas").path("ProjectInvitationView");
         assertThat(view.path("required").valueStream().map(JsonNode::asString).toList())
                 .contains("id", "projectId", "targetEmail", "status", "expiresAt").doesNotContain("code");
+    }
+
+    @Test void personalFactCollectionIsClosedBoundedReadWithHistoricalSources() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        var operation=spec.path("paths").path("/api/v1/projects/{projectId}/assistant/fact-reports/collection").path("post");
+        assertThat(operation.path("operationId").asString()).isEqualTo("generatePersonalFactCollection");
+        assertThat(operation.path("security").toString()).contains("consoleAccessBearer");
+        assertThat(operation.path("parameters").valueStream().map(p->p.path("name").asString()).toList()).containsExactly("projectId");
+        assertThat(operation.path("requestBody").path("required").asBoolean()).isTrue();
+        var schemas=spec.path("components").path("schemas");
+        var input=schemas.path("PersonalFactCollectionInput");
+        assertThat(input.path("properties").propertyNames()).containsExactly("recordIds");
+        assertThat(input.path("additionalProperties").asBoolean()).isFalse();
+        assertThat(input.path("required").get(0).asString()).isEqualTo("recordIds");
+        var ids=input.path("properties").path("recordIds");
+        assertThat(ids.path("minItems").asInt()).isEqualTo(1);assertThat(ids.path("maxItems").asInt()).isEqualTo(5);
+        assertThat(ids.path("uniqueItems").asBoolean()).isTrue();
+        assertThat(ids.path("items").path("format").asString()).isEqualTo("uuid");
+        assertThat(ids.path("items").path("pattern").asString()).isEqualTo("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}");
+        var report=schemas.path("PersonalFactCollectionReport");
+        assertThat(report.path("properties").propertyNames()).containsExactlyInAnyOrder("schemaVersion","mode","scope","sourceRecords",
+                "coverage","earliestCollectionAt","latestCollectionAt","expiresAt","contentSha256","markdown");
+        assertThat(report.path("required").size()).isEqualTo(10);
+        var version=report.path("properties").path("schemaVersion");
+        assertThat(version.path("type").asString()).isEqualTo("integer");assertThat(version.has("enum")).isFalse();
+        assertThat(version.path("minimum").asInt()).isEqualTo(1);assertThat(version.path("maximum").asInt()).isEqualTo(1);
+        assertThat(report.path("properties").path("mode").path("enum").get(0).asString()).isEqualTo("FACTS_ONLY");
+        assertThat(report.path("properties").path("scope").path("enum").get(0).asString()).isEqualTo("SELECTED_PERSONAL_RECORDS");
+        assertThat(report.path("properties").path("markdown").path("maxLength").asInt()).isEqualTo(1048576);
+        var sources=report.path("properties").path("sourceRecords");
+        assertThat(sources.path("minItems").asInt()).isEqualTo(1);assertThat(sources.path("maxItems").asInt()).isEqualTo(5);
+        assertThat(sources.path("items").path("$ref").asString()).endsWith("/PersonalEvidenceRecordView");
+        assertThat(schemas.path("PersonalFactCollectionCoverage").path("required").size()).isEqualTo(5);
+        assertThat(schemas.path("PersonalFactCollectionCoverage").path("properties").path("devices").path("maximum").asInt()).isEqualTo(5);
+        assertThat(schemas.path("PersonalFactCollectionCoverage").path("properties").path("selectedProperties").path("maximum").asInt()).isEqualTo(50);
+    }
+
+    @Test void personalFactReportHasBoundedHistoricalOnlySchemaAndNoWriteInput() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        var operation=spec.path("paths").path("/api/v1/projects/{projectId}/assistant/evidence-records/{recordId}/fact-report").path("get");
+        assertThat(operation.path("operationId").asString()).isEqualTo("generatePersonalFactReport");
+        assertThat(operation.path("security").toString()).contains("consoleAccessBearer");
+        assertThat(operation.has("requestBody")).isFalse();
+        assertThat(operation.path("parameters").valueStream().map(p->p.path("name").asString()).toList())
+                .containsExactlyInAnyOrder("projectId","recordId");
+        var schema=spec.path("components").path("schemas").path("PersonalFactReport");
+        assertThat(schema.path("properties").propertyNames()).containsExactlyInAnyOrder("schemaVersion","mode","sourceRecord","contentSha256","markdown");
+        assertThat(schema.path("required").valueStream().map(JsonNode::asString).toList()).hasSize(5);
+        var version=schema.path("properties").path("schemaVersion");
+        assertThat(version.path("type").asString()).isEqualTo("integer");
+        assertThat(version.has("enum")).isFalse();
+        assertThat(version.path("minimum").asInt()).isEqualTo(1);
+        assertThat(version.path("maximum").asInt()).isEqualTo(1);
+        assertThat(schema.path("properties").path("mode").path("enum").get(0).asString()).isEqualTo("FACTS_ONLY");
+        assertThat(schema.path("properties").path("markdown").path("maxLength").asInt()).isEqualTo(131072);
+    }
+
+    @Test void personalEvidenceRecordsHaveClosedSelectorsAndHistoricalOnlyContent() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());var paths=spec.path("paths");
+        String base="/api/v1/projects/{projectId}/assistant/evidence-records";
+        assertThat(paths.path(base).path("post").path("responses").has("201")).isTrue();
+        assertThat(paths.path(base+"/{recordId}").path("delete").path("responses").has("204")).isTrue();
+        for(String path:List.of(base,base+"/{recordId}"))
+            assertThat(paths.path(path).path("get").path("security").toString()).contains("consoleAccessBearer");
+        var schemas=spec.path("components").path("schemas");
+        assertThat(schemas.path("CreatePersonalEvidenceRecordRequest").path("properties").propertyNames())
+                .containsExactlyInAnyOrder("deviceId","expectedModelVersionId","propertyKeys");
+        assertThat(schemas.path("CreatePersonalEvidenceRecordRequest").path("additionalProperties").asBoolean()).isFalse();
+        assertThat(schemas.path("PersonalEvidenceRecordView").path("properties").propertyNames())
+                .containsExactlyInAnyOrder("id","deviceId","modelVersionId","createdAt","expiresAt","contentSha256");
+        assertThat(schemas.path("PersonalEvidenceProperty").path("properties").path("value").path("type")
+                .valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("number","boolean","null");
+    }
+
+
+    @Test void controlledProjectKnowledgeHasClosedApprovalVersionAndLocalCitationContract() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec()); var paths=spec.path("paths");
+        String base="/api/v1/projects/{projectId}/assistant/knowledge";
+        var publish=paths.path(base+"/sources/{sourceKey}").path("put");
+        assertThat(publish.path("responses").has("201")).isTrue();
+        assertThat(paths.path(base+"/sources/{sourceKey}").path("delete").path("responses").has("204")).isTrue();
+        var search=paths.path(base+"/search").path("post");
+        assertThat(search.path("security").toString()).contains("consoleAccessBearer");
+        assertThat(search.path("parameters").valueStream().map(p -> p.path("name").asString()).toList()).doesNotContain("Idempotency-Key");
+        var schemas=spec.path("components").path("schemas");
+        var request=schemas.path("PublishAssistantKnowledgeRequest");
+        assertThat(request.path("properties").propertyNames()).containsExactlyInAnyOrder("expectedCurrentVersionId","content","approvedForProjectMembers");
+        assertThat(request.path("additionalProperties").asBoolean()).isFalse();
+        var keywords=schemas.path("SearchAssistantKnowledgeRequest").path("properties").path("keywords");
+        assertThat(keywords.path("minItems").asInt()).isEqualTo(1);assertThat(keywords.path("maxItems").asInt()).isEqualTo(5);
+        var result=schemas.path("AssistantKnowledgeSearchResult");
+        assertThat(result.path("properties").path("hits").path("maxItems").asInt()).isEqualTo(3);
+        assertThat(result.path("properties").path("mode").path("enum").get(0).asString()).isEqualTo("LOCAL_LITERAL");
+        assertThat(schemas.path("AssistantKnowledgeHit").path("properties").propertyNames())
+            .containsExactlyInAnyOrder("source","startCodePoint","endCodePoint","truncated","text");
+        assertThat(schemas.path("AssistantKnowledgeHit").path("properties").path("text").path("maxLength").asInt()).isEqualTo(256);
+        assertThat(schemas.path("AssistantKnowledgeSource").path("properties").propertyNames())
+            .containsExactlyInAnyOrder("id","sourceKey","versionNumber","createdAt","contentSha256");
+    }
+
+    @Test void assistantAlarmsPublishBoundedClosedFactsAndNullableCursor() throws Exception {
+        var spec = PRETTY.readTree(fetchSpec());
+        var operation = spec.path("paths").path("/api/v1/projects/{projectId}/assistant/devices/{deviceId}/alarms").path("get");
+        assertThat(operation.path("operationId").asString()).isEqualTo("getAssistantDeviceAlarms");
+        assertThat(operation.path("security").toString()).contains("consoleAccessBearer");
+        assertThat(parameter(operation, "expectedModelVersionId", "query").path("required").asBoolean()).isTrue();
+        assertThat(parameter(operation, "limit", "query").path("schema").path("maximum").asInt()).isEqualTo(50);
+        assertThat(parameter(operation, "cursor", "query").path("schema").path("maxLength").asInt()).isEqualTo(4096);
+        var schemas = spec.path("components").path("schemas");
+        var fields = schemas.path("AssistantAlarmEvidence").path("properties");
+        assertThat(fields.path("items").path("maxItems").asInt()).isEqualTo(50);
+        assertThat(fields.path("sourceModelState").path("enum").valueStream().map(JsonNode::asString).toList())
+                .containsExactly("NOT_PROVIDED");
+        assertThat(fields.path("nextCursor").path("type").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("string", "null");
+        var item = schemas.path("AssistantAlarmEvidenceItem").path("properties");
+        assertThat(item.propertyNames()).containsExactlyInAnyOrder("id", "severity", "conditionState", "ackState",
+                "firstConditionAt", "activatedAt", "clearedAt", "acknowledgedAt", "lastReceivedAt", "version");
+        assertThat(item.path("severity").path("enum").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("CRITICAL", "MAJOR", "MINOR", "WARNING", "INFO");
+        assertThat(item.path("activatedAt").path("type").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("string", "null");
+    }
+
+    @Test void assistantHistoryPublishesBoundedNullableVersionedFacts() throws Exception {
+        var spec = PRETTY.readTree(fetchSpec());
+        var operation = spec.path("paths").path("/api/v1/projects/{projectId}/assistant/devices/{deviceId}/history").path("get");
+        assertThat(operation.path("operationId").asString()).isEqualTo("getAssistantDeviceHistory");
+        assertThat(operation.path("security").toString()).contains("consoleAccessBearer");
+        for (String name : List.of("expectedModelVersionId", "propertyKey", "from", "to"))
+            assertThat(parameter(operation, name, "query").path("required").asBoolean()).isTrue();
+        var schemas = spec.path("components").path("schemas");
+        assertThat(schemas.path("AssistantHistoryEvidence").path("properties").path("points").path("maxItems").asInt()).isEqualTo(2000);
+        assertThat(schemas.path("AssistantHistoryPoint").path("properties").path("value").path("type")
+                .valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("number", "null");
+        assertThat(schemas.path("AssistantHistoryPoint").path("properties").path("sourceModelVersionId").path("type")
+                .valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("string", "null");
+    }
+
+    @Test void assistantSnapshotKeepsConsoleAuthAndBoundedEvidenceSchema() throws Exception {
+        JsonNode spec = PRETTY.readTree(fetchSpec());
+        var operation = spec.path("paths").path("/api/v1/projects/{projectId}/assistant/devices/{deviceId}/snapshot").path("get");
+        assertThat(operation.path("operationId").asString()).isEqualTo("getAssistantDeviceSnapshot");
+        assertThat(operation.path("security").toString()).contains("consoleAccessBearer");
+        var keys = parameter(operation, "propertyKey", "query").path("schema");
+        assertThat(keys.path("minItems").asInt()).isEqualTo(1);
+        assertThat(keys.path("maxItems").asInt()).isEqualTo(10);
+        assertThat(keys.path("uniqueItems").asBoolean()).isTrue();
+        assertThat(parameter(operation, "expectedModelVersionId", "query").path("required").asBoolean()).isTrue();
+        var fields = spec.path("components").path("schemas").path("AssistantEvidenceProperty").path("properties");
+        assertThat(fields.path("value").path("type").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("number", "string", "boolean", "object", "array", "null");
+        assertThat(fields.path("availability").path("enum").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("PRESENT", "MISSING", "SOURCE_UNKNOWN", "MODEL_MISMATCH");
     }
 
     /** PS-026a：运行时null必须出现在生成类型中，版本不能退化为JS number。 */
@@ -796,6 +1129,7 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
         var parsed = PRETTY.readTree(generated);
         assertUniqueOperationIds(parsed);
         OpenApiGlobalStructureAssertions.verify(parsed);
+        OpenApiHttpInventoryAssertions.verify(parsed);
 
         if (writeMode) {
             // JUnit不保证测试顺序；写入测试自身复用全部结构断言，任何失败都发生在落盘之前。
@@ -853,7 +1187,7 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
     private static void assertExpectedMetadata(JsonNode spec) {
 
         assertThat(spec.get("openapi").asString()).startsWith("3.1");
-        assertThat(spec.get("info").get("title").asString()).isEqualTo("ThingsLink 管理 API");
+        assertThat(spec.get("info").get("title").asString()).isEqualTo("ThingsLink HTTP 接口目录");
         // 契约版本，不是应用构建版本 —— 两者分别演进
         assertThat(spec.get("info").get("version").asString()).isEqualTo("v1");
         assertThat(spec.get("servers").get(0).get("url").asString())

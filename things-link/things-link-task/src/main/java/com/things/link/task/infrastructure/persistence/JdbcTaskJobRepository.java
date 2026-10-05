@@ -28,7 +28,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
     /** @param jdbc JDBC 数据库访问门面 */
     public JdbcTaskJobRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void create(TaskJob job) {
         jdbc.update("""
@@ -47,18 +47,18 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 time(job.createdAt()), time(job.updatedAt()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<TaskJob> findJob(UUID projectId, UUID jobId) {
         return jdbc.query(selectJobs() + " WHERE j.project_id = ? AND j.id = ? AND j.deleted_at IS NULL",
                 this::mapJob, projectId, jobId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<TaskJob> findJobs(UUID projectId) {
         return jdbc.query(selectJobs() + " WHERE j.project_id = ? AND j.deleted_at IS NULL ORDER BY j.updated_at DESC", this::mapJob, projectId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(TaskJob job, long expectedVersion) {
         int changed = jdbc.update("""
                 UPDATE task_job SET name = ?, description = ?, status = ?, target_type = ?, target_group_id = ?,
@@ -77,7 +77,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean softDelete(UUID projectId, UUID jobId, long expectedVersion) {
         return jdbc.update("""
                 UPDATE task_job SET deleted_at = now(), status = 'PAUSED', version = version + 1, updated_at = now()
@@ -85,21 +85,21 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, projectId, jobId, expectedVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DueSchedule> claimDueSchedules(int limit) {
         return jdbc.query("SELECT tenant_id, project_id, job_id, scheduled_fire_at FROM claim_due_task_schedules(?)",
                 (rs, row) -> new DueSchedule(rs.getObject("tenant_id", UUID.class), rs.getObject("project_id", UUID.class),
                         rs.getObject("job_id", UUID.class), instant(rs, "scheduled_fire_at")), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DueExecution> claimDueExecutions(int limit) {
         return jdbc.query("SELECT tenant_id, project_id, execution_id FROM claim_due_task_executions(?)",
                 (rs, row) -> new DueExecution(rs.getObject("tenant_id", UUID.class), rs.getObject("project_id", UUID.class),
                         rs.getObject("execution_id", UUID.class)), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<TaskExecution> createScheduledExecution(DueSchedule due, Instant now) {
         UUID id = Uuid7.generate();
         int inserted = jdbc.update("""
@@ -112,7 +112,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
         return inserted == 1 ? findExecution(due.projectId(), id) : Optional.empty();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean advanceSchedule(UUID projectId, UUID jobId, Instant expectedFireAt, Instant nextRunAt) {
         return jdbc.update("""
                 UPDATE task_schedule SET next_run_at = ?, lease_until = NULL, updated_at = now()
@@ -120,7 +120,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, time(nextRunAt), projectId, jobId, time(expectedFireAt)) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public TaskExecution createManualExecution(TaskExecution execution) {
         jdbc.update("""
                 INSERT INTO task_execution (id, tenant_id, project_id, job_id, trigger_type, status, target_type, target_group_id,
@@ -132,13 +132,13 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
         return findExecution(execution.projectId(), execution.id()).orElseThrow();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<TaskExecution> findExecution(UUID projectId, UUID executionId) {
         return jdbc.query(selectExecutions() + " WHERE project_id = ? AND id = ?", this::mapExecution,
                 projectId, executionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<TaskExecution> lockExecution(UUID tenantId, UUID projectId, UUID executionId) {
         Objects.requireNonNull(tenantId, "执行租户身份不能为空");
         Objects.requireNonNull(projectId, "执行项目身份不能为空");
@@ -152,13 +152,13 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 this::mapExecution, tenantId, projectId, executionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<TaskExecution> findExecutions(UUID projectId, UUID jobId) {
         return jdbc.query(selectExecutions() + " WHERE project_id = ? AND job_id = ? ORDER BY started_at DESC",
                 this::mapExecution, projectId, jobId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public int appendTargets(UUID executionId, UUID tenantId, UUID projectId, List<UUID> deviceIds) {
         int appended = 0;
         for (UUID deviceId : deviceIds) appended += jdbc.update("""
@@ -168,7 +168,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
         return appended;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean updateExpansion(UUID executionId, String cursor, boolean hasMore, int appended, Instant now) {
         return jdbc.update("""
                 UPDATE task_execution SET expansion_cursor = ?, total_targets = total_targets + ?,
@@ -177,7 +177,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, cursor, appended, hasMore, time(now), executionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean beginStopping(UUID executionId, Instant now) {
         // 停止原因只用于展示；ADR0066 决策2以持久状态控制重入，不改动已经展开的历史事实。
         return jdbc.update("""
@@ -186,7 +186,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, time(now), executionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean beginDispatchStopping(UUID executionId, Instant now) {
         // ADR0067决策3区分停止来源，保留原执行快照、全部计数及目标事实。
         return jdbc.update("""
@@ -195,7 +195,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, time(now), executionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public int skipPendingForStopping(UUID executionId, int limit, Instant now) {
         if (limit < 1 || limit > 100) {
             throw new IllegalArgumentException("停止收束目标批量必须在1到100之间");
@@ -215,7 +215,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, executionId, limit, time(now), time(now));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean completeStoppingExecutionIfReady(UUID executionId, Instant now) {
         // ADR0066 决策3要求同时排除未受理与已受理未终态目标，不能套用旧分支只检查 ACCEPTED 的完成条件。
         // 汇总读取本执行全部目标，但不重写 total/cursor/failure_summary；100条上限仅约束每轮目标变更。
@@ -236,7 +236,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, time(now), time(now), executionId, executionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean updateStoppingLease(UUID executionId, boolean progressed, Instant now) {
         // ADR0066 决策3沿用30秒领取租约；无进展从本轮处理时间重算，避免过期租约造成忙轮询。
         return jdbc.update("""
@@ -244,7 +244,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, progressed ? null : time(now.plusSeconds(30)), time(now), executionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<TaskTarget> claimPendingTargets(UUID executionId, int limit) {
         return jdbc.query("""
                 WITH due AS (
@@ -258,7 +258,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, this::mapTarget, executionId, limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markTargetAccepted(UUID executionId, UUID deviceId, UUID commandId, Instant now) {
         return jdbc.update("""
                 UPDATE task_target SET status = 'ACCEPTED', command_id = ?, accepted_at = ?, lease_until = NULL, updated_at = ?
@@ -266,7 +266,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, commandId, time(now), time(now), executionId, deviceId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markTargetFailed(UUID executionId, UUID deviceId, String summary, Instant now) {
         return jdbc.update("""
                 UPDATE task_target SET status = 'FAILED', failure_summary = ?, completed_at = ?, lease_until = NULL, updated_at = ?
@@ -274,7 +274,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, summary, time(now), time(now), executionId, deviceId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markTargetSkipped(UUID executionId, UUID deviceId, String summary, Instant now) {
         return jdbc.update("""
                 UPDATE task_target SET status = 'SKIPPED', failure_summary = ?, completed_at = ?, lease_until = NULL, updated_at = ?
@@ -282,7 +282,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, summary, time(now), time(now), executionId, deviceId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markRunningIfNoPending(UUID executionId, Instant now) {
         return jdbc.update("""
                 UPDATE task_execution e SET status = 'RUNNING', lease_until = NULL, updated_at = ?
@@ -291,7 +291,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, time(now), executionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean completeTarget(UUID executionId, UUID deviceId, TaskTarget.Status status, String summary, Instant now) {
         return jdbc.update("""
                 UPDATE task_target SET status = ?, failure_summary = ?, completed_at = ?, updated_at = ?
@@ -299,7 +299,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, status.name(), summary, time(now), time(now), executionId, deviceId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<TaskTarget> findActiveTargets(UUID executionId, int limit) {
         return jdbc.query("""
                 SELECT execution_id, tenant_id, project_id, device_id, status, command_id, failure_summary, accepted_at, completed_at
@@ -307,7 +307,7 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
                 """, this::mapTarget, executionId, limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean completeExecutionIfReady(UUID executionId, Instant now) {
         return jdbc.update("""
                 UPDATE task_execution e SET accepted_targets = s.accepted, succeeded_targets = s.succeeded,
@@ -361,9 +361,9 @@ public class JdbcTaskJobRepository implements TaskJobRepository {
             rs.getObject("execution_id", UUID.class), rs.getObject("tenant_id", UUID.class), rs.getObject("project_id", UUID.class),
             rs.getObject("device_id", UUID.class), TaskTarget.Status.valueOf(rs.getString("status")),
             rs.getObject("command_id", UUID.class), rs.getString("failure_summary"), instant(rs, "accepted_at"), instant(rs, "completed_at")); }
-    /** nullable instant to JDBC timestamp。 */
+    /** 将可空时间点转换为 JDBC 时间戳。 */
     private static Timestamp time(Instant value) { return value == null ? null : Timestamp.from(value); }
-    /** JDBC timestamp to nullable instant。 */
+    /** 将 JDBC 时间戳转换为可空时间点。 */
     private static Instant instant(ResultSet rs, String column) throws SQLException { Timestamp value = rs.getTimestamp(column); return value == null ? null : value.toInstant(); }
     /** 从仍有效的任务读取执行创建瞬间要冻结的目标类型。 */
     private TaskJob.TargetType jobTargetType(UUID projectId, UUID jobId) { return jdbc.queryForObject("SELECT target_type FROM task_job WHERE project_id = ? AND id = ? AND deleted_at IS NULL", TaskJob.TargetType.class, projectId, jobId); }

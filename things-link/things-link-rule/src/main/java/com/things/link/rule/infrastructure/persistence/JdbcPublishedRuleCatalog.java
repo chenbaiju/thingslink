@@ -35,7 +35,7 @@ public class JdbcPublishedRuleCatalog implements PublishedRuleCatalog {
         this.objectMapper = objectMapper;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public PublishedRulePlan resolve(UUID tenantId, UUID projectId, UUID messageId) {
         return new PublishedRulePlan(jdbcTemplate.query(

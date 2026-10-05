@@ -24,7 +24,7 @@ public class JdbcSubscriptionRefundExecutionRepository implements SubscriptionRe
     /** @param jdbc 数据库连接 @param json JSON编解码 */
     public JdbcSubscriptionRefundExecutionRepository(JdbcTemplate jdbc,ObjectMapper json) { this.jdbc=jdbc; this.json=json; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<SubscriptionRefundExecution> find(UUID tenant,UUID operation) {
         return jdbc.query("""
@@ -36,7 +36,7 @@ public class JdbcSubscriptionRefundExecutionRepository implements SubscriptionRe
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void insert(SubscriptionRefundExecution result) {
         int inserted=jdbc.update("""

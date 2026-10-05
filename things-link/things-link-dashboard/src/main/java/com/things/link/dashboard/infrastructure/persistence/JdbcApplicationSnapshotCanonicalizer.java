@@ -22,7 +22,7 @@ public class JdbcApplicationSnapshotCanonicalizer implements ApplicationSnapshot
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public PostgreSqlApplicationSnapshotCanonicalForm canonicalize(JsonNode snapshot) {
         Objects.requireNonNull(snapshot, "snapshot");

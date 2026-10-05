@@ -28,13 +28,13 @@ public class OtaProjectCleanupContributor implements ProjectCleanupContributor {
         this.repository = repository;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectCleanupStage stage() {
         return ProjectCleanupStage.OTA;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public ProjectCleanupBatchResult clean(ProjectCleanupClaim claim) {

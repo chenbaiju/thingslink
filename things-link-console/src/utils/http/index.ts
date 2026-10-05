@@ -155,6 +155,14 @@ axiosInstance.interceptors.response.use(
       const config = error.config as ExtendedAxiosRequestConfig | undefined
       const url = config?.url ?? ''
 
+      // 分析调用只能发送一次；401也不能自动重放、丢弃原意图或推断没有消费。
+      // 保留当前身份，由调用界面提示恢复登录后只读核对原调用；不携带原错误正文。
+      if (config && isSingleAttemptAnalysis(config)) {
+        return Promise.reject(
+          createHttpError('分析请求未重发，请恢复登录后查询原调用状态。', ApiStatus.unauthorized)
+        )
+      }
+
       // 登录接口的 401 是「账号或口令错误」，不是“当前会话失效”。
       // 如果走全局登出逻辑，登录页会把自己反复写进 redirect 查询串。
       if (url.includes(LOGIN_URL)) {
@@ -327,6 +335,7 @@ async function retryRequest<T>(
   config: ExtendedAxiosRequestConfig,
   retries: number = MAX_RETRIES
 ): Promise<T> {
+  if (isSingleAttemptAnalysis(config)) return request<T>(config)
   try {
     return await request<T>(config)
   } catch (error) {
@@ -336,6 +345,14 @@ async function retryRequest<T>(
     }
     throw error
   }
+}
+
+/** 精确匹配分析提交操作；状态GET和其他项目写操作沿原认证恢复策略。 */
+function isSingleAttemptAnalysis(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'POST' &&
+    /^\/api\/v1\/projects\/[^/?#]+\/assistant\/analysis-runs(?:[?#].*)?$/.test(config.url ?? '')
+  )
 }
 
 /** 延迟函数 */

@@ -31,44 +31,80 @@ public class DeviceCommandDefinitionController {
     /** @param service 命令定义服务 */
     public DeviceCommandDefinitionController(DeviceCommandDefinitionService service, DeviceApiAuthorization authorization) { this.service = service; this.authorization = authorization; }
 
+    /**
+     * 命令列表。
+     * 获取设备类型下的全部命令定义
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceTypeId 设备类型标识
+     * @return 符合当前查询条件的结果列表
+     */
     @Operation(summary = "命令列表", description = "获取设备类型下的全部命令定义")
     /** @param projectId 项目 ID @param deviceTypeId 类型 ID @return 命令列表 */
     @GetMapping
-    public ResponseEntity<List<DeviceCommandDefinitionResponse>> list(@PathVariable UUID projectId,
-                                                                       @PathVariable UUID deviceTypeId) {
+    public ResponseEntity<List<DeviceCommandDefinitionResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                                                       @io.swagger.v3.oas.annotations.Parameter(description = "设备类型标识") @PathVariable UUID deviceTypeId) {
         authorization.requireRead(projectId); return ResponseEntity.ok(service.list(projectId, deviceTypeId).stream()
                 .map(DeviceCommandDefinitionResponse::from).toList());
     }
 
+    /**
+     * 创建命令。
+     * 为设备类型添加命令定义，支持 JSON Schema
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceTypeId 设备类型标识
+     * @param request 本次操作的请求数据，结构见 {@code SaveDeviceCommandDefinitionRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<DeviceCommandDefinitionResponse>}
+     */
     @Operation(summary = "创建命令", description = "为设备类型添加命令定义，支持 JSON Schema")
     /** @param projectId 项目 ID @param deviceTypeId 类型 ID @param request 创建请求 @return 新命令 */
     @PostMapping
-    public ResponseEntity<DeviceCommandDefinitionResponse> create(@PathVariable UUID projectId,
-                                                                   @PathVariable UUID deviceTypeId,
+    public ResponseEntity<DeviceCommandDefinitionResponse> create(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                                                   @io.swagger.v3.oas.annotations.Parameter(description = "设备类型标识") @PathVariable UUID deviceTypeId,
                                                                    @Valid @RequestBody SaveDeviceCommandDefinitionRequest request) {
         authorization.requireWrite(projectId); return ResponseEntity.status(HttpStatus.CREATED).body(DeviceCommandDefinitionResponse.from(service.create(
                 projectId, deviceTypeId, request.commandKey(), request.name(), request.description(),
                 request.inputSchema(), request.outputSchema(), request.timeoutSeconds(), request.sortOrder())));
     }
 
+    /**
+     * 修改命令。
+     * 修改草稿设备类型的命令定义
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceTypeId 设备类型标识
+     * @param id 命令定义标识
+     * @param request 本次操作的请求数据，结构见 {@code SaveDeviceCommandDefinitionRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<DeviceCommandDefinitionResponse>}
+     */
     @Operation(summary = "修改命令", description = "修改草稿设备类型的命令定义")
     /** @param projectId 项目 ID @param deviceTypeId 类型 ID @param id 命令 ID @param request 请求 @return 命令 */
     @PutMapping("/{id}")
-    public ResponseEntity<DeviceCommandDefinitionResponse> update(@PathVariable UUID projectId,
-                                                                   @PathVariable UUID deviceTypeId,
-                                                                   @PathVariable UUID id,
+    public ResponseEntity<DeviceCommandDefinitionResponse> update(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                                                   @io.swagger.v3.oas.annotations.Parameter(description = "设备类型标识") @PathVariable UUID deviceTypeId,
+                                                                   @io.swagger.v3.oas.annotations.Parameter(description = "命令定义标识") @PathVariable UUID id,
                                                                    @Valid @RequestBody SaveDeviceCommandDefinitionRequest request) {
         authorization.requireWrite(projectId); return ResponseEntity.ok(DeviceCommandDefinitionResponse.from(service.update(projectId, deviceTypeId, id,
                 request.commandKey(), request.name(), request.description(),
                 request.inputSchema(), request.outputSchema(), request.timeoutSeconds(), request.sortOrder())));
     }
 
+    /**
+     * 删除命令。
+     * 软删除草稿设备类型的命令定义
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceTypeId 设备类型标识
+     * @param id 命令定义标识
+     * @return 操作完成后的 HTTP 响应，正文为空
+     */
     @Operation(summary = "删除命令", description = "软删除草稿设备类型的命令定义")
     /** @param projectId 项目 ID @param deviceTypeId 类型 ID @param id 命令 ID @return 空响应 */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID projectId,
-                                       @PathVariable UUID deviceTypeId,
-                                       @PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "设备类型标识") @PathVariable UUID deviceTypeId,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "命令定义标识") @PathVariable UUID id) {
         authorization.requireWrite(projectId); service.delete(projectId, deviceTypeId, id);
         return ResponseEntity.noContent().build();
     }

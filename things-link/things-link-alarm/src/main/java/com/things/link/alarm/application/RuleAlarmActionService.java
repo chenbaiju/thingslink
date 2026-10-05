@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>该端口不读取控制台身份，也不接受调用方给出的告警类型或严重程度；规则 Outbox 已携带确权后的项目、设备与
  * owner tenant，本服务仍重新读取 {@link AlarmRule} 并逐项匹配，防止伪造跨项目或跨设备动作。调用方必须先从
  * 可信执行信封恢复 {@code TenantContext}：生产链由 {@code RuleExecutionCoordinator} 建立并在 finally 清理；
- * 本服务不重复建立上下文，缺失时让项目 RLS fail-closed，避免把任意方法参数升级为可信隔离范围。</p>
+ * 本服务不重复建立上下文，缺失时让项目 行级隔离在缺失条件时拒绝访问，避免把任意方法参数升级为可信隔离范围。</p>
  */
 @Service
 public class RuleAlarmActionService implements ApplicationEventPublisherAware {

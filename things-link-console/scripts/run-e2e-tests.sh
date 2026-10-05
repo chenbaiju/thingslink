@@ -151,13 +151,15 @@ OTA_LIFECYCLE_FIXTURE_PROVISIONED=false
 WEBAPP_PORT="${E2E_WEBAPP_PORT:-3019}"
 DEFAULT_E2E_LOG_DIR="${E2E_LOCAL_LOG_DIR:-${CONSOLE_DIR}/logs}"
 mkdir -p "${DEFAULT_E2E_LOG_DIR}"
-BACKEND_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-backend.log"
-SIMULATOR_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-simulator.log"
-SIGNER_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-signer.log"
-VITE_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-vite.log"
-WEBAPP_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-webapp.log"
-DEPENDENCIES_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-dependencies.log"
-STACK_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-stack.log"
+# 同一轮子进程日志共用纳秒时间戳，区分重复运行；正式证据目录保留其冻结文件名。
+E2E_LOG_TIMESTAMP="$(python3 -c 'import time; print(time.time_ns())')"
+BACKEND_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-backend-${E2E_LOG_TIMESTAMP}.log"
+SIMULATOR_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-simulator-${E2E_LOG_TIMESTAMP}.log"
+SIGNER_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-signer-${E2E_LOG_TIMESTAMP}.log"
+VITE_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-vite-${E2E_LOG_TIMESTAMP}.log"
+WEBAPP_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-webapp-${E2E_LOG_TIMESTAMP}.log"
+DEPENDENCIES_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-dependencies-${E2E_LOG_TIMESTAMP}.log"
+STACK_LOG="${DEFAULT_E2E_LOG_DIR}/target-e2e-stack-${E2E_LOG_TIMESTAMP}.log"
 if [[ -n "${E2E_RUN_DIR:-}" ]]; then
   BACKEND_LOG="${E2E_RUN_DIR}/backend.log"
   SIMULATOR_LOG="${E2E_RUN_DIR}/simulator.log"
@@ -970,7 +972,7 @@ if ${CONTROLLED_SMTP}; then
     -keystore "${TEST_TLS_DIRECTORY}/trust.p12" -storepass changeit \
     -file "${TEST_TLS_DIRECTORY}/ca.pem" >/dev/null 2>&1
   node "${SCRIPT_DIR}/controlled-smtp-fixture.mjs" "${TEST_TLS_DIRECTORY}" \
-    >"${DEFAULT_E2E_LOG_DIR}/controlled-smtp.log" 2>&1 &
+    >"${DEFAULT_E2E_LOG_DIR}/controlled-smtp-${E2E_LOG_TIMESTAMP}.log" 2>&1 &
   SMTP_PID=$!
   for _ in $(seq 1 50); do
     [[ -f "${TEST_TLS_DIRECTORY}/smtp-config.json" ]] && break
@@ -1013,9 +1015,26 @@ if [[ "${SKIP_BACKEND:-0}" != "1" ]]; then
     (cd "${BACKEND_DIR}" && ./mvnw -q -pl things-link-bootstrap -am package -DskipTests)
     JAR="$(ls "${BACKEND_DIR}"/things-link-bootstrap/target/things-link-bootstrap-*.jar | head -1)"
   fi
+  # 仅向本次测试后端注入独立随机主密钥，不写仓库/文件、不调用模型供应商。
+  # 合并既有测试配置；显式覆盖 assistant 凭据环，避免继承真实项目主密钥。
+  AGENT_TEST_APPLICATION_JSON="$(python3 - <<'PY_AGENT_KEY'
+import base64, json, os, secrets
+config = json.loads(os.environ.get("SPRING_APPLICATION_JSON") or "{}")
+# Spring JSON 支持嵌套及点分属性；测试凭据设置应只有一个来源。
+for key in list(config):
+    if key.startswith("things-link.assistant.credentials"):
+        del config[key]
+config.setdefault("things-link", {}).setdefault("assistant", {})["credentials"] = {
+    "active-key-id": "e2e",
+    "keys": {"e2e": base64.b64encode(secrets.token_bytes(32)).decode("ascii")},
+}
+print(json.dumps(config))
+PY_AGENT_KEY
+)"
   INGRESS_HANDOFF_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   log "启动后端 ${JAR}（专用 Redis DB，含下行凭据与 durable ingress 服务身份）"
   env "${ota_env_args[@]+"${ota_env_args[@]}"}" "${smtp_env_args[@]+"${smtp_env_args[@]}"}" \
+  SPRING_APPLICATION_JSON="${AGENT_TEST_APPLICATION_JSON}" \
   SPRING_DATA_REDIS_DATABASE="${REDIS_TEST_DB}" \
   SERVER_PORT="${BASE_PORT}" \
   EMQX_API_KEY="${EMQX_API_KEY}" \
@@ -1036,7 +1055,7 @@ if [[ "${SKIP_BACKEND:-0}" != "1" ]]; then
   THINGS_LINK_INGRESS_HANDOFF_PASSWORD="${INGRESS_HANDOFF_PASSWORD}" \
     java "${smtp_java_args[@]+"${smtp_java_args[@]}"}" -jar "${JAR}" >"${BACKEND_LOG}" 2>&1 &
   BACKEND_PID=$!
-  unset INGRESS_HANDOFF_PASSWORD
+  unset INGRESS_HANDOFF_PASSWORD AGENT_TEST_APPLICATION_JSON
   sleep 1
   if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
     log "错误：后端启动即退出，日志见 ${BACKEND_LOG}"; exit 1

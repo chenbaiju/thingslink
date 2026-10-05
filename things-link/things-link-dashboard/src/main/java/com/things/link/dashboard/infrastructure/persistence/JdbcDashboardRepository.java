@@ -124,7 +124,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional
     public void create(DashboardCatalogEntry dashboard, DashboardDraft draft) {
@@ -154,7 +154,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 draft.modelReferences());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void lockTenantCapacity(UUID tenantId) {
@@ -165,7 +165,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 Integer.class, "tenant-dashboard-capacity-v1:" + tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long countTenantDashboards(UUID tenantId, UUID projectId) {
         Long count = jdbcTemplate.queryForObject("SELECT dashboard_tenant_capacity_count(?,?)",
@@ -174,7 +174,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         return count;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void lockCreationRequest(
@@ -191,7 +191,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 """, Integer.class, tenantId, projectId, accountId, idempotencyKeyDigest);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<DashboardCreationResult> findCreationResult(
@@ -211,7 +211,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 tenantId, projectId, accountId, idempotencyKeyDigest).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<DashboardCatalogEntry> findCreationDashboard(UUID projectId, UUID dashboardId) {
@@ -227,7 +227,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 """, DASHBOARD_MAPPER, projectId, dashboardId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void createIdempotent(
@@ -252,7 +252,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardCatalogEntry> find(UUID projectId, UUID dashboardId) {
         return jdbcTemplate.query("""
@@ -263,7 +263,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 """, DASHBOARD_MAPPER, projectId, dashboardId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<DashboardCatalogEntry> page(UUID projectId, String cursor, int limit) {
         Objects.requireNonNull(projectId, "projectId");
@@ -297,7 +297,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         return CursorPage.of(items, Cursor.encode(last.updatedAt() + "|" + last.id()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<CursorPage<DashboardVersionSummary>> pageVersions(
             UUID projectId, UUID dashboardId, String cursor, int limit) {
@@ -367,7 +367,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 items, Cursor.encode(Long.toString(last.versionNumber()))));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean rename(UUID projectId, UUID dashboardId, String managementName,
                           UUID updatedBy, Instant updatedAt) {
@@ -383,7 +383,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 """, managementName, updatedBy, Timestamp.from(updatedAt), projectId, dashboardId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardDraft> findDraft(UUID projectId, UUID dashboardId) {
         return jdbcTemplate.query("""
@@ -410,7 +410,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 """, DRAFT_MAPPER, projectId, dashboardId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional
     public DashboardDraftSaveResult saveDraft(
@@ -501,13 +501,13 @@ public class JdbcDashboardRepository implements DashboardRepository {
                 saved.updatedBy(), saved.createdAt(), saved.updatedAt(), referenceSnapshot));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardVersion> findVersion(UUID projectId, UUID dashboardId, UUID versionId) {
         return queryVersion(" AND version.id = ?", projectId, dashboardId, versionId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DashboardVersionLookupResult findVersionForManagement(
             UUID projectId, UUID dashboardId, UUID versionId) {
@@ -563,19 +563,19 @@ public class JdbcDashboardRepository implements DashboardRepository {
         return rows.getFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardVersion> findLatestVersion(UUID projectId, UUID dashboardId) {
         return queryVersion(" ORDER BY version.version_number DESC LIMIT 1", projectId, dashboardId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardPublicationState> findPublicationState(UUID projectId, UUID dashboardId) {
         return queryPublicationState(projectId, dashboardId, "");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<DashboardPublicationState> lockPublicationState(UUID projectId, UUID dashboardId) {
@@ -588,7 +588,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         return queryPublicationState(projectId, dashboardId, "");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public DashboardPublicationAppendResult appendPublication(
@@ -627,7 +627,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         return result;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public DashboardPublicationRollbackResult rollbackPublication(
@@ -663,7 +663,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         return result;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public DashboardPublicationWithdrawalResult withdrawPublication(
@@ -699,7 +699,7 @@ public class JdbcDashboardRepository implements DashboardRepository {
         return result;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public DashboardSoftDeleteResult softDelete(

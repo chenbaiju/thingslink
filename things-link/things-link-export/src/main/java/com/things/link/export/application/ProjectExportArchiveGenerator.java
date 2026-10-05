@@ -364,14 +364,14 @@ public class ProjectExportArchiveGenerator {
             this.maximum = maximum;
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void write(int value) throws IOException {
             byte[] one = {(byte) value};
             write(one, 0, 1);
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void write(byte[] value, int offset, int length) throws IOException {
             if (total[0] + length > maximum) {
@@ -398,13 +398,13 @@ public class ProjectExportArchiveGenerator {
             this.maximum = maximum;
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override public void write(int value) throws IOException {
             byte[] one = {(byte) value};
             write(one, 0, 1);
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override public void write(byte[] value, int offset, int length) throws IOException {
             if (count + length > maximum) {
                 throw new ProjectExportLimitException("项目导出ZIP超过512MiB上限");

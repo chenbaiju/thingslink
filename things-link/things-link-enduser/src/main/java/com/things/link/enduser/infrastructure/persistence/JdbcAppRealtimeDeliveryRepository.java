@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import java.util.*;
+/** 终端用户实时投递事实的 JDBC 仓储，负责持久准入、租约及完成状态。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcAppRealtimeDeliveryRepository implements AppRealtimeDeliveryRepository {

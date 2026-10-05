@@ -11,10 +11,10 @@ import java.util.UUID;
  *
  * @param tenantId 设备档案所属租户，用于计量聚合
  * @param projectId 已认证项目 ID，也是 RLS 上下文来源
- * @param deviceId 已认证设备 ID，同时固定作为 Kafka record key
+ * @param deviceId 已认证设备 ID，同时固定作为 Kafka 记录键
  * @param topic 原始 MQTT Topic
  * @param payload 原始 MQTT payload 字节
- * @param qos MQTT QoS，v1 上行契约固定为 1
+ * @param qos MQTT 服务质量等级，v1 上行契约固定为 1
  * @param retained MQTT retained 标志，v1 上行契约固定为 false
  * @param clientId Broker 观察到的客户端标识
  * @param receivedAt 平台收到消息的 UTC 时刻
@@ -73,7 +73,7 @@ public record RawUplinkMessage(UUID tenantId, UUID projectId, UUID deviceId, Str
     }
 
     /**
-     * 返回 Kafka record key；S3 的分区有序性依赖该值永远等于 deviceId。
+     * 返回 Kafka 记录键；S3 的分区有序性依赖该值永远等于 deviceId。
      *
      * @return 设备 ID
      */

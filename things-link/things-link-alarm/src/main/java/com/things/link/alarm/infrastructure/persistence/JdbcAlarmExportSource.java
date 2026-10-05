@@ -22,7 +22,7 @@ public class JdbcAlarmExportSource implements AlarmExportSource {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long streamInstances(UUID tenantId, UUID projectId, InstanceSink sink) {
         long[] count = {0L};
@@ -52,7 +52,7 @@ public class JdbcAlarmExportSource implements AlarmExportSource {
         return count[0];
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long streamEvents(UUID tenantId, UUID projectId, EventSink sink) {
         long[] count = {0L};

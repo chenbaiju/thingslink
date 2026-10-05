@@ -40,6 +40,14 @@ public class EnrollmentIntakeController {
         this.queue = queue;
     }
 
+    /**
+     * 登记自部署待审申请。
+     * 仅受控运营人员提交 V1 原始封套；来源头由操作者声明，不能代替传输证明
+     *
+     * @param source 受控登记来源标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code PendingRegistration}
+     */
     @PostMapping(consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @Operation(summary = "登记自部署待审申请", description = "仅受控运营人员提交 V1 原始封套；来源头由操作者声明，不能代替传输证明")
     @ApiResponses({
@@ -50,7 +58,7 @@ public class EnrollmentIntakeController {
             @ApiResponse(responseCode = "409", description = "申请或部署身份冲突"),
             @ApiResponse(responseCode = "413", description = "封套超过 V1 长度上限")
     })
-    public PendingRegistration receive(@RequestHeader("X-Enrollment-Source") String source,
+    public PendingRegistration receive(@io.swagger.v3.oas.annotations.Parameter(description = "受控登记来源标识") @RequestHeader("X-Enrollment-Source") String source,
                                        HttpServletRequest request) throws IOException {
         EnrollmentRegistry.Channel channel;
         try {
@@ -77,12 +85,21 @@ public class EnrollmentIntakeController {
     public record PendingRegistration(UUID requestId, UUID deploymentId, UUID tenantId,
                                       EnrollmentRegistry.Channel firstChannel, String status, Instant receivedAt) { }
 
+    /**
+     * 查询自部署待审队列。
+     * 仅受控运营人员可查看；稳定倒序键集分页，不包含公钥或摘要
+     *
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @param beforeReceivedAt 向前翻页的接收时间边界
+     * @param beforeRequestId 向前翻页的申请标识边界
+     * @return 符合当前查询条件的结果列表
+     */
     @GetMapping
     @Operation(summary = "查询自部署待审队列", description = "仅受控运营人员可查看；稳定倒序键集分页，不包含公钥或摘要")
     public List<EnrollmentQueue.Pending> pending(
-            @RequestParam(defaultValue = "25") String limit,
-            @RequestParam(required = false) String beforeReceivedAt,
-            @RequestParam(required = false) String beforeRequestId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue = "25") String limit,
+            @io.swagger.v3.oas.annotations.Parameter(description = "向前翻页的接收时间边界") @RequestParam(required = false) String beforeReceivedAt,
+            @io.swagger.v3.oas.annotations.Parameter(description = "向前翻页的申请标识边界") @RequestParam(required = false) String beforeRequestId) {
         int pageSize;
         Instant before = null;
         UUID beforeId = null;

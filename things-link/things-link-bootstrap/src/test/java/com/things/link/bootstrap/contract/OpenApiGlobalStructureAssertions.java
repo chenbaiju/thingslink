@@ -36,7 +36,8 @@ final class OpenApiGlobalStructureAssertions {
                 assertThat(headers.getFirst().path("required").asBoolean()).as(label)
                         .isEqualTo(policy.equals("required-header"));
             } else assertThat(headers).as(label + "是明确例外").isEmpty();
-            if (!policy.equals("broker-callback")) operation.path("responses").properties().forEach(response -> {
+            if (!Set.of("broker-callback", "device-access", "static-content", "simulator", "websocket-upgrade", "framework-management")
+                    .contains(policy)) operation.path("responses").properties().forEach(response -> {
                 if (response.getKey().matches("[45][0-9Xx]{2}")) {
                     var content = response.getValue().path("content");
                     assertThat(content.propertyNames()).as(label + " " + response.getKey()).containsExactly("application/json");

@@ -354,7 +354,7 @@ public class DashboardRuntimePlanValidator {
         /** 不可变模型版本。 */ private final UUID versionId;
         /** 摘要算法。 */ private final String digestAlgorithm;
         /** 摘要。 */ private final String digest;
-        /** Profile。 */ private final String profile;
+        /** 运行配置档案。 */ private final String profile;
         /** CURRENT_VALUE声明的键。 */ private final Set<String> currentKeys = new HashSet<>();
         /** 快照元数据可读取键。 */ private final Set<String> metadataKeys = new HashSet<>();
         /** 是否被设备变量引用。 */ private boolean selectable;

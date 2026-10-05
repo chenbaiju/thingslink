@@ -6,7 +6,7 @@ import java.util.UUID;
  * 已由数据库 CAS 为 SENDING 的规则通知冻结快照。
  *
  * @param id 投递事实与外部幂等 ID
- * @param tenantId owner tenant ID，仅用于同属校验
+ * @param tenantId 归属租户标识，仅用于同属校验
  * @param projectId 项目隔离与 Webhook 密钥派生轴
  * @param channel 固定 EMAIL 或 WEBHOOK 渠道
  * @param recipient 冻结邮箱或 HTTPS 地址

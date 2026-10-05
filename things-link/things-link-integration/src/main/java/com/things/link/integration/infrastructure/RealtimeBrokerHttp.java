@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.*;
-/** Module-owned bounded single-exchange transport. No request/response/credential logging. */
+/** 模块自行管理的有界单次交换传输；不记录请求、响应或凭据。 */
 final class RealtimeBrokerHttp implements AutoCloseable {
     private final URI base;private final String authorization;private final Set<Call> active=new HashSet<>();
     private OkHttpClient client;private boolean closed;

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
+/** 公开实时事件接入适配器；禁用时不准入，持久依赖故障继续向上游传播。 */
 @Service
 public class RealtimeEventIngress implements PublicRealtimeIngress {
     private final RealtimeEventAdmission admission;private final boolean enabled;

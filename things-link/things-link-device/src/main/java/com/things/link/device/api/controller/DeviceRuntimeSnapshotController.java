@@ -114,7 +114,7 @@ public class DeviceRuntimeSnapshotController {
                             schema = @Schema(type = "string", allowableValues = "no-store")),
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<byte[]> snapshots(@PathVariable UUID projectId,
+    public ResponseEntity<byte[]> snapshots(@io.swagger.v3.oas.annotations.Parameter(description = "Console已选择项目") @PathVariable UUID projectId,
                                             @RequestBody(required = false) byte[] body,
                                             HttpServletRequest servletRequest) {
         authorization.requireRead(projectId);
@@ -166,7 +166,7 @@ public class DeviceRuntimeSnapshotController {
                             schema = @Schema(type = "string", allowableValues = "no-store")),
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<byte[]> currentValues(@PathVariable UUID projectId,
+    public ResponseEntity<byte[]> currentValues(@io.swagger.v3.oas.annotations.Parameter(description = "Console已选择项目") @PathVariable UUID projectId,
                                                 @RequestBody(required = false) byte[] body,
                                                 HttpServletRequest servletRequest) {
         authorization.requireRead(projectId);
@@ -190,7 +190,7 @@ public class DeviceRuntimeSnapshotController {
     @ApiResponse(responseCode = "200", description = "单设备和完整模型描述，最终JSON不超过4MiB",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = DeviceRuntimeSnapshotResponse.class)))
-    public ResponseEntity<byte[]> bindingMetadata(@PathVariable UUID projectId, @PathVariable UUID deviceId,
+    public ResponseEntity<byte[]> bindingMetadata(@io.swagger.v3.oas.annotations.Parameter(description = "已选择的Console项目") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "明确选择的设备") @PathVariable UUID deviceId,
                                                    HttpServletRequest servletRequest) {
         authorization.requireRead(projectId);
         requireNoQuery(servletRequest);
@@ -198,6 +198,8 @@ public class DeviceRuntimeSnapshotController {
     }
 
     /**
+     * 查询Console精确模型设备目录。
+     *
      * @param projectId 已选项目
      * @param modelVersionId 变量声明的精确模型
      * @param cursor 可选签名游标
@@ -217,9 +219,9 @@ public class DeviceRuntimeSnapshotController {
             @ApiResponse(responseCode = "401", description = "未认证"),
             @ApiResponse(responseCode = "404", description = "项目不可见")
     })
-    public ResponseEntity<byte[]> catalog(@PathVariable UUID projectId,
-            @RequestParam UUID modelVersionId, @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") int limit, HttpServletRequest request) {
+    public ResponseEntity<byte[]> catalog(@io.swagger.v3.oas.annotations.Parameter(description = "已选项目") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "变量声明的精确模型") @RequestParam UUID modelVersionId, @io.swagger.v3.oas.annotations.Parameter(description = "可选签名游标") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "1..50页大小") @RequestParam(defaultValue = "20") int limit, HttpServletRequest request) {
         authorization.requireRead(projectId);
         if (!java.util.Set.of("modelVersionId", "cursor", "limit").containsAll(request.getParameterMap().keySet())
                 || request.getParameterMap().values().stream().anyMatch(values -> values.length != 1)) {

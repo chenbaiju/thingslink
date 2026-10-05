@@ -25,7 +25,7 @@ public enum OtaManifestContractVersion {
     /**
      * 返回稳定协议值。
      *
-     * @return {@code tc-ota-manifest/v1}
+     * @return 固定的升级清单契约版本 {@code tc-ota-manifest/v1}
      */
     public String value() {
         return value;

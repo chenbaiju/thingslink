@@ -105,7 +105,7 @@ def main():
     if source_hashes() != source_before:
         raise SystemExit('SDK source changed during build; rerun against a stable candidate')
     artifacts = {}
-    for name in [f'baijulink_{args.app}.bin', 'bootloader/bootloader.bin', 'partition_table/partition-table.bin']:
+    for name in [f'thingslink_{args.app}.bin', 'bootloader/bootloader.bin', 'partition_table/partition-table.bin']:
         path = build / name
         artifacts[name] = hashlib.sha256(path.read_bytes()).hexdigest()
         print(f'SHA256 {name} {artifacts[name]}')

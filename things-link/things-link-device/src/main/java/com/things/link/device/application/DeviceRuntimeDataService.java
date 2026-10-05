@@ -584,7 +584,7 @@ public class DeviceRuntimeDataService {
         return new BusinessException(CommonErrorCode.INVALID_PARAMETER, message);
     }
 
-    /** @param versionId 版本 @param digestAlgorithm 算法 @param digest 摘要 @param profile Profile @param root 完整快照 */
+    /** @param versionId 版本 @param digestAlgorithm 算法 @param digest 摘要 @param profile 模型运行配置档案 @param root 完整快照 */
     private record ModelSnapshot(UUID versionId, String digestAlgorithm, String digest,
                                  String profile, JsonNode root) { }
 }

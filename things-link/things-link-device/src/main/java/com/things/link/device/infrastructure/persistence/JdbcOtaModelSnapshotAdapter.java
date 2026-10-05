@@ -19,7 +19,7 @@ public class JdbcOtaModelSnapshotAdapter implements OtaModelSnapshotPort {
         this.jdbc = Objects.requireNonNull(jdbc, "jdbc");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<OtaModelSnapshot> find(UUID projectId, UUID deviceTypeId, UUID thingModelVersionId) {
         Objects.requireNonNull(projectId, "projectId");

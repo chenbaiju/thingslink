@@ -18,21 +18,21 @@ public class JdbcOtaCampaignAdvancementRepository implements OtaCampaignAdvancem
     /** 注入数据平面访问。 */
     public JdbcOtaCampaignAdvancementRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Candidate> candidate() {
         return jdbc.query("SELECT * FROM ota_campaign_advancement_candidate()", (rs, row) -> new Candidate(
                 rs.getObject("tenant_id", UUID.class), rs.getObject("project_id", UUID.class),
                 rs.getObject("campaign_id", UUID.class), rs.getLong("state_version"))).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean advance(UUID project, UUID campaign, long revision, int expectedBatchNumber,
             UUID actor, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_campaign_advance(?,?,?,?,?,?)", Boolean.class,
                 project, campaign, revision, expectedBatchNumber, actor, reason));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean complete(UUID project, UUID campaign, long revision) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_campaign_complete(?,?,?)", Boolean.class,
                 project, campaign, revision));

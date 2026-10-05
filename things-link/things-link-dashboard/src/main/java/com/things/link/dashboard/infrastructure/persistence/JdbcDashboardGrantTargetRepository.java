@@ -46,7 +46,7 @@ public class JdbcDashboardGrantTargetRepository implements DashboardGrantTargetR
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public boolean lockForGrant(UUID tenantId, UUID projectId, UUID dashboardId) {

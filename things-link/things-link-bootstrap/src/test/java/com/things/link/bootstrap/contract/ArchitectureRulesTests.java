@@ -52,6 +52,7 @@ class ArchitectureRulesTests {
             "telemetry",
             "ingestion",
             "alarm",
+            "assistant",
             "task",
             "rule",
             "enduser",

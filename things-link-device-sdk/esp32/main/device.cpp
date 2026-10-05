@@ -1,9 +1,9 @@
-#include "baijulink/esp_mqtt_connection.hpp"
-#include "baijulink/esp_wifi_station.hpp"
-#include "baijulink/example_logic.hpp"
-#include "baijulink/mqtt_frames.hpp"
-#include "baijulink/nvs_snapshot.hpp"
-#include "baijulink/protected_config.hpp"
+#include "thingslink/esp_mqtt_connection.hpp"
+#include "thingslink/esp_wifi_station.hpp"
+#include "thingslink/example_logic.hpp"
+#include "thingslink/mqtt_frames.hpp"
+#include "thingslink/nvs_snapshot.hpp"
+#include "thingslink/protected_config.hpp"
 #include "driver/gpio.h"
 #include "driver/usb_serial_jtag.h"
 #include "esp_heap_caps.h"
@@ -18,7 +18,7 @@
 #include <new>
 #include <sys/time.h>
 
-using namespace baijulink;
+using namespace thingslink;
 namespace {
 std::uint64_t monotonic_ms(){return static_cast<std::uint64_t>(esp_timer_get_time()/1000);}
 std::uint64_t utc_ms(){timeval now{};gettimeofday(&now,nullptr);return static_cast<std::uint64_t>(now.tv_sec)*1000+now.tv_usec/1000;}
@@ -244,7 +244,7 @@ extern "C" void app_main() {
     // No auto-run, auto-load, persisted time, unsafe fallback, flash erase, or eFuse writes.
     static std::array<char,DeviceSettings::max_document+16> line{};
     std::size_t length=0;bool discard=false;
-    status("READY BAIJULINK USB1");
+    status("READY THINGSLINK USB1");
     for(;;) {
         std::uint8_t bytes[128];const int count=usb_serial_jtag_read_bytes(bytes,sizeof bytes,pdMS_TO_TICKS(20));
         for(int i=0;i<count;++i) {

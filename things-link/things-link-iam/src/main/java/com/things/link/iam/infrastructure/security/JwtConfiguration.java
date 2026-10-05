@@ -90,7 +90,7 @@ public class JwtConfiguration {
      * 令牌签发器。
      *
      * @param key 签名密钥
-     * @return JwtEncoder
+     * @return JWT 编码器
      */
     @Bean
     public JwtEncoder jwtEncoder(@Qualifier("jwtSecretKey") SecretKeySpec key) {
@@ -104,7 +104,7 @@ public class JwtConfiguration {
      * 声明的任意算法，这正是算法混淆攻击的入口。
      *
      * @param key 签名密钥
-     * @return JwtDecoder
+     * @return JWT 解码器
      */
     @Bean
     public JwtDecoder jwtDecoder(@Qualifier("jwtSecretKey") SecretKeySpec key) {

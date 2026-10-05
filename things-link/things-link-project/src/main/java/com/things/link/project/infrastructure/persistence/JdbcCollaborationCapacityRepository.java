@@ -16,7 +16,7 @@ public class JdbcCollaborationCapacityRepository implements CollaborationCapacit
     /** @param jdbc 原业务事务连接 */
     public JdbcCollaborationCapacityRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void lockCapacity(UUID tenantId, UUID accountId) {
         Objects.requireNonNull(tenantId, "tenantId");
@@ -35,7 +35,7 @@ public class JdbcCollaborationCapacityRepository implements CollaborationCapacit
                 Integer.class, "tenant-external-seats-v1:" + tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Usage readUsage(UUID tenantId, UUID projectId, UUID accountId) {
         return jdbc.queryForObject("""

@@ -26,25 +26,25 @@ public class RealtimeWebSocketSession implements RealtimeConnection {
         this.principal = principal;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String id() {
         return session.getId();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RealtimePrincipal principal() {
         return principal;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void sendText(String payload) throws Exception {
         session.sendMessage(new TextMessage(payload));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void close(int statusCode, String reason) {
         try {

@@ -63,7 +63,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI().substring(request.getContextPath().length());
         // 匿名命名空间连拒绝路径也可能携带误放query/body的凭据，改由dashboard独立固定模板事件记录。
-        return path.matches("^/api/v1/projects/[^/]+/webhooks(?:/.*)?$") || ArtifactUploadRoute.isContent(request) || path.equals("/api/v1/app/browser-auth") || path.startsWith("/api/v1/app/browser-auth/")
+        return path.matches("^/api/v1/projects/[^/]+/assistant/knowledge(?:/.*)?$")
+                || path.matches("^/api/v1/projects/[^/]+/assistant/fact-reports(?:/.*)?$")
+                || path.matches("^/api/v1/projects/[^/]+/assistant/evidence-records(?:/.*)?$")
+                || path.matches("^/api/v1/projects/[^/]+/webhooks(?:/.*)?$") || ArtifactUploadRoute.isContent(request) || path.equals("/api/v1/app/browser-auth") || path.startsWith("/api/v1/app/browser-auth/")
                 || path.equals("/api/v1/shares") || path.startsWith("/api/v1/shares/")
                 || path.equals("/ws/shares") || path.startsWith("/ws/shares/")
                 || ("POST".equals(request.getMethod()) && SHARE_CREATION.matcher(path).matches());

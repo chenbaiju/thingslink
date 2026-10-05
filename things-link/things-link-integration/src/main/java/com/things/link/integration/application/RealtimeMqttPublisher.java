@@ -9,6 +9,6 @@ public interface RealtimeMqttPublisher {
     static String topic(UUID ticket){return "tc/app/v1/"+ticket+"/events";}
     static int packetBytes(UUID ticket,byte[] envelope){
         int remaining=2+topic(ticket).getBytes(java.nio.charset.StandardCharsets.UTF_8).length+2+envelope.length;
-        int header=1;for(int n=remaining;;n/=128){header++;if(n<128)break;}return header+remaining+16; // ADR0179: MQTT5 property length, maximum subscription identifier and outbound topic alias.
+        int header=1;for(int n=remaining;;n/=128){header++;if(n<128)break;}return header+remaining+16; // ADR0179：MQTT5 属性长度、最大订阅标识符及出站主题别名。
     }
 }

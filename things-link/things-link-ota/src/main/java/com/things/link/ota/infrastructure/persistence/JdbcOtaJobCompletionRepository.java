@@ -13,7 +13,7 @@ public class JdbcOtaJobCompletionRepository implements OtaJobCompletionRepositor
     private final JdbcTemplate jdbc;
     /** 使用调用方事务绑定的连接，保留真实RLS。 */
     public JdbcOtaJobCompletionRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<OtaJobCompletion> page(UUID tenant, UUID project, String transaction, UUID afterJob, int limit) {
         if(tenant==null || project==null || transaction==null || !transaction.matches("[0-9]{1,20}") || limit<1 || limit>100)
             throw new IllegalArgumentException("OTA完成来源分页参数无效");

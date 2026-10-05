@@ -9,15 +9,21 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** ADR0149公开静态壳，不读取业务身份，响应只含同次验证内容。 */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "应用静态文件", description = "受控公开静态壳与白名单资源，当前公开部署验收暂停")
 @RestController
-@io.swagger.v3.oas.annotations.Hidden
 public class DashboardPublicHostController {
     /** 控制器不接触文件系统或operator权限，只映射公开交付结果。 */
     private final DashboardPublicHostService hosts;
     /** @param hosts 固定路由与事务内容服务 */
     public DashboardPublicHostController(DashboardPublicHostService hosts) { this.hosts = hosts; }
 
-    /** @param request 原始路径用于拒绝编码/穿越，不作为任意磁盘路径 @return 精确公开字节或空错误 */
+    /**
+     * 读取受控应用静态壳或白名单资源；拒绝编码路径、穿越和未登记文件。
+     *
+     * @param request 原始路径用于拒绝编码/穿越，不作为任意磁盘路径
+     * @return 精确公开字节或空错误
+     */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "getApplicationStaticContent", summary = "读取受控应用静态文件；拒绝编码路径、穿越及未登记资源", description = "读取受控应用静态文件；拒绝编码路径、穿越及未登记资源。")
     @GetMapping({"/app", "/app/**"})
     public ResponseEntity<byte[]> read(HttpServletRequest request) {
         String path = request.getRequestURI().substring(request.getContextPath().length());

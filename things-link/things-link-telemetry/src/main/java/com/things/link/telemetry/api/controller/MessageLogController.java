@@ -59,10 +59,10 @@ public class MessageLogController {
     @Operation(summary = "消息详情", description = "已脱敏摘要（JSON 或 HEX）、消息类型与阶段时刻、错误码与截断／采样标记")
     @GetMapping("/{logId}")
     public ResponseEntity<MessageLogDetailResponse> detail(
-            @PathVariable UUID projectId,
-            @PathVariable UUID deviceId,
-            @PathVariable UUID logId,
-            @RequestParam(defaultValue = MessageLogDetailResponse.FORMAT_JSON) @Size(max = 8) String format) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "日志 ID") @PathVariable UUID logId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "摘要格式：`JSON`（默认）或 `HEX`") @RequestParam(defaultValue = MessageLogDetailResponse.FORMAT_JSON) @Size(max = 8) String format) {
         authorization.requireDeviceRead(projectId, deviceId);
         return ResponseEntity.ok(MessageLogDetailResponse.from(
                 service.detail(projectId, deviceId, logId), format));
@@ -86,16 +86,16 @@ public class MessageLogController {
     @Operation(summary = "消息日志查询", description = "查询设备消息日志，支持按方向、协议、时间范围和 traceId 筛选，游标分页")
     @GetMapping
     public ResponseEntity<CursorPage<MessageLogResponse>> list(
-            @PathVariable UUID projectId,
-            @PathVariable UUID deviceId,
-            @RequestParam(required = false) DeviceMessageLog.Direction direction,
-            @RequestParam(required = false) TransportProtocol protocol,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) @Size(max = 64) String traceId,
-            @RequestParam(required = false) @Size(max = 32) String messageType,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选方向") @RequestParam(required = false) DeviceMessageLog.Direction direction,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选协议") @RequestParam(required = false) TransportProtocol protocol,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选开始时刻，包含") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选结束时刻，不包含") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选精确 traceId") @RequestParam(required = false) @Size(max = 64) String traceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选消息类型（调试时间线按类型筛选）") @RequestParam(required = false) @Size(max = 32) String messageType,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选下一页游标") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "每页数量") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireDeviceRead(projectId, deviceId);
         MessageLogQuery query = new MessageLogQuery(projectId, deviceId, direction, protocol,
                 from, to, traceId, cursor, limit, messageType);

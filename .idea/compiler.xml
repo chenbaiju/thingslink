@@ -30,6 +30,7 @@
         <module name="things-link-alarm" />
         <module name="things-link-project" />
         <module name="things-link-issuer" />
+        <module name="things-link-assistant" />
       </profile>
     </annotationProcessing>
   </component>
@@ -39,6 +40,7 @@
       <module name="jagonzn-service" options="-parameters" />
       <module name="things-link-access" options="-parameters" />
       <module name="things-link-alarm" options="-parameters" />
+      <module name="things-link-assistant" options="-parameters" />
       <module name="things-link-bootstrap" options="-parameters" />
       <module name="things-link-dashboard" options="-parameters" />
       <module name="things-link-device" options="-parameters" />

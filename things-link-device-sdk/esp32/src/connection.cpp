@@ -1,8 +1,8 @@
-#include "baijulink/connection.hpp"
+#include "thingslink/connection.hpp"
 #include <algorithm>
 #include <cstring>
 
-namespace baijulink {
+namespace thingslink {
 namespace {
 bool alnum(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
@@ -77,7 +77,7 @@ ProfileResult ConnectionProfile::assign(const ConnectionInput& input) {
     if (input.access_token.empty() || input.access_token.size() > 256) return ProfileResult::Token;
     for (unsigned char c : input.access_token) if (c < 33 || c > 126) return ProfileResult::Token;
     if (!pem_shape(input.ca_pem)) return ProfileResult::Certificate;
-    baijulink::username(input.identity, username_);
+    thingslink::username(input.identity, username_);
     copy(host_, input.host); copy(token_, input.access_token); copy(ca_, input.ca_pem);
     std::memcpy(client_id_.data(), "bl-", 3);
     std::memcpy(client_id_.data() + 3, username_.data(), std::strlen(username_.data()) + 1);

@@ -69,7 +69,7 @@ public record DeviceAccessUplinkMessage(UUID tenantId, UUID projectId, UUID devi
     }
 
     /**
-     * 返回 Kafka record key；同设备有序性依赖该值永远等于 deviceId。
+     * 返回 Kafka 记录键；同设备有序性依赖该值永远等于 deviceId。
      *
      * @return 设备 ID 字符串
      */

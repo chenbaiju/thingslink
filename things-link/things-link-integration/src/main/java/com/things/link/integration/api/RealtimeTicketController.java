@@ -17,6 +17,7 @@ import java.security.Principal;
 import java.util.*;
 import static com.things.link.integration.api.OpenApiRequestSupport.*;
 /** 三种认证链仅提取各自可信身份；凭据不能通过请求体改变。 */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "实时连接票据", description = "按原身份签发限定协议和设备范围的短期票据")
 @RestController
 @ApiResponse(responseCode="400",description="10001 范围或参数无效",content=@Content(schema=@Schema(implementation=ApiError.class)))
 @ApiResponse(responseCode="401",description="80006 原身份或票据失效",content=@Content(schema=@Schema(implementation=ApiError.class)))
@@ -28,27 +29,49 @@ public class RealtimeTicketController {
     private final RealtimeTicketService tickets;private final ProjectService projects;
     private final RealtimeTicketParser parser=new RealtimeTicketParser();
     public RealtimeTicketController(RealtimeTicketService tickets,ProjectService projects){this.tickets=tickets;this.projects=projects;}
+    /**
+     * Key换取限定范围的短期实时票据。
+     *
+     * @param principal 认证框架提供的当前调用主体
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<RealtimeTicketService.Issued>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
     @PostMapping(value="/api/open/v1/realtime/tickets",consumes="application/json",produces="application/json")
     @io.swagger.v3.oas.annotations.security.SecurityRequirement(name="openApiKey")
-    @Operation(operationId="issueOpenRealtimeTicket",summary="Key换取限定范围的短期实时票据",requestBody=@io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=TicketRequestSchema.class))))
+    @Operation(operationId="issueOpenRealtimeTicket",summary="Key换取限定范围的短期实时票据",requestBody=@io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=TicketRequestSchema.class))), description = "Key换取限定范围的短期实时票据。")
     public ResponseEntity<RealtimeTicketService.Issued> open(Principal principal,HttpServletRequest request)throws IOException {
         return issue(RealtimeIdentity.fromKey(identity(principal)),request);
     }
+    /**
+     * Console当前项目短期实时票据。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<RealtimeTicketService.Issued>}
+     */
     @io.swagger.v3.oas.annotations.security.SecurityRequirement(name="consoleAccessBearer")
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
     @PostMapping(value="/api/v1/projects/{projectId}/realtime-tickets",consumes="application/json",produces="application/json")
-    @Operation(operationId="issueConsoleRealtimeTicket",summary="Console当前项目短期实时票据",requestBody=@io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=TicketRequestSchema.class))))
-    public ResponseEntity<RealtimeTicketService.Issued> console(@PathVariable UUID projectId,@AuthenticationPrincipal Jwt jwt,HttpServletRequest request)throws IOException {
+    @Operation(operationId="issueConsoleRealtimeTicket",summary="Console当前项目短期实时票据",requestBody=@io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=TicketRequestSchema.class))), description = "Console当前项目短期实时票据。")
+    public ResponseEntity<RealtimeTicketService.Issued> console(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@AuthenticationPrincipal Jwt jwt,HttpServletRequest request)throws IOException {
         rejectKey(request);var scope=TenantContext.current().orElseThrow(RealtimeTicketController::invalid);
         if(jwt==null||!projectId.equals(scope.projectId()))throw invalid();
         UUID owner=projects.requireProjectTenant(projectId);
         return issue(new RealtimeIdentity(RealtimeIdentity.Kind.CONSOLE,owner,projectId,generation(jwt),scope.accountId(),scope.accountId(),null,jwt.getExpiresAt()),request);
     }
+    /**
+     * App当前绑定设备的短期实时票据。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<RealtimeTicketService.Issued>}
+     */
     @io.swagger.v3.oas.annotations.security.SecurityRequirement(name="appAccessBearer")
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
     @PostMapping(value="/api/v1/app/realtime-tickets",consumes="application/json",produces="application/json")
-    @Operation(operationId="issueAppRealtimeTicket",summary="App当前绑定设备的短期实时票据",requestBody=@io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=TicketRequestSchema.class))))
+    @Operation(operationId="issueAppRealtimeTicket",summary="App当前绑定设备的短期实时票据",requestBody=@io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=TicketRequestSchema.class))), description = "App当前绑定设备的短期实时票据。")
     public ResponseEntity<RealtimeTicketService.Issued> app(@AuthenticationPrincipal Jwt jwt,HttpServletRequest request)throws IOException {
         rejectKey(request);if(jwt==null)throw invalid();
         return issue(new RealtimeIdentity(RealtimeIdentity.Kind.APP,uuid(jwt.getClaimAsString("tid")),uuid(jwt.getClaimAsString("pid")),generation(jwt),uuid(jwt.getSubject()),null,null,jwt.getExpiresAt()),request);

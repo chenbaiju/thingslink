@@ -24,17 +24,17 @@ public class JdbcOtaDeviceReportRepository implements OtaDeviceReportRepository 
     private final JdbcTemplate jdbc;
     /** 注入当前RLS连接。 */
     public JdbcOtaDeviceReportRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public java.time.Instant currentTime() {
         return jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void lockRegistration(UUID tenant, UUID project, UUID device) {
         jdbc.queryForObject("SELECT 1 FROM pg_advisory_xact_lock(hashtextextended("
                 + "concat_ws(':','ota-device-report-v1',?::text,?::text,?::text),13024::bigint))",
                 Integer.class, tenant, project, device);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaDeviceReportState> find(UUID project, UUID device, boolean exclusive, boolean shared) {
         if (exclusive && shared) throw new IllegalArgumentException("报告锁模式互斥");
         return jdbc.query("SELECT " + COLUMNS + ",encode(sha256(canonical),'hex') AS actual_hash"
@@ -42,14 +42,14 @@ public class JdbcOtaDeviceReportRepository implements OtaDeviceReportRepository 
                 + (exclusive ? " FOR UPDATE" : shared ? " FOR SHARE" : ""),
                 JdbcOtaDeviceReportRepository::map, project, device).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(OtaDeviceReportState s) {
         jdbc.update("INSERT INTO ota_device_report (" + COLUMNS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 s.tenantId(), s.projectId(), s.deviceId(), s.credentialVersion(), s.reportSequence(), s.revision(),
                 s.committedSecurityVersion(), s.canonical(), s.reportHash(), Timestamp.from(s.brokerReceivedAt()),
                 Timestamp.from(s.acceptedAt()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean replace(long expectedRevision, OtaDeviceReportState s) {
         return jdbc.update("""
                 UPDATE ota_device_report SET credential_version=?,report_sequence=?,revision=?,

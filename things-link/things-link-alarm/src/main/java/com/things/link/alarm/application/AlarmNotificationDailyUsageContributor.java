@@ -21,7 +21,7 @@ public class AlarmNotificationDailyUsageContributor implements DailyUsageContrib
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DailyUsageValue> calculate(DailyUsageScope scope, LocalDate usageDate) {
         Long count = jdbcTemplate.queryForObject("""

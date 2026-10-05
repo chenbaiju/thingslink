@@ -1810,6 +1810,241 @@
       "method": "get",
       "path": "/api/v1/projects/{projectId}/devices/{deviceId}/message-rule-actions",
       "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/devices/{deviceId}/snapshot",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/model-configurations/deepseek-chat",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/assistant/model-configurations/deepseek-chat",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "patch",
+      "path": "/api/v1/projects/{projectId}/assistant/model-configurations/deepseek-chat",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/assistant/model-configurations/deepseek-chat",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/assistant/model-probes/{sampleIndex}",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/devices/{deviceId}/history",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/assistant/evidence-records",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/evidence-records",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/evidence-records/{recordId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/assistant/evidence-records/{recordId}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/device-access/v1/property/report",
+      "idempotency": "device-access"
+    },
+    {
+      "method": "post",
+      "path": "/device-access/v1/command/claim",
+      "idempotency": "device-access"
+    },
+    {
+      "method": "post",
+      "path": "/device-access/v1/command/reply",
+      "idempotency": "device-access"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/emqx/events/command-reply",
+      "idempotency": "broker-callback"
+    },
+    {
+      "method": "post",
+      "path": "/simulations/start",
+      "idempotency": "simulator"
+    },
+    {
+      "method": "post",
+      "path": "/simulations/stop",
+      "idempotency": "simulator"
+    },
+    {
+      "method": "post",
+      "path": "/simulations/reconnect-storm",
+      "idempotency": "simulator"
+    },
+    {
+      "method": "post",
+      "path": "/simulations/publish-once",
+      "idempotency": "simulator"
+    },
+    {
+      "method": "post",
+      "path": "/simulations/publish-command-reply/{commandId}",
+      "idempotency": "simulator"
+    },
+    {
+      "method": "get",
+      "path": "/simulations/stats",
+      "idempotency": "simulator"
+    },
+    {
+      "method": "get",
+      "path": "/app",
+      "idempotency": "static-content"
+    },
+    {
+      "method": "get",
+      "path": "/app/{resourcePath}",
+      "idempotency": "static-content"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/realtime/ws",
+      "idempotency": "websocket-upgrade"
+    },
+    {
+      "method": "get",
+      "path": "/ws/app/properties",
+      "idempotency": "websocket-upgrade"
+    },
+    {
+      "method": "get",
+      "path": "/ws/app/dashboard",
+      "idempotency": "websocket-upgrade"
+    },
+    {
+      "method": "get",
+      "path": "/ws/dashboard/properties",
+      "idempotency": "websocket-upgrade"
+    },
+    {
+      "method": "get",
+      "path": "/ws/shares/{shareId}/properties",
+      "idempotency": "websocket-upgrade"
+    },
+    {
+      "method": "get",
+      "path": "/api/open/v1/realtime/ws",
+      "idempotency": "websocket-upgrade"
+    },
+    {
+      "method": "head",
+      "path": "/app",
+      "idempotency": "static-content"
+    },
+    {
+      "method": "head",
+      "path": "/app/{resourcePath}",
+      "idempotency": "static-content"
+    },
+    {
+      "method": "get",
+      "path": "/actuator",
+      "idempotency": "framework-management"
+    },
+    {
+      "method": "get",
+      "path": "/actuator/health",
+      "idempotency": "framework-management"
+    },
+    {
+      "method": "get",
+      "path": "/actuator/health/{componentPath}",
+      "idempotency": "framework-management"
+    },
+    {
+      "method": "get",
+      "path": "/actuator/prometheus",
+      "idempotency": "framework-management"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/devices/{deviceId}/alarms",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/knowledge/sources",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/knowledge/sources/{sourceKey}",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/assistant/knowledge/sources/{sourceKey}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/projects/{projectId}/assistant/knowledge/sources/{sourceKey}",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/assistant/knowledge/search",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/evidence-records/{recordId}/fact-report",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/assistant/fact-reports/collection",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/projects/{projectId}/assistant/analysis-runs",
+      "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/analysis-runs/status",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/analysis-runs/{callId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/assistant/analysis-runs/by-key",
+      "idempotency": "required-header"
     }
   ],
   "pages": [
@@ -2051,6 +2286,10 @@
     },
     {
       "name": "CursorPageDeviceMessageRuleActionResponse",
+      "hasMore": true
+    },
+    {
+      "name": "AssistantAlarmEvidence",
       "hasMore": true
     }
   ]

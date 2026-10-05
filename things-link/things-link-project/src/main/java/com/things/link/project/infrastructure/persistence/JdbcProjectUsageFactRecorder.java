@@ -32,7 +32,7 @@ public class JdbcProjectUsageFactRecorder implements ProjectUsageFactRecorder, c
         this.transactionLocalRlsScope = transactionLocalRlsScope;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional
     public boolean record(UUID ownerTenantId, UUID projectId, QuotaMetric metric,

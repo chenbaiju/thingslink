@@ -35,7 +35,7 @@ public class JdbcAlarmPushAudienceAdapter implements AlarmPushAudiencePort {
         this.lifecycleAccessService = lifecycleAccessService;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<PushAudience> listActiveInstallations(
             UUID tenantId, UUID projectId, UUID deviceId) {

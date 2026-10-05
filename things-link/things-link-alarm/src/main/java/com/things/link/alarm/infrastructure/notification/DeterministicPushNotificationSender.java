@@ -25,7 +25,7 @@ public class DeterministicPushNotificationSender implements PushNotificationSend
     /** 本桩唯一允许的 provider。 */
     private static final String MOCK_PROVIDER = "MOCK";
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String send(
             AlarmNotificationDelivery delivery,

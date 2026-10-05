@@ -1,0 +1,22 @@
+{
+  "version": "business-admission-review-v1",
+  "model": "deepseek-flash",
+  "modelVersion": "DeepSeek-V4.1-Flash",
+  "promptVersion": "thingslink-agent-single-analysis-v1",
+  "candidateSha256": "abe35f14065feffd2b0d00d50223deacbd5cdefb5a07c9a348d6004ccad46445",
+  "counterSha256": "4419e0648eeff6c8bdd998e42eb0d8a6a58a62695cba4242d86bc50be3345c60",
+  "reviewedAt": "2026-10-04T00:00:00Z",
+  "expiresAt": "2026-10-11T00:00:00Z",
+  "checks": [
+    {
+      "checkId": "ONLINE_COUNTER_CONTRACT",
+      "status": "PENDING",
+      "evidenceSha256": null
+    },
+    {
+      "checkId": "SUPPLIER_DATA_HANDLING",
+      "status": "PENDING",
+      "evidenceSha256": null
+    }
+  ]
+}

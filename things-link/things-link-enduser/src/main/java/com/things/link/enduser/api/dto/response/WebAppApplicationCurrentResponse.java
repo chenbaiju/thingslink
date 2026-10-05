@@ -77,10 +77,10 @@ public record WebAppApplicationCurrentResponse(
     }
 
     /**
-     * App access Bearer证明的可信实际身份。
+     * 应用访问令牌证明的可信实际身份。
      *
      * @param kind 固定身份类别APP
-     * @param appUserId App JWT subject
+     * @param appUserId 应用 JWT 的主体，即终端用户标识
      * @param projectId App JWT绑定项目ID
      */
     @Schema(description = "已认证App身份")

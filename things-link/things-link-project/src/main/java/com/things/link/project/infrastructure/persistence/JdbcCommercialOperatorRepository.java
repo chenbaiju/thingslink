@@ -23,11 +23,11 @@ public class JdbcCommercialOperatorRepository implements CommercialOperatorRepos
             .collect(Collectors.joining(","));
     /** @param jdbc 当前事务的JDBC */
     public JdbcCommercialOperatorRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean enabled(UUID actor,boolean lock) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT commercial_operator_enabled(?,?)",Boolean.class,actor,lock));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Snapshot> snapshot(UUID tenant) {
         return jdbc.query("SELECT t.name,t.quota_policy_assignment_version,"+PROJECTION+
                 " FROM sys_tenant t JOIN sys_quota_policy q ON q.id=t.quota_policy_id WHERE t.id=? AND t.status='ACTIVE' AND q.plan_template",

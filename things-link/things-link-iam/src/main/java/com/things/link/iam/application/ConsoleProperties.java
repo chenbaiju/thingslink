@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 从 {@code Host} 头或 {@code X-Forwarded-Host} 拼链接是常见做法，也是常见漏洞：
  * 这两个头都由客户端控制。攻击者对着「忘记密码」接口发一个伪造 Host 的请求，
  * 受害者收到的重置链接就指向攻击者的域名 —— 点开即交出令牌。
- * 这类问题有个名字叫 Host Header Injection，修法只有一个：<b>链接的域名由服务端配置决定</b>。
+ * 这类问题有个名字叫 主机请求头注入，修法只有一个：<b>链接的域名由服务端配置决定</b>。
  *
  * <p>当前生产调用方是 IAM 邮件适配器，配置归属 iam。若新增跨模块调用方，
  * 再评估公共配置归属；不因历史 S6 设想提前建立反向模块依赖。

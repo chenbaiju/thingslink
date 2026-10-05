@@ -65,9 +65,9 @@ public class AppPasswordService {
     /**
      * 修改自己的口令并撤销全部会话。
      *
-     * @param appUserId   终端用户 ID（App JWT subject）
-     * @param tenantId    归属租户（App JWT tid）
-     * @param projectId   当前项目（已验证 App JWT pid），只限定改密入口资格
+     * @param appUserId   终端用户 ID（应用 JWT 主体）
+     * @param tenantId    归属租户（应用 JWT 租户声明）
+     * @param projectId   当前项目（已验证 应用 JWT 项目声明），只限定改密入口资格
      * @param oldPassword 原口令
      * @param newPassword 新口令
      * @throws BusinessException 项目只读（60022）、访问无效（60009）、原口令错（60008）或新口令过短（10001）

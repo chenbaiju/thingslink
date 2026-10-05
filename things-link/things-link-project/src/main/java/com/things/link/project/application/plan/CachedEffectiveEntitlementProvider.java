@@ -36,7 +36,7 @@ public class CachedEffectiveEntitlementProvider implements EffectiveEntitlementP
     private final Clock clock;
     /** 以产品修订版 ID 为键的本机快照；条目数受目录修订版数量约束且 TTL 会回源。 */
     private final Map<UUID, CacheEntry> entries = new ConcurrentHashMap<>();
-    /** 有界淘汰的短临界区；不会按 TTL 主动删除 last-known-good。 */
+    /** 有界淘汰的短临界区；不会按 TTL 主动删除 最近一次有效值。 */
     private final Object evictionMonitor = new Object();
 
     /**
@@ -60,7 +60,7 @@ public class CachedEffectiveEntitlementProvider implements EffectiveEntitlementP
         this.clock = clock;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public EffectiveEntitlement resolvePlanRevision(UUID planRevisionId) {
         if (planRevisionId == null) {
@@ -90,7 +90,7 @@ public class CachedEffectiveEntitlementProvider implements EffectiveEntitlementP
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public EffectiveEntitlement resolvePlanRevision(String revisionCode, String planCode) {
         if (revisionCode == null || planCode == null) {

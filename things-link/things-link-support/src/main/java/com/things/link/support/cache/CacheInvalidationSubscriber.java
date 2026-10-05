@@ -35,7 +35,7 @@ public class CacheInvalidationSubscriber implements MessageListener {
         this.metrics = metrics;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void onMessage(Message message, byte[] pattern) {
         CacheInvalidationEvent event = null;

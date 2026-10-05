@@ -10,6 +10,7 @@ public enum ProjectCleanupStage {
     /** 看板与WebApp应用发布事实。 */ DASHBOARD,
     /** OTA固件草稿及创建恢复身份。 */ OTA,
     /** 公开集成凭据；不可变操作独立保留。 */ INTEGRATION,
+    /** Agent项目供应商凭据。 */ ASSISTANT,
     /** 遥测、命令与摄入事实。 */ TELEMETRY,
     /** 设备及模型。 */ DEVICE,
     /** 项目登录会话。 */ IAM,

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import java.sql.Timestamp;
 import java.util.*;
+/** 人工恢复回执 JDBC 仓储，持久保存操作身份及恢复结果。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcWebhookRecoveryRepository implements WebhookRecoveryRepository {

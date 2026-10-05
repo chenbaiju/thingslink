@@ -40,7 +40,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/system")
-@Tag(name = "控制台", description = "菜单与权限点下发")
+@Tag(name = "控制台", description = "菜单、权限点与系统状态")
 public class MenuController {
 
     private final CurrentUserService currentUserService;

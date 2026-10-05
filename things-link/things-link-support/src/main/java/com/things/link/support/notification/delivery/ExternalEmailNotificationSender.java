@@ -27,13 +27,13 @@ public class ExternalEmailNotificationSender implements ExternalNotificationSend
         this.mailSender = mailSender;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String channel() {
         return "EMAIL";
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String send(ExternalNotificationRequest request) {
         if (request == null || request.deliveryId() == null

@@ -44,19 +44,19 @@ public enum AlarmErrorCode implements ErrorCode {
         this.httpStatus = httpStatus;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int code() {
         return code;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String defaultMessage() {
         return message;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int httpStatus() {
         return httpStatus;

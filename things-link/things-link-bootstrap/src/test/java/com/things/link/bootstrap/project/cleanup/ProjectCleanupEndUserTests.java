@@ -196,7 +196,8 @@ class ProjectCleanupEndUserTests {
                 List.of(prerequisites.get(0), prerequisites.get(1), prerequisites.get(2), prerequisites.get(3),
                         endusers, dashboards,
                         proxy(new OtaProjectCleanupContributor(new JdbcOtaProjectCleanupRepository(app))),
-                ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner))));
+                ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner),
+                ProjectCleanupDashboardCompatibilityFixture.emptyAssistantContributor(owner))));
         assertThat(drain()).isEqualTo(501);
         assertThat(rows("dash_dashboard", f)).isZero();
         assertThat(owner.queryForObject("SELECT cleanup_stage FROM sys_project WHERE id=?",
@@ -205,6 +206,9 @@ class ProjectCleanupEndUserTests {
         assertThat(next()).isEqualTo(ProjectCleanupBatchResult.done());
         assertThat(owner.queryForObject("SELECT cleanup_stage FROM sys_project WHERE id=?",
                 String.class, f.project())).isEqualTo("INTEGRATION");
+        assertThat(next()).isEqualTo(ProjectCleanupBatchResult.done());
+        assertThat(owner.queryForObject("SELECT cleanup_stage FROM sys_project WHERE id=?",
+                String.class, f.project())).isEqualTo("ASSISTANT");
         assertThat(next()).isEqualTo(ProjectCleanupBatchResult.done());
         assertThat(owner.queryForObject("SELECT cleanup_stage FROM sys_project WHERE id=?",
                 String.class, f.project())).isEqualTo("TELEMETRY");

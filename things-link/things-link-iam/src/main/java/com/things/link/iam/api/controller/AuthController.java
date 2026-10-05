@@ -167,7 +167,7 @@ public class AuthController {
      *
      * @param request     注册请求
      * @param httpRequest 用于取来源 IP 做限流
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/register")
     @Operation(summary = "注册",
@@ -229,7 +229,7 @@ public class AuthController {
      *
      * @param request     重发请求
      * @param httpRequest 用于取来源 IP 做限流
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/email/resend")
     @Operation(summary = "重发验证邮件",
@@ -265,7 +265,7 @@ public class AuthController {
      *
      * @param request     找回密码请求
      * @param httpRequest 用于取来源 IP 做限流
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/password/forgot")
     @Operation(summary = "找回密码",
@@ -299,7 +299,7 @@ public class AuthController {
      * <p>因此本接口<b>不返回令牌对</b>，用户必须用新口令重新登录一次。
      *
      * @param request 重置请求
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/password/reset")
     @Operation(summary = "重置密码",
@@ -402,7 +402,7 @@ public class AuthController {
      * 需要即时踢人的场景（账号被盗）要靠缩短访问令牌有效期，或引入撤销名单。
      *
      * @param httpRequest 当前请求
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/logout")
     @Operation(summary = "退出登录",

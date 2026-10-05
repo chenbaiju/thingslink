@@ -22,7 +22,7 @@ public class JdbcDeviceExportSource implements DeviceExportSource {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long streamDevices(UUID tenantId, UUID projectId, DeviceSink sink) {
         long[] count = {0L};

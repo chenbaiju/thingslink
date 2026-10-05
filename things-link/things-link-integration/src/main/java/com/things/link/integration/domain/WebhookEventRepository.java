@@ -2,6 +2,7 @@ package com.things.link.integration.domain;
 import com.things.link.shared.message.PublicWebhookEvent;
 import java.time.Instant;
 import java.util.*;
+/** 可信 Webhook 来源及投递意图持久端口；来源身份、正文摘要和原始时间独立保存。 */
 public interface WebhookEventRepository {
     Instant now();
     void lockProject(UUID project);

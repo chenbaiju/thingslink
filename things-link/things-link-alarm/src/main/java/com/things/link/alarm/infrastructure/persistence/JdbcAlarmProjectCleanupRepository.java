@@ -18,7 +18,7 @@ public class JdbcAlarmProjectCleanupRepository implements AlarmProjectCleanupRep
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectCleanupBatchResult clean(ProjectCleanupClaim claim) {
         return jdbc.queryForObject("SELECT * FROM public.alarm_project_cleanup_batch(?,?,?,?)",

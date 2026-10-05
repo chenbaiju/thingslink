@@ -7,8 +7,8 @@ public class RealtimeMqttIdleGuard {
     public RealtimeMqttIdleGuard(RealtimeTicketService tickets,RealtimeMqttSessions sessions){this.tickets=tickets;this.sessions=sessions;}
     public void inspect(RealtimeMqttSessions.Session session){
         try{tickets.authorizeMqtt(session.ticket(),session.peerIp());return;}
-        catch(BusinessException rejected){try{tickets.closeMqttById(session.ticket());}catch(RuntimeException unavailable){/* Physical close must still be attempted when the database cannot record it. */}}
-        catch(RuntimeException unavailable){/* Authoritative uncertainty is fail-closed, never an allow. */}
+        catch(BusinessException rejected){try{tickets.closeMqttById(session.ticket());}catch(RuntimeException unavailable){/* 即使数据库无法记录关闭事实，也必须尝试关闭物理连接。 */}}
+        catch(RuntimeException unavailable){/* 权威状态不确定时拒绝放行，不能视为允许。 */}
         if(!sessions.disconnect(session.ticket()))throw new IllegalStateException("REALTIME_BROKER_DISCONNECT_UNCONFIRMED");
     }
 }

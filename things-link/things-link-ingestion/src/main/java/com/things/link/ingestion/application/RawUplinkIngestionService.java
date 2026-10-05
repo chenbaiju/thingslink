@@ -76,7 +76,7 @@ public class RawUplinkIngestionService {
     }
 
     /**
-     * 为 manual-ACK ingress 返回稳定结果；依赖故障继续抛出，禁止误归为永久拒绝。
+     * 为 手动确认的接入流程 返回稳定结果；依赖故障继续抛出，禁止误归为永久拒绝。
      *
      * @param request Broker 持久交接信封还原出的发布事件
      * @return 可确认的接纳或永久拒绝分类

@@ -33,6 +33,9 @@ class AccessComponentFilterTests {
                 "com.things.link.device.application.DeviceAccessAcceptanceService",
                 "com.things.link.telemetry.application.DeviceCommandService");
         assertThat(components).doesNotContain(
+                "com.things.link.assistant.api.controller.DeviceEvidenceController",
+                "com.things.link.assistant.application.DeviceEvidenceService",
+                "com.things.link.device.application.ConsoleDeviceEvidenceService",
                 "com.things.link.device.api.controller.DeviceController",
                 "com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer",
                 "com.things.link.support.outbox.OutboxSchedulingConfiguration",

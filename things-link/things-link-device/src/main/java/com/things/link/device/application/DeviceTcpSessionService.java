@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.*;
 import static com.things.link.device.application.DeviceAccessSessionPort.*;
 
-/** ADR0191: actual heartbeat and original transaction govern TCP liveness, even after owner process death. */
+/** ADR0191：TCP 活跃状态由真实心跳及原事务决定，所属进程退出后仍按此规则处理。 */
 @Service
 public class DeviceTcpSessionService {
     private final DeviceAccessSessionRepository repository;

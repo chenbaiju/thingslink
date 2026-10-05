@@ -7,13 +7,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
- * Broker durable handoff 的单活服务身份与连接参数。
+ * 消息代理持久接管 的单活服务身份与连接参数。
  *
  * <p>ADR 0046 要求认证端与 MQTT 客户端读取同一组环境变量，避免在 EMQX HOCON 中保存密码。
  * {@code enabled=false} 只用于测试和迁移窗口；删除旧 HTTP message action 的运行环境必须显式启用。</p>
  *
  * @param enabled 是否启动固定单活 ingress
- * @param brokerUri MQTT 3.1.1 Broker URI
+ * @param brokerUri MQTT 3.1.1 消息代理服务地址
  * @param username 只用于内部订阅的服务用户名
  * @param password 不得写入仓库、日志或证据的服务密码
  * @param clientId 独立部署的单活 MQTT 客户端身份；认证端与订阅端必须一致
@@ -65,11 +65,11 @@ public record BrokerIngressProperties(boolean enabled, String brokerUri, String 
     }
 
     /**
-     * 常量时间校验 Broker HTTP authenticator 转发的服务凭据。
+     * 常量时间校验 消息代理 HTTP 认证器 转发的服务凭据。
      *
      * @param candidateUsername MQTT CONNECT 用户名
      * @param candidatePassword MQTT CONNECT 密码
-     * @param candidateClientId MQTT CONNECT clientId
+     * @param candidateClientId MQTT 连接报文中的客户端标识
      * @return 是否为当前启用的唯一 ingress owner
      */
     public boolean matches(String candidateUsername, String candidatePassword, String candidateClientId) {

@@ -28,7 +28,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
         this.objectMapper = objectMapper;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void createGroup(DeviceGroup group) {
         jdbcTemplate.update("""
@@ -39,7 +39,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                 group.type().name(), ruleJson(group.rule()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DeviceGroup> findGroups(UUID projectId) {
         return jdbcTemplate.query(groupSelect() + """
@@ -57,7 +57,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                 this::mapGroup, projectId, groupIds.toArray(UUID[]::new));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceGroup> findGroup(UUID projectId, UUID groupId) {
         return jdbcTemplate.query(groupSelect() + """
@@ -65,7 +65,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                 """, this::mapGroup, projectId, groupId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean updateGroup(DeviceGroup group) {
         return jdbcTemplate.update("""
@@ -76,7 +76,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                 group.type().name()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean softDeleteGroup(UUID projectId, UUID groupId) {
         // 软删除组后显式清边，避免同名重建时历史成员在审计或误写路径中复活。
@@ -88,7 +88,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                 """, projectId, groupId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void addMember(UUID projectId, UUID groupId, UUID deviceId) {
         jdbcTemplate.update("""
@@ -100,7 +100,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                 """, groupId, deviceId, projectId, groupId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void replaceMembers(UUID projectId, UUID groupId, List<UUID> deviceIds) {
         jdbcTemplate.update("DELETE FROM dev_group_member WHERE project_id = ? AND group_id = ?",
@@ -108,7 +108,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
         deviceIds.forEach(deviceId -> addMember(projectId, groupId, deviceId));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void upsertTag(DeviceTag tag) {
         jdbcTemplate.update("""
@@ -119,7 +119,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                 """, tag.id(), tag.tenantId(), tag.projectId(), tag.deviceId(), tag.key(), tag.value());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DeviceTag> findTags(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
@@ -132,7 +132,7 @@ public class JdbcDeviceGroupRepository implements DeviceGroupRepository {
                         resultSet.getString("tag_key"), resultSet.getString("tag_value")), projectId, deviceId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean deleteTag(UUID projectId, UUID deviceId, String key) {
         return jdbcTemplate.update("""

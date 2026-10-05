@@ -8,7 +8,7 @@ import java.util.Objects;
  * 不可变物模型的顶层属性运行描述。
  *
  * @param propertyKey 属性键
- * @param dataType NUMBER/TEXT/SWITCH/ENUM/OBJECT/LIST
+ * @param dataType 属性数据类型：数值、文本、开关、枚举、对象或列表
  * @param unit 可选单位
  * @param minimumValue 可选数值下界
  * @param maximumValue 可选数值上界

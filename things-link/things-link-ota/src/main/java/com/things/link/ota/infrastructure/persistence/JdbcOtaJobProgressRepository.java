@@ -22,7 +22,7 @@ public class JdbcOtaJobProgressRepository implements OtaJobProgressRepository {
     private final JdbcTemplate jdbc;
     /** 注入项目数据平面。 */
     public JdbcOtaJobProgressRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Context> locate(UUID jobId) {
         return jdbc.query("""
                 SELECT j.tenant_id,j.project_id,j.campaign_id,c.firmware_id,j.id AS job_id,j.device_id,
@@ -31,7 +31,7 @@ public class JdbcOtaJobProgressRepository implements OtaJobProgressRepository {
                 FROM ota_device_job j JOIN ota_campaign c ON c.id=j.campaign_id WHERE j.id=?
                 """, (rs, row) -> context(rs), jobId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaJobExecutionOrigin> origin(UUID jobId, int attemptNo) {
         return jdbc.query("SELECT * FROM ota_job_execution_origin WHERE job_id=? AND attempt_no=?", (rs, row) ->
                 new OtaJobExecutionOrigin(uuid(rs,"tenant_id"), uuid(rs,"project_id"), uuid(rs,"campaign_id"),
@@ -40,17 +40,17 @@ public class JdbcOtaJobProgressRepository implements OtaJobProgressRepository {
                         rs.getBytes("canonical"), instant(rs,"broker_received_at"), instant(rs,"accepted_at"),
                         instant(rs,"captured_at"), rs.getLong("dispatched_revision")), jobId, attemptNo).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaJobProgressReceipt> find(UUID jobId, int attemptNo, long seq) {
         return jdbc.query("SELECT * FROM ota_job_progress WHERE job_id=? AND attempt_no=? AND progress_seq=?",
                 JdbcOtaJobProgressRepository::receipt, jobId, attemptNo, seq).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaJobProgressReceipt> latest(UUID jobId, int attemptNo) {
         return jdbc.query("SELECT * FROM ota_job_progress WHERE job_id=? AND attempt_no=? ORDER BY progress_seq DESC LIMIT 1",
                 JdbcOtaJobProgressRepository::receipt, jobId, attemptNo).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean accept(Context expected, OtaJobProgressReceipt r, String nextStatus, String reason) {
         if (!expected.jobId().equals(r.jobId())) return false;
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_job_accept_progress(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -59,17 +59,17 @@ public class JdbcOtaJobProgressRepository implements OtaJobProgressRepository {
                 r.canonical(), r.payloadHash(), Timestamp.from(r.brokerReceivedAt()), Timestamp.from(r.acceptedAt()),
                 expected.revision(), nextStatus, reason));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<ExpiryClaim> claimExpired() {
         return jdbc.query("SELECT * FROM ota_job_claim_expired()", JdbcOtaJobProgressRepository::expiry).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<ExpiryClaim> authoritativeExpiry(UUID jobId, UUID token) {
         if (jobId == null || token == null) return Optional.empty();
         return jdbc.query("SELECT * FROM ota_job_authoritative_expiry(?,?)", JdbcOtaJobProgressRepository::expiry,
                 jobId, token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean expire(ExpiryClaim claim, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_job_expire(?,?,?,?)", Boolean.class,
                 claim.context().jobId(), claim.token(), claim.context().revision(), reason));

@@ -6,7 +6,7 @@ import jakarta.annotation.PreDestroy;
 import tools.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.*;
-/** Only the isolated application Broker is queried; foreign client IDs are never deleted. */
+/** 仅查询隔离的应用 Broker；禁止删除不属于本应用的客户端标识。 */
 @Component
 public class EmqxRealtimeSessions implements RealtimeMqttSessions,AutoCloseable {
     private final RealtimeBrokerHttp http;private final ObjectMapper json=new ObjectMapper();
@@ -24,7 +24,7 @@ public class EmqxRealtimeSessions implements RealtimeMqttSessions,AutoCloseable 
                 if(!client.startsWith("tc-app-v1-")||!user.startsWith("tc-app-v1:"))continue;
                 try{UUID id=UUID.fromString(client.substring(10));if(!client.equals("tc-app-v1-"+id)||!user.equals("tc-app-v1:"+id))continue;
                     String ip=row.path("ip_address").asString();if(!ip.matches("[0-9A-Fa-f:.]{1,64}"))throw unavailable();sessions.add(new Session(id,ip));
-                }catch(IllegalArgumentException foreign){/* No guessing a canonical identity from malformed broker metadata. */}
+                }catch(IllegalArgumentException foreign){/* 禁止从格式错误的 Broker 元数据中猜测规范身份。 */}
             }
             return List.copyOf(sessions);
         }catch(RuntimeException malformed){throw unavailable();}

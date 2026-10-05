@@ -26,7 +26,7 @@ public class JdbcRuleExecutionReceiptStore implements RuleExecutionReceiptStore 
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleExecutionReceiptClaim tryClaim(RuleExecutionEnvelope envelope) {
         String claim = jdbcTemplate.queryForObject("""
@@ -39,13 +39,13 @@ public class JdbcRuleExecutionReceiptStore implements RuleExecutionReceiptStore 
         return RuleExecutionReceiptClaim.valueOf(claim);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void complete(RuleExecutionEnvelope envelope) {
         finish(envelope, false, "完成");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void release(RuleExecutionEnvelope envelope) {
         finish(envelope, true, "释放");

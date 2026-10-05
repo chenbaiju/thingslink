@@ -38,7 +38,7 @@ public class JdbcRuleExecutionLogReadRepository implements RuleExecutionLogReadR
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<RuleExecutionSummary> findSummaries(RuleExecutionLogQuery query) {
         Position position = decodeCursor(query.cursor());
@@ -104,7 +104,7 @@ public class JdbcRuleExecutionLogReadRepository implements RuleExecutionLogReadR
         return CursorPage.of(items, encodeCursor(items.getLast()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<RuleExecutionAttempt> findAttempts(
             UUID projectId, UUID messageId, UUID ruleId, UUID ruleVersionId) {
@@ -116,7 +116,7 @@ public class JdbcRuleExecutionLogReadRepository implements RuleExecutionLogReadR
                 """, this::mapAttempt, projectId, messageId, ruleId, ruleVersionId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<RuleOption> findRuleOptions(UUID projectId) {
         return jdbc.query("""

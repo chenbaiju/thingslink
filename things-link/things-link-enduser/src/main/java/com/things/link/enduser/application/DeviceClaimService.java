@@ -150,8 +150,8 @@ public class DeviceClaimService {
      * <p>相同消费人重放且原 PRIMARY 仍有效时返回原关系，处理“服务已提交但客户端丢失响应”；
      * 其他重放统一 60012。预期业务拒绝不回滚已经递增的有效哈希复核次数。
      *
-     * @param tenantId 当前 App access token 的租户
-     * @param projectId 当前 App access token 的项目
+     * @param tenantId 当前 应用访问令牌 的租户
+     * @param projectId 当前 应用访问令牌 的项目
      * @param appUserId 当前 App 用户
      * @param plaintext 明文令牌
      * @return 新建或幂等复用的 PRIMARY 关系

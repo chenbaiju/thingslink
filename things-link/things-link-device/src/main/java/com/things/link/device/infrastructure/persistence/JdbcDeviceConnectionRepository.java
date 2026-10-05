@@ -19,7 +19,7 @@ public class JdbcDeviceConnectionRepository implements DeviceConnectionRepositor
     /** @param jdbcTemplate JDBC 访问入口 */
     public JdbcDeviceConnectionRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */ @Override public void create(DeviceConnection c) {
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public void create(DeviceConnection c) {
         jdbcTemplate.update("""
                 INSERT INTO dev_connection
                     (id, tenant_id, project_id, device_id, session_id, protocol, broker_node, client_ip, connected_at)
@@ -28,7 +28,7 @@ public class JdbcDeviceConnectionRepository implements DeviceConnectionRepositor
                 c.protocol().name(), c.brokerNode(), c.clientIp(), c.connectedAt());
     }
 
-    /** {@inheritDoc} */ @Override public List<DeviceConnection> findByDevice(UUID projectId, UUID deviceId) {
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public List<DeviceConnection> findByDevice(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_id, session_id, protocol, broker_node,
                        client_ip, connected_at, disconnected_at, disconnect_reason, created_at
@@ -37,7 +37,7 @@ public class JdbcDeviceConnectionRepository implements DeviceConnectionRepositor
                 """, this::map, projectId, deviceId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<String> findActiveMqttSessionIds(UUID projectId, UUID deviceId) {
         return jdbcTemplate.queryForList("""

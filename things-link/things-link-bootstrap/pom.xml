@@ -103,6 +103,11 @@
 			<groupId>com.things.link</groupId>
 			<artifactId>things-link-ingestion</artifactId>
 		</dependency>
+		<!-- AG-1a 管理面证据编排，与 runtime 同源，access 排除组件。 -->
+		<dependency>
+			<groupId>com.things.link</groupId>
+			<artifactId>things-link-assistant</artifactId>
+		</dependency>
 		<!-- S6 告警状态机：启动模块必须显式带入，组件扫描才会装配告警 API 与评估端口。 -->
 		<dependency>
 			<groupId>com.things.link</groupId>

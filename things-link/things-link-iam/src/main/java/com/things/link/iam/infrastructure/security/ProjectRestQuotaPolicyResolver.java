@@ -30,7 +30,7 @@ public class ProjectRestQuotaPolicyResolver implements RestQuotaPolicyResolver {
         this.provider = provider;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<RestQuotaPolicy> resolve(UUID projectId) {
         EffectiveQuotaPolicyProvider quotaPolicyProvider = provider.getIfAvailable();

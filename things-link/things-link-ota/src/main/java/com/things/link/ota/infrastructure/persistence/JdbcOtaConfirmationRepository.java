@@ -26,22 +26,22 @@ public class JdbcOtaConfirmationRepository implements OtaConfirmationRepository 
     private final JdbcTemplate jdbc;
     /** 注入实际事务连接。 */
     public JdbcOtaConfirmationRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<UUID> candidateBoot(UUID jobId, int attemptNo) {
         return jdbc.query("SELECT boot_id FROM ota_job_progress WHERE job_id=? AND attempt_no=?"
                 + " AND adopted_status='HEALTH_CHECKING'", (rs,row)->rs.getObject(1,UUID.class),jobId,attemptNo)
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaHealthReceipt> findHealth(UUID jobId,int attemptNo,long seq) {
         return jdbc.query("SELECT * FROM ota_health_receipt WHERE job_id=? AND attempt_no=? AND health_seq=?",
                 JdbcOtaConfirmationRepository::health,jobId,attemptNo,seq).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaHealthReceipt> firstHealth(UUID jobId,int attemptNo) {
         return healthOrder(jobId,attemptNo,"ASC");
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaHealthReceipt> latestHealth(UUID jobId,int attemptNo) {
         return healthOrder(jobId,attemptNo,"DESC");
     }
@@ -50,7 +50,7 @@ public class JdbcOtaConfirmationRepository implements OtaConfirmationRepository 
         return jdbc.query("SELECT * FROM ota_health_receipt WHERE job_id=? AND attempt_no=? ORDER BY health_seq "
                 +direction+" LIMIT 1",JdbcOtaConfirmationRepository::health,job,attempt).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean acceptHealth(OtaJobProgressRepository.Context c,OtaHealthReceipt r,
             String next,String reason,OtaCommitPermit permit) {
         if (!c.jobId().equals(r.jobId())) return false;
@@ -68,22 +68,22 @@ public class JdbcOtaConfirmationRepository implements OtaConfirmationRepository 
                 +"ROW(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,NULL)::ota_health_receipt,?,?,?,"+permitRow+")",
                 Boolean.class,args.toArray()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaCommitPermit> findPermit(UUID job,int attempt) {
         return jdbc.query("SELECT * FROM ota_commit_permit WHERE job_id=? AND attempt_no=?",
                 JdbcOtaConfirmationRepository::permit,job,attempt).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean hasSendReservation(UUID permitId) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM ota_commit_transport WHERE event_id=?)",
                 Boolean.class,permitId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaCommitReceipt> findCommitReceipt(UUID device,UUID receiptId) {
         return jdbc.query("SELECT * FROM ota_commit_receipt WHERE device_id=? AND receipt_id=?",
                 JdbcOtaConfirmationRepository::commit,device,receiptId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean acceptCommit(OtaJobProgressRepository.Context c,OtaCommitReceipt r,String next,String reason,UUID deviceReceiptId) {
         if(!c.jobId().equals(r.jobId())) return false;
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_confirmation_accept_commit("

@@ -58,7 +58,7 @@ public record DeviceAccessDiagnosticsResponse(TransportProtocol protocol, long c
      * 冻结的两类在线判据分列（§6.2）：连接在线优先，其次最近活动，最后离线。
      *
      * @param diagnostics 诊断快照
-     * @return {@code CONNECTED}／{@code LAST_ACTIVITY}／{@code OFFLINE}
+     * @return 连接诊断依据：已连接、最近活跃或离线，对应 {@code CONNECTED}／{@code LAST_ACTIVITY}／{@code OFFLINE}
      */
     private static String state(ConnectionDiagnostics diagnostics) {
         if (diagnostics.online()) {

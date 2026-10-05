@@ -43,13 +43,13 @@ public class JdbcEffectiveEntitlementRepository implements EffectiveEntitlementR
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<EffectiveEntitlement> findByPlanRevisionId(UUID planRevisionId) {
         return load(SELECT_SQL_TEMPLATE.formatted("r.id = ?"), planRevisionId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<EffectiveEntitlement> findByRevisionAndPlan(String revisionCode, String planCode) {
         return load(SELECT_SQL_TEMPLATE.formatted("r.revision_code = ? AND p.code = ?"), revisionCode, planCode);

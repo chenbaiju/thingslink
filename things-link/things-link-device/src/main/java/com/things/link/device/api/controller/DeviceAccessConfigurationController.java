@@ -30,18 +30,31 @@ public class DeviceAccessConfigurationController {
         this.control = control;
     }
 
-    /** @param projectId 项目 @param deviceId 设备 @return 当前七字段视图，不返回任何秘密 */
+    /**
+     * 读取设备接入配置。
+     *
+     * @param projectId 项目
+     * @param deviceId 设备
+     * @return 当前七字段视图，不返回任何秘密
+     */
     @GetMapping
     @Operation(operationId = "readDeviceAccessConfiguration", summary = "读取设备接入配置", description = "项目成员可读；版本为十进制字符串，不可配置设备返回空协议列表")
-    public ResponseEntity<DeviceAccessConfigurationResponse> get(@PathVariable UUID projectId, @PathVariable UUID deviceId) {
+    public ResponseEntity<DeviceAccessConfigurationResponse> get(@io.swagger.v3.oas.annotations.Parameter(description = "项目") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "设备") @PathVariable UUID deviceId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(DeviceAccessConfigurationResponse.from(control.view(projectId, deviceId)));
     }
 
-    /** @param projectId 项目 @param deviceId 设备 @param request 严格类型与CAS请求 @return 本次事务提交的配置视图 */
+    /**
+     * 修改设备接入配置。
+     *
+     * @param projectId 项目
+     * @param deviceId 设备
+     * @param request 严格类型与CAS请求
+     * @return 本次事务提交的配置视图
+     */
     @PutMapping
     @Operation(operationId = "changeDeviceAccessConfiguration", summary = "修改设备接入配置", description = "仅OWNER/ADMIN；先校验期望版本，同值不推进，冲突读取最新视图后决定重试")
-    public ResponseEntity<DeviceAccessConfigurationResponse> put(@PathVariable UUID projectId, @PathVariable UUID deviceId,
+    public ResponseEntity<DeviceAccessConfigurationResponse> put(@io.swagger.v3.oas.annotations.Parameter(description = "项目") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "设备") @PathVariable UUID deviceId,
             @RequestBody ChangeDeviceAccessConfigurationRequest request) {
         authorization.requireDeviceWrite(projectId);
         return ResponseEntity.ok(DeviceAccessConfigurationResponse.from(control.changeView(projectId, deviceId,

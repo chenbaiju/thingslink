@@ -205,7 +205,7 @@ public interface RuleNotificationDeliveryStore {
 
     /**
      * @param id 稳定投递 ID
-     * @param tenantId owner tenant ID
+     * @param tenantId 归属租户标识
      * @param projectId 项目隔离轴
      * @param ruleId 规则来源规则 ID；场景来源为空
      * @param ruleVersionId 规则来源不可变版本 ID；场景来源为空

@@ -24,7 +24,7 @@ public class JdbcOtaDownloadRequestRepository implements OtaDownloadRequestRepos
     private final JdbcTemplate jdbc;
     /** 注入当前事务连接。 */
     public JdbcOtaDownloadRequestRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<JobContext> locate(UUID jobId) {
         return jdbc.query("""
                 SELECT j.tenant_id,j.project_id,j.device_id,j.campaign_id,c.firmware_id,j.id,j.status,j.state_version,
@@ -38,17 +38,17 @@ public class JdbcOtaDownloadRequestRepository implements OtaDownloadRequestRepos
                 rs.getLong("state_version"), rs.getInt("attempt_no"), rs.getLong("credential_version"),
                 rs.getString("manifest_sha256"), rs.getTimestamp("deadline_at").toInstant()), jobId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Request> find(UUID deviceId, UUID requestId) {
         return jdbc.query("SELECT " + COLUMNS + " FROM ota_download_request WHERE device_id=? AND request_id=?",
                 JdbcOtaDownloadRequestRepository::map, deviceId, requestId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Request> findByJobAttempt(UUID jobId, int attemptNo) {
         return jdbc.query("SELECT " + COLUMNS + " FROM ota_download_request WHERE job_id=? AND attempt_no=?",
                 JdbcOtaDownloadRequestRepository::map, jobId, attemptNo).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean create(Request r, long expectedJobRevision) {
         int changed = jdbc.update("INSERT INTO ota_download_request(" + COLUMNS + ",job_revision)"
                 + " SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
@@ -64,7 +64,7 @@ public class JdbcOtaDownloadRequestRepository implements OtaDownloadRequestRepos
                 Timestamp.from(r.acceptedAt()));
         return true;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean safetyPause(JobContext c, long expectedCampaignRevision, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_download_request_safety_pause(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 Boolean.class, c.tenantId(), c.projectId(), c.deviceId(), c.jobId(), c.campaignId(), c.firmwareId(),

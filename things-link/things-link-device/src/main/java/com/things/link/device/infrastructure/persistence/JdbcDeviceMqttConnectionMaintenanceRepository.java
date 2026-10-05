@@ -11,7 +11,7 @@ public class JdbcDeviceMqttConnectionMaintenanceRepository implements DeviceMqtt
     private final JdbcTemplate jdbc;
     /** 装配实际数据源。 */
     public JdbcDeviceMqttConnectionMaintenanceRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public int cleanExpired() {
         return jdbc.queryForObject("SELECT public.dev_mqtt_connection_maintenance()", Integer.class);
     }

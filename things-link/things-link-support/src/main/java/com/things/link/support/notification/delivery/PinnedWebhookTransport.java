@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
-/** Public Webhook transport. No ambient proxy, DNS re-resolution, credentials or hidden second POST. */
+/** 公开 Webhook 传输；不使用环境代理、再次解析 DNS、携带凭据或隐式发送第二次 POST。 */
 @Component
 public class PinnedWebhookTransport implements AutoCloseable {
     public static final int MAX_BODY_BYTES=262144;
@@ -25,7 +25,7 @@ public class PinnedWebhookTransport implements AutoCloseable {
         new SynchronousQueue<>(),Thread.ofPlatform().daemon().name("tc-webhook-dns-",0).factory(),new ThreadPoolExecutor.AbortPolicy());
 
     public PinnedWebhookTransport(){this(Dns.SYSTEM,OkHttpClient.Builder::new);}
-    /** Package-local fixture injection; production exposes no private-address or TLS bypass option. */
+    /** 仅允许包内注入测试依赖；生产环境不提供私有地址放行或绕过 TLS 的选项。 */
     PinnedWebhookTransport(Dns resolver,Supplier<OkHttpClient.Builder> clients){this.resolver=resolver;this.clients=clients;}
 
     public Result post(URI target,Map<String,String> headers,byte[] body){
@@ -70,7 +70,7 @@ public class PinnedWebhookTransport implements AutoCloseable {
         } catch(ExecutionException|IOException failure){return result(start,null,Failure.NETWORK_ERROR);
         } finally {
             if(lookup!=null)lookup.cancel(true);
-            // Cancel before close: closing an oversized HTTP/1 body must not silently drain it for reuse.
+            // 先取消再关闭：关闭超大 HTTP/1 正文时，禁止为了复用连接而隐式读完剩余内容。
             if(call!=null)call.cancel();if(response!=null)response.close();if(pool!=null)pool.evictAll();
         }
     }

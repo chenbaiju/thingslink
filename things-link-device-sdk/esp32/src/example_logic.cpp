@@ -1,6 +1,6 @@
-#include "baijulink/example_logic.hpp"
+#include "thingslink/example_logic.hpp"
 #include <cstdio>
-namespace baijulink {
+namespace thingslink {
 bool ExampleLogic::start(const DeviceSettings& settings) {
     if(!safe_off() || !settings.ready())return false;
     mode_=settings.mode;sample_=0;on_=false;

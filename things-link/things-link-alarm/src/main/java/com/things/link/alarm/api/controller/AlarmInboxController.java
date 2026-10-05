@@ -42,27 +42,45 @@ public class AlarmInboxController {
         this.authorization = authorization;
     }
 
-    /** @param projectId 当前项目 @param cursor 可空位置 @param limit 每页1至100条 @return 固定窗口全部通知页 */
+    /**
+     * 分页查询个人站内告警通知。
+     *
+     * @param projectId 当前项目
+     * @param cursor 可空位置
+     * @param limit 每页1至100条
+     * @return 固定窗口全部通知页
+     */
     @GetMapping
-    @Operation(summary = "分页查询个人站内告警通知")
-    public AlarmInboxPageResponse page(@PathVariable UUID projectId, @RequestParam(required = false) String cursor,
-                                       @RequestParam(defaultValue = "20") int limit) {
+    @Operation(summary = "分页查询个人站内告警通知", description = "分页查询个人站内告警通知。")
+    public AlarmInboxPageResponse page(@io.swagger.v3.oas.annotations.Parameter(description = "当前项目") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "可空位置") @RequestParam(required = false) String cursor,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "每页1至100条") @RequestParam(defaultValue = "20") int limit) {
         authorization.requireRead(projectId);
         return AlarmInboxPageResponse.from(service.page(projectId, cursor, limit));
     }
 
-    /** @param projectId 当前项目 @return 最多探测100条的个人未读摘要 */
+    /**
+     * 查询个人站内告警未读摘要。
+     *
+     * @param projectId 当前项目
+     * @return 最多探测100条的个人未读摘要
+     */
     @GetMapping("/unread-count")
-    @Operation(summary = "查询个人站内告警未读摘要")
-    public AlarmInboxCountResponse unreadCount(@PathVariable UUID projectId) {
+    @Operation(summary = "查询个人站内告警未读摘要", description = "查询个人站内告警未读摘要。")
+    public AlarmInboxCountResponse unreadCount(@io.swagger.v3.oas.annotations.Parameter(description = "当前项目") @PathVariable UUID projectId) {
         authorization.requireRead(projectId);
         return new AlarmInboxCountResponse(service.unreadCount(projectId));
     }
 
-    /** @param projectId 当前项目 @param request 明确展示的事件ID @return 新增个人回执数，不改变共享ACK */
+    /**
+     * 原子标记明确的站内告警事件已读。
+     *
+     * @param projectId 当前项目
+     * @param request 明确展示的事件ID
+     * @return 新增个人回执数，不改变共享ACK
+     */
     @PostMapping("/read")
-    @Operation(summary = "原子标记明确的站内告警事件已读")
-    public AlarmInboxReadResponse markRead(@PathVariable UUID projectId, @RequestBody AlarmInboxReadRequest request) {
+    @Operation(summary = "原子标记明确的站内告警事件已读", description = "原子标记明确的站内告警事件已读。")
+    public AlarmInboxReadResponse markRead(@io.swagger.v3.oas.annotations.Parameter(description = "当前项目") @PathVariable UUID projectId, @RequestBody AlarmInboxReadRequest request) {
         authorization.requireRead(projectId);
         return new AlarmInboxReadResponse(service.markRead(projectId, request == null ? null : request.eventIds()));
     }

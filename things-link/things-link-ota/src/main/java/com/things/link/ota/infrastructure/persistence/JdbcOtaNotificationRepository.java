@@ -19,31 +19,31 @@ public class JdbcOtaNotificationRepository implements OtaNotificationRepository 
     private final JdbcTemplate jdbc;
     /** 注入事务连接。 */
     public JdbcOtaNotificationRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> claimOne() {
         return jdbc.query("SELECT * FROM ota_notification_claim_one()", JdbcOtaNotificationRepository::claim)
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> authoritativeClaim(UUID event, UUID token) {
         if (event == null || token == null) return Optional.empty();
         return jdbc.query("SELECT * FROM ota_notification_authoritative_claim(?,?)",
                 JdbcOtaNotificationRepository::claim, event, token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> authoritativeTransport(UUID id, UUID token) {
         if (id == null || token == null) return Optional.empty();
         return jdbc.query("SELECT * FROM ota_notification_authoritative_transport(?,?)",
                 JdbcOtaNotificationRepository::transport, id, token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> reserveSend(Claim c, String topic, byte[] canonical) {
         var reserved = jdbc.query("SELECT id,reservation_token FROM ota_notification_reserve(?,?,?,?,?)",
                 (rs, row) -> new UUID[]{rs.getObject("id", UUID.class), rs.getObject("reservation_token", UUID.class)},
                 c.eventId(), c.leaseToken(), c.revision(), topic, canonical).stream().findFirst();
         return reserved.flatMap(ids -> authoritativeTransport(ids[0], ids[1]));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean deferIneligible(Claim c, String reason) {
         return jdbc.update("""
                 WITH observed AS MATERIALIZED(SELECT clock_timestamp() AS at_time)
@@ -54,7 +54,7 @@ public class JdbcOtaNotificationRepository implements OtaNotificationRepository 
                     AND ota_notification_send_allowed(d.event_id,?,?)
                 """, reason, c.eventId(), c.leaseToken(), c.revision()) == 1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recordObservation(Transport t, String outcome, Integer httpStatus, String errorCode) {
         int changed = jdbc.update("UPDATE ota_notification_transport SET outcome=?,http_status=?,error_code=?,"
                 + "observed_at=clock_timestamp() WHERE id=? AND reservation_token=? AND tenant_id=? AND project_id=?"
@@ -62,22 +62,22 @@ public class JdbcOtaNotificationRepository implements OtaNotificationRepository 
                 t.tenantId(), t.projectId(), t.eventId());
         return changed == 1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean settleCurrent(Claim c, UUID transportId) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_notification_settle(?,?,?,?)", Boolean.class,
                 c.eventId(), c.leaseToken(), c.revision(), transportId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recoverExpired(Claim c) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_notification_recover(?,?,?)", Boolean.class,
                 c.eventId(), c.leaseToken(), c.revision()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean exhaustDue(Claim c, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_notification_exhaust(?,?,?,?)", Boolean.class,
                 c.eventId(), c.leaseToken(), c.revision(), reason));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean pauseSecurity(Claim c, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_notification_pause(?,?,?,?)", Boolean.class,
                 c.eventId(), c.leaseToken(), c.revision(), reason));

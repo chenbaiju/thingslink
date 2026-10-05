@@ -12,6 +12,9 @@ public final class DashboardDataRequestPaths {
     /** Console使用独立路径名，旧current-values批量接口继续保留既有合同。 */
     private static final Pattern CONSOLE_POST = Pattern.compile(
             "^/api/v1/projects/[^/]+/(?:devices/(?:snapshots|current-value-snapshots)/query|alarms/query)$");
+    /** 个人集合报告仅汇编历史来源，精确登记读取配额与认证前禁止缓存。 */
+    private static final Pattern PERSONAL_FACT_COLLECTION_POST = Pattern.compile(
+            "^/api/v1/projects/[^/]+/assistant/fact-reports/collection$");
     /** 两个App GET也必须在认证和参数失败前写入no-store。 */
     private static final Pattern APP_GET = Pattern.compile(
             "^/api/v1/app/devices/(?:catalog|[^/]+/properties/[^/]+/history/versioned)$");
@@ -50,9 +53,10 @@ public final class DashboardDataRequestPaths {
         return "POST".equals(method) && APP_POST.contains(path);
     }
 
-    /** Console日写配额例外只包含本合同三个读取POST，短窗口读取配额继续扣减。 */
+    /** 精确只读POST不扣写额度；读取短窗、项目和租户额度继续保留，分类不授予权限。 */
     public static boolean isConsolePostRead(String method, String path) {
-        return "POST".equals(method) && path != null && CONSOLE_POST.matcher(path).matches();
+        return "POST".equals(method) && path != null && (CONSOLE_POST.matcher(path).matches()
+                || PERSONAL_FACT_COLLECTION_POST.matcher(path).matches());
     }
 
     /** 新数据合同的完整读取入口；相邻路径、其他方法及未来匿名分享均不自动加入。 */

@@ -26,7 +26,7 @@ public class JdbcDailyUsageReconciliationRepository implements DailyUsageReconci
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DailyUsageScope> claimDueScopes(int maximumRows) {
         return jdbcTemplate.query("SELECT tenant_id, project_id FROM claim_due_daily_usage_scopes(?)",
@@ -44,7 +44,7 @@ public class JdbcDailyUsageReconciliationRepository implements DailyUsageReconci
         if (rows.size() != 1) throw new IllegalStateException("日用量归并项目范围已失效");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void mergeAbsolute(DailyUsageScope scope, LocalDate usageDate, DailyUsageValue value) {
         jdbcTemplate.update("""
@@ -58,7 +58,7 @@ public class JdbcDailyUsageReconciliationRepository implements DailyUsageReconci
                 value.metric().name(), value.usedValue());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void complete(DailyUsageScope scope) {
         int updated = jdbcTemplate.update("""

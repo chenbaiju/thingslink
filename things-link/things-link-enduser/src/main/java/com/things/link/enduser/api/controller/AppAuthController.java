@@ -106,7 +106,7 @@ public class AppAuthController {
      * 退出登录。
      *
      * @param request 注销请求（刷新令牌可空）
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/logout")
     @Operation(summary = "退出登录",
@@ -123,7 +123,7 @@ public class AppAuthController {
      *
      * @param jwt     已通过校验的 App 令牌，显式传递 appUserId、tenantId 与 projectId
      * @param request 原口令与新口令
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/password")
     @Operation(summary = "修改密码",

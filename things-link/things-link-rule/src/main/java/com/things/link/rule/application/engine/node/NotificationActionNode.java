@@ -42,19 +42,19 @@ public final class NotificationActionNode implements RuleNode {
     private static final Pattern PAYLOAD_PLACEHOLDER =
             Pattern.compile("\\$\\{payload\\.([A-Za-z0-9_.]+)}");
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String type() {
         return TYPE;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public JsonNode configSchema() {
         return CONFIG_SCHEMA.deepCopy();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeValidation validate(JsonNode config) {
         if (config == null || !config.isObject() || config.isEmpty() || config.size() > ALLOWED_KEYS.size()
@@ -76,7 +76,7 @@ public final class NotificationActionNode implements RuleNode {
         return RuleNodeValidation.success();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeResult execute(RuleMessage message, JsonNode config, RuleExecutionContext context) {
         JsonNode payload = new ObjectMapper().createObjectNode()

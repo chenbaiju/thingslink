@@ -23,18 +23,18 @@ public class JdbcOtaFirmwareLifecycleRepository implements OtaFirmwareLifecycleR
     /** 同物理事务连接。 */ private final JdbcTemplate jdbc;
     /** 注入调用方事务绑定数据入口。 */
     public JdbcOtaFirmwareLifecycleRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaFirmwareLifecycleState> find(UUID projectId,UUID firmwareId,boolean lock) {
         return jdbc.query("SELECT "+COLUMNS+" FROM ota_firmware WHERE project_id=? AND id=?"+(lock?" FOR UPDATE":""),
                 JdbcOtaFirmwareLifecycleRepository::map,projectId,firmwareId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean deprecate(UUID tenantId,UUID projectId,UUID firmwareId,long expectedRevision,
             String reason,UUID actorId,Instant occurredAt) {
         return jdbc.update("UPDATE ota_firmware SET status='DEPRECATED',revision=revision+1,deprecated_reason=?,deprecated_by=?,deprecated_at=? WHERE tenant_id=? AND project_id=? AND id=? AND status='READY' AND revision=?",
                 reason,actorId,Timestamp.from(occurredAt),tenantId,projectId,firmwareId,expectedRevision)==1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean revoke(UUID tenantId,UUID projectId,UUID firmwareId,long expectedRevision,
             String reason,UUID actorId,Instant occurredAt) {
         return jdbc.update("UPDATE ota_firmware SET status='REVOKED',revision=revision+1,revoked_reason=?,revoked_by=?,revoked_at=? WHERE tenant_id=? AND project_id=? AND id=? AND status IN ('READY','DEPRECATED') AND revision=?",

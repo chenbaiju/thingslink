@@ -36,15 +36,15 @@ public class JdbcOtaPublicationRepository implements OtaPublicationRepository {
     private final JdbcTemplate jdbc;
     /** 注入事务绑定JDBC。 */
     public JdbcOtaPublicationRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(OtaPublication s) {
         jdbc.update("INSERT INTO ota_firmware_publication ("+COLUMNS+") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",s.id(),s.tenantId(),s.projectId(),s.firmwareId(),s.uploadSessionId(),s.createdBy(),s.requestId(),s.projectGeneration(),s.firmwareRevision(),s.uploadRevision(),s.canonicalManifest(),s.trustSnapshot(),s.status(),s.revision(),s.spki(),s.signature(),s.receipt(),s.failureCode(),s.leaseToken(),timestamp(s.leaseUntil()),timestamp(s.createdAt()),timestamp(s.updatedAt()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaPublication> find(UUID projectId,UUID firmwareId,UUID id,boolean lock) {
         return jdbc.query("SELECT "+COLUMNS+" FROM ota_firmware_publication WHERE project_id=? AND firmware_id=? AND id=?"+(lock?" FOR UPDATE":""),JdbcOtaPublicationRepository::map,projectId,firmwareId,id).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaPublication> findActive(UUID projectId,UUID firmwareId) {
         return jdbc.query("SELECT "+COLUMNS+" FROM ota_firmware_publication WHERE project_id=? AND firmware_id=? AND status<>'REJECTED'",JdbcOtaPublicationRepository::map,projectId,firmwareId).stream().findFirst();
     }
@@ -84,7 +84,7 @@ public class JdbcOtaPublicationRepository implements OtaPublicationRepository {
     @Override public Optional<OtaPublication> claimPreparedOrSigned() {
         return jdbc.query("SELECT "+COLUMNS+" FROM public.ota_firmware_publication_claim()",JdbcOtaPublicationRepository::map).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean renew(OtaPublication s,UUID token) {
         return update(s,token,"lease_until=clock_timestamp()+interval '120 seconds'",
             " AND status IN ('SIGNING','SIGNED') AND EXISTS (SELECT 1 FROM sys_project p WHERE p.id=project_id AND p.tenant_id=ota_firmware_publication.tenant_id AND p.status='ACTIVE' AND p.lifecycle_generation=project_generation)");
@@ -93,11 +93,11 @@ public class JdbcOtaPublicationRepository implements OtaPublicationRepository {
     @Override public boolean recordSigned(OtaPublication s,UUID token,byte[] spki,byte[] signature,String receipt) {
         return update(s,token,"status='SIGNED',revision=revision+1,spki=?,signature=?,receipt=?,updated_at=greatest(clock_timestamp(),updated_at)"," AND status='SIGNING'",spki,signature,receipt);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean reject(OtaPublication s,UUID token,String reason) {
         return update(s,token,"status='REJECTED',revision=revision+1,failure_code=?,lease_token=NULL,lease_until=NULL,updated_at=greatest(clock_timestamp(),updated_at)"," AND status IN ('SIGNING','SIGNED')",reason);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean unknown(OtaPublication s,UUID token,String reason) {
         return update(s,token,"status='UNKNOWN',revision=revision+1,failure_code=?,lease_token=NULL,lease_until=NULL,updated_at=greatest(clock_timestamp(),updated_at)"," AND status='SIGNING'",reason);
     }
@@ -131,7 +131,7 @@ public class JdbcOtaPublicationRepository implements OtaPublicationRepository {
         }
         return true;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaRelease> findRelease(UUID projectId,UUID firmwareId) {
         return jdbc.query("SELECT "+RELEASE_COLUMNS+" FROM ota_firmware_release WHERE project_id=? AND firmware_id=?",JdbcOtaPublicationRepository::mapRelease,projectId,firmwareId).stream().findFirst();
     }

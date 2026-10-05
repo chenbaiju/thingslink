@@ -28,7 +28,9 @@ TS="$(date +%s)"
 OWNER_EMAIL="owner-${TS}@example.com"
 MEMBER_EMAIL="member-${TS}@example.com"
 BACKEND_PID=""
-BACKEND_LOG="$CONSOLE_DIR/target-contract-backend.log"
+CONTRACT_LOG_TIMESTAMP="$(python3 -c 'import time; print(time.time_ns())')"
+mkdir -p "${CONSOLE_DIR}/logs"
+BACKEND_LOG="${CONSOLE_DIR}/logs/target-contract-backend-${CONTRACT_LOG_TIMESTAMP}.log"
 
 log() { printf '\033[36m[contract]\033[0m %s\n' "$*"; }
 

@@ -41,22 +41,22 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
         this.jdbc = jdbc;
         this.campaigns = new JdbcOtaCampaignRepository(jdbc);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void controlLock(UUID tenant, UUID project) {
         completion.capture(tenant, project);
         readControlLock(tenant, project);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void readControlLock(UUID tenant, UUID project) {
         jdbc.queryForObject("SELECT 1 FROM pg_advisory_xact_lock(hashtextextended("
                 + "concat_ws(':','ota-project-control-v1',?::text,?::text),13026::bigint))",
                 Integer.class, tenant, project);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Instant currentTime() {
         return jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<UUID> firmwaresUsingKey(UUID project, String domain, String version) {
         return List.copyOf(jdbc.query("SELECT DISTINCT c.firmware_id FROM ota_campaign c"
                 + " JOIN ota_firmware_release r ON r.id=c.release_id AND r.project_id=c.project_id"
@@ -65,17 +65,17 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
                 + " AND convert_from(r.trust_snapshot,'UTF8')::jsonb->>'keyVersion'=?"
                 + " ORDER BY c.firmware_id", (rs, row) -> rs.getObject(1, UUID.class), project, domain, version));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> claimOne() {
         return jdbc.query("SELECT * FROM ota_job_claim_one()", JdbcOtaCampaignRuntimeRepository::claim).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> authoritativeClaim(UUID job, UUID token) {
         if (job == null || token == null) return Optional.empty();
         return jdbc.query("SELECT * FROM ota_job_authoritative_claim(?,?)",
                 JdbcOtaCampaignRuntimeRepository::claim, job, token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaCampaignRuntime> lockRuntime(UUID project, UUID campaign) {
         if (campaigns.find(project, campaign, true).isEmpty()) return Optional.empty();
         jdbc.queryForList("SELECT batch_number FROM ota_campaign_batch WHERE project_id=? AND campaign_id=?"
@@ -84,7 +84,7 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
                 + " ORDER BY device_id::text FOR UPDATE", project, campaign);
         return read(project, campaign);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaCampaignRuntime> read(UUID project, UUID campaign) {
         var found = campaigns.find(project, campaign, false);
         if (found.isEmpty()) return Optional.empty();
@@ -138,15 +138,15 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
                 rs.getString("reason"),rs.getLong("cancelled_pending_count"),rs.getLong("unresolved_count"),instant(rs,"cancelled_at")),
                 project,campaign).stream().findFirst().orElse(null);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean start(UUID project, UUID campaign, long revision, UUID actor) {
         return change(project, campaign, revision, "START", actor, null, null);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean pause(UUID project, UUID campaign, long revision, UUID actor, String reason) {
         return change(project, campaign, revision, "PAUSE", actor, reason, null);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<UUID> resumeFailureCandidates(UUID project, UUID campaign) {
         return jdbc.queryForList("""
                 SELECT j.id FROM ota_device_job j WHERE j.project_id=? AND j.campaign_id=? AND j.status='DISPATCHED'
@@ -155,11 +155,11 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
                     WHERE a.job_id=j.id AND r.attempt_no=j.attempt_no AND a.status='EXHAUSTED')) ORDER BY j.id
                 """, UUID.class, project, campaign);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean resume(UUID project, UUID campaign, long revision, UUID actor, String reason) {
         return change(project, campaign, revision, "RESUME", actor, reason, null);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean cancelRuntime(UUID project, UUID campaign, long revision, UUID actor, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_campaign_cancel_runtime(?,?,?,?,?)",
                 Boolean.class, project, campaign, revision, actor, reason));
@@ -169,11 +169,11 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_campaign_runtime_change(?,?,?,?,?,?,?)",
                 Boolean.class, project, campaign, revision, action, actor, reason, job));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean admit(Claim claim, long credential, long reportRevision, String reportHash, Instant checkedAt) {
         return admission(claim, true, null, credential, reportRevision, reportHash, checkedAt);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean skip(Claim claim, String reason) {
         return admission(claim, false, reason, null, null, null, null);
     }
@@ -184,7 +184,7 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
                 c.tenantId(), c.projectId(), c.campaignId(), c.jobId(), c.jobRevision(), c.token(), eligible, reason,
                 credential, revision, hash, checked == null ? null : Timestamp.from(checked)));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public int securityPause(UUID project, UUID firmware, UUID actor, String reason) {
         var ids = jdbc.query("SELECT id FROM ota_campaign WHERE project_id=? AND firmware_id=?"
                 + " AND status IN ('RUNNING','PAUSED') ORDER BY id::text FOR UPDATE",
@@ -196,7 +196,7 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
         }
         return changed;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean securityPauseJob(Claim supplied, String reason) {
         var actual = authoritativeClaim(supplied.jobId(), supplied.token());
         if (actual.isEmpty() || !actual.get().equals(supplied)) return false;
@@ -208,12 +208,12 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
                 Boolean.class, supplied.projectId(), supplied.campaignId(), current.get().stateVersion(),
                 "SECURITY", null, reason, supplied.jobId(), supplied.token(), supplied.jobRevision()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<RetryDue> claimRetryDue() {
         return jdbc.query("SELECT * FROM ota_job_claim_retry_due()", JdbcOtaCampaignRuntimeRepository::retryDue)
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean consumeRetryClaim(RetryDue due) {
         if (due == null || due.token() == null || due.leaseUntil() == null || due.nextAttemptAt() == null) return false;
         return jdbc.update("""
@@ -227,38 +227,38 @@ public class JdbcOtaCampaignRuntimeRepository implements OtaCampaignRuntimeRepos
                 due.attemptNo(), due.jobRevision(), java.sql.Timestamp.from(due.nextAttemptAt()), due.failureCode(),
                 due.token(), java.sql.Timestamp.from(due.leaseUntil())) == 1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean beginRetry(UUID tenantId, UUID projectId, UUID jobId, String failureCode, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_job_begin_retry(?,?,?,?,?)", Boolean.class,
                 tenantId, projectId, jobId, failureCode, reason));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean dispatchRetry(UUID jobId, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_job_dispatch_retry(?,?)", Boolean.class,
                 jobId, reason));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean exhaustRetry(UUID jobId, String failureCode, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_job_exhaust_retry(?,?,?)", Boolean.class,
                 jobId, failureCode, reason));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean cancelRetryWait(UUID jobId, String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_job_cancel_retry_wait(?,?)", Boolean.class,
                 jobId, reason));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean hasInstallStopFence(UUID jobId) {
         return Boolean.TRUE.equals(jdbc.queryForObject(
                 "SELECT EXISTS(SELECT 1 FROM ota_install_stop_control WHERE job_id=?)", Boolean.class, jobId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<JobState> jobState(UUID jobId) {
         return jdbc.query("SELECT status,attempt_no,state_version FROM ota_device_job WHERE id=?",
                 (rs, row) -> new JobState(rs.getString("status"), rs.getInt("attempt_no"),
                         rs.getLong("state_version")), jobId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean retryBudgetRemains(UUID jobId) {
         return Boolean.TRUE.equals(jdbc.queryForObject(
                 "SELECT j.attempt_no <= (convert_from(c.canonical_plan,'UTF8')::jsonb"

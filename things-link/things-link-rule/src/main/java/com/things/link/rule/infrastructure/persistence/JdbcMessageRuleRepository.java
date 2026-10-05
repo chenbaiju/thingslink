@@ -31,13 +31,13 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
         this.objectMapper = objectMapper;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<MessageRule> lock(UUID projectId, UUID ruleId) {
         return jdbcTemplate.query(ruleSelect() + " WHERE project_id = ? AND id = ? AND deleted_at IS NULL FOR UPDATE",
                 this::mapRule, projectId, ruleId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<MessageRule> search(UUID projectId, String name, String status, Instant beforeTime, UUID beforeId, int limit) {
         return jdbcTemplate.query(ruleSelect() + """
@@ -48,7 +48,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
                 """, this::mapRule, projectId, name, status, status,
                 beforeTime == null ? null : time(beforeTime), beforeTime == null ? null : time(beforeTime), beforeId, limit);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<MessageRuleVersion> history(UUID projectId, UUID ruleId, Long beforeVersion, int limit) {
         return jdbcTemplate.query(versionSelect() + """
@@ -57,7 +57,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
                 """, this::mapVersion, projectId, ruleId, beforeVersion, beforeVersion, limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean create(MessageRule rule, MessageRuleVersion initialVersion) {
         int definitions = jdbcTemplate.update("""
@@ -71,7 +71,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
         return definitions == 1 && insertVersion(initialVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<MessageRule> find(UUID projectId, UUID ruleId) {
         return jdbcTemplate.query(ruleSelect() + """
@@ -79,7 +79,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
                 """, this::mapRule, projectId, ruleId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<MessageRuleVersion> findVersion(UUID projectId, UUID ruleId, UUID versionId) {
         return jdbcTemplate.query(versionSelect() + """
@@ -87,7 +87,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
                 """, this::mapVersion, projectId, ruleId, versionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<MessageRuleVersion> versions(UUID projectId, UUID ruleId) {
         return jdbcTemplate.query(versionSelect() + """
@@ -95,7 +95,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
                 """, this::mapVersion, projectId, ruleId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long nextVersionNumber(UUID projectId, UUID ruleId) {
         Long value = jdbcTemplate.queryForObject("""
@@ -105,7 +105,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
         return value == null ? 1L : value;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean revise(MessageRule replacement, long expectedVersion, MessageRuleVersion newVersion) {
         int definitions = jdbcTemplate.update("""
@@ -117,7 +117,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
         return definitions == 1 && insertVersion(newVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean activate(UUID projectId, UUID ruleId, UUID versionId, long expectedVersion) {
         return jdbcTemplate.update("""
@@ -132,7 +132,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
                 """, versionId, projectId, ruleId, expectedVersion, versionId, versionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean pause(UUID projectId, UUID ruleId, long expectedVersion) {
         return jdbcTemplate.update("""
@@ -143,7 +143,7 @@ public class JdbcMessageRuleRepository implements MessageRuleRepository {
                 """, projectId, ruleId, expectedVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean softDelete(UUID projectId, UUID ruleId, long expectedVersion) {
         return jdbcTemplate.update("""

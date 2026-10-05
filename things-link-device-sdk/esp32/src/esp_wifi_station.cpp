@@ -1,7 +1,7 @@
-#include "baijulink/esp_wifi_station.hpp"
+#include "thingslink/esp_wifi_station.hpp"
 #include "esp_wifi.h"
 #include <cstring>
-namespace baijulink {
+namespace thingslink {
 bool EspWifiStation::start(const DeviceSettings& settings) {
     if(initialized_ || !settings.ready())return false;
     static bool netif_initialized=false; // One station owner in this application.

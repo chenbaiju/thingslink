@@ -376,7 +376,7 @@ final class DashboardComponentDescriptorRegistry {
             return segment;
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public int compareTo(HostVersion other) {
             int majorComparison = Integer.compare(major, other.major);

@@ -40,7 +40,7 @@ public class JdbcAppUserRepository implements AppUserRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void lockTenantCapacity(UUID tenantId) {
         requireSessionTransaction(tenantId);
@@ -48,7 +48,7 @@ public class JdbcAppUserRepository implements AppUserRepository {
                 rs -> { }, "tenant-end-user-capacity-v1:" + tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long countByTenant(UUID tenantId) {
         return jdbcTemplate.queryForObject("SELECT count(*) FROM app_user WHERE tenant_id=?",

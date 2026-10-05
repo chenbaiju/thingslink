@@ -33,17 +33,48 @@ import java.util.UUID;
 public class CommercialOperationsController {
     private final CommercialOperationsService operations;
     public CommercialOperationsController(CommercialOperationsService operations) { this.operations=operations; }
-    @GetMapping("/context") @Operation(summary="读取目标租户调整审批摘要")
-    public CommercialOperationsService.Preview preview(@PathVariable UUID tenantId) { return operations.preview(tenantId); }
+    /**
+     * 读取目标租户调整审批摘要。
+     *
+     * @param tenantId 目标租户标识
+     * @return 当前接口的操作结果，响应结构见 {@code CommercialOperationsService.Preview}
+     */
+    @GetMapping("/context") @Operation(summary="读取目标租户调整审批摘要", description = "读取目标租户调整审批摘要。")
+    public CommercialOperationsService.Preview preview(@io.swagger.v3.oas.annotations.Parameter(description = "目标租户标识") @PathVariable UUID tenantId) { return operations.preview(tenantId); }
+    /**
+     * 提交有限期人工调整。
+     * 精确字符串数量；可信操作者；先预览版本，未知结果按原键查询，不自动换键
+     *
+     * @param tenantId 目标租户标识
+     * @param request 本次操作的请求数据，结构见 {@code CreateCommercialAdjustmentRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code CommercialOperationsService.Adjustment}
+     */
     @PostMapping @Operation(summary="提交有限期人工调整",description="精确字符串数量；可信操作者；先预览版本，未知结果按原键查询，不自动换键")
-    public CommercialOperationsService.Adjustment create(@PathVariable UUID tenantId,@Valid @RequestBody CreateCommercialAdjustmentRequest request) {
+    public CommercialOperationsService.Adjustment create(@io.swagger.v3.oas.annotations.Parameter(description = "目标租户标识") @PathVariable UUID tenantId,@Valid @RequestBody CreateCommercialAdjustmentRequest request) {
         return operations.create(tenantId,request.dimensionCode(),request.amount(),request.startsAt(),request.endsAt(),
                 request.reason(),request.idempotencyKey(),request.expectedAssignmentVersion());
     }
+    /**
+     * 恢复原幂等键调整事实。
+     * 包括已到期及已撤销，不重新授予
+     *
+     * @param tenantId 目标租户标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @return 当前接口的操作结果，响应结构见 {@code CommercialOperationsService.Adjustment}
+     */
     @GetMapping("/by-key/{key}") @Operation(summary="恢复原幂等键调整事实",description="包括已到期及已撤销，不重新授予")
-    public CommercialOperationsService.Adjustment byKey(@PathVariable UUID tenantId,@PathVariable String key) { return operations.byKey(tenantId,key); }
+    public CommercialOperationsService.Adjustment byKey(@io.swagger.v3.oas.annotations.Parameter(description = "目标租户标识") @PathVariable UUID tenantId,@io.swagger.v3.oas.annotations.Parameter(description = "本次操作的幂等键，用于识别重复提交") @PathVariable String key) { return operations.byKey(tenantId,key); }
+    /**
+     * 撤销人工调整。
+     * 仅人工ACTIVE/PENDING调整；重复撤销返回false，不重复审计
+     *
+     * @param tenantId 目标租户标识
+     * @param adjustmentId 商业调整记录标识
+     * @param request 本次操作的请求数据，结构见 {@code RevokeRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code RevokeResult}
+     */
     @PostMapping("/{adjustmentId}/revoke") @Operation(summary="撤销人工调整",description="仅人工ACTIVE/PENDING调整；重复撤销返回false，不重复审计")
-    public RevokeResult revoke(@PathVariable UUID tenantId,@PathVariable UUID adjustmentId,@Valid @RequestBody RevokeRequest request) {
+    public RevokeResult revoke(@io.swagger.v3.oas.annotations.Parameter(description = "目标租户标识") @PathVariable UUID tenantId,@io.swagger.v3.oas.annotations.Parameter(description = "商业调整记录标识") @PathVariable UUID adjustmentId,@Valid @RequestBody RevokeRequest request) {
         return new RevokeResult(operations.revoke(tenantId,adjustmentId,request.reason()));
     }
     public record RevokeRequest(@NotBlank @Size(max=512) String reason) { }

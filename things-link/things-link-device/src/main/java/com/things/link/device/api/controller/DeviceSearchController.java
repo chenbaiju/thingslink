@@ -63,15 +63,15 @@ public class DeviceSearchController {
             description = "关键词、设备类型、状态、设备组和标签维度间使用 AND；类型和状态集合内使用 OR，并按创建时间键集分页")
     @GetMapping
     public ResponseEntity<CursorPage<DeviceResponse>> search(
-            @PathVariable UUID projectId,
-            @RequestParam(required = false) @Size(max = 128) String keyword,
-            @RequestParam(required = false) List<UUID> deviceTypeIds,
-            @RequestParam(required = false) List<Device.Status> statuses,
-            @RequestParam(required = false) UUID groupId,
-            @RequestParam(required = false) @Size(max = 64) String tagKey,
-            @RequestParam(required = false) @Size(max = 128) String tagValue,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选名称、设备标识或位置关键词") @RequestParam(required = false) @Size(max = 128) String keyword,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可重复设备类型 ID，集合内部为 OR") @RequestParam(required = false) List<UUID> deviceTypeIds,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可重复状态，集合内部为 OR") @RequestParam(required = false) List<Device.Status> statuses,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选设备组 ID") @RequestParam(required = false) UUID groupId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选精确标签键，必须与标签值成对") @RequestParam(required = false) @Size(max = 64) String tagKey,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选精确标签值，必须与标签键成对") @RequestParam(required = false) @Size(max = 128) String tagValue,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选下一页游标") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "单页数量") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireRead(projectId);
         DeviceSearchQuery query = new DeviceSearchQuery(projectId, keyword,
                 deviceTypeIds == null ? Set.of() : Set.copyOf(deviceTypeIds),

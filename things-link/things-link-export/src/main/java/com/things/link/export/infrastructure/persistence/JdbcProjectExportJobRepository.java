@@ -33,7 +33,7 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public boolean create(UUID id, UUID tenantId, UUID projectId, long generation, UUID requesterAccountId) {
@@ -42,21 +42,21 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 id, tenantId, projectId, generation, requesterAccountId));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ProjectExportJob> findActive(UUID tenantId, UUID projectId, long generation) {
         return jdbcTemplate.query("SELECT * FROM find_active_project_export_job(?, ?, ?)",
                 this::mapJob, tenantId, projectId, generation).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ProjectExportJob> findByIdentity(UUID tenantId, UUID projectId, UUID exportId) {
         return jdbcTemplate.query("SELECT * FROM find_project_export_job(?, ?, ?)",
                 this::mapJob, tenantId, projectId, exportId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<ProjectExportDownloadClaim> lockDownloadCandidate(
@@ -67,7 +67,7 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 tenantId, projectId, exportId, generation, requesterAccountId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Optional<ProjectExportClaim> claimReady(String workerName) {
@@ -80,14 +80,14 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean renew(UUID exportId, UUID leaseToken) {
         return result("SELECT renew_project_export_job(?, ?, ?)", exportId, leaseToken, LEASE_SECONDS);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean registerUpload(UUID exportId, UUID leaseToken, UUID cleanupId, UUID uploadId,
@@ -97,7 +97,7 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 exportId, leaseToken, cleanupId, uploadId, objectKey, Timestamp.from(snapshotAt)));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public boolean complete(UUID exportId, UUID leaseToken, UUID uploadId, String objectKey,
@@ -107,7 +107,7 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 exportId, leaseToken, uploadId, objectKey, objectSize, objectSha256));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean fail(UUID exportId, UUID leaseToken, String failureCode, boolean permanent) {
@@ -115,7 +115,7 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 exportId, leaseToken, failureCode, permanent);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Optional<ProjectExportCleanupClaim> claimCleanup() {
@@ -125,21 +125,21 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                         rs.getObject("lease_token", UUID.class)), LEASE_SECONDS).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean completeCleanup(UUID cleanupId, UUID leaseToken) {
         return result("SELECT complete_project_export_cleanup(?, ?)", cleanupId, leaseToken);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean failCleanup(UUID cleanupId, UUID leaseToken, String failureCode) {
         return result("SELECT fail_project_export_cleanup(?, ?, ?)", cleanupId, leaseToken, failureCode);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Optional<ProjectExportExpiryClaim> claimExpired() {
@@ -150,7 +150,7 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 LEASE_SECONDS).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean completeExpired(UUID exportId, UUID cleanupId, UUID leaseToken) {
@@ -158,7 +158,7 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
                 exportId, cleanupId, leaseToken);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean failExpired(UUID cleanupId, UUID leaseToken, String failureCode) {

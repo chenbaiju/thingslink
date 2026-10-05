@@ -399,7 +399,7 @@ public class KafkaTransactionalOutboxPublisher implements DisposableBean {
         };
     }
 
-    /** Verify both persisted routing metadata and canonical identity before sending. */
+    /** 发送前同时校验已持久化的路由元数据与规范身份。 */
     private RoutedMessage routePublicWebhook(OutboxEvent event) {
         var message=objectMapper.readValue(event.payload(),com.things.link.shared.message.PublicWebhookSource.class);
         new com.things.link.support.webhook.PublicWebhookCodec(objectMapper).validate(message);

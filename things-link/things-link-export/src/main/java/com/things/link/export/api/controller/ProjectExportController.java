@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /** 项目冻结期一致快照导出HTTP入口。 */
-@Tag(name = "Project Export", description = "项目冻结期数据导出")
+@Tag(name = "项目导出", description = "项目冻结期数据导出")
 @RestController
 @RequestMapping("/api/v1/projects/{projectId}/exports")
 public class ProjectExportController {
@@ -33,9 +33,9 @@ public class ProjectExportController {
      * @param projectId 删除项目 ID
      * @return 202及异步任务状态
      */
-    @Operation(summary = "请求项目数据导出")
+    @Operation(summary = "请求项目数据导出", description = "建立或回读同代次非终态导出任务。")
     @PostMapping
-    public ResponseEntity<ProjectExportResponse> request(@PathVariable UUID projectId) {
+    public ResponseEntity<ProjectExportResponse> request(@io.swagger.v3.oas.annotations.Parameter(description = "删除项目 ID") @PathVariable UUID projectId) {
         return ResponseEntity.accepted().body(ProjectExportResponse.from(exportService.request(projectId)));
     }
 
@@ -45,10 +45,10 @@ public class ProjectExportController {
      * @param exportId 导出任务 ID
      * @return 当前状态；5g2另行增加下载签发
      */
-    @Operation(summary = "查询项目数据导出状态")
+    @Operation(summary = "查询项目数据导出状态", description = "查询导出任务状态。")
     @GetMapping("/{exportId}")
-    public ResponseEntity<ProjectExportResponse> get(@PathVariable UUID projectId,
-                                                     @PathVariable UUID exportId) {
+    public ResponseEntity<ProjectExportResponse> get(@io.swagger.v3.oas.annotations.Parameter(description = "删除项目 ID") @PathVariable UUID projectId,
+                                                     @io.swagger.v3.oas.annotations.Parameter(description = "导出任务 ID") @PathVariable UUID exportId) {
         return ResponseEntity.ok(ProjectExportResponse.from(exportService.get(projectId, exportId)));
     }
 
@@ -58,10 +58,10 @@ public class ProjectExportController {
      * @param exportId 导出任务 ID
      * @return 仅含短时URL与截止时刻的响应
      */
-    @Operation(summary = "签发项目导出下载地址")
+    @Operation(summary = "签发项目导出下载地址", description = "在当前账号和OWNER事实权威复核后签发五分钟下载URL。")
     @PostMapping("/{exportId}/download-url")
-    public ResponseEntity<ProjectExportDownloadUrlResponse> download(@PathVariable UUID projectId,
-                                                                      @PathVariable UUID exportId) {
+    public ResponseEntity<ProjectExportDownloadUrlResponse> download(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                                      @io.swagger.v3.oas.annotations.Parameter(description = "导出任务 ID") @PathVariable UUID exportId) {
         return ResponseEntity.ok(ProjectExportDownloadUrlResponse.from(
                 exportService.download(projectId, exportId)));
     }

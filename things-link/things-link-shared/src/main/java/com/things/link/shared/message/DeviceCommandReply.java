@@ -11,7 +11,7 @@ import java.util.UUID;
  * @param connectionDeviceId 发布回复的实际连接设备
  * @param commandId Topic 参数中的命令 ID
  * @param occurredAt 设备发生时间 @param receivedAt 平台接收时间
- * @param status ACK/SUCCESS/FAILED @param outputJson 输出对象 JSON
+ * @param status 回复状态：确认、成功或失败 @param outputJson 输出对象 JSON
  * @param errorCode 设备错误码 @param message 中文或厂商诊断摘要 @param traceId 链路 ID
  */
 public record DeviceCommandReply(UUID messageId, UUID tenantId, UUID projectId,

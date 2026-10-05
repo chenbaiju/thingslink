@@ -25,7 +25,7 @@ public class JdbcDailyQuotaDecisionRepository implements DailyQuotaDecisionRepos
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DailyQuotaDecisionFact> find(DailyUsageScope scope, LocalDate usageDate, QuotaMetric metric) {
         return jdbcTemplate.query("""

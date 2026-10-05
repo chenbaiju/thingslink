@@ -34,7 +34,7 @@ public class JdbcSubscriptionNotificationIntentRepository implements Subscriptio
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<UUID> insertIfAbsent(UUID tenantId, UUID subscriptionId,
                                          SubscriptionNotificationKind kind,

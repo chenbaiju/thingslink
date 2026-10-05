@@ -39,7 +39,7 @@ public class JdbcRuleSceneExecutionReadRepository implements RuleSceneExecutionR
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<RuleSceneExecutionSummary> find(RuleSceneExecutionQuery query) {
         Position position = decodeCursor(query.cursor());
@@ -77,14 +77,14 @@ public class JdbcRuleSceneExecutionReadRepository implements RuleSceneExecutionR
         return CursorPage.of(items, encodeCursor(items.getLast()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<RuleSceneExecutionSummary> findSummary(UUID projectId, UUID executionId) {
         return jdbc.query(summarySelect() + " AND execution.id = ?",
                 this::mapSummary, projectId, executionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<NotificationDeliverySummary> findNotifications(UUID projectId, UUID executionId) {
         return jdbc.query("""
@@ -96,7 +96,7 @@ public class JdbcRuleSceneExecutionReadRepository implements RuleSceneExecutionR
                 """, this::mapNotification, projectId, executionId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DeviceActionDeliverySummary> findDeviceActions(UUID projectId, UUID executionId) {
         return jdbc.query("""
@@ -107,7 +107,7 @@ public class JdbcRuleSceneExecutionReadRepository implements RuleSceneExecutionR
                 """, this::mapDeviceAction, projectId, executionId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<RuleOption> findSceneOptions(UUID projectId) {
         return jdbc.query("""

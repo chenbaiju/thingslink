@@ -62,13 +62,13 @@ public class JdbcEffectiveQuotaPolicyRepository implements EffectiveQuotaPolicyR
         this.resourcePackageRepository = resourcePackageRepository;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<EffectiveQuotaPolicy> findByTenantId(UUID tenantId) {
         return enrich(jdbcTemplate.query(SELECT_BY_TENANT_SQL, ROW_MAPPER, tenantId).stream().findFirst());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public Optional<EffectivePlanQuota> findForCommercialLifecycle(UUID tenantId) {
@@ -82,20 +82,20 @@ public class JdbcEffectiveQuotaPolicyRepository implements EffectiveQuotaPolicyR
                         tenantId,DatabaseTime.now(jdbcTemplate))));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<EffectiveQuotaPolicy> findByProjectId(UUID projectId) {
         return enrich(jdbcTemplate.query(SELECT_BY_PROJECT_SQL, ROW_MAPPER).stream().findFirst());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<EffectiveQuotaPolicy> findByDeviceProject(UUID tenantId, UUID projectId) {
         return enrich(jdbcTemplate.query(SELECT_BY_DEVICE_PROJECT_SQL, ROW_MAPPER, tenantId, projectId)
                 .stream().findFirst());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<EffectiveQuotaPolicy> findByPlanRevision(UUID planRevisionId) {
         return enrich(jdbcTemplate.query(SELECT_BY_PLAN_REVISION_SQL, ROW_MAPPER, planRevisionId)

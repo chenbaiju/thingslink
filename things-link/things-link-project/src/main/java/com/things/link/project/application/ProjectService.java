@@ -302,6 +302,13 @@ public class ProjectService {
                 .orElseThrow(() -> new BusinessException(ProjectErrorCode.PROJECT_NOT_FOUND));
     }
 
+    /** 当前项目管理员读取许可，允许归档项目；供其他领域复用，避免引用 project.domain。 */
+    @Transactional(readOnly = true)
+    public void requireProjectAdministrator(UUID projectId) {
+        if (!requireRoleInProject(projectId).canManageMembers())
+            throw new BusinessException(ProjectErrorCode.MEMBER_MANAGEMENT_FORBIDDEN);
+    }
+
     /**
      * ADR0070决策1：为已授权控制台写入取得持久项目归属，不能沿用跨租户协作者自己的tenant。
      * 本查询保留ARCHIVED供后续持续许可分类为只读；返回值只是身份，不代表写许可或锁后角色。

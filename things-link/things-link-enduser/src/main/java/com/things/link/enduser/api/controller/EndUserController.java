@@ -177,7 +177,7 @@ public class EndUserController {
      * @param projectId 项目 ID
      * @param appUserId 终端用户 ID
      * @param request   目标角色
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/{appUserId}/role")
     @Operation(summary = "分配角色",
@@ -211,7 +211,7 @@ public class EndUserController {
      * @param projectId 项目 ID
      * @param appUserId 终端用户 ID
      * @param request   目标角色
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PatchMapping("/{appUserId}/role")
     @Operation(summary = "修改角色",
@@ -241,7 +241,7 @@ public class EndUserController {
      *
      * @param projectId 项目 ID
      * @param appUserId 终端用户 ID
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/{appUserId}/suspend")
     @Operation(summary = "停用项目角色",
@@ -269,7 +269,7 @@ public class EndUserController {
      *
      * @param projectId 项目 ID
      * @param appUserId 终端用户 ID
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/{appUserId}/restore")
     @Operation(summary = "恢复项目角色",

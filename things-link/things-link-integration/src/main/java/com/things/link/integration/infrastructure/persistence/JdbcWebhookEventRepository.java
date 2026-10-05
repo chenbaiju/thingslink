@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.*;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
+/** Webhook 来源 JDBC 仓储，维护项目时间底线、来源去重与订阅投递意图。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcWebhookEventRepository implements WebhookEventRepository {

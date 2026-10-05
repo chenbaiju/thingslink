@@ -155,7 +155,7 @@ public class ProjectController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<ProjectResponse> update(
-            @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
             @Valid @RequestBody UpdateProjectRequest request) {
         return ResponseEntity.ok(ProjectResponse.from(
                 projectService.updateName(projectId, request.name())));
@@ -185,7 +185,7 @@ public class ProjectController {
             @ApiResponse(responseCode = "409", description = "项目仍有其他成员",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public void delete(@PathVariable UUID projectId) {
+    public void delete(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId) {
         projectService.delete(projectId);
     }
 
@@ -207,7 +207,7 @@ public class ProjectController {
             @ApiResponse(responseCode = "409", description = "项目恢复期限已过",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<ProjectResponse> restore(@PathVariable UUID projectId) {
+    public ResponseEntity<ProjectResponse> restore(@io.swagger.v3.oas.annotations.Parameter(description = "待恢复项目ID") @PathVariable UUID projectId) {
         return ResponseEntity.ok(ProjectResponse.from(projectRecoveryService.restore(projectId)));
     }
 

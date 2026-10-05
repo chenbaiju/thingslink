@@ -43,7 +43,7 @@ import java.util.UUID;
 @RestController
 @Validated
 @RequestMapping("/api/v1/app/applications")
-@Tag(name = "WebApp 应用运行", description = "已认证WebApp应用运行描述")
+@Tag(name = "WebApp 应用运行", description = "WebApp 公开定位与已认证应用运行描述")
 public class WebAppDashboardSchemaController {
 
     /** 发布元数据合同§5.3以最终HTTP JSON字节计量768KiB上限。 */
@@ -111,11 +111,11 @@ public class WebAppDashboardSchemaController {
     })
     public ResponseEntity<byte[]> schema(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable @Pattern(regexp = "^app_[0-9a-f]{32}$", message = "应用公开键格式不合法") String appKey,
-            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String applicationVersionId,
-            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid")) String dashboardVersionId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "规范应用公开键") @PathVariable @Pattern(regexp = "^app_[0-9a-f]{32}$", message = "应用公开键格式不合法") String appKey,
+            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid"), description = "规范小写应用版本UUID") String applicationVersionId,
+            @PathVariable @Parameter(schema = @Schema(type = "string", format = "uuid"), description = "规范小写看板版本UUID") String dashboardVersionId,
             @RequestParam(required = false) @Parameter(required = true,
-                    schema = @Schema(type = "string", pattern = "^[1-9][0-9]{0,18}$"))
+                    schema = @Schema(type = "string", pattern = "^[1-9][0-9]{0,18}$"), description = "正十进制Long字符串")
             String expectedPublicationRevision,
             HttpServletRequest request) throws IOException {
         // MVC允许缺参进入此处，由闭集守卫统一返回10001；公开合同仍必填，避免框架缺参异常落入通用500。

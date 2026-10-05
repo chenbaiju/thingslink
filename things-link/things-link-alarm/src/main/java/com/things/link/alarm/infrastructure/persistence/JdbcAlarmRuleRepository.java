@@ -23,7 +23,7 @@ public class JdbcAlarmRuleRepository implements AlarmRuleRepository {
     /** @param jdbcTemplate JDBC 访问器 */
     public JdbcAlarmRuleRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean create(AlarmRule rule) {
         return jdbcTemplate.update("""
                 INSERT INTO alarm_rule (id, tenant_id, project_id, name, alarm_type, originator_type, originator_id,
@@ -37,13 +37,13 @@ public class JdbcAlarmRuleRepository implements AlarmRuleRepository {
                 Timestamp.from(rule.createdAt()), Timestamp.from(rule.updatedAt())) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<AlarmRule> findById(UUID projectId, UUID ruleId) {
         return jdbcTemplate.query(select() + " WHERE project_id = ? AND id = ? AND deleted_at IS NULL", this::map,
                 projectId, ruleId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public CursorPage<AlarmRule> page(UUID projectId, String cursor, int limit) {
         Cursor position = Cursor.decode(cursor);
         List<AlarmRule> rows = jdbcTemplate.query(select() + """
@@ -54,7 +54,7 @@ public class JdbcAlarmRuleRepository implements AlarmRuleRepository {
         return page(rows, limit, AlarmRule::createdAt, AlarmRule::id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(AlarmRule rule) {
         return jdbcTemplate.update("""
                 UPDATE alarm_rule SET name = ?, alarm_type = ?, originator_id = ?, property_key = ?,
@@ -68,7 +68,7 @@ public class JdbcAlarmRuleRepository implements AlarmRuleRepository {
                 rule.projectId(), rule.id(), rule.version()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean softDelete(UUID projectId, UUID ruleId, int version) {
         return jdbcTemplate.update("""
                 UPDATE alarm_rule SET deleted_at = now(), updated_at = now(), version = version + 1
@@ -76,7 +76,7 @@ public class JdbcAlarmRuleRepository implements AlarmRuleRepository {
                 """, projectId, ruleId, version) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<AlarmRule> findEnabledByProperty(UUID projectId, UUID deviceId, String propertyKey) {
         return jdbcTemplate.query(select() + """
                  WHERE project_id = ? AND originator_id = ? AND property_key = ? AND enabled AND deleted_at IS NULL

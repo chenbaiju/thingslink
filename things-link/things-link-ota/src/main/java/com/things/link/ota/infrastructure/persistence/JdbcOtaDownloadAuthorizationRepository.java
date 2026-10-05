@@ -21,73 +21,73 @@ public class JdbcOtaDownloadAuthorizationRepository implements OtaDownloadAuthor
     private final JdbcTemplate jdbc;
     /** 注入真实事务连接。 */
     public JdbcOtaDownloadAuthorizationRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> claimOne() {
         return jdbc.query("SELECT * FROM ota_download_claim_one()", JdbcOtaDownloadAuthorizationRepository::claim)
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> findCurrent(UUID id) {
         if (id == null) return Optional.empty();
         return jdbc.query("SELECT * FROM ota_download_authorization_snapshot WHERE id=?",
                 JdbcOtaDownloadAuthorizationRepository::claim, id).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> authoritativeClaim(UUID id, UUID token) {
         if (id == null || token == null) return Optional.empty();
         return jdbc.query("SELECT * FROM ota_download_authoritative_claim(?,?)",
                 JdbcOtaDownloadAuthorizationRepository::claim, id, token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> authoritativeTransport(UUID id, UUID token) {
         if (id == null || token == null) return Optional.empty();
         return jdbc.query("SELECT * FROM ota_download_authoritative_transport(?,?)",
                 JdbcOtaDownloadAuthorizationRepository::transport, id, token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> reserveSigning(Claim c, long jobRevision) {
         boolean changed = Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_download_reserve_signing(?,?,?,?)",
                 Boolean.class, c.authorizationId(), c.leaseToken(), c.revision(), jobRevision));
         return changed ? authoritativeClaim(c.authorizationId(), c.leaseToken()) : Optional.empty();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean seal(Claim c, long jobRevision, String keyVersion, byte[] nonce,
             byte[] ciphertext, String hash, String topic) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_download_seal(?,?,?,?,?,?,?,?,?)", Boolean.class,
                 c.authorizationId(), c.leaseToken(), c.revision(), jobRevision, keyVersion, nonce, ciphertext, hash, topic));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean signingUnknown(Claim c, String reason) { return mutation("ota_download_signing_unknown", c, reason); }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> reserveSend(Claim c) {
         var reserved = jdbc.query("SELECT id,reservation_token FROM ota_download_reserve_send(?,?,?)",
                 (rs, row) -> new UUID[]{rs.getObject("id", UUID.class), rs.getObject("reservation_token", UUID.class)},
                 c.authorizationId(), c.leaseToken(), c.revision()).stream().findFirst();
         return reserved.flatMap(ids -> authoritativeTransport(ids[0], ids[1]));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean deferIneligible(Claim c, String reason) { return mutation("ota_download_defer", c, reason); }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recordObservation(Transport t, String outcome, Integer httpStatus, String errorCode) {
         return jdbc.update("UPDATE ota_download_transport SET outcome=?,http_status=?,error_code=?,observed_at=clock_timestamp()"
                 + " WHERE id=? AND reservation_token=? AND authorization_id=? AND tenant_id=? AND project_id=? AND outcome IS NULL",
                 outcome, httpStatus, errorCode, t.id(), t.reservationToken(), t.authorizationId(), t.tenantId(), t.projectId()) == 1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean settleCurrent(Claim c, UUID transportId) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_download_settle(?,?,?,?)", Boolean.class,
                 c.authorizationId(), c.leaseToken(), c.revision(), transportId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recoverExpired(Claim c) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_download_recover(?,?,?)", Boolean.class,
                 c.authorizationId(), c.leaseToken(), c.revision()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean exhaustDue(Claim c, String reason) { return mutation("ota_download_exhaust", c, reason); }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean pauseSecurity(Claim c, String reason) { return mutation("ota_download_pause", c, reason); }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Reissue> findReissue(UUID authorizationId) {
         if (authorizationId == null) return Optional.empty();
         return jdbc.query("SELECT id,status,transport_count,revision,response_expires_at,reissue_requested_at"
@@ -96,13 +96,13 @@ public class JdbcOtaDownloadAuthorizationRepository implements OtaDownloadAuthor
                         rs.getInt("transport_count"), rs.getLong("revision"), instant(rs, "response_expires_at"),
                         rs.getTimestamp("reissue_requested_at") != null), authorizationId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean requestReissue(UUID authorizationId, long expectedRevision, long expectedJobRevision) {
         if (authorizationId == null) return false;
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_download_reissue_request(?,?,?)", Boolean.class,
                 authorizationId, expectedRevision, expectedJobRevision));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean cancelReissue(Claim c) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_download_reissue_cancel(?,?,?)", Boolean.class,
                 c.authorizationId(), c.leaseToken(), c.revision()));

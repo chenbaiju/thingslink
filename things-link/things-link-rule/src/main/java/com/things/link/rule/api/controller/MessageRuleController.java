@@ -35,7 +35,7 @@ import java.util.UUID;
 /** 消息规则管理HTTP；服务层再次授权，Controller不参与持久事务。 */
 @RestController
 @RequestMapping("/api/v1/projects/{projectId}/message-rules")
-@Tag(name = "消息规则管理")
+@Tag(name = "消息规则管理", description = "当前项目消息规则定义、版本及管理操作")
 public class MessageRuleController {
     /** 规则管理用例。 */
     private final MessageRuleService service;
@@ -47,66 +47,144 @@ public class MessageRuleController {
     public MessageRuleController(MessageRuleService service, MessageRuleDebugService debug, RuleManagementAccess access) {
         this.service = service; this.debug = debug; this.access = access;
     }
-    /** 目录不返回源码。 */
-    @GetMapping @Operation(operationId="listMessageRules", summary="分页查询消息规则")
-    public RuleManagementPage<MessageRuleView> list(@PathVariable UUID projectId,
-            @RequestParam(required=false) String name, @RequestParam(required=false) String status,
-            @RequestParam(required=false) String cursor, @RequestParam(defaultValue="20") int limit) {
+    /**
+     * 目录不返回源码。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param name 名称筛选条件
+     * @param status 状态筛选条件
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 当前接口的操作结果，响应结构见 {@code RuleManagementPage<MessageRuleView>}
+     */
+    @GetMapping @Operation(operationId="listMessageRules", summary="分页查询消息规则", description = "目录不返回源码。")
+    public RuleManagementPage<MessageRuleView> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "名称筛选条件") @RequestParam(required=false) String name, @io.swagger.v3.oas.annotations.Parameter(description = "状态筛选条件") @RequestParam(required=false) String status,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required=false) String cursor, @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue="20") int limit) {
         access.read(projectId, false); return service.list(projectId, name, status, cursor, limit);
     }
-    /** 创建草稿，不自动发布。 */
-    @PostMapping @ResponseStatus(HttpStatus.CREATED) @Operation(operationId="createMessageRule", summary="创建消息规则")
-    public MessageRuleView create(@PathVariable UUID projectId, @Valid @RequestBody MessageRuleWriteRequest request) {
+    /**
+     * 创建草稿，不自动发布。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param request 本次操作的请求数据，结构见 {@code MessageRuleWriteRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code MessageRuleView}
+     */
+    @PostMapping @ResponseStatus(HttpStatus.CREATED) @Operation(operationId="createMessageRule", summary="创建消息规则", description = "创建草稿，不自动发布。")
+    public MessageRuleView create(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @Valid @RequestBody MessageRuleWriteRequest request) {
         access.read(projectId, false);
         return service.create(projectId, new CreateMessageRuleCommand(request.name(), request.description(), request.source(), actions(request.actions())));
     }
-    /** 读取规则控制面状态。 */
-    @GetMapping("/{ruleId}") @Operation(operationId="getMessageRule", summary="查询消息规则")
-    public MessageRuleView get(@PathVariable UUID projectId, @PathVariable UUID ruleId) {
+    /**
+     * 读取规则控制面状态。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @return 当前接口的操作结果，响应结构见 {@code MessageRuleView}
+     */
+    @GetMapping("/{ruleId}") @Operation(operationId="getMessageRule", summary="查询消息规则", description = "读取规则控制面状态。")
+    public MessageRuleView get(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId) {
         access.read(projectId, false); return service.get(projectId, ruleId);
     }
-    /** 保存完整新版本，不能隐式清空动作。 */
-    @PutMapping("/{ruleId}") @Operation(operationId="reviseMessageRule", summary="修订消息规则")
-    public MessageRuleView revise(@PathVariable UUID projectId, @PathVariable UUID ruleId, @Valid @RequestBody MessageRuleWriteRequest request) {
+    /**
+     * 保存完整新版本，不能隐式清空动作。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @param request 本次操作的请求数据，结构见 {@code MessageRuleWriteRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code MessageRuleView}
+     */
+    @PutMapping("/{ruleId}") @Operation(operationId="reviseMessageRule", summary="修订消息规则", description = "保存完整新版本，不能隐式清空动作。")
+    public MessageRuleView revise(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId, @Valid @RequestBody MessageRuleWriteRequest request) {
         access.read(projectId, false);
         return service.revise(projectId, ruleId, new ReviseMessageRuleCommand(request.name(), request.description(), request.source(),
                 request.expectedVersion() == null ? 0 : request.expectedVersion(), actions(request.actions())));
     }
-    /** 保留数组形状的历史读取。 */
-    @GetMapping("/{ruleId}/versions") @Operation(operationId="listMessageRuleVersions", summary="读取消息规则版本历史")
-    public List<MessageRuleVersionView> versions(@PathVariable UUID projectId, @PathVariable UUID ruleId) {
+    /**
+     * 保留数组形状的历史读取。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @return 符合当前查询条件的结果列表
+     */
+    @GetMapping("/{ruleId}/versions") @Operation(operationId="listMessageRuleVersions", summary="读取消息规则版本历史", description = "保留数组形状的历史读取。")
+    public List<MessageRuleVersionView> versions(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId) {
         access.read(projectId, false); return service.versions(projectId, ruleId);
     }
-    /** 管理页面使用有界历史。 */
-    @GetMapping("/{ruleId}/version-history") @Operation(operationId="pageMessageRuleVersions", summary="分页读取消息规则版本")
-    public RuleManagementPage<MessageRuleVersionView> history(@PathVariable UUID projectId, @PathVariable UUID ruleId,
-            @RequestParam(required=false) String cursor, @RequestParam(defaultValue="20") int limit) {
+    /**
+     * 管理页面使用有界历史。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 当前接口的操作结果，响应结构见 {@code RuleManagementPage<MessageRuleVersionView>}
+     */
+    @GetMapping("/{ruleId}/version-history") @Operation(operationId="pageMessageRuleVersions", summary="分页读取消息规则版本", description = "管理页面使用有界历史。")
+    public RuleManagementPage<MessageRuleVersionView> history(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required=false) String cursor, @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue="20") int limit) {
         access.read(projectId, false); return service.history(projectId, ruleId, cursor, limit);
     }
-    /** 单版本包含完整动作。 */
-    @GetMapping("/{ruleId}/versions/{versionId}") @Operation(operationId="getMessageRuleVersion", summary="读取消息规则指定版本")
-    public MessageRuleVersionView version(@PathVariable UUID projectId, @PathVariable UUID ruleId, @PathVariable UUID versionId) {
+    /**
+     * 单版本包含完整动作。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @param versionId 当前资源的不可变版本标识
+     * @return 当前接口的操作结果，响应结构见 {@code MessageRuleVersionView}
+     */
+    @GetMapping("/{ruleId}/versions/{versionId}") @Operation(operationId="getMessageRuleVersion", summary="读取消息规则指定版本", description = "单版本包含完整动作。")
+    public MessageRuleVersionView version(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId, @io.swagger.v3.oas.annotations.Parameter(description = "当前资源的不可变版本标识") @PathVariable UUID versionId) {
         access.read(projectId, false); return service.version(projectId, ruleId, versionId);
     }
-    /** 发布、恢复和显式回滚共享一个CAS入口。 */
-    @PostMapping("/{ruleId}/versions/{versionId}/activate") @Operation(operationId="activateMessageRuleVersion", summary="发布消息规则版本")
-    public MessageRuleView activate(@PathVariable UUID projectId, @PathVariable UUID ruleId, @PathVariable UUID versionId,
-            @RequestParam long expectedVersion) {
+    /**
+     * 发布、恢复和显式回滚共享一个CAS入口。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @param versionId 当前资源的不可变版本标识
+     * @param expectedVersion 调用方期望的资源版本，用于并发更新校验
+     * @return 当前接口的操作结果，响应结构见 {@code MessageRuleView}
+     */
+    @PostMapping("/{ruleId}/versions/{versionId}/activate") @Operation(operationId="activateMessageRuleVersion", summary="发布消息规则版本", description = "发布、恢复和显式回滚共享一个CAS入口。")
+    public MessageRuleView activate(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId, @io.swagger.v3.oas.annotations.Parameter(description = "当前资源的不可变版本标识") @PathVariable UUID versionId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "调用方期望的资源版本，用于并发更新校验") @RequestParam long expectedVersion) {
         access.read(projectId, false); return service.activate(projectId, ruleId, versionId, expectedVersion);
     }
-    /** 暂停只影响未来计划。 */
-    @PostMapping("/{ruleId}/pause") @Operation(operationId="pauseMessageRule", summary="暂停消息规则")
-    public MessageRuleView pause(@PathVariable UUID projectId, @PathVariable UUID ruleId, @RequestParam long expectedVersion) {
+    /**
+     * 暂停只影响未来计划。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @param expectedVersion 调用方期望的资源版本，用于并发更新校验
+     * @return 当前接口的操作结果，响应结构见 {@code MessageRuleView}
+     */
+    @PostMapping("/{ruleId}/pause") @Operation(operationId="pauseMessageRule", summary="暂停消息规则", description = "暂停只影响未来计划。")
+    public MessageRuleView pause(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId, @io.swagger.v3.oas.annotations.Parameter(description = "调用方期望的资源版本，用于并发更新校验") @RequestParam long expectedVersion) {
         access.read(projectId, false); return service.pause(projectId, ruleId, expectedVersion);
     }
-    /** 删除不清除历史。 */
-    @DeleteMapping("/{ruleId}") @ResponseStatus(HttpStatus.NO_CONTENT) @Operation(operationId="deleteMessageRule", summary="删除消息规则")
-    public void delete(@PathVariable UUID projectId, @PathVariable UUID ruleId, @RequestParam long expectedVersion) {
+    /**
+     * 删除不清除历史。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @param expectedVersion 调用方期望的资源版本，用于并发更新校验
+     */
+    @DeleteMapping("/{ruleId}") @ResponseStatus(HttpStatus.NO_CONTENT) @Operation(operationId="deleteMessageRule", summary="删除消息规则", description = "删除不清除历史。")
+    public void delete(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId, @io.swagger.v3.oas.annotations.Parameter(description = "调用方期望的资源版本，用于并发更新校验") @RequestParam long expectedVersion) {
         access.read(projectId, false); service.delete(projectId, ruleId, expectedVersion);
     }
-    /** 真实沙箱结果与可追溯事件绑定，无动作派发。 */
-    @PostMapping("/{ruleId}/versions/{versionId}/debug") @Operation(operationId="debugMessageRuleVersion", summary="调试消息规则版本")
-    public DebugResponse debug(@PathVariable UUID projectId, @PathVariable UUID ruleId, @PathVariable UUID versionId,
+    /**
+     * 真实沙箱结果与可追溯事件绑定，无动作派发。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ruleId 规则标识
+     * @param versionId 当前资源的不可变版本标识
+     * @param request 本次操作的请求数据，结构见 {@code MessageRuleDebugRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code DebugResponse}
+     */
+    @PostMapping("/{ruleId}/versions/{versionId}/debug") @Operation(operationId="debugMessageRuleVersion", summary="调试消息规则版本", description = "真实沙箱结果与可追溯事件绑定，无动作派发。")
+    public DebugResponse debug(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "规则标识") @PathVariable UUID ruleId, @io.swagger.v3.oas.annotations.Parameter(description = "当前资源的不可变版本标识") @PathVariable UUID versionId,
             @RequestBody MessageRuleDebugRequest request) {
         access.read(projectId, false);
         var result = debug.execute(projectId, new DebugMessageRuleCommand(ruleId, versionId, request.inputJson()));

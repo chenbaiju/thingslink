@@ -91,10 +91,10 @@ public class AppUserDashboardGrantController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<CursorPage<AppUserDashboardGrantResponse>> list(
-            @PathVariable UUID projectId,
-            @PathVariable UUID appUserId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标终端用户ID") @PathVariable UUID appUserId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "上一页返回的不透明游标，首页为空") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "单页数量，默认50，允许1至200") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireManage(projectId);
         return ResponseEntity.ok(service.list(projectId, appUserId, cursor, limit)
                 .map(AppUserDashboardGrantResponse::from));
@@ -125,9 +125,9 @@ public class AppUserDashboardGrantController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<AppUserDashboardGrantResponse> get(
-            @PathVariable UUID projectId,
-            @PathVariable UUID appUserId,
-            @PathVariable UUID dashboardId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标终端用户ID") @PathVariable UUID appUserId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "稳定看板ID") @PathVariable UUID dashboardId) {
         authorization.requireManage(projectId);
         return ResponseEntity.ok(AppUserDashboardGrantResponse.from(
                 service.get(projectId, appUserId, dashboardId)));
@@ -168,9 +168,9 @@ public class AppUserDashboardGrantController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = UpdateAppUserDashboardGrantRequest.class)))
     public ResponseEntity<AppUserDashboardGrantResponse> update(
-            @PathVariable UUID projectId,
-            @PathVariable UUID appUserId,
-            @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前ACTIVE项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标终端用户ID") @PathVariable UUID appUserId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "稳定看板ID") @PathVariable UUID dashboardId,
             @Parameter(description = "可选公共写幂等键；完成重放不返回旧正文", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {

@@ -11,7 +11,7 @@ import java.util.UUID;
  * <p>该事实故意不携带 payload、源码和异常正文；固定状态与结果码足以支撑 S8-2 的运行追踪，同时避免把设备数据
  * 或 guest 错误泄漏到长期事实。</p>
  *
- * @param tenantId owner tenant ID
+ * @param tenantId 归属租户标识
  * @param key 不可变执行身份
  * @param attempt 执行尝试序号
  * @param status 封闭终态

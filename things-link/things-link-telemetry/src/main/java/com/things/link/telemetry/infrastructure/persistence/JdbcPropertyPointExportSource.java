@@ -32,7 +32,7 @@ public class JdbcPropertyPointExportSource implements PropertyPointExportSource 
         this.objectMapper = objectMapper;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long streamPropertyPoints(UUID tenantId, UUID projectId, PropertyPointSink sink) {
         long[] count = {0L};

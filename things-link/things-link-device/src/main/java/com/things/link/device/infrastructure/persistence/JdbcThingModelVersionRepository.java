@@ -21,7 +21,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
     /** @param jdbcTemplate JDBC 访问器 */
     public JdbcThingModelVersionRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<ThingModelVersion> findPublished(UUID projectId, UUID versionId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, version_number, change_level,
@@ -30,7 +30,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 """, this::mapVersion, projectId, versionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ThingModelVersion> findLatest(UUID projectId, UUID deviceTypeId) {
         return jdbcTemplate.query("""
@@ -42,7 +42,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 """, this::mapVersion, projectId, deviceTypeId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ThingModelVersion create(UUID id, UUID tenantId, UUID projectId, UUID deviceTypeId,
                                     String versionNumber, ThingModelVersion.ChangeLevel changeLevel,
@@ -63,7 +63,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 changeLevel.name(), modelSnapshot, modelSnapshot, Timestamp.from(publishedAt));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ThingModelVersion createInitialFromDefinitions(UUID tenantId, UUID projectId, UUID deviceTypeId) {
         ThingModelVersion version = jdbcTemplate.queryForObject("""
@@ -138,7 +138,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
         return version;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ResolvedBinding> resolve(UUID projectId, UUID deviceId, String versionNumber) {
         return jdbcTemplate.query("""
@@ -154,7 +154,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 """, this::mapResolved, versionNumber, projectId, deviceId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean wasDirectlyReplacedWithinWindow(UUID projectId, UUID deviceId, UUID oldVersionId,
                                                    UUID currentVersionId, Instant receivedAt, Instant notBefore) {
@@ -169,7 +169,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
         return Boolean.TRUE.equals(result);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<BindingTransition> findTransition(UUID projectId, UUID deviceId, UUID transitionKey) {
         return jdbcTemplate.query("""
@@ -180,7 +180,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 """, this::mapTransition, projectId, deviceId, transitionKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ResolvedBinding> lockCurrent(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
@@ -195,7 +195,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 """, this::mapResolved, projectId, deviceId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ResolvedBinding> findCurrent(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
@@ -209,7 +209,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 """, this::mapResolved, projectId, deviceId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean hasNonInitialTransition(UUID projectId, UUID deviceId) {
         Boolean result = jdbcTemplate.queryForObject("""
@@ -220,7 +220,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
         return Boolean.TRUE.equals(result);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ThingModelVersion> findById(UUID projectId, UUID deviceTypeId, UUID versionId) {
         return jdbcTemplate.query("""
@@ -231,7 +231,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 """, this::mapVersion, projectId, deviceTypeId, versionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void appendTransition(BindingTransition value) {
         jdbcTemplate.update("""
@@ -244,7 +244,7 @@ public class JdbcThingModelVersionRepository implements ThingModelVersionReposit
                 Timestamp.from(value.effectiveAt()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean compareAndSetCurrent(UUID projectId, UUID deviceId, UUID expectedVersionId, UUID targetVersionId) {
         return jdbcTemplate.update("""

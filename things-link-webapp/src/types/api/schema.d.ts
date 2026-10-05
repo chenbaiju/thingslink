@@ -11,9 +11,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询当前订阅，不返回秘密 */
+        /**
+         * 查询当前订阅，不返回秘密
+         * @description 查询当前订阅，不返回秘密。
+         */
         get: operations["getProjectWebhook"];
-        /** 更新Webhook冻结修订，换目标时首次展示新秘密 */
+        /**
+         * 更新Webhook冻结修订，换目标时首次展示新秘密
+         * @description 更新Webhook冻结修订，换目标时首次展示新秘密。
+         */
         put: operations["updateProjectWebhook"];
         post?: never;
         delete?: never;
@@ -30,10 +36,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 更新批量任务 */
+        /**
+         * 更新批量任务
+         * @description 更新任务。
+         */
         put: operations["update"];
         post?: never;
-        /** 删除批量任务 */
+        /**
+         * 删除批量任务
+         * @description 软删除任务。
+         */
         delete: operations["delete"];
         options?: never;
         head?: never;
@@ -47,7 +59,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询手动场景 */
+        /**
+         * 查询手动场景
+         * @description 读取场景定义与活动版本指针。
+         */
         get: operations["get"];
         /**
          * 修改手动场景
@@ -55,7 +70,10 @@ export interface paths {
          */
         put: operations["revise"];
         post?: never;
-        /** 删除手动场景 */
+        /**
+         * 删除手动场景
+         * @description 软删除场景定义，不可变版本与执行事实继续保留。
+         */
         delete: operations["delete_1"];
         options?: never;
         head?: never;
@@ -70,7 +88,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 有界流式接收固件内容 */
+        /**
+         * 有界流式接收固件内容
+         * @description 消费一次接收身份；Servlet回调不能继承安全链清理后的ThreadLocal。
+         */
         put: operations["uploadOtaContent"];
         post?: never;
         delete?: never;
@@ -86,12 +107,21 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询消息规则 */
+        /**
+         * 查询消息规则
+         * @description 读取规则控制面状态。
+         */
         get: operations["getMessageRule"];
-        /** 修订消息规则 */
+        /**
+         * 修订消息规则
+         * @description 保存完整新版本，不能隐式清空动作。
+         */
         put: operations["reviseMessageRule"];
         post?: never;
-        /** 删除消息规则 */
+        /**
+         * 删除消息规则
+         * @description 删除不清除历史。
+         */
         delete: operations["deleteMessageRule"];
         options?: never;
         head?: never;
@@ -181,9 +211,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 设备标签列表 */
+        /**
+         * 设备标签列表
+         * @description 读取单台设备的全部键值标签。
+         */
         get: operations["tags"];
-        /** 设置设备标签 */
+        /**
+         * 设置设备标签
+         * @description 新增或覆盖一个设备标签。
+         */
         put: operations["putTag"];
         post?: never;
         delete?: never;
@@ -220,8 +256,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /**
+         * 修改草稿点位
+         * @description 修改草稿点位。
+         */
         put: operations["update_2"];
         post?: never;
+        /**
+         * 删除草稿点位
+         * @description 删除草稿点位。
+         */
         delete: operations["delete_3"];
         options?: never;
         head?: never;
@@ -356,10 +400,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 修改设备组 */
+        /**
+         * 修改设备组
+         * @description 更新设备组；组类型创建后不可修改。
+         */
         put: operations["update_7"];
         post?: never;
-        /** 删除设备组 */
+        /**
+         * 删除设备组
+         * @description 软删除设备组。
+         */
         delete: operations["delete_8"];
         options?: never;
         head?: never;
@@ -379,7 +429,10 @@ export interface paths {
          * @description 最多兼容返回 200 条；请使用 /devices/search?groupId=... 键集分页
          */
         get: operations["members"];
-        /** 替换静态组成员 */
+        /**
+         * 替换静态组成员
+         * @description 原子替换静态组全部成员。
+         */
         put: operations["replaceMembers"];
         post?: never;
         delete?: never;
@@ -419,13 +472,82 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询自动化 */
+        /**
+         * 查询自动化
+         * @description 查询自动化。
+         */
         get: operations["getManagedAutomation"];
-        /** 追加自动化版本 */
+        /**
+         * 追加自动化版本
+         * @description 追加自动化版本。
+         */
         put: operations["reviseManagedAutomation"];
         post?: never;
-        /** 删除自动化 */
+        /**
+         * 删除自动化
+         * @description 删除自动化。
+         */
         delete: operations["deleteManagedAutomation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/model-configurations/deepseek-chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 管理员读取项目模型配置元数据
+         * @description 管理员读取项目模型配置元数据。
+         */
+        get: operations["getAssistantModelConfiguration"];
+        /**
+         * 管理员保存并启用项目模型凭据
+         * @description 同一事务替换并验证本地解密后启用，配置版本递增两次；失败全部回滚。版本CAS，不返回凭据、不执行供应商测试。重复提交冲突后重新GET确认结果。
+         */
+        put: operations["replaceAssistantModelConfiguration"];
+        post?: never;
+        /**
+         * 管理员清除项目模型凭据并保留版本墓碑
+         * @description 管理员清除项目模型凭据并保留版本墓碑。
+         */
+        delete: operations["removeAssistantModelConfiguration"];
+        options?: never;
+        head?: never;
+        /**
+         * 管理员启用或停用项目模型凭据
+         * @description 管理员启用或停用项目模型凭据。
+         */
+        patch: operations["enableAssistantModelConfiguration"];
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/knowledge/sources/{sourceKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取最新批准知识正文
+         * @description 仅读取当前批准版本的规范纯文本；成员撤权或来源换版后拒绝旧结果，不提供历史正文或出站资格。
+         */
+        get: operations["getAssistantKnowledgeSource"];
+        /**
+         * 明确批准项目共享并发布知识新版本
+         * @description 仅当前活跃项目OWNER/ADMIN可发布，逐次明确批准项目共享并匹配当前版本UUID；最多100来源、每来源20版本、规范正文16KiB，不自动重发。
+         */
+        put: operations["publishAssistantKnowledgeSource"];
+        post?: never;
+        /**
+         * 按当前版本删除项目知识来源
+         * @description 仅当前活跃项目管理员按精确当前UUID物理删除来源全部最多20版本；旧引用不再可读，取消请求不能证明事务撤销。
+         */
+        delete: operations["deleteAssistantKnowledgeSource"];
         options?: never;
         head?: never;
         patch?: never;
@@ -462,12 +584,21 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询告警规则 */
+        /**
+         * 查询告警规则
+         * @description 获取规则。
+         */
         get: operations["get_1"];
-        /** 修改告警规则 */
+        /**
+         * 修改告警规则
+         * @description 修改规则。
+         */
         put: operations["update_8"];
         post?: never;
-        /** 删除告警规则 */
+        /**
+         * 删除告警规则
+         * @description 软删除规则。
+         */
         delete: operations["delete_9"];
         options?: never;
         head?: never;
@@ -482,8 +613,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /**
+         * 修改模板
+         * @description 更新当前项目通知模板；要求规则管理权限及当前 version，模板内容沿现有规则校验。
+         */
         put: operations["updateTemplate"];
         post?: never;
+        /**
+         * 删除模板
+         * @description 删除当前项目的通知模板；要求规则管理权限并携带 version，引用及并发约束由服务校验。
+         */
         delete: operations["deleteTemplate"];
         options?: never;
         head?: never;
@@ -498,8 +637,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /**
+         * 修改收件人
+         * @description 修改当前项目通知组的收件人配置；要求规则管理权限及当前 version，不能跨项目改写。
+         */
         put: operations["updateRecipient"];
         post?: never;
+        /**
+         * 删除收件人
+         * @description 删除当前项目通知组的指定收件人；要求规则管理权限并按 version 检查并发修改。
+         */
         delete: operations["deleteRecipient"];
         options?: never;
         head?: never;
@@ -514,8 +661,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /**
+         * 修改通知组
+         * @description 修改当前项目的通知组名称与启用状态；要求规则管理权限并携带当前 version，版本冲突拒绝更新。
+         */
         put: operations["updateGroup"];
         post?: never;
+        /**
+         * 删除通知组
+         * @description 按项目与组标识删除通知组；要求规则管理权限，version 用于防止并发覆盖。
+         */
         delete: operations["deleteGroup"];
         options?: never;
         head?: never;
@@ -530,8 +685,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        /**
+         * 修改规则路由
+         * @description 修改当前项目告警规则的通知绑定；要求规则管理权限及当前 version，引用归属由服务核对。
+         */
         put: operations["updateBinding"];
         post?: never;
+        /**
+         * 删除规则路由
+         * @description 删除当前项目告警规则的指定通知绑定；要求规则管理权限并按 version 防止并发覆盖。
+         */
         delete: operations["deleteBinding"];
         options?: never;
         head?: never;
@@ -558,6 +721,178 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/simulations/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 停止全部设备并主动断开
+         * @description 停止全部设备并主动断开。 仅由独立模拟器进程提供，默认回环 8090；本目录不是平台运行路由。含设备凭据的请求不得写入日志，远程使用须先取得受保护测试网络。本片不代表真实硬件或容量资格。
+         */
+        post: operations["stopDeviceSimulation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/simulations/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 建立设备连接并开始周期上报
+         * @description 建立设备连接并开始周期上报。
+         *
+         *      超分片规模的请求在此被拒绝：10,000 台应由多个模拟器进程/节点分片，而不是一个无限大的单次请求。
+         *      `@Size(max=1000)` 是 HTTP 层硬保护，本校验是可配置的服务层软保护，两者职责不同。 仅由独立模拟器进程提供，默认回环 8090；本目录不是平台运行路由。含设备凭据的请求不得写入日志，远程使用须先取得受保护测试网络。本片不代表真实硬件或容量资格。
+         */
+        post: operations["startDeviceSimulation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/simulations/reconnect-storm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 强制当前批次全部设备异常断线并进入带抖动的生产重连流程
+         * @description 强制当前批次全部设备异常断线并进入带抖动的生产重连流程。 仅由独立模拟器进程提供，默认回环 8090；本目录不是平台运行路由。含设备凭据的请求不得写入日志，远程使用须先取得受保护测试网络。本片不代表真实硬件或容量资格。
+         */
+        post: operations["reconnectDeviceSimulation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/simulations/publish-once": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 让当前批次每台在线设备立即补发一条属性报文
+         * @description 让当前批次每台在线设备立即补发一条属性报文。
+         *
+         *      该入口只控制真实 MQTT 设备连接，不接触后端或数据库；C4a 故障矩阵借此把单条业务
+         *      `messageId` 精确放入故障窗口。调用返回只代表 MQTT 发布已发起，PUBACK 仍须从 stats 与 manifest 对账。 仅由独立模拟器进程提供，默认回环 8090；本目录不是平台运行路由。含设备凭据的请求不得写入日志，远程使用须先取得受保护测试网络。本片不代表真实硬件或容量资格。
+         */
+        post: operations["publishDeviceSimulationProperties"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/simulations/publish-command-reply/{commandId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 以当前唯一设备连接发布指定命令的成功终态
+         * @description 以当前唯一设备连接发布指定命令的成功终态。
+         *
+         *      数据库停机场景必须先经生产 API 受理命令，再在数据库不可用时送入回复；专用入口避免
+         *      暴露可伪造任意 Topic/payload 的通用发布器。commandId 仍由服务层复核 UUIDv7。 仅由独立模拟器进程提供，默认回环 8090；本目录不是平台运行路由。含设备凭据的请求不得写入日志，远程使用须先取得受保护测试网络。本片不代表真实硬件或容量资格。
+         */
+        post: operations["publishDeviceSimulationCommandReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/device-access/v1/property/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 受理一次属性上报
+         * @description 受理一次属性上报。 由 device-access 角色提供；HTTP 协议须显式开通，生产必须 HTTPS。凭据归属来自认证身份；最大正文 64 KiB，messageId 沿设备业务协议去重，不使用管理面 Idempotency-Key。错误体为 errorCode/message，不是平台 ApiError。
+         */
+        post: operations["reportDeviceAccessProperties"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/device-access/v1/command/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 提交一次业务回复
+         * @description 提交一次业务回复。
+         *
+         *      请求体同样按上限自读而不是交给消息转换器：交给框架会把超大请求先完整缓冲再判断，等于把上限
+         *      挪到内存之后。 由 device-access 角色提供；HTTP 协议须显式开通，生产必须 HTTPS。凭据归属来自认证身份；最大正文 64 KiB，messageId 沿设备业务协议去重，不使用管理面 Idempotency-Key。错误体为 errorCode/message，不是平台 ApiError。
+         */
+        post: operations["replyDeviceAccessCommand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/device-access/v1/command/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 领取待执行命令
+         * @description 领取待执行命令。 由 device-access 角色提供；HTTP 协议须显式开通，生产必须 HTTPS。凭据归属来自认证身份；最大正文 64 KiB，messageId 沿设备业务协议去重，不使用管理面 Idempotency-Key。错误体为 errorCode/message，不是平台 ApiError。
+         */
+        post: operations["claimDeviceAccessCommands"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shares/{shareId}/devices/snapshots/query": {
         parameters: {
             query?: never;
@@ -567,7 +902,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 查询匿名分享设备描述快照 */
+        /**
+         * 查询匿名分享设备描述快照
+         * @description 元信息只由已声明的模型和每设备实际绑定属性投影。
+         */
         post: operations["queryDashboardShareDeviceSnapshots"];
         delete?: never;
         options?: never;
@@ -584,7 +922,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 查询匿名分享设备当前值 */
+        /**
+         * 查询匿名分享设备当前值
+         * @description 当前值按PG权威来源版本返回五态，scope外错误不得降为NO_VALUE。
+         */
         post: operations["queryDashboardShareCurrentValues"];
         delete?: never;
         options?: never;
@@ -601,7 +942,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 分页读取匿名分享告警实例 */
+        /**
+         * 分页读取匿名分享告警实例
+         * @description 告警的整次设备集合与三组过滤必须由服务证明来自同一实际绑定。
+         */
         post: operations["queryDashboardShareAlarms"];
         delete?: never;
         options?: never;
@@ -640,10 +984,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询当前Webhook订阅 */
+        /**
+         * 分页查询当前Webhook订阅
+         * @description 分页查询当前Webhook订阅。
+         */
         get: operations["listProjectWebhooks"];
         put?: never;
-        /** 创建Webhook并首次展示签名秘密 */
+        /**
+         * 创建Webhook并首次展示签名秘密
+         * @description 创建Webhook并首次展示签名秘密。
+         */
         post: operations["createProjectWebhook"];
         delete?: never;
         options?: never;
@@ -660,7 +1010,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 轮换Webhook签名秘密，仅首次展示 */
+        /**
+         * 轮换Webhook签名秘密，仅首次展示
+         * @description 轮换Webhook签名秘密，仅首次展示。
+         */
         post: operations["rotateProjectWebhook"];
         delete?: never;
         options?: never;
@@ -677,7 +1030,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 永久撤销Webhook */
+        /**
+         * 永久撤销Webhook
+         * @description 永久撤销Webhook。
+         */
         post: operations["revokeProjectWebhook"];
         delete?: never;
         options?: never;
@@ -694,7 +1050,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 恢复Webhook，仅接收之后新事件 */
+        /**
+         * 恢复Webhook，仅接收之后新事件
+         * @description 恢复Webhook，仅接收之后新事件。
+         */
         post: operations["resumeProjectWebhook"];
         delete?: never;
         options?: never;
@@ -711,7 +1070,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 暂停Webhook，禁止旧修订发送 */
+        /**
+         * 暂停Webhook，禁止旧修订发送
+         * @description 暂停Webhook，禁止旧修订发送。
+         */
         post: operations["pauseProjectWebhook"];
         delete?: never;
         options?: never;
@@ -728,7 +1090,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 按原身份恢复当前修订死信，保留次数与原文 */
+        /**
+         * 按原身份恢复当前修订死信，保留次数与原文
+         * @description 按原身份恢复当前修订死信，保留次数与原文。
+         */
         post: operations["recoverProjectWebhookDelivery"];
         delete?: never;
         options?: never;
@@ -743,10 +1108,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 列出批量任务 */
+        /**
+         * 列出批量任务
+         * @description 列出项目任务。
+         */
         get: operations["list"];
         put?: never;
-        /** 创建批量任务 */
+        /**
+         * 创建批量任务
+         * @description 创建任务。
+         */
         post: operations["create_1"];
         delete?: never;
         options?: never;
@@ -763,7 +1134,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 手工执行任务 */
+        /**
+         * 手工执行任务
+         * @description 手工触发一次执行。
+         */
         post: operations["run"];
         delete?: never;
         options?: never;
@@ -780,7 +1154,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 启用批量任务 */
+        /**
+         * 启用批量任务
+         * @description 启用任务。
+         */
         post: operations["enable"];
         delete?: never;
         options?: never;
@@ -797,7 +1174,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 暂停批量任务 */
+        /**
+         * 暂停批量任务
+         * @description 暂停任务。
+         */
         post: operations["disable"];
         delete?: never;
         options?: never;
@@ -812,10 +1192,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询手动场景目录 */
+        /**
+         * 查询手动场景目录
+         * @description 有界场景目录；不返回条件或动作正文。
+         */
         get: operations["listManagedScenes"];
         put?: never;
-        /** 创建手动场景 */
+        /**
+         * 创建手动场景
+         * @description 创建 DRAFT 场景与版本号 1 的不可变条件/动作事实。
+         */
         post: operations["create_2"];
         delete?: never;
         options?: never;
@@ -852,7 +1238,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 暂停手动场景 */
+        /**
+         * 暂停手动场景
+         * @description 暂停新执行，保留活动版本与旧执行事实。
+         */
         post: operations["pauseManagedScene"];
         delete?: never;
         options?: never;
@@ -909,7 +1298,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Console当前项目短期实时票据 */
+        /**
+         * Console当前项目短期实时票据
+         * @description Console当前项目短期实时票据。
+         */
         post: operations["issueConsoleRealtimeTicket"];
         delete?: never;
         options?: never;
@@ -926,7 +1318,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 导入离线根签名OTA信任包 */
+        /**
+         * 导入离线根签名OTA信任包
+         * @description 仅管理角色导入，公共幂等完成墓碑保持，不重复执行成功写。
+         */
         post: operations["importOtaTrustBundle"];
         delete?: never;
         options?: never;
@@ -941,10 +1336,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** OTA固件游标分页 */
+        /**
+         * OTA固件游标分页
+         * @description 成员读取草稿及取消终态，默认每页20项。
+         */
         get: operations["listOtaFirmwares"];
         put?: never;
-        /** 创建OTA固件草稿 */
+        /**
+         * 创建OTA固件草稿
+         * @description 创建或按领域映射恢复同一未取消草稿。
+         */
         post: operations["createOtaFirmware"];
         delete?: never;
         options?: never;
@@ -959,10 +1360,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 固件上传会话历史 */
+        /**
+         * 固件上传会话历史
+         * @description 成员读取固件内上传会话历史，最新在前；空历史返回空页，父固件不存在仍404。
+         */
         get: operations["listOtaUploads"];
         put?: never;
-        /** 创建或恢复固件上传会话 */
+        /**
+         * 创建或恢复固件上传会话
+         * @description 创建及重复请求均回到领域授权和恢复映射。
+         */
         post: operations["createOtaUpload"];
         delete?: never;
         options?: never;
@@ -979,7 +1386,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 登记固件上传取消 */
+        /**
+         * 登记固件上传取消
+         * @description 取消登记不声明物理对象已回收；公共幂等墓碑仍适用。
+         */
         post: operations["cancelOtaUpload"];
         delete?: never;
         options?: never;
@@ -996,7 +1406,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 撤销OTA固件 */
+        /**
+         * 撤销OTA固件
+         * @description READY/DEPRECATED单向撤销，不接受已终态再次修改事实。
+         */
         post: operations["revokeOtaFirmware"];
         delete?: never;
         options?: never;
@@ -1013,7 +1426,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 申领OTA管理端固定版本短时下载地址 */
+        /**
+         * 申领OTA管理端固定版本短时下载地址
+         * @description 空正文重申领须用新键，公共层只存完成墓碑，不存短地址响应。
+         */
         post: operations["createOtaReleaseDownload"];
         delete?: never;
         options?: never;
@@ -1028,10 +1444,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 固件发布尝试历史 */
+        /**
+         * 固件发布尝试历史
+         * @description 成员读取固件内发布尝试历史，最新在前；空历史返回空页，父固件不存在仍404。
+         */
         get: operations["listOtaPublications"];
         put?: never;
-        /** 建立OTA固件发布尝试 */
+        /**
+         * 建立OTA固件发布尝试
+         * @description 202仅说明接受尝试；无真实受控适配器时领域返回503且不新建成功状态。
+         */
         post: operations["createOtaPublication"];
         delete?: never;
         options?: never;
@@ -1048,7 +1470,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 退役OTA固件 */
+        /**
+         * 退役OTA固件
+         * @description READY单向退役，重复成功键返回公共完成墓碑10014。
+         */
         post: operations["deprecateOtaFirmware"];
         delete?: never;
         options?: never;
@@ -1065,7 +1490,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 取消OTA固件草稿 */
+        /**
+         * 取消OTA固件草稿
+         * @description 取消采用必填公共写幂等及领域修订终态规则。
+         */
         post: operations["cancelOtaFirmware"];
         delete?: never;
         options?: never;
@@ -1082,7 +1510,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 登记受控OTA类型基线 */
+        /**
+         * 登记受控OTA类型基线
+         * @description 当前管理者按精确类型登记部署配置，成功重复键保持公共完成墓碑10014。
+         */
         post: operations["registerOtaTypeBaseline"];
         delete?: never;
         options?: never;
@@ -1097,10 +1528,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** OTA活动游标分页 */
+        /**
+         * OTA活动游标分页
+         * @description 管理端活动列表：游标不透明且绑定项目，响应只含摘要白名单。
+         */
         get: operations["listOtaCampaigns"];
         put?: never;
-        /** 创建DIRECT OTA活动草稿 */
+        /**
+         * 创建DIRECT OTA活动草稿
+         * @description 创建不可编辑草稿，未执行设备占位。
+         */
         post: operations["createOtaCampaign"];
         delete?: never;
         options?: never;
@@ -1117,7 +1554,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 启动OTA活动 */
+        /**
+         * 启动OTA活动
+         * @description 到达冻结排程时间后启动第一批，实际准入由后台事务执行。
+         */
         post: operations["startOtaCampaign"];
         delete?: never;
         options?: never;
@@ -1134,7 +1574,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 原子冻结OTA目标与批次 */
+        /**
+         * 原子冻结OTA目标与批次
+         * @description 一次排程冻结全部目标并占位，任一失败全部回滚。
+         */
         post: operations["scheduleOtaCampaign"];
         delete?: never;
         options?: never;
@@ -1151,7 +1594,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 恢复OTA活动 */
+        /**
+         * 恢复OTA活动
+         * @description 重新验真安全条件，人工原因不能覆盖安全暂停。
+         */
         post: operations["resumeOtaCampaign"];
         delete?: never;
         options?: never;
@@ -1168,7 +1614,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 暂停OTA活动 */
+        /**
+         * 暂停OTA活动
+         * @description 关闭新准入，不撤回已受理通知或中断刷写。
+         */
         post: operations["pauseOtaCampaign"];
         delete?: never;
         options?: never;
@@ -1185,7 +1634,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 请求取消OTA活动并保留已派发安全责任 */
+        /**
+         * 请求取消OTA活动并保留已派发安全责任
+         * @description 未派发取消不暗示任何设备降级或刷写中断。
+         */
         post: operations["cancelOtaCampaign"];
         delete?: never;
         options?: never;
@@ -1202,7 +1654,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 人工放行OTA下一批 */
+        /**
+         * 人工放行OTA下一批
+         * @description 当前人工计划成功批的唯一后继，完成同键返回公共墓碑。
+         */
         post: operations["advanceOtaCampaignBatch"];
         delete?: never;
         options?: never;
@@ -1217,10 +1672,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询消息规则 */
+        /**
+         * 分页查询消息规则
+         * @description 目录不返回源码。
+         */
         get: operations["listMessageRules"];
         put?: never;
-        /** 创建消息规则 */
+        /**
+         * 创建消息规则
+         * @description 创建草稿，不自动发布。
+         */
         post: operations["createMessageRule"];
         delete?: never;
         options?: never;
@@ -1237,7 +1698,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 调试消息规则版本 */
+        /**
+         * 调试消息规则版本
+         * @description 真实沙箱结果与可追溯事件绑定，无动作派发。
+         */
         post: operations["debugMessageRuleVersion"];
         delete?: never;
         options?: never;
@@ -1254,7 +1718,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 发布消息规则版本 */
+        /**
+         * 发布消息规则版本
+         * @description 发布、恢复和显式回滚共享一个CAS入口。
+         */
         post: operations["activateMessageRuleVersion"];
         delete?: never;
         options?: never;
@@ -1271,7 +1738,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 暂停消息规则 */
+        /**
+         * 暂停消息规则
+         * @description 暂停只影响未来计划。
+         */
         post: operations["pauseMessageRule"];
         delete?: never;
         options?: never;
@@ -1330,10 +1800,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 管理者分页读取项目邀请 */
+        /**
+         * 管理者分页读取项目邀请
+         * @description 管理者分页读取项目邀请。
+         */
         get: operations["listProjectInvitations"];
         put?: never;
-        /** 创建待接受项目邀请 */
+        /**
+         * 创建待接受项目邀请
+         * @description 创建待接受项目邀请。
+         */
         post: operations["createProjectInvitation"];
         delete?: never;
         options?: never;
@@ -1350,7 +1826,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 重发邀请并使旧码失效 */
+        /**
+         * 重发邀请并使旧码失效
+         * @description 重发邀请并使旧码失效。
+         */
         post: operations["resendProjectInvitation"];
         delete?: never;
         options?: never;
@@ -1367,7 +1846,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 请求项目数据导出 */
+        /**
+         * 请求项目数据导出
+         * @description 建立或回读同代次非终态导出任务。
+         */
         post: operations["request"];
         delete?: never;
         options?: never;
@@ -1384,7 +1866,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 签发项目导出下载地址 */
+        /**
+         * 签发项目导出下载地址
+         * @description 在当前账号和OWNER事实权威复核后签发五分钟下载URL。
+         */
         post: operations["download"];
         delete?: never;
         options?: never;
@@ -1538,6 +2023,10 @@ export interface paths {
          */
         get: operations["list_4"];
         put?: never;
+        /**
+         * 创建草稿点位
+         * @description 创建草稿点位。
+         */
         post: operations["create_4"];
         delete?: never;
         options?: never;
@@ -1847,7 +2336,10 @@ export interface paths {
          */
         get: operations["list_11"];
         put?: never;
-        /** 创建设备组 */
+        /**
+         * 创建设备组
+         * @description 创建一个静态或动态设备组。
+         */
         post: operations["create_9"];
         delete?: never;
         options?: never;
@@ -1970,7 +2462,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询看板分享历史 */
+        /**
+         * 分页查询看板分享历史
+         * @description 列出全部状态的安全摘要；ARCHIVED只读可用，不返回secret/hash/creator或完整scope。
+         */
         get: operations["listDashboardShares"];
         put?: never;
         /**
@@ -1993,7 +2488,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 撤销看板只读分享 */
+        /**
+         * 撤销看板只读分享
+         * @description 无body的不可恢复撤销；重复撤销同一事实成功且不追加审计。
+         */
         post: operations["revokeDashboardShare"];
         delete?: never;
         options?: never;
@@ -2008,10 +2506,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询自动化目录 */
+        /**
+         * 查询自动化目录
+         * @description 查询自动化目录。
+         */
         get: operations["listManagedAutomations"];
         put?: never;
-        /** 创建自动化 */
+        /**
+         * 创建自动化
+         * @description 创建自动化。
+         */
         post: operations["createManagedAutomation"];
         delete?: never;
         options?: never;
@@ -2028,7 +2532,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 发布自动化版本 */
+        /**
+         * 发布自动化版本
+         * @description 发布自动化版本。
+         */
         post: operations["activateManagedAutomationVersion"];
         delete?: never;
         options?: never;
@@ -2045,8 +2552,115 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 暂停自动化 */
+        /**
+         * 暂停自动化
+         * @description 暂停自动化。
+         */
         post: operations["pauseManagedAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/model-probes/{sampleIndex}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 执行已冻结授权的单次合成模型计数探针
+         * @description 仅OWNER/ADMIN/OPERATOR，固定1至3样本，无正文及查询；每批每样本持久至多一次，禁止自动重试。仅返回usage摘要，不授予业务模型资格。默认无服务端授权时关闭。
+         */
+        post: operations["runAssistantSyntheticModelProbe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/knowledge/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 本地字面检索受权项目知识
+         * @description 按1至5个不同字面关键词读取当前批准版本，最多3条摘要及码点绑定原文片段；无资料、无命中和源失败分开，不生成诊断、不执行文本指令、不发送外部模型。
+         */
+        post: operations["searchAssistantProjectKnowledge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/fact-reports/collection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 手动生成本人历史设备集合事实报告
+         * @description 最多五设备各一条本人有效记录，返回前统一复核来源及当前权限；范围只限所选历史记录，不代表实时或全项目覆盖。固定纯文本/no-store，无写入、模型、设备查询或付费重试。
+         */
+        post: operations["generatePersonalFactCollection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/evidence-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取个人设备事实记录列表
+         * @description 读取本人在当前项目可访问的历史事实元数据，最多100条；拒绝额外查询参数，不返回事实正文或模型诊断。
+         */
+        get: operations["listPersonalEvidenceRecords"];
+        put?: never;
+        /**
+         * 手动保存个人设备事实记录
+         * @description 在当前项目重新采集本人设备事实，拒绝浏览器事实正文与额外查询参数；不调用外部模型，返回不缓存。
+         */
+        post: operations["createPersonalEvidenceRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/analysis-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 提交单设备固定分析调用
+         * @description 单个规范UUIDv7 Idempotency-Key必填，24小时保护；同键重新确权仅返回元数据，改变请求409。原60秒不续期，无自动重试；仅首次持有受信单次凭证并最终确权可返回SUCCEEDED与result。未知、未准入和重放的result为空。生产签发链仍关闭，关闭通道不创建调用。
+         */
+        post: operations["runAssistantAnalysis"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2168,10 +2782,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页读取Key脱敏元数据 */
+        /**
+         * 分页读取Key脱敏元数据
+         * @description 分页读取Key脱敏元数据。
+         */
         get: operations["listProjectApiKeys"];
         put?: never;
-        /** 签发项目API Key，仅首次返回秘密 */
+        /**
+         * 签发项目API Key，仅首次返回秘密
+         * @description 签发项目API Key，仅首次返回秘密。
+         */
         post: operations["issueProjectApiKey"];
         delete?: never;
         options?: never;
@@ -2188,7 +2808,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 原子轮换并立即撤销旧Key */
+        /**
+         * 原子轮换并立即撤销旧Key
+         * @description 原子轮换并立即撤销旧Key。
+         */
         post: operations["rotateProjectApiKey"];
         delete?: never;
         options?: never;
@@ -2205,7 +2828,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 撤销项目API Key */
+        /**
+         * 撤销项目API Key
+         * @description 撤销项目API Key。
+         */
         post: operations["revokeProjectApiKey"];
         delete?: never;
         options?: never;
@@ -2222,7 +2848,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 人工清除告警实例 */
+        /**
+         * 人工清除告警实例
+         * @description 人工清除仍活动事故，不自动标记为已确认。
+         */
         post: operations["clear"];
         delete?: never;
         options?: never;
@@ -2239,7 +2868,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 确认告警实例 */
+        /**
+         * 确认告警实例
+         * @description 确认事故，不改变其是否仍然活动的条件状态。
+         */
         post: operations["acknowledge"];
         delete?: never;
         options?: never;
@@ -2274,10 +2906,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询告警规则 */
+        /**
+         * 分页查询告警规则
+         * @description 分页列出规则。
+         */
         get: operations["page"];
         put?: never;
-        /** 创建告警规则 */
+        /**
+         * 创建告警规则
+         * @description 创建规则。
+         */
         post: operations["create_11"];
         delete?: never;
         options?: never;
@@ -2292,8 +2930,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 查询规则路由
+         * @description 读取当前项目告警规则的通知绑定列表；要求项目读取权限，规则归属由服务核对。
+         */
         get: operations["bindings"];
         put?: never;
+        /**
+         * 创建规则路由
+         * @description 为当前项目告警规则创建通知组与模板绑定；要求规则管理权限，所有引用须属于该项目。
+         */
         post: operations["createBinding"];
         delete?: never;
         options?: never;
@@ -2310,7 +2956,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 原子标记明确的站内告警事件已读 */
+        /**
+         * 原子标记明确的站内告警事件已读
+         * @description 原子标记明确的站内告警事件已读。
+         */
         post: operations["markRead"];
         delete?: never;
         options?: never;
@@ -2325,8 +2974,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 分页模板
+         * @description 按项目读取通知模板的游标页；要求项目读取权限，模板正文仅沿当前配置合同返回。
+         */
         get: operations["templates"];
         put?: never;
+        /**
+         * 创建模板
+         * @description 在当前项目创建通道通知模板；要求规则管理权限，正文、变量及通道沿现有规则校验。
+         */
         post: operations["createTemplate"];
         delete?: never;
         options?: never;
@@ -2341,8 +2998,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 分页通知组
+         * @description 按项目读取通知组的游标页；要求项目读取权限，cursor 和 limit 沿当前分页校验。
+         */
         get: operations["groups"];
         put?: never;
+        /**
+         * 创建通知组
+         * @description 在当前项目创建通知组；要求规则管理权限，校验名称并返回新建记录。
+         */
         post: operations["createGroup"];
         delete?: never;
         options?: never;
@@ -2357,8 +3022,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 查询通知组收件人
+         * @description 读取当前项目指定通知组的收件人列表；要求项目读取权限，组归属由服务再次核对。
+         */
         get: operations["recipients"];
         put?: never;
+        /**
+         * 创建收件人
+         * @description 在当前项目通知组添加收件人及通道；要求规则管理权限，目标与通道按现有通知配置规则校验。
+         */
         post: operations["createRecipient"];
         delete?: never;
         options?: never;
@@ -2554,6 +3227,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/emqx/events/command-reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 接收专用 EMQX 规则转发的命令回复
+         * @description 接收专用 EMQX 规则转发的命令回复。
+         */
+        post: operations["ingestEmqxCommandReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/emqx/auth": {
         parameters: {
             query?: never;
@@ -2663,7 +3356,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 按邀请绑定邮箱注册，仍需邮箱验证 */
+        /**
+         * 按邀请绑定邮箱注册，仍需邮箱验证
+         * @description 按邀请绑定邮箱注册，仍需邮箱验证。
+         */
         post: operations["registerWithProjectInvitation"];
         delete?: never;
         options?: never;
@@ -2680,7 +3376,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 以有效邀请码预览邀请，不消费 */
+        /**
+         * 以有效邀请码预览邀请，不消费
+         * @description 以有效邀请码预览邀请，不消费。
+         */
         post: operations["previewProjectInvitation"];
         delete?: never;
         options?: never;
@@ -2817,7 +3516,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** App当前绑定设备的短期实时票据 */
+        /**
+         * App当前绑定设备的短期实时票据
+         * @description App当前绑定设备的短期实时票据。
+         */
         post: operations["issueAppRealtimeTicket"];
         delete?: never;
         options?: never;
@@ -2894,7 +3596,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 查询WebApp设备描述快照 */
+        /**
+         * 查询WebApp设备描述快照
+         * @description 读取设备描述与模型属性元数据快照。
+         */
         post: operations["queryWebAppDeviceSnapshots"];
         delete?: never;
         options?: never;
@@ -2911,7 +3616,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 查询WebApp设备当前值 */
+        /**
+         * 查询WebApp设备当前值
+         * @description 读取稀疏PG当前值及来源模型。
+         */
         post: operations["queryWebAppDeviceCurrentValues"];
         delete?: never;
         options?: never;
@@ -3128,7 +3836,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 分页查询WebApp告警实例 */
+        /**
+         * 分页查询WebApp告警实例
+         * @description 读取按指定设备和条件过滤后的告警实例页。
+         */
         post: operations["queryWebAppAlarms"];
         delete?: never;
         options?: never;
@@ -3145,7 +3856,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Key换取限定范围的短期实时票据 */
+        /**
+         * Key换取限定范围的短期实时票据
+         * @description Key换取限定范围的短期实时票据。
+         */
         post: operations["issueOpenRealtimeTicket"];
         delete?: never;
         options?: never;
@@ -3162,7 +3876,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** API Key受理设备命令 */
+        /**
+         * API Key受理设备命令
+         * @description API Key受理设备命令。
+         */
         post: operations["submitOpenCommand"];
         delete?: never;
         options?: never;
@@ -3179,7 +3896,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** API Key精确模型当前值只读查询 */
+        /**
+         * API Key精确模型当前值只读查询
+         * @description API Key精确模型当前值只读查询。
+         */
         post: operations["queryOpenCurrentValues"];
         delete?: never;
         options?: never;
@@ -3196,7 +3916,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** API Key设备告警只读查询 */
+        /**
+         * API Key设备告警只读查询
+         * @description API Key设备告警只读查询。
+         */
         post: operations["queryOpenAlarms"];
         delete?: never;
         options?: never;
@@ -3300,6 +4023,50 @@ export interface paths {
         patch: operations["rename"];
         trace?: never;
     };
+    "/simulations/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询不含凭据的运行统计
+         * @description 查询不含凭据的运行统计。 仅由独立模拟器进程提供，默认回环 8090；本目录不是平台运行路由。含设备凭据的请求不得写入日志，远程使用须先取得受保护测试网络。本片不代表真实硬件或容量资格。
+         */
+        get: operations["getDeviceSimulationStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/app": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 规范化应用静态入口
+         * @description 无查询串时将 /app 重定向到 /app/；不读取业务身份，响应不缓存。当前公开部署验收暂停，路径登记不表示已公开上线。
+         */
+        get: operations["redirectApplicationStaticRoot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /**
+         * 读取应用静态资源响应头
+         * @description 无查询串时将 /app 重定向到 /app/；不读取业务身份，响应不缓存。当前公开部署验收暂停，路径登记不表示已公开上线。 HEAD 只读取状态与响应头。
+         */
+        head: operations["headApplicationStaticRoot"];
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/status": {
         parameters: {
             query?: never;
@@ -3347,7 +4114,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取匿名分享精确Schema */
+        /**
+         * 读取匿名分享精确Schema
+         * @description 返回分享冻结的完整精确Schema，不跟随Dashboard当前指针切换版本。
+         */
         get: operations["getDashboardShareSchema"];
         put?: never;
         post?: never;
@@ -3384,7 +4154,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页读取分享变量设备目录 */
+        /**
+         * 分页读取分享变量设备目录
+         * @description 目录只选一个冻结变量候选，不接受客户端模型或全项目设备查询。
+         */
         get: operations["getDashboardShareDeviceCatalog"];
         put?: never;
         post?: never;
@@ -3401,7 +4174,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取匿名分享上下文 */
+        /**
+         * 读取匿名分享上下文
+         * @description 读取有限候选和DB历史锚点，不返回内部项目身份或原凭据。
+         */
         get: operations["getDashboardShareContext"];
         put?: never;
         post?: never;
@@ -3418,7 +4194,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询持久恢复收据，清理后当前明细可空 */
+        /**
+         * 查询持久恢复收据，清理后当前明细可空
+         * @description 查询持久恢复收据，清理后当前明细可空。
+         */
         get: operations["getProjectWebhookRecoveryOperation"];
         put?: never;
         post?: never;
@@ -3435,7 +4214,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 恢复原订阅操作元数据，不恢复秘密 */
+        /**
+         * 恢复原订阅操作元数据，不恢复秘密
+         * @description 恢复原订阅操作元数据，不恢复秘密。
+         */
         get: operations["recoverProjectWebhookOperation"];
         put?: never;
         post?: never;
@@ -3452,7 +4234,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询指定事件类型的受理与拒绝元数据 */
+        /**
+         * 查询指定事件类型的受理与拒绝元数据
+         * @description 查询指定事件类型的受理与拒绝元数据。
+         */
         get: operations["listProjectWebhookEvents"];
         put?: never;
         post?: never;
@@ -3469,7 +4254,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 按当前管理资格分页查询投递 */
+        /**
+         * 按当前管理资格分页查询投递
+         * @description 按当前管理资格分页查询投递。
+         */
         get: operations["listProjectWebhookDeliveries"];
         put?: never;
         post?: never;
@@ -3486,7 +4274,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询冻结目标及有界尝试，不返回正文或租约 */
+        /**
+         * 查询冻结目标及有界尝试，不返回正文或租约
+         * @description 查询冻结目标及有界尝试，不返回正文或租约。
+         */
         get: operations["getProjectWebhookDelivery"];
         put?: never;
         post?: never;
@@ -3503,7 +4294,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 列出任务执行日志 */
+        /**
+         * 列出任务执行日志
+         * @description 列出执行日志。
+         */
         get: operations["executions"];
         put?: never;
         post?: never;
@@ -3520,7 +4314,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询手动场景版本历史 */
+        /**
+         * 查询手动场景版本历史
+         * @description 读取完整不可变版本历史。
+         */
         get: operations["versions"];
         put?: never;
         post?: never;
@@ -3537,7 +4334,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询手动场景单版本 */
+        /**
+         * 查询手动场景单版本
+         * @description 单版本回读包含完整有序条件与动作。
+         */
         get: operations["getManagedSceneVersion"];
         put?: never;
         post?: never;
@@ -3554,7 +4354,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询手动场景版本 */
+        /**
+         * 分页查询手动场景版本
+         * @description 有界版本历史供管理页面使用，旧数组入口保持兼容。
+         */
         get: operations["pageManagedSceneVersions"];
         put?: never;
         post?: never;
@@ -3631,7 +4434,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询规则节点配置目录 */
+        /**
+         * 查询规则节点配置目录
+         * @description 返回允许的条件和动作Schema；目录不构成写授权。
+         */
         get: operations["getRuleNodeCatalog"];
         put?: never;
         post?: never;
@@ -3728,7 +4534,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询项目概要统计 */
+        /**
+         * 查询项目概要统计
+         * @description 查询项目概要统计。
+         */
         get: operations["get_4"];
         put?: never;
         post?: never;
@@ -3765,7 +4574,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA信任域登记摘要 */
+        /**
+         * 读取OTA信任域登记摘要
+         * @description 当前成员可读登记摘要，不返回内部签名正文。
+         */
         get: operations["getOtaTrustDomain"];
         put?: never;
         post?: never;
@@ -3802,7 +4614,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** OTA固件详情 */
+        /**
+         * OTA固件详情
+         * @description 精确项目读取，不向跨项目请求区分真实存在性。
+         */
         get: operations["getOtaFirmware"];
         put?: never;
         post?: never;
@@ -3819,7 +4634,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取固件上传会话 */
+        /**
+         * 读取固件上传会话
+         * @description 精确项目状态查询，不输出存储或租约标识。
+         */
         get: operations["getOtaUpload"];
         put?: never;
         post?: never;
@@ -3836,7 +4654,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA管理端发布物 */
+        /**
+         * 读取OTA管理端发布物
+         * @description 只投影公开密码学材料；公钥本身不代表设备信任来源。
+         */
         get: operations["getOtaRelease"];
         put?: never;
         post?: never;
@@ -3853,7 +4674,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA固件发布尝试 */
+        /**
+         * 读取OTA固件发布尝试
+         * @description 精确父资源读取，不输出内部签名正文或凭据。
+         */
         get: operations["getOtaPublication"];
         put?: never;
         post?: never;
@@ -3870,7 +4694,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA固件生命周期记录 */
+        /**
+         * 读取OTA固件生命周期记录
+         * @description 当前管理成员读取不可缓存的安全生命周期记录。
+         */
         get: operations["getOtaFirmwareLifecycle"];
         put?: never;
         post?: never;
@@ -3927,7 +4754,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA类型基线登记 */
+        /**
+         * 读取OTA类型基线登记
+         * @description 管理元数据不缓存，不能作为当前设备资格凭证。
+         */
         get: operations["getOtaTypeBaseline"];
         put?: never;
         post?: never;
@@ -3964,7 +4794,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA活动与冻结目标 */
+        /**
+         * 读取OTA活动与冻结目标
+         * @description 返回同一事务中的计划与稳定作业快照。
+         */
         get: operations["getOtaCampaign"];
         put?: never;
         post?: never;
@@ -3981,7 +4814,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** OTA活动设备作业游标分页 */
+        /**
+         * OTA活动设备作业游标分页
+         * @description 活动内设备作业列表：游标不透明且绑定项目，响应只含运行状态机白名单。
+         */
         get: operations["listOtaCampaignJobs"];
         put?: never;
         post?: never;
@@ -3998,7 +4834,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA设备作业与转移时间线 */
+        /**
+         * 读取OTA设备作业与转移时间线
+         * @description 单个作业与不可变转移时间线；未知、跨项目或跨活动身份都是70034。
+         */
         get: operations["getOtaCampaignJob"];
         put?: never;
         post?: never;
@@ -4015,7 +4854,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA回退准备观察与当前资格 */
+        /**
+         * 读取OTA回退准备观察与当前资格
+         * @description 成功读取禁缓存，始终明确不具执行权。
+         */
         get: operations["getOtaRollbackPreflight"];
         put?: never;
         post?: never;
@@ -4032,7 +4874,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA活动执行事实 */
+        /**
+         * 读取OTA活动执行事实
+         * @description 读取当前执行事实，不返回URL或租约。
+         */
         get: operations["getOtaCampaignExecution"];
         put?: never;
         post?: never;
@@ -4049,7 +4894,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取OTA活动冻结批次 */
+        /**
+         * 读取OTA活动冻结批次
+         * @description 冻结批次只读投影；草稿活动返回空列表，未知与跨项目身份都是70034。
+         */
         get: operations["listOtaCampaignBatches"];
         put?: never;
         post?: never;
@@ -4066,7 +4914,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** OTA审计时间线 */
+        /**
+         * OTA审计时间线
+         * @description 读取本项目 OTA 审计时间线，最新在前。
+         */
         get: operations["listOtaAudits"];
         put?: never;
         post?: never;
@@ -4103,7 +4954,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取消息规则版本历史 */
+        /**
+         * 读取消息规则版本历史
+         * @description 保留数组形状的历史读取。
+         */
         get: operations["listMessageRuleVersions"];
         put?: never;
         post?: never;
@@ -4120,7 +4974,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取消息规则指定版本 */
+        /**
+         * 读取消息规则指定版本
+         * @description 单版本包含完整动作。
+         */
         get: operations["getMessageRuleVersion"];
         put?: never;
         post?: never;
@@ -4137,7 +4994,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页读取消息规则版本 */
+        /**
+         * 分页读取消息规则版本
+         * @description 管理页面使用有界历史。
+         */
         get: operations["pageMessageRuleVersions"];
         put?: never;
         post?: never;
@@ -4154,7 +5014,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询项目数据导出状态 */
+        /**
+         * 查询项目数据导出状态
+         * @description 查询导出任务状态。
+         */
         get: operations["get_5"];
         put?: never;
         post?: never;
@@ -4491,6 +5354,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 查询设备最近连接记录
+         * @description 返回当前项目可见设备的最近一百条连接记录，不提供游标分页。
+         */
         get: operations["list_17"];
         put?: never;
         post?: never;
@@ -4507,7 +5374,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询设备命令结果 */
+        /**
+         * 查询设备命令结果
+         * @description 查询命令事实与全部派发尝试。
+         */
         get: operations["get_7"];
         put?: never;
         post?: never;
@@ -4724,7 +5594,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询自动化版本 */
+        /**
+         * 查询自动化版本
+         * @description 查询自动化版本。
+         */
         get: operations["getManagedAutomationVersion"];
         put?: never;
         post?: never;
@@ -4741,7 +5614,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询自动化版本目录 */
+        /**
+         * 查询自动化版本目录
+         * @description 查询自动化版本目录。
+         */
         get: operations["pageManagedAutomationVersions"];
         put?: never;
         post?: never;
@@ -4758,7 +5634,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询自动化执行记录 */
+        /**
+         * 查询自动化执行记录
+         * @description 查询自动化执行记录。
+         */
         get: operations["listAutomationExecutions"];
         put?: never;
         post?: never;
@@ -4775,8 +5654,195 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询自动化执行详情 */
+        /**
+         * 查询自动化执行详情
+         * @description 查询自动化执行详情。
+         */
         get: operations["getAutomationExecution"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/knowledge/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取当前批准的项目知识目录
+         * @description 当前四角色手动读取最多100个最新批准来源元数据，不包含正文；返回前重新核验成员和版本，不授予外部出站资格。
+         */
+        get: operations["listAssistantKnowledgeSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/evidence-records/{recordId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取本人历史事实详情
+         * @description 按本人记录与当前项目权限读取历史快照及来源；拒绝额外查询参数，不把历史事实当作当前状态，响应不缓存。
+         */
+        get: operations["getPersonalEvidenceRecord"];
+        put?: never;
+        post?: never;
+        /**
+         * 删除本人设备事实记录
+         * @description 按当前可写项目权限删除本人的历史事实记录；拒绝额外查询参数，不重置模型配置或探针次数，成功无正文。
+         */
+        delete: operations["deletePersonalEvidenceRecord"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/evidence-records/{recordId}/fact-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 手动生成本人历史事实报告
+         * @description 仅汇编当前有权且未到期的本人历史记录，返回前独立复核权限与来源；固定事实格式、无查询参数、no-store，不调用模型或设备，不把历史事实判为当前健康。
+         */
+        get: operations["generatePersonalFactReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/devices/{deviceId}/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取单设备受权证据快照
+         * @description 当前Console项目成员可读；1至10个不同属性键，来源异常整批拒绝。不调用外部模型。
+         */
+        get: operations["getAssistantDeviceSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/devices/{deviceId}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取受权单属性历史证据
+         * @description 单设备、单数值属性、最多24小时；保留裁剪、实际粒度和来源版本明确返回，空点不代表正常。
+         */
+        get: operations["getAssistantDeviceHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/devices/{deviceId}/alarms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取受权单设备告警事实页
+         * @description 按告警更新时间降序，最多50条；无时间窗，不含自由文本类型，当前模型不证明历史事故来源，空页不代表正常。
+         */
+        get: operations["getAssistantDeviceAlarms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/analysis-runs/{callId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取本人分析调用状态
+         * @description 当前项目付费角色且本人创建，读取前重新验证设备与当前权限；不包含正文，不会重发或释放执行槽。
+         */
+        get: operations["getAssistantAnalysisCall"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/analysis-runs/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取项目模型分析可用状态
+         * @description 只允许当前项目付费角色；固定审查批准和项目启用均有效才可发起。状态不保证供应商在线或余额，提交仍重新确权，不解密或联网。
+         */
+        get: operations["getAssistantAnalysisAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/assistant/analysis-runs/by-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 按原幂等键读取本人分析调用
+         * @description 仅只读恢复元数据，不创建调用或执行；单个原UUIDv7幂等头必填，原24小时期限不续期。404不证明原请求未受理或没有消费，不能自动重发。
+         */
+        get: operations["getAssistantAnalysisCallByKey"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4812,7 +5878,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取Key脱敏元数据 */
+        /**
+         * 读取Key脱敏元数据
+         * @description 读取Key脱敏元数据。
+         */
         get: operations["getProjectApiKey"];
         put?: never;
         post?: never;
@@ -4829,7 +5898,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询原操作结果，不恢复秘密 */
+        /**
+         * 查询原操作结果，不恢复秘密
+         * @description 查询原操作结果，不恢复秘密。
+         */
         get: operations["recoverProjectApiKeyOperation"];
         put?: never;
         post?: never;
@@ -4846,7 +5918,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询告警实例 */
+        /**
+         * 分页查询告警实例
+         * @description 分页查询项目事故历史。
+         */
         get: operations["page_1"];
         put?: never;
         post?: never;
@@ -4863,7 +5938,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询告警实例 */
+        /**
+         * 查询告警实例
+         * @description 查询单个事故。
+         */
         get: operations["get_9"];
         put?: never;
         post?: never;
@@ -4880,7 +5958,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询告警事件 */
+        /**
+         * 分页查询告警事件
+         * @description 查询不可变状态迁移事件。
+         */
         get: operations["events"];
         put?: never;
         post?: never;
@@ -4917,7 +5998,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询个人站内告警通知 */
+        /**
+         * 分页查询个人站内告警通知
+         * @description 分页查询个人站内告警通知。
+         */
         get: operations["page_2"];
         put?: never;
         post?: never;
@@ -4934,7 +6018,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 查询个人站内告警未读摘要 */
+        /**
+         * 查询个人站内告警未读摘要
+         * @description 查询个人站内告警未读摘要。
+         */
         get: operations["unreadCount"];
         put?: never;
         post?: never;
@@ -4951,6 +6038,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 分页查询不含敏感载荷的投递意图
+         * @description 按项目游标分页查询投递意图，可按告警实例筛选；要求项目读取权限，响应不包含敏感通知载荷，意图状态不等于供应商送达回执。
+         */
         get: operations["deliveries"];
         put?: never;
         post?: never;
@@ -5007,7 +6098,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 已验证账号的邀请收件箱 */
+        /**
+         * 已验证账号的邀请收件箱
+         * @description 已验证账号的邀请收件箱。
+         */
         get: operations["listMyProjectInvitations"];
         put?: never;
         post?: never;
@@ -5064,7 +6158,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取目标租户调整审批摘要 */
+        /**
+         * 读取目标租户调整审批摘要
+         * @description 读取目标租户调整审批摘要。
+         */
         get: operations["preview"];
         put?: never;
         post?: never;
@@ -5261,7 +6358,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询WebApp设备目录 */
+        /**
+         * 分页查询WebApp设备目录
+         * @description 读取按精确模型过滤的已授权设备目录。
+         */
         get: operations["listWebAppDeviceCatalog"];
         put?: never;
         post?: never;
@@ -5338,7 +6438,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** API Key完整不可变模型 */
+        /**
+         * API Key完整不可变模型
+         * @description API Key完整不可变模型。
+         */
         get: operations["getOpenModel"];
         put?: never;
         post?: never;
@@ -5355,7 +6458,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** API Key设备目录 */
+        /**
+         * API Key设备目录
+         * @description API Key设备目录。
+         */
         get: operations["listOpenDevices"];
         put?: never;
         post?: never;
@@ -5372,7 +6478,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** API Key设备安全元数据 */
+        /**
+         * API Key设备安全元数据
+         * @description API Key设备安全元数据。
+         */
         get: operations["getOpenDevice"];
         put?: never;
         post?: never;
@@ -5409,7 +6518,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** API Key查询所属命令结果 */
+        /**
+         * API Key查询所属命令结果
+         * @description API Key查询所属命令结果。
+         */
         get: operations["getOpenCommand"];
         put?: never;
         post?: never;
@@ -5426,7 +6538,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** API Key按原业务键恢复命令，不重发 */
+        /**
+         * API Key按原业务键恢复命令，不重发
+         * @description API Key按原业务键恢复命令，不重发。
+         */
         get: operations["recoverOpenCommand"];
         put?: never;
         post?: never;
@@ -5466,7 +6581,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** 撤回尚未接受的邀请 */
+        /**
+         * 撤回尚未接受的邀请
+         * @description 撤回尚未接受的邀请。
+         */
         delete: operations["revokeProjectInvitation"];
         options?: never;
         head?: never;
@@ -5503,7 +6621,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** 删除设备标签 */
+        /**
+         * 删除设备标签
+         * @description 删除一个设备标签键。
+         */
         delete: operations["deleteTag"];
         options?: never;
         head?: never;
@@ -5585,6 +6706,230 @@ export interface paths {
          * @description 关闭当前用户与设备的有效关系并保留历史。重复解绑或关系不存在仍返回 204；角色失效时返回 60009。解绑后设备数据面立即不可见。
          */
         delete: operations["unbindSelf"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actuator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询运维入口索引
+         * @description 由框架列举当前运维端点链接；不增加端点暴露，不代表链接对当前身份可用。
+         */
+        get: operations["management_get__actuator"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actuator/prometheus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 抓取运行指标
+         * @description 由框架按协商媒体类型输出 Prometheus 指标；只供受保护的内部抓取，不用于业务数据查询。
+         */
+        get: operations["management_get__actuator_prometheus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actuator/health/{componentPath}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询运行健康
+         * @description 由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。
+         */
+        get: operations["management_get__actuator_health__componentPath_"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actuator/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询运行健康
+         * @description 由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。
+         */
+        get: operations["management_get__actuator_health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ws/shares/{shareId}/properties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 建立匿名分享属性实时连接
+         * @description 默认关闭；启用后必须匹配配置的宿主 Origin、分享能力与连接租约；不借用 Console JWT。 成功后升级为 WebSocket；消息帧及关闭码沿所属实时协议合同，不能按普通 JSON 接口调用。登记不表示当前公开部署验收恢复。
+         */
+        get: operations["upgradeShareProperties"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ws/app/properties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 建立 App 属性实时连接
+         * @description 必须提供精确允许的 Origin；使用 App JWT 并校验当前绑定设备资格。 成功后升级为 WebSocket；消息帧及关闭码沿所属实时协议合同，不能按普通 JSON 接口调用。登记不表示当前公开部署验收恢复。
+         */
+        get: operations["upgradeAppProperties"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ws/app/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 建立 App 看板实时连接
+         * @description 必须提供精确允许的 Origin；使用 App JWT，按看板协议重新校验授权。 成功后升级为 WebSocket；消息帧及关闭码沿所属实时协议合同，不能按普通 JSON 接口调用。登记不表示当前公开部署验收恢复。
+         */
+        get: operations["upgradeAppDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ws/dashboard/properties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 建立控制台看板实时连接
+         * @description 必须提供精确允许的 Origin；使用控制台 JWT 和当前项目成员身份。 成功后升级为 WebSocket；消息帧及关闭码沿所属实时协议合同，不能按普通 JSON 接口调用。登记不表示当前公开部署验收恢复。
+         */
+        get: operations["upgradeConsoleDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/realtime/ws": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 建立控制台实时连接
+         * @description 仅同源；原控制台 JWT 经握手校验项目成员及设备访问范围。 成功后升级为 WebSocket；消息帧及关闭码沿所属实时协议合同，不能按普通 JSON 接口调用。登记不表示当前公开部署验收恢复。
+         */
+        get: operations["upgradeConsoleRealtime"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/app/{resourcePath}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取受控应用静态文件；拒绝编码路径、穿越及未登记资源
+         * @description 读取受控应用静态文件；拒绝编码路径、穿越及未登记资源。
+         */
+        get: operations["getApplicationStaticResource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /**
+         * 读取应用静态资源响应头
+         * @description 读取受控应用静态文件；拒绝编码路径、穿越及未登记资源。 HEAD 只读取状态与响应头。
+         */
+        head: operations["headApplicationStaticResource"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/open/v1/realtime/ws": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 使用短期票据建立开放实时连接
+         * @description 只接受保留状态的 WS 票据及原客户端地址；若提供 Origin 须匹配精确允许来源。禁止查询串、Authorization、X-Api-Key 与 Cookie。 成功后升级为 WebSocket；消息帧及关闭码沿所属实时协议合同，不能按普通 JSON 接口调用。登记不表示当前公开部署验收恢复。
+         */
+        get: operations["upgradeOpenRealtime"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -6212,6 +7557,35 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        ModelCredentialInput: {
+            expectedRevision: string;
+            apiKey: string;
+        };
+        ModelConfigurationView: {
+            configured: boolean;
+            enabled: boolean;
+            revision: string;
+            /** Format: date-time */
+            updatedAt: string | null;
+        };
+        PublishAssistantKnowledgeRequest: {
+            /** Format: uuid */
+            expectedCurrentVersionId: string | null;
+            /** @description UTF-8规范正文最多16KiB，需管理员人工筛选脱敏 */
+            content: string;
+            /** @description 必须明确true，批准全部当前项目成员读取；不授予外部出站资格 */
+            approvedForProjectMembers: boolean;
+        };
+        AssistantKnowledgeSource: {
+            /** Format: uuid */
+            id: string;
+            sourceKey: string;
+            /** Format: int32 */
+            versionNumber: number;
+            /** Format: date-time */
+            createdAt: string;
+            contentSha256: string;
+        };
         SaveApplicationDraftRequest: {
             /** @description 草稿CAS修订号的规范十进制字符串 */
             expectedRevision: string;
@@ -6384,6 +7758,129 @@ export interface components {
             /** @enum {string} */
             provider: "HUAWEI" | "XIAOMI" | "OPPO" | "VIVO" | "APNS" | "MOCK";
             token?: string;
+        };
+        ConnectionQualification: {
+            /** Format: int32 */
+            target?: number;
+            /** Format: int32 */
+            attempted?: number;
+            /** Format: int32 */
+            succeeded?: number;
+            /** Format: int32 */
+            failed?: number;
+            /** Format: date-time */
+            rampStartedAt?: string;
+            /** Format: date-time */
+            allConnectedAt?: string;
+            /** Format: int64 */
+            rampDurationMillis?: number;
+        };
+        Counters: {
+            /** Format: int64 */
+            initiated?: number;
+            /** Format: int64 */
+            confirmed?: number;
+            /** Format: int64 */
+            confirmedMessages?: number;
+            /** Format: int64 */
+            failed?: number;
+        };
+        GeneratorResourceQualification: {
+            /** Format: int64 */
+            sampleCount?: number;
+            /** Format: int64 */
+            maxSampleGapMillis?: number;
+            /** Format: date-time */
+            maxSampleGapStartedAt?: string;
+            /** Format: date-time */
+            maxSampleGapEndedAt?: string;
+            /** Format: int64 */
+            incompleteSamples?: number;
+            /** Format: double */
+            peakProcessCpuLoad?: number;
+            /** Format: double */
+            maxFiveSecondCpuAverage?: number;
+            /** Format: int64 */
+            peakHeapUsedBytes?: number;
+            /** Format: int64 */
+            heapMaxBytes?: number;
+            /** Format: int64 */
+            peakRssBytes?: number;
+            /** Format: int64 */
+            peakThreadCount?: number;
+            /** Format: int64 */
+            peakOpenFileDescriptors?: number;
+            /** Format: int64 */
+            maxFileDescriptors?: number;
+        };
+        SimulationStats: {
+            running?: boolean;
+            /** Format: int32 */
+            deviceCount?: number;
+            /** Format: int32 */
+            connectedDevices?: number;
+            /** Format: int64 */
+            publishedReports?: number;
+            /** Format: int64 */
+            deliveredReports?: number;
+            /** Format: int64 */
+            failedOperations?: number;
+            /** Format: int64 */
+            forcedDisconnects?: number;
+            /** Format: int32 */
+            reconnectedDevices?: number;
+            /** Format: int64 */
+            reconnectSpreadMillis?: number;
+            propertyReports?: components["schemas"]["Counters"];
+            commandReplies?: components["schemas"]["Counters"];
+            configReplies?: components["schemas"]["Counters"];
+            batchReports?: components["schemas"]["Counters"];
+            manifestHealthy?: boolean;
+            manifestFailureReason?: string;
+            manifestDir?: string;
+            /** Format: int64 */
+            schedulingDeviationP99Millis?: number;
+            /** Format: int64 */
+            schedulingDeviationSampleCount?: number;
+            /** Format: double */
+            processCpuLoad?: number;
+            /** Format: int64 */
+            heapUsedBytes?: number;
+            /** Format: int64 */
+            heapMaxBytes?: number;
+            /** Format: int64 */
+            rssBytes?: number;
+            /** Format: int64 */
+            threadCount?: number;
+            /** Format: int64 */
+            openFileDescriptors?: number;
+            /** Format: int64 */
+            maxFileDescriptors?: number;
+            /** Format: date-time */
+            clockNow?: string;
+            runId?: string;
+            shardId?: string;
+            /** Format: int32 */
+            propertiesPerReport?: number;
+            connection?: components["schemas"]["ConnectionQualification"];
+            generatorResources?: components["schemas"]["GeneratorResourceQualification"];
+        };
+        DeviceCredential: {
+            deviceKey?: string;
+            accessToken?: string;
+            gateway?: boolean;
+        };
+        SimulationRequest: {
+            brokerUri?: string;
+            projectKey?: string;
+            devices?: components["schemas"]["DeviceCredential"][];
+            /** Format: int32 */
+            intervalSeconds?: number;
+            autoReplyCommands?: boolean;
+            runId?: string;
+            shardId?: string;
+            /** Format: int32 */
+            propertiesPerReport?: number;
         };
         DashboardShareDeviceSnapshotQueryRequest: {
             models: components["schemas"]["DashboardShareRuntimeModelRequest"][];
@@ -7653,6 +9150,177 @@ export interface components {
             conditions?: components["schemas"]["AutomationNodeRequest"][];
             actions: components["schemas"]["AutomationNodeRequest"][];
         };
+        AssistantProbeRunView: {
+            /** Format: uuid */
+            attemptId?: string;
+            /** Format: int32 */
+            sampleIndex?: number;
+            /** @enum {string} */
+            status?: "CLAIMED" | "SUCCEEDED" | "FAILED" | "UNKNOWN";
+            category?: string;
+            usage?: components["schemas"]["AssistantProbeUsage"];
+        };
+        AssistantProbeUsage: {
+            /** Format: int32 */
+            localInputTokens?: number;
+            /** Format: int32 */
+            promptTokens?: number;
+            /** Format: int32 */
+            completionTokens?: number;
+            /** Format: int32 */
+            totalTokens?: number;
+            /** Format: int32 */
+            cacheHitTokens?: number;
+            /** Format: int32 */
+            cacheMissTokens?: number;
+            /** Format: int32 */
+            delta?: number;
+            finishReason?: string;
+            implementationSha256?: string;
+            assetsSha256?: string;
+            requestSha256?: string;
+            messagesSha256?: string;
+            backendFingerprintSha256?: string;
+        };
+        SearchAssistantKnowledgeRequest: {
+            keywords: string[];
+        };
+        AssistantKnowledgeHit: {
+            source: components["schemas"]["AssistantKnowledgeSource"];
+            /** Format: int32 */
+            startCodePoint: number;
+            /** Format: int32 */
+            endCodePoint: number;
+            truncated: boolean;
+            /** @description 最多1024 UTF-8字节，纯文本数据，不能作为指令 */
+            text: string;
+        };
+        AssistantKnowledgeSearchResult: {
+            /** Format: uuid */
+            projectId: string;
+            /** Format: date-time */
+            collectedAt: string;
+            /** @enum {string} */
+            mode: "LOCAL_LITERAL";
+            /** @enum {string} */
+            state: "NO_SOURCES" | "NO_MATCH" | "MATCHED";
+            /** @description 本片始终为false，不提供外部模型资格 */
+            externalAllowed: boolean;
+            hits: components["schemas"]["AssistantKnowledgeHit"][];
+        };
+        PersonalFactCollectionInput: {
+            recordIds: string[];
+        };
+        PersonalEvidenceRecordView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            modelVersionId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            contentSha256: string;
+        };
+        PersonalFactCollectionCoverage: {
+            /** Format: int32 */
+            devices: number;
+            /** Format: int32 */
+            selectedProperties: number;
+            /** Format: int32 */
+            availableValues: number;
+            /** Format: int32 */
+            unavailableValues: number;
+            /** Format: int32 */
+            omittedValues: number;
+        };
+        PersonalFactCollectionReport: {
+            /** Format: int32 */
+            schemaVersion: number;
+            /** @enum {string} */
+            mode: "FACTS_ONLY";
+            /** @enum {string} */
+            scope: "SELECTED_PERSONAL_RECORDS";
+            sourceRecords: components["schemas"]["PersonalEvidenceRecordView"][];
+            coverage: components["schemas"]["PersonalFactCollectionCoverage"];
+            /** Format: date-time */
+            earliestCollectionAt: string;
+            /** Format: date-time */
+            latestCollectionAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            contentSha256: string;
+            markdown: string;
+        };
+        CreatePersonalEvidenceRecordRequest: {
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            expectedModelVersionId: string;
+            propertyKeys: string[];
+        };
+        AssistantAnalysisRequest: {
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            expectedModelVersionId: string;
+            propertyKeys: string[];
+            /** @enum {string} */
+            template: "STATUS_SUMMARY" | "ALARM_EXPLANATION";
+        };
+        AssistantAnalysisCallView: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "RESERVED" | "DISPATCHED" | "SUCCEEDED" | "FAILED" | "UNKNOWN";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            deadline: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            dispatchedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+        };
+        AssistantAnalysisFinding: {
+            /** @enum {string} */
+            kind: "FACT" | "HYPOTHESIS" | "RECOMMENDATION";
+            statement: string;
+            evidenceIds: string[];
+        };
+        AssistantAnalysisResult: {
+            /** @enum {string} */
+            model: "deepseek-flash";
+            /** @enum {string} */
+            promptVersion: "thingslink-agent-single-analysis-v1";
+            summary: string;
+            findings: components["schemas"]["AssistantAnalysisFinding"][];
+            limitations: string[];
+            usage: components["schemas"]["AssistantAnalysisUsage"];
+        };
+        /** @description 仅首次SUCCEEDED带result；UNAVAILABLE的call和result均为空，其余类别仅有call。REPLAY即使状态已成功也不恢复正文。生产业务仍未准入。 */
+        AssistantAnalysisRunView: {
+            call: components["schemas"]["AssistantAnalysisCallView"] | null;
+            /** @enum {string} */
+            category: "UNAVAILABLE" | "REPLAY" | "TRANSPORT_UNKNOWN" | "UNQUALIFIED" | "SUCCEEDED";
+            result: components["schemas"]["AssistantAnalysisResult"] | null;
+        };
+        AssistantAnalysisUsage: {
+            /** Format: int32 */
+            promptTokens: number;
+            /** Format: int32 */
+            completionTokens: number;
+            /** Format: int32 */
+            totalTokens: number;
+            /** Format: int32 */
+            cacheHitTokens: number;
+            /** Format: int32 */
+            cacheMissTokens: number;
+        };
         CreateApplicationRequest: {
             /** @description Console目录管理名称 */
             managementName: string;
@@ -8499,6 +10167,10 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        EnableRequest: {
+            expectedRevision: string;
+            enabled: boolean;
         };
         RenameApplicationRequest: {
             /** @description Console目录管理名称 */
@@ -10145,6 +11817,180 @@ export interface components {
             /** Format: date-time */
             deliveredAt?: string;
         };
+        AssistantKnowledgeDetail: {
+            source: components["schemas"]["AssistantKnowledgeSource"];
+            /** @description 规范NFC纯文本，UTF-8最多16KiB */
+            content: string;
+        };
+        AssistantEvidenceAlarmSummary: {
+            /** @enum {string} */
+            state: "ACTIVE" | "NORMAL";
+            /** Format: date-time */
+            observedAt: string;
+        };
+        AssistantEvidenceDevice: {
+            status: string;
+            /** Format: date-time */
+            lastOnlineAt: string | null;
+            /** Format: date-time */
+            readAt: string;
+        };
+        PersonalEvidenceProperty: {
+            key: string;
+            /** @enum {string} */
+            availability: "PRESENT" | "MISSING" | "SOURCE_UNKNOWN" | "MODEL_MISMATCH";
+            value: number | boolean | null;
+            valueOmitted: boolean;
+            /** Format: date-time */
+            occurredAt: string | null;
+            /** Format: uuid */
+            sourceModelVersionId: string | null;
+            /** Format: date-time */
+            readAt: string;
+        };
+        PersonalEvidenceRecordDetail: {
+            record: components["schemas"]["PersonalEvidenceRecordView"];
+            snapshot: components["schemas"]["PersonalEvidenceSnapshot"];
+        };
+        PersonalEvidenceSnapshot: {
+            /** Format: int32 */
+            schemaVersion: number;
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            modelVersionId: string;
+            /** Format: date-time */
+            collectionStartedAt: string;
+            /** Format: date-time */
+            collectionFinishedAt: string;
+            device: components["schemas"]["AssistantEvidenceDevice"];
+            alarmSummary: components["schemas"]["AssistantEvidenceAlarmSummary"];
+            properties: components["schemas"]["PersonalEvidenceProperty"][];
+        };
+        PersonalFactReport: {
+            /** Format: int32 */
+            schemaVersion: number;
+            /** @enum {string} */
+            mode: "FACTS_ONLY";
+            sourceRecord: components["schemas"]["PersonalEvidenceRecordView"];
+            contentSha256: string;
+            /** @description 确定性汇编的历史事实纯文本；必须转义展示，不是模型诊断 */
+            markdown: string;
+        };
+        AssistantEvidenceProperty: {
+            key: string;
+            value: number | string | boolean | Record<string, never> | unknown[] | null;
+            /** Format: date-time */
+            occurredAt: string | null;
+            reportedRevision: string | null;
+            /** Format: uuid */
+            sourceModelVersionId: string | null;
+            /** Format: date-time */
+            readAt: string;
+            /** @enum {string} */
+            availability: "PRESENT" | "MISSING" | "SOURCE_UNKNOWN" | "MODEL_MISMATCH";
+        };
+        DeviceEvidenceSnapshot: {
+            /** Format: int32 */
+            schemaVersion: number;
+            /** Format: uuid */
+            projectId: string;
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            modelVersionId: string;
+            /** Format: date-time */
+            collectionStartedAt: string;
+            /** Format: date-time */
+            collectionFinishedAt: string;
+            device: components["schemas"]["AssistantEvidenceDevice"];
+            properties: components["schemas"]["AssistantEvidenceProperty"][];
+            alarmSummary: components["schemas"]["AssistantEvidenceAlarmSummary"];
+        };
+        AssistantHistoryEvidence: {
+            /** Format: uuid */
+            projectId: string;
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            modelVersionId: string;
+            propertyKey: string;
+            /** Format: date-time */
+            requestedFrom: string;
+            /** Format: date-time */
+            requestedTo: string;
+            /** Format: date-time */
+            effectiveFrom: string;
+            /** Format: date-time */
+            effectiveTo: string;
+            retentionClipped: boolean;
+            requestedGranularity: string;
+            actualGranularity: string;
+            aggregation: string;
+            /** Format: date-time */
+            readAt: string;
+            /** @enum {string} */
+            state: "HAS_POINTS" | "NO_POINTS" | "OUTSIDE_RETENTION";
+            points: components["schemas"]["AssistantHistoryPoint"][];
+        };
+        AssistantHistoryPoint: {
+            /** Format: date-time */
+            at: string;
+            /** Format: double */
+            value: number | null;
+            sampleCount: string;
+            /** Format: uuid */
+            sourceModelVersionId: string | null;
+            /** @enum {string} */
+            source: "CURRENT_MODEL" | "HISTORICAL_MODEL" | "SOURCE_UNKNOWN";
+        };
+        /** @description 封闭枚举和时间事实；自由文本告警类型不返回 */
+        AssistantAlarmEvidenceItem: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            severity?: "CRITICAL" | "MAJOR" | "MINOR" | "WARNING" | "INFO";
+            /** @enum {string} */
+            conditionState?: "PENDING" | "ACTIVE" | "CLEARED";
+            /** @enum {string} */
+            ackState?: "UNACKNOWLEDGED" | "ACKNOWLEDGED";
+            /** Format: date-time */
+            firstConditionAt?: string;
+            /** Format: date-time */
+            activatedAt?: string | null;
+            /** Format: date-time */
+            clearedAt?: string | null;
+            /** Format: date-time */
+            acknowledgedAt?: string | null;
+            /** Format: date-time */
+            lastReceivedAt?: string;
+            /** Format: int32 */
+            version?: number;
+        };
+        /** @description 受权事故事实页；不含时间窗承诺、自由文本或模型分析 */
+        AssistantAlarmEvidence: {
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            deviceId?: string;
+            /** Format: uuid */
+            currentModelVersionId?: string;
+            /** Format: date-time */
+            collectedAt?: string;
+            /** @enum {string} */
+            sourceModelState?: "NOT_PROVIDED";
+            items?: components["schemas"]["AssistantAlarmEvidenceItem"][];
+            /** @description 不透明的下一页游标；末页为null */
+            nextCursor?: string | null;
+            hasMore?: boolean;
+            /** Format: int32 */
+            limit?: number;
+        };
+        AssistantAnalysisAvailability: {
+            businessAvailable: boolean;
+            /** @enum {string} */
+            reason: "INTERNAL_TRANSPORT_DISABLED" | "MODEL_ADMISSION_PENDING" | "PROJECT_MODEL_CONFIGURATION_DISABLED" | "REVIEWED_CONFIGURATION_AVAILABLE";
+        };
         CursorPageApplicationCatalogResponse: {
             items?: components["schemas"]["ApplicationCatalogResponse"][];
             /** @description 不透明的下一页游标；末页为null */
@@ -10752,6 +12598,142 @@ export interface components {
             aggregation?: string;
             points?: components["schemas"]["OpenPropertyHistoryPoint"][];
         };
+        DeviceHttpError: {
+            /** @description 稳定的设备协议错误码 */
+            errorCode: string;
+            /** @description 不回显载荷或凭据的错误说明 */
+            message: string;
+        };
+        DeviceHttpPropertyReport: {
+            /**
+             * Format: uuid
+             * @description 设备生成的 UUIDv7；重试须保持相同标识和载荷
+             */
+            messageId: string;
+            /**
+             * Format: date-time
+             * @description 设备采集时刻，RFC3339 UTC；仍受原未来时间边界校验
+             */
+            occurredAt: string;
+            /** @description 物模型语义版本；省略或空值仅沿原标量兼容窗口推断 */
+            modelVersion?: string | null;
+            /** @description 非空属性键值对象，内容继续按绑定物模型校验 */
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        DeviceHttpClaimRequest: {
+            /**
+             * Format: int32
+             * @description 可选正整数条数；空值采用默认，仍沿原领取用例限制
+             */
+            limit?: number | null;
+            /**
+             * Format: int64
+             * @description 可选正整数租约秒数；空值采用默认，仍沿原租约限制
+             */
+            leaseSeconds?: number | null;
+        };
+        DeviceHttpReplyRequest: {
+            /**
+             * Format: uuid
+             * @description 该设备收到的命令标识
+             */
+            commandId: string;
+            /**
+             * Format: uuid
+             * @description 回复消息标识；重放保持原结果
+             */
+            messageId: string;
+            /**
+             * Format: date-time
+             * @description 设备业务结果发生时间
+             */
+            occurredAt: string;
+            /**
+             * @description 原命令回复状态枚举；ACK 是中间态，SUCCESS/FAILED 是执行结果
+             * @enum {string}
+             */
+            status: "ACK" | "SUCCESS" | "FAILED";
+            /** @description 可选业务输出对象，允许为空 */
+            output?: {
+                [key: string]: unknown;
+            } | null;
+            /** @description 可选失败码，允许为空 */
+            errorCode?: string | null;
+            /** @description 可选失败说明，允许为空 */
+            message?: string | null;
+        };
+        DeviceHttpAcceptance: {
+            /**
+             * Format: uuid
+             * @description 原消息标识
+             */
+            messageId: string;
+            /**
+             * Format: date-time
+             * @description 首次受理时刻
+             */
+            receivedAt: string;
+            /**
+             * @description 持久受理标记，不代表后续业务完成
+             * @enum {string}
+             */
+            status: "ACCEPTED";
+        };
+        DeviceHttpReplyAcceptance: {
+            /**
+             * Format: uuid
+             * @description 原回复标识
+             */
+            messageId: string;
+            /**
+             * Format: date-time
+             * @description 回复受理时刻
+             */
+            receivedAt: string;
+            /**
+             * @description 回复持久受理标记
+             * @enum {string}
+             */
+            status: "ACCEPTED";
+            /**
+             * Format: uuid
+             * @description 所回复的命令标识
+             */
+            commandId: string;
+        };
+        DeviceHttpClaimResponse: {
+            /** @description 本次领取到的命令 */
+            commands: {
+                /**
+                 * Format: uuid
+                 * @description 执行去重必须使用此命令标识
+                 */
+                commandId: string;
+                /** @description 物模型命令键 */
+                commandKey: string;
+                /** @description 原命令输入对象 */
+                input: {
+                    [key: string]: unknown;
+                };
+                /**
+                 * Format: int32
+                 * @description 仅为诊断序号，不是业务幂等键
+                 */
+                attempt: number;
+                /**
+                 * Format: date-time
+                 * @description 命令租约到期时刻，允许为空
+                 */
+                leaseExpiresAt: string | null;
+            }[];
+            /**
+             * Format: int64
+             * @description 本次租约对应的轮询等待毫秒数
+             */
+            pollAfterMillis: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -10766,14 +12748,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description Webhook 订阅标识 */
                 subscriptionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -10869,21 +12853,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description Webhook 订阅标识 */
                 subscriptionId: string;
             };
             cookie?: never;
         };
+        /** @description 更新Webhook冻结修订，换目标时首次展示新秘密的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookUpdate"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -10983,18 +12971,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
+        /** @description 更新批量任务的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveTaskJobRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11008,6 +12999,7 @@ export interface operations {
     delete: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -11015,14 +13007,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -11036,14 +13030,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11062,18 +13058,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
             };
             cookie?: never;
         };
+        /** @description 修改手动场景的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReviseSceneRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11087,6 +13086,7 @@ export interface operations {
     delete_1: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -11094,14 +13094,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -11115,12 +13117,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
+                /** @description 上传会话标识 */
                 sessionId: string;
             };
             cookie?: never;
         };
+        /** @description 有界流式接收固件内容的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/octet-stream": string;
@@ -11143,14 +13149,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11169,18 +13177,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
+        /** @description 修订消息规则的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MessageRuleWriteRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11194,6 +13205,7 @@ export interface operations {
     deleteMessageRule: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -11201,14 +13213,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -11222,8 +13236,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前项目ID */
                 projectId: string;
+                /** @description 目标终端用户ID */
                 appUserId: string;
+                /** @description 稳定看板ID */
                 dashboardId: string;
             };
             cookie?: never;
@@ -11285,12 +13302,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前ACTIVE项目ID */
                 projectId: string;
+                /** @description 目标终端用户ID */
                 appUserId: string;
+                /** @description 稳定看板ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
+        /** @description 更新终端用户看板授权的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateAppUserDashboardGrantRequest"];
@@ -11358,14 +13379,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11384,18 +13407,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 修改设备的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateDeviceRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11414,14 +13440,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11435,14 +13463,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备标识 */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11461,18 +13491,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备标识 */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 更新设备当前坐标的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateDeviceLocationPointRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11488,14 +13521,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11514,18 +13549,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
+        /** @description 设置设备标签的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PutDeviceTagRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11542,18 +13580,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
         };
+        /** @description 更新期望状态的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateDesiredRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11572,19 +13613,23 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
+                /** @description Modbus 点位映射标识 */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 修改草稿点位的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveModbusPointMappingRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11603,15 +13648,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
+                /** @description Modbus 点位映射标识 */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11625,14 +13673,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 */
                 projectId: string;
+                /** @description 设备 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11651,18 +13701,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 */
                 projectId: string;
+                /** @description 设备 */
                 deviceId: string;
             };
             cookie?: never;
         };
+        /** @description 修改设备接入配置的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ChangeDeviceAccessConfigurationRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11681,18 +13734,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 修改设备类型的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateDeviceTypeRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11711,14 +13767,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11735,19 +13793,23 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
+                /** @description 属性 ID */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 修改属性的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDevicePropertyDefinitionRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11766,15 +13828,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
+                /** @description 属性 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11791,19 +13856,23 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
+                /** @description 事件 ID */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 修改事件的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDeviceEventDefinitionRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11822,15 +13891,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
+                /** @description 事件 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11847,19 +13919,23 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备类型标识 */
                 deviceTypeId: string;
+                /** @description 命令定义标识 */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 修改命令的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDeviceCommandDefinitionRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11878,15 +13954,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备类型标识 */
                 deviceTypeId: string;
+                /** @description 命令定义标识 */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11903,18 +13982,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
+        /** @description 修改设备组的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDeviceGroupRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11933,14 +14015,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11954,14 +14038,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11980,18 +14066,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
+        /** @description 替换静态组成员的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReplaceDeviceGroupMembersRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12005,14 +14094,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12031,18 +14122,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
+        /** @description 保存看板草稿的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDashboardDraftRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12058,14 +14152,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 自动化标识 */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12084,18 +14180,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 自动化标识 */
                 id: string;
             };
             cookie?: never;
         };
+        /** @description 追加自动化版本的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReviseAutomationRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12109,6 +14208,7 @@ export interface operations {
     deleteManagedAutomation: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -12116,14 +14216,235 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 自动化标识 */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getAssistantModelConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 接口指定的项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ModelConfigurationView"];
+                };
+            };
+        };
+    };
+    replaceAssistantModelConfiguration: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 接口指定的项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        /** @description 管理员保存并启用项目模型凭据的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelCredentialInput"];
+            };
+        };
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ModelConfigurationView"];
+                };
+            };
+            /** @description 50061：服务器模型凭据保护不可用，整笔回滚；不得自动重发秘密 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    removeAssistantModelConfiguration: {
+        parameters: {
+            query: {
+                /** @description 调用方期望的配置修订版本 */
+                expectedRevision: string;
+            };
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 接口指定的项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ModelConfigurationView"];
+                };
+            };
+        };
+    };
+    enableAssistantModelConfiguration: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 接口指定的项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        /** @description 管理员启用或停用项目模型凭据的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnableRequest"];
+            };
+        };
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ModelConfigurationView"];
+                };
+            };
+            /** @description 50061：启用时服务器模型凭据保护不可用；停用不依赖解密 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAssistantKnowledgeSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前选定项目 */
+                projectId: string;
+                /** @description 受控来源标识 */
+                sourceKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssistantKnowledgeDetail"];
+                };
+            };
+        };
+    };
+    publishAssistantKnowledgeSource: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 当前选定项目 */
+                projectId: string;
+                /** @description 受控来源标识 */
+                sourceKey: string;
+            };
+            cookie?: never;
+        };
+        /** @description 封闭有界JSON，只接受Schema明列字段，不接受身份、查询表达式或外部凭据 */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishAssistantKnowledgeRequest"];
+            };
+        };
+        responses: {
+            /** @description 已发布新版本，不自动重试或重放正文 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssistantKnowledgeSource"];
+                };
+            };
+        };
+    };
+    deleteAssistantKnowledgeSource: {
+        parameters: {
+            query: {
+                /** @description 精确当前版本UUID */
+                expectedCurrentVersionId: string;
+            };
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 当前选定项目 */
+                projectId: string;
+                /** @description 受控来源标识 */
+                sourceKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 已删除来源全部版本，不返回正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -12137,14 +14458,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12163,18 +14486,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
+        /** @description 保存应用草稿的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveApplicationDraftRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12190,14 +14516,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12216,18 +14544,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
+        /** @description 修改告警规则的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmRuleRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12241,6 +14572,7 @@ export interface operations {
     delete_9: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 version: number;
             };
             header?: {
@@ -12248,14 +14580,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -12272,18 +14606,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知模板标识 */
                 templateId: string;
             };
             cookie?: never;
         };
+        /** @description 修改模板的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationTemplateRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12297,6 +14634,7 @@ export interface operations {
     deleteTemplate: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 version: number;
             };
             header?: {
@@ -12304,14 +14642,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知模板标识 */
                 templateId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -12328,18 +14668,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知接收者标识 */
                 recipientId: string;
             };
             cookie?: never;
         };
+        /** @description 修改收件人的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationRecipientRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12353,6 +14696,7 @@ export interface operations {
     deleteRecipient: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 version: number;
             };
             header?: {
@@ -12360,14 +14704,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知接收者标识 */
                 recipientId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -12384,18 +14730,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
+        /** @description 修改通知组的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationGroupRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12409,6 +14758,7 @@ export interface operations {
     deleteGroup: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 version: number;
             };
             header?: {
@@ -12416,14 +14766,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -12440,18 +14792,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知绑定标识 */
                 bindingId: string;
             };
             cookie?: never;
         };
+        /** @description 修改规则路由的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationBindingRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -12465,6 +14820,7 @@ export interface operations {
     deleteBinding: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 version: number;
             };
             header?: {
@@ -12472,14 +14828,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知绑定标识 */
                 bindingId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 请求成功，无响应正文 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -12495,6 +14853,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 注册或轮换 PUSH 安装实例的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RegisterAppPushTokenRequest"];
@@ -12528,15 +14887,422 @@ export interface operations {
             };
         };
     };
+    stopDeviceSimulation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SimulationStats"];
+                };
+            };
+        };
+    };
+    startDeviceSimulation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 建立设备连接并开始周期上报的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationRequest"];
+            };
+        };
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SimulationStats"];
+                };
+            };
+        };
+    };
+    reconnectDeviceSimulation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SimulationStats"];
+                };
+            };
+        };
+    };
+    publishDeviceSimulationProperties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    publishDeviceSimulationCommandReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 已由平台受理的 UUIDv7 命令 */
+                commandId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    reportDeviceAccessProperties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 冻结设备 JSON 载荷；请求体不得为空 */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceHttpPropertyReport"];
+            };
+        };
+        responses: {
+            /** @description 持久受理或同键同载荷重放；不保证遥测投影已经完成 */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpAcceptance"];
+                };
+            };
+            /** @description 载荷格式或字段无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 设备凭据缺失或无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 设备未开通该协议或项目当前不接受设备写入 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 同一业务消息标识与首次载荷冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 请求正文超过允许体积 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 上报或回复的媒体类型不是 application/json */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 认证或业务预算超限 */
+            429: {
+                headers: {
+                    /** @description 预算恢复前等待的秒数 */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 可靠接管或依赖暂不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+        };
+    };
+    replyDeviceAccessCommand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 冻结设备 JSON 载荷；请求体不得为空 */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceHttpReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description 回复已受理；命令业务终态沿命令事实查询 */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpReplyAcceptance"];
+                };
+            };
+            /** @description 载荷格式或字段无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 设备凭据缺失或无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 设备未开通该协议或项目当前不接受设备写入 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 命令不存在或不属于当前设备 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 同一业务消息标识与首次载荷冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 请求正文超过允许体积 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 上报或回复的媒体类型不是 application/json */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 认证或业务预算超限 */
+            429: {
+                headers: {
+                    /** @description 预算恢复前等待的秒数 */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 可靠接管或依赖暂不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+        };
+    };
+    claimDeviceAccessCommands: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 可选领取参数；空体采用原默认条数和租约 */
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeviceHttpClaimRequest"];
+            };
+        };
+        responses: {
+            /** @description 领取到命令及轮询间隔；设备必须按 commandId 去重，attempt 仅为诊断序号 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpClaimResponse"];
+                };
+            };
+            /** @description 无可领取命令，无响应正文；按 Retry-After 秒数重试 */
+            204: {
+                headers: {
+                    /** @description 再次轮询前等待的秒数 */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 载荷格式或字段无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 设备凭据缺失或无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 设备未开通该协议或项目当前不接受设备写入 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 请求正文超过允许体积 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 认证或业务预算超限 */
+            429: {
+                headers: {
+                    /** @description 预算恢复前等待的秒数 */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+            /** @description 可靠接管或依赖暂不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceHttpError"];
+                };
+            };
+        };
+    };
     queryDashboardShareDeviceSnapshots: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                /** @description 只读分享标识 */
                 shareId: string;
             };
             cookie?: never;
         };
+        /** @description 查询匿名分享设备描述快照的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DashboardShareDeviceSnapshotQueryRequest"];
@@ -12611,10 +15377,12 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 只读分享标识 */
                 shareId: string;
             };
             cookie?: never;
         };
+        /** @description 查询匿名分享设备当前值的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DashboardShareCurrentValueQueryRequest"];
@@ -12689,10 +15457,12 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 只读分享标识 */
                 shareId: string;
             };
             cookie?: never;
         };
+        /** @description 分页读取匿名分享告警实例的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DashboardShareAlarmQueryRequest"];
@@ -12801,6 +15571,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 创建项目的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateProjectRequest"];
@@ -12857,18 +15628,21 @@ export interface operations {
     listProjectWebhooks: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -12964,20 +15738,23 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建Webhook并首次展示签名秘密的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookCreate"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -13073,21 +15850,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description Webhook 订阅标识 */
                 subscriptionId: string;
             };
             cookie?: never;
         };
+        /** @description 轮换Webhook签名秘密，仅首次展示的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookChange"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -13183,21 +15964,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description Webhook 订阅标识 */
                 subscriptionId: string;
             };
             cookie?: never;
         };
+        /** @description 永久撤销Webhook的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookChange"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -13293,21 +16078,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description Webhook 订阅标识 */
                 subscriptionId: string;
             };
             cookie?: never;
         };
+        /** @description 恢复Webhook，仅接收之后新事件的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookChange"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -13403,21 +16192,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description Webhook 订阅标识 */
                 subscriptionId: string;
             };
             cookie?: never;
         };
+        /** @description 暂停Webhook，禁止旧修订发送的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookChange"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -13513,21 +16306,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 投递记录标识 */
                 deliveryId: string;
             };
             cookie?: never;
         };
+        /** @description 按原身份恢复当前修订死信，保留次数与原文的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebhookRecover"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -13624,13 +16421,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13649,17 +16447,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建批量任务的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveTaskJobRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -13678,14 +16478,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Accepted */
+            /** @description 请求已受理；后续处理终态需沿对应业务合同确认 */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -13704,14 +16506,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13730,14 +16534,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13751,20 +16557,25 @@ export interface operations {
     listManagedScenes: {
         parameters: {
             query?: {
+                /** @description 名称筛选条件 */
                 name?: string;
+                /** @description 状态筛选条件 */
                 status?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13783,17 +16594,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建手动场景的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateSceneRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -13807,6 +16620,7 @@ export interface operations {
     activate: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -13814,15 +16628,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13836,6 +16653,7 @@ export interface operations {
     pauseManagedScene: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -13843,14 +16661,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13865,21 +16685,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
             };
             cookie?: never;
         };
+        /** @description 一键执行手动场景的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ExecuteSceneRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13898,6 +16722,7 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 待恢复项目ID */
                 projectId: string;
             };
             cookie?: never;
@@ -13946,13 +16771,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description Console当前项目短期实时票据的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PublicRealtimeTicketRequest"];
@@ -14064,21 +16892,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级信任域标识 */
                 trustDomain: string;
             };
             cookie?: never;
         };
+        /** @description 导入离线根签名OTA信任包的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaTrustImportRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14092,18 +16924,21 @@ export interface operations {
     listOtaFirmwares: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14118,13 +16953,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建OTA固件草稿的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaFirmwareCreateRequest"];
@@ -14145,19 +16983,23 @@ export interface operations {
     listOtaUploads: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14172,14 +17014,18 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
+        /** @description 创建或恢复固件上传会话的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaUploadCreateRequest"];
@@ -14201,22 +17047,27 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
+                /** @description 上传会话标识 */
                 sessionId: string;
             };
             cookie?: never;
         };
+        /** @description 登记固件上传取消的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaUploadCancelRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14231,21 +17082,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
+        /** @description 撤销OTA固件的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaFirmwareLifecycleChange"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14260,17 +17115,20 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14284,19 +17142,23 @@ export interface operations {
     listOtaPublications: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14311,14 +17173,18 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
+        /** @description 建立OTA固件发布尝试的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaPublicationCreateRequest"];
@@ -14340,21 +17206,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
+        /** @description 退役OTA固件的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaFirmwareLifecycleChange"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14369,21 +17239,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
+        /** @description 取消OTA固件草稿的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaFirmwareCancelRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14398,21 +17272,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备类型标识 */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
+        /** @description 登记受控OTA类型基线的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaTypeBaselineRegistration"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14426,18 +17304,21 @@ export interface operations {
     listOtaCampaigns: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14452,13 +17333,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建DIRECT OTA活动草稿的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaCampaignPlanBody"];
@@ -14480,21 +17364,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
+        /** @description 启动OTA活动的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaCampaignStartingRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14509,21 +17397,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
+        /** @description 原子冻结OTA目标与批次的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaCampaignSchedulingRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14538,21 +17430,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
+        /** @description 恢复OTA活动的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaCampaignChangeRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14567,21 +17463,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
+        /** @description 暂停OTA活动的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaCampaignChangeRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14596,21 +17496,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
+        /** @description 请求取消OTA活动并保留已派发安全责任的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaCampaignCancellationRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14625,21 +17529,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
+        /** @description 人工放行OTA下一批的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OtaCampaignAdvancementRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14653,20 +17561,25 @@ export interface operations {
     listMessageRules: {
         parameters: {
             query?: {
+                /** @description 名称筛选条件 */
                 name?: string;
+                /** @description 状态筛选条件 */
                 status?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14685,17 +17598,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建消息规则的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MessageRuleWriteRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -14714,19 +17629,23 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
+        /** @description 调试消息规则版本的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MessageRuleDebugRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14740,6 +17659,7 @@ export interface operations {
     activateMessageRuleVersion: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -14747,15 +17667,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14769,6 +17692,7 @@ export interface operations {
     pauseMessageRule: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -14776,14 +17700,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14848,6 +17774,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 邀请成员的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["InviteMemberRequest"];
@@ -14966,18 +17893,21 @@ export interface operations {
     listProjectInvitations: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -14996,17 +17926,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建待接受项目邀请的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["InviteMemberRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15025,14 +17957,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 项目邀请标识 */
                 invitationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15051,13 +17985,14 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 删除项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15076,14 +18011,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 导出任务 ID */
                 exportId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15153,6 +18090,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 预置终端用户的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ProvisionEndUserRequest"];
@@ -15292,6 +18230,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 分配角色的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EndUserRoleRequest"];
@@ -15367,6 +18306,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 修改角色的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EndUserRoleRequest"];
@@ -15484,6 +18424,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 签发设备认领令牌的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["IssueDeviceClaimTokenRequest"];
@@ -15551,13 +18492,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15576,17 +18518,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建设备的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateDeviceRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15602,14 +18546,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15628,18 +18574,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
+        /** @description 创建草稿点位的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveModbusPointMappingRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15658,14 +18607,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15679,14 +18630,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15705,14 +18658,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15726,19 +18681,23 @@ export interface operations {
     listConsoleDeviceCommandHistory: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15753,21 +18712,25 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
+        /** @description 下发设备命令的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SubmitDeviceCommandRequest"];
             };
         };
         responses: {
-            /** @description Accepted */
+            /** @description 请求已受理；后续处理终态需沿对应业务合同确认 */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -15783,10 +18746,12 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Console已选择项目 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 查询设备与精确模型描述快照的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DeviceSnapshotQueryRequest"];
@@ -15860,17 +18825,19 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 批量读取当前值的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["BatchCurrentValuesRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15886,10 +18853,12 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Console已选择项目 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 查询权威PG当前值快照的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DeviceCurrentValueSnapshotQueryRequest"];
@@ -15963,13 +18932,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -15988,17 +18958,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建设备类型的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateDeviceTypeRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16017,14 +18989,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16043,14 +19017,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16066,14 +19042,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16092,18 +19070,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
+        /** @description 创建属性的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDevicePropertyDefinitionRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16119,14 +19100,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16145,18 +19128,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
+        /** @description 创建事件的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDeviceEventDefinitionRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16172,14 +19158,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备类型标识 */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16198,18 +19186,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备类型标识 */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
+        /** @description 创建命令的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDeviceCommandDefinitionRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16223,17 +19214,19 @@ export interface operations {
     list_10: {
         parameters: {
             query?: {
+                /** @description 可选网关 ID，省略时返回项目内全部有效绑定 */
                 gatewayId?: string;
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16252,17 +19245,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 绑定子设备的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["BindTopologyRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16278,13 +19273,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16303,17 +19299,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建设备组的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveDeviceGroupRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16327,18 +19325,21 @@ export interface operations {
     listDashboards: {
         parameters: {
             query?: {
+                /** @description 上一页返回的不透明游标；首页为空 */
                 cursor?: string;
+                /** @description 单页数量，默认50，允许1至200 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16353,13 +19354,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 客户端生成且在当前项目创建范围内唯一的幂等键 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建看板的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateDashboardRequest"];
@@ -16387,11 +19391,14 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
+        /** @description 撤回看板当前发布的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DashboardPublicationRevisionRequest"];
@@ -16410,19 +19417,23 @@ export interface operations {
     listDashboardVersions: {
         parameters: {
             query?: {
+                /** @description 上一页返回的不透明版本号游标；首页为空 */
                 cursor?: string;
+                /** @description 单页数量，默认50，允许1至200 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16441,11 +19452,14 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
+        /** @description 发布看板新版本的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PublishDashboardVersionRequest"];
@@ -16473,12 +19487,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
+                /** @description 目标历史版本ID */
                 versionId: string;
             };
             cookie?: never;
         };
+        /** @description 回滚看板历史版本的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DashboardPublicationRevisionRequest"];
@@ -16504,11 +19522,14 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
+        /** @description 软删除看板的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DashboardPublicationRevisionRequest"];
@@ -16527,19 +19548,23 @@ export interface operations {
     listDashboardShares: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 看板标识 */
                 dashboardId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16554,14 +19579,18 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 看板标识 */
                 dashboardId: string;
             };
             cookie?: never;
         };
+        /** @description 签发看板只读分享的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateDashboardShareRequest"];
@@ -16587,8 +19616,11 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 看板标识 */
                 dashboardId: string;
+                /** @description 只读分享标识 */
                 shareId: string;
             };
             cookie?: never;
@@ -16607,20 +19639,25 @@ export interface operations {
     listManagedAutomations: {
         parameters: {
             query?: {
+                /** @description 名称筛选条件 */
                 name?: string;
+                /** @description 状态筛选条件 */
                 status?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16639,17 +19676,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建自动化的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateAutomationRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -16663,6 +19702,7 @@ export interface operations {
     activateManagedAutomationVersion: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -16670,15 +19710,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 自动化标识 */
                 id: string;
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16692,6 +19735,7 @@ export interface operations {
     pauseManagedAutomation: {
         parameters: {
             query: {
+                /** @description 调用方期望的资源版本，用于并发更新校验 */
                 expectedVersion: number;
             };
             header?: {
@@ -16699,14 +19743,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 自动化标识 */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16717,21 +19763,235 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    runAssistantSyntheticModelProbe: {
         parameters: {
-            query?: {
-                cursor?: string;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
+                projectId: string;
+                /** @description 固定合成样本序号文本，仅允许 1 至 3 */
+                sampleIndex: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssistantProbeRunView"];
+                };
+            };
+        };
+    };
+    searchAssistantProjectKnowledge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前选定项目 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        /** @description 封闭有界JSON，只接受Schema明列字段，不接受身份、查询表达式或外部凭据 */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAssistantKnowledgeRequest"];
+            };
+        };
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssistantKnowledgeSearchResult"];
+                };
+            };
+        };
+    };
+    generatePersonalFactCollection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前受权项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        /** @description 手动生成本人历史设备集合事实报告的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonalFactCollectionInput"];
+            };
+        };
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonalFactCollectionReport"];
+                };
+            };
+        };
+    };
+    listPersonalEvidenceRecords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonalEvidenceRecordView"][];
+                };
+            };
+        };
+    };
+    createPersonalEvidenceRecord: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        /** @description 手动保存个人设备事实记录的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonalEvidenceRecordRequest"];
+            };
+        };
+        responses: {
+            /** @description 本人历史事实记录已保存 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonalEvidenceRecordView"];
+                };
+            };
+        };
+    };
+    runAssistantAnalysis: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 规范小写UUIDv7调用键；不是项目模型密钥，过期不能复用 */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        /** @description 提交单设备固定分析调用的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantAnalysisRequest"];
+            };
+        };
+        responses: {
+            /** @description 封闭输入或幂等键无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Console身份失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前角色无付费分析权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目、设备或本人调用不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 请求身份、设备模型或配置变化 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 共享并发或请求限额已满 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    list_12: {
+        parameters: {
+            query?: {
+                /** @description 上一页返回的不透明游标；首页为空 */
+                cursor?: string;
+                /** @description 单页数量，默认50，允许1至200 */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description 当前选定的项目ID */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16746,13 +20006,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 客户端生成且在当前项目创建范围内唯一的幂等键 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建应用的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateApplicationRequest"];
@@ -16780,11 +20043,14 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
+        /** @description 撤回应用当前发布的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ApplicationPublicationRevisionRequest"];
@@ -16803,19 +20069,23 @@ export interface operations {
     listApplicationVersions: {
         parameters: {
             query?: {
+                /** @description 上一页返回的不透明版本号游标；首页为空 */
                 cursor?: string;
+                /** @description 单页数量，默认50，允许1至200 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16834,11 +20104,14 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
+        /** @description 发布应用新版本的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PublishApplicationVersionRequest"];
@@ -16866,12 +20139,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
+                /** @description 目标历史版本ID */
                 versionId: string;
             };
             cookie?: never;
         };
+        /** @description 回滚应用历史版本的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ApplicationPublicationRevisionRequest"];
@@ -16897,11 +20174,14 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
+        /** @description 软删应用的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ApplicationPublicationRevisionRequest"];
@@ -16920,18 +20200,21 @@ export interface operations {
     listProjectApiKeys: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16950,17 +20233,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 签发项目API Key，仅首次返回秘密的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateKey"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -16979,18 +20264,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description API 密钥记录标识，不是密钥明文 */
                 keyId: string;
             };
             cookie?: never;
         };
+        /** @description 原子轮换并立即撤销旧Key的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateKey"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17009,18 +20297,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description API 密钥记录标识，不是密钥明文 */
                 keyId: string;
             };
             cookie?: never;
         };
+        /** @description 撤销项目API Key的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RevokeKey"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17039,18 +20330,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 告警实例标识 */
                 instanceId: string;
             };
             cookie?: never;
         };
+        /** @description 人工清除告警实例的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AlarmStateMutationRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17069,18 +20363,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 告警实例标识 */
                 instanceId: string;
             };
             cookie?: never;
         };
+        /** @description 确认告警实例的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AlarmStateMutationRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17096,10 +20393,12 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Console路径项目 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 按设备和状态读取告警实例的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AlarmDeviceQueryRequest"];
@@ -17171,18 +20470,21 @@ export interface operations {
     page: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17201,17 +20503,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建告警规则的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmRuleRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -17227,14 +20531,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17253,18 +20559,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
+        /** @description 创建规则路由的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationBindingRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -17283,17 +20592,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前项目 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 原子标记明确的站内告警事件已读的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AlarmInboxReadRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17307,18 +20618,21 @@ export interface operations {
     templates: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17337,17 +20651,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建模板的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationTemplateRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -17361,18 +20677,21 @@ export interface operations {
     groups: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17391,17 +20710,19 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 创建通知组的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationGroupRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -17417,14 +20738,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17443,18 +20766,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 通知组标识 */
                 groupId: string;
             };
             cookie?: never;
         };
+        /** @description 创建收件人的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SaveAlarmNotificationRecipientRequest"];
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 资源创建成功；返回结构见响应 Schema */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -17470,10 +20796,12 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目邀请标识 */
                 invitationId: string;
             };
             cookie?: never;
         };
+        /** @description 目标账号明确接受邀请的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AcceptProjectInvitationRequest"];
@@ -17494,10 +20822,12 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 目标租户标识 */
                 tenantId: string;
             };
             cookie?: never;
         };
+        /** @description 提交有限期人工调整的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateCommercialAdjustmentRequest"];
@@ -17574,11 +20904,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 目标租户标识 */
                 tenantId: string;
+                /** @description 商业调整记录标识 */
                 adjustmentId: string;
             };
             cookie?: never;
         };
+        /** @description 撤销人工调整的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RevokeRequest"];
@@ -17653,8 +20986,11 @@ export interface operations {
     pending: {
         parameters: {
             query?: {
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: string;
+                /** @description 向前翻页的接收时间边界 */
                 beforeReceivedAt?: string;
+                /** @description 向前翻页的申请标识边界 */
                 beforeRequestId?: string;
             };
             header?: never;
@@ -17663,7 +20999,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17678,6 +21014,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 受控登记来源标识 */
                 "X-Enrollment-Source": string;
             };
             path?: never;
@@ -17746,13 +21083,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 自部署登记申请标识 */
                 requestId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17768,17 +21106,19 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 自部署登记申请标识 */
                 requestId: string;
             };
             cookie?: never;
         };
+        /** @description 追加申请核验事实的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReviewInput"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17796,13 +21136,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 一型一密动态注册的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DeviceRegistrationRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17820,13 +21161,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 接收 MQTT 上行消息的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EmqxMessagePublishedRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17844,6 +21186,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 设备下线的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": {
@@ -17852,7 +21195,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17872,6 +21215,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 设备上线的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": {
@@ -17880,7 +21224,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17893,6 +21237,31 @@ export interface operations {
             };
         };
     };
+    ingestEmqxCommandReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 接收专用 EMQX 规则转发的命令回复的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmqxMessagePublishedRequest"];
+            };
+        };
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmqxMessagePublishedResponse"];
+                };
+            };
+        };
+    };
     auth: {
         parameters: {
             query?: never;
@@ -17900,6 +21269,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description MQTT 客户端认证的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": {
@@ -17908,7 +21278,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17928,6 +21298,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description MQTT Topic 授权的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": {
@@ -17936,7 +21307,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -17956,6 +21327,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 切换当前项目的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SwitchProjectRequest"];
@@ -17998,6 +21370,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 注册的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RegisterRequest"];
@@ -18076,6 +21449,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 按邀请绑定邮箱注册，仍需邮箱验证的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ProjectInvitationRegistrationRequest"];
@@ -18098,13 +21472,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 以有效邀请码预览邀请，不消费的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ProjectInvitationProofRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -18122,6 +21497,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 重置密码的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResetPasswordRequest"];
@@ -18153,6 +21529,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 找回密码的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ForgotPasswordRequest"];
@@ -18211,6 +21588,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 登录的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginRequest"];
@@ -18262,6 +21640,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 验证邮箱的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VerifyEmailRequest"];
@@ -18295,6 +21674,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 重发验证邮件的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResendVerificationRequest"];
@@ -18332,11 +21712,13 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path?: never;
             cookie?: never;
         };
+        /** @description App当前绑定设备的短期实时票据的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PublicRealtimeTicketRequest"];
@@ -18501,6 +21883,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 签发设备共享令牌的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["IssueDeviceShareTokenRequest"];
@@ -18558,6 +21941,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 下发命令的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AppSubmitCommandRequest"];
@@ -18615,14 +21999,19 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 接口header参数「X-Application-Key」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Key": string;
+                /** @description 接口header参数「X-Application-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Version": string;
+                /** @description 接口header参数「X-Application-Revision」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Revision": string;
+                /** @description 接口header参数「X-Dashboard-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Dashboard-Version": string;
             };
             path?: never;
             cookie?: never;
         };
+        /** @description 查询WebApp设备描述快照的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebAppDeviceSnapshotQueryRequest"];
@@ -18695,14 +22084,19 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 接口header参数「X-Application-Key」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Key": string;
+                /** @description 接口header参数「X-Application-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Version": string;
+                /** @description 接口header参数「X-Application-Revision」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Revision": string;
+                /** @description 接口header参数「X-Dashboard-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Dashboard-Version": string;
             };
             path?: never;
             cookie?: never;
         };
+        /** @description 查询WebApp设备当前值的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebAppCurrentValueQueryRequest"];
@@ -18778,6 +22172,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 接收设备主控的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConsumeDeviceTransferRequest"];
@@ -18838,6 +22233,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 接收设备共享的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConsumeDeviceShareRequest"];
@@ -18898,6 +22294,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 认领设备的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConsumeDeviceClaimRequest"];
@@ -18958,6 +22355,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 按浏览器代次轮换会话的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AppBrowserEpochRequest"];
@@ -19036,6 +22434,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 退出匹配浏览器代次的会话的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AppBrowserEpochRequest"];
@@ -19112,6 +22511,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 浏览器登录并替换旧会话的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AppBrowserLoginRequest"];
@@ -19190,6 +22590,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 刷新令牌的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["AppRefreshRequest"];
@@ -19223,6 +22624,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 修改密码的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AppChangePasswordRequest"];
@@ -19263,6 +22665,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 退出登录的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["AppRefreshRequest"];
@@ -19285,6 +22688,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description 登录的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AppLoginRequest"];
@@ -19324,14 +22728,19 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 接口header参数「X-Application-Key」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Key": string;
+                /** @description 接口header参数「X-Application-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Version": string;
+                /** @description 接口header参数「X-Application-Revision」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Revision": string;
+                /** @description 接口header参数「X-Dashboard-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Dashboard-Version": string;
             };
             path?: never;
             cookie?: never;
         };
+        /** @description 分页查询WebApp告警实例的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WebAppAlarmQueryRequest"];
@@ -19404,11 +22813,13 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 业务写幂等键；是否必填及重放语义以本接口合同为准 */
                 "Idempotency-Key": string;
             };
             path?: never;
             cookie?: never;
         };
+        /** @description Key换取限定范围的短期实时票据的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PublicRealtimeTicketRequest"];
@@ -19520,13 +22931,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /** @description 客户端提交的幂等键 */
                 "Idempotency-Key": string;
             };
             path: {
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
+        /** @description API Key受理设备命令的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OpenCommandSubmit"];
@@ -19641,13 +23055,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description API Key精确模型当前值只读查询的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OpenCurrentRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     /** @description 所有响应禁止缓存 */
@@ -19744,13 +23159,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description API Key设备告警只读查询的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OpenAlarmQueryRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     /** @description 所有响应禁止缓存 */
@@ -19848,6 +23264,7 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
@@ -19907,10 +23324,12 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
+        /** @description 编辑项目的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateProjectRequest"];
@@ -20032,6 +23451,7 @@ export interface operations {
             };
             cookie?: never;
         };
+        /** @description 修改成员角色的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateMemberRoleRequest"];
@@ -20079,14 +23499,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20105,18 +23527,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
             };
             cookie?: never;
         };
+        /** @description 修改看板管理名称的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RenameDashboardRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20132,14 +23557,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20158,18 +23585,21 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
             };
             cookie?: never;
         };
+        /** @description 修改应用管理名称的请求数据；结构、必填字段和校验边界见请求 Schema */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RenameApplicationRequest"];
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20177,6 +23607,80 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ApplicationCatalogResponse"];
                 };
+            };
+        };
+    };
+    getDeviceSimulationStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SimulationStats"];
+                };
+            };
+        };
+    };
+    redirectApplicationStaticRoot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 永久重定向到 /app/，无响应正文 */
+            308: {
+                headers: {
+                    /** @description 规范静态入口 /app/ */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 查询串不符合入口合同，错误正文为空 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    headApplicationStaticRoot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 永久重定向到 /app/，无响应正文；HEAD 不返回正文 */
+            308: {
+                headers: {
+                    /** @description 规范静态入口 /app/ */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 查询串不符合入口合同，错误正文为空；HEAD 不返回正文 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -20243,6 +23747,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 只读分享标识 */
                 shareId: string;
             };
             cookie?: never;
@@ -20315,16 +23820,24 @@ export interface operations {
     getDashboardSharePropertyHistory: {
         parameters: {
             query: {
+                /** @description 接口query参数「expectedModelVersionId」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 expectedModelVersionId: string;
+                /** @description 接口query参数「windowPreset」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 windowPreset: "LAST_1_HOUR" | "LAST_24_HOURS" | "LAST_7_DAYS";
+                /** @description 接口query参数「anchorAt」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 anchorAt: string;
+                /** @description 接口query参数「granularity」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 granularity: "RAW" | "ONE_MINUTE" | "ONE_HOUR" | "ONE_DAY";
+                /** @description 接口query参数「aggregation」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 aggregation: "AVG" | "MIN" | "MAX" | "SUM" | "COUNT";
             };
             header?: never;
             path: {
+                /** @description 只读分享标识 */
                 shareId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
+                /** @description 目标属性键 */
                 propertyKey: string;
             };
             cookie?: never;
@@ -20397,12 +23910,16 @@ export interface operations {
     getDashboardShareDeviceCatalog: {
         parameters: {
             query: {
+                /** @description 接口query参数「variableKey」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 variableKey: string;
+                /** @description 接口query参数「cursor」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 cursor?: string;
+                /** @description 接口query参数「limit」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 只读分享标识 */
                 shareId: string;
             };
             cookie?: never;
@@ -20477,6 +23994,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 只读分享标识 */
                 shareId: string;
             };
             cookie?: never;
@@ -20551,14 +24069,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 管理操作标识，用于定位幂等回执 */
                 operationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -20655,14 +24175,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 管理操作标识，用于定位幂等回执 */
                 operationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -20757,20 +24279,25 @@ export interface operations {
     listProjectWebhookEvents: {
         parameters: {
             query: {
+                /** @description 事件类型筛选值 */
                 eventType: string;
+                /** @description 受理结果筛选值 */
                 result?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -20865,20 +24392,25 @@ export interface operations {
     listProjectWebhookDeliveries: {
         parameters: {
             query?: {
+                /** @description Webhook 订阅标识 */
                 subscriptionId?: string;
+                /** @description 状态筛选条件 */
                 status?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -20975,14 +24507,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 投递记录标识 */
                 deliveryId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     "Cache-Control"?: "no-store";
@@ -21079,14 +24613,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21102,14 +24638,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21125,15 +24663,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21147,19 +24688,23 @@ export interface operations {
     pageManagedSceneVersions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 手动场景标识 */
                 sceneId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21173,22 +24718,29 @@ export interface operations {
     list_13: {
         parameters: {
             query?: {
+                /** @description 手动场景标识 */
                 sceneId?: string;
+                /** @description 状态筛选条件 */
                 status?: string;
+                /** @description 查询时间区间起点 */
                 from?: string;
+                /** @description 查询时间区间终点 */
                 to?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21204,14 +24756,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 执行记录标识 */
                 executionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21227,13 +24781,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21249,13 +24804,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21269,22 +24825,29 @@ export interface operations {
     list_14: {
         parameters: {
             query?: {
+                /** @description 规则标识 */
                 ruleId?: string;
+                /** @description 状态筛选条件 */
                 status?: string;
+                /** @description 查询时间区间起点 */
                 from?: string;
+                /** @description 查询时间区间终点 */
                 to?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21300,13 +24863,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21320,19 +24884,23 @@ export interface operations {
     attempts: {
         parameters: {
             query: {
+                /** @description 消息标识 */
                 messageId: string;
+                /** @description 规则标识 */
                 ruleId: string;
+                /** @description 不可变规则版本标识 */
                 ruleVersionId: string;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21348,6 +24916,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 路径项目 ID；必须与当前令牌已选项目一致 */
                 projectId: string;
             };
             cookie?: never;
@@ -21388,13 +24957,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21408,18 +24978,21 @@ export interface operations {
     listOtaTrustDomains: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21435,14 +25008,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级信任域标识 */
                 trustDomain: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21456,19 +25031,23 @@ export interface operations {
     listOtaTrustKeys: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级信任域标识 */
                 trustDomain: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21484,14 +25063,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21507,15 +25088,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
+                /** @description 上传会话标识 */
                 sessionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21531,14 +25115,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21554,15 +25140,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
+                /** @description 固件发布尝试标识 */
                 publicationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21578,14 +25167,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21599,19 +25190,23 @@ export interface operations {
     listOtaDeviceJobs: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21625,18 +25220,21 @@ export interface operations {
     getOtaDeviceEligibility: {
         parameters: {
             query: {
+                /** @description 固件标识 */
                 firmwareId: string;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21652,14 +25250,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备类型标识 */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21673,19 +25273,23 @@ export interface operations {
     listOtaTypeBaselineVersions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 设备类型标识 */
                 deviceTypeId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21701,14 +25305,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21722,19 +25328,23 @@ export interface operations {
     listOtaCampaignJobs: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21750,15 +25360,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21774,15 +25387,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
+                /** @description 批量任务标识 */
                 jobId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21798,14 +25414,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21821,14 +25439,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 升级活动标识 */
                 campaignId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21842,19 +25462,23 @@ export interface operations {
     listOtaAudits: {
         parameters: {
             query?: {
+                /** @description 游标，可为空表示首页 */
                 cursor?: string;
+                /** @description 每页条数，1..100，默认 20 */
                 limit?: number;
+                /** @description 精确动作编码，可为空；必须是 `ota.` 命名空间 */
                 action?: string;
             };
             header?: never;
             path: {
+                /** @description 项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21868,25 +25492,35 @@ export interface operations {
     list_15: {
         parameters: {
             query?: {
+                /** @description 可选设备 ID */
                 deviceId?: string;
+                /** @description 可选消息方向 */
                 direction?: "UP" | "DOWN";
+                /** @description 可选传输协议 */
                 protocol?: "MQTT" | "HTTP" | "COAP" | "TCP";
+                /** @description 可选开始时刻，包含 */
                 from?: string;
+                /** @description 可选结束时刻，不包含 */
                 to?: string;
+                /** @description 可选精确追踪 ID */
                 traceId?: string;
+                /** @description 消息类型筛选值 */
                 messageType?: string;
+                /** @description 可选下一页游标 */
                 cursor?: string;
+                /** @description 单页数量 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21902,14 +25536,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21925,15 +25561,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21947,19 +25586,23 @@ export interface operations {
     pageMessageRuleVersions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 规则标识 */
                 ruleId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21975,14 +25618,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 删除项目 ID */
                 projectId: string;
+                /** @description 导出任务 ID */
                 exportId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22039,12 +25684,16 @@ export interface operations {
     listAppUserDashboardGrants: {
         parameters: {
             query?: {
+                /** @description 上一页返回的不透明游标，首页为空 */
                 cursor?: string;
+                /** @description 单页数量，默认50，允许1至200 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 当前项目ID */
                 projectId: string;
+                /** @description 目标终端用户ID */
                 appUserId: string;
             };
             cookie?: never;
@@ -22101,15 +25750,22 @@ export interface operations {
     listProperties: {
         parameters: {
             query?: {
+                /** @description 可选属性标识符 */
                 propertyKey?: string;
+                /** @description 可选开始时刻，包含 */
                 from?: string;
+                /** @description 可选结束时刻，不包含 */
                 to?: string;
+                /** @description 可选下一页游标 */
                 cursor?: string;
+                /** @description 每页数量 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
@@ -22130,15 +25786,22 @@ export interface operations {
     history: {
         parameters: {
             query: {
+                /** @description 属性标识符 */
                 propertyKey: string;
+                /** @description 开始时刻，包含 */
                 from: string;
+                /** @description 结束时刻，不包含 */
                 to: string;
+                /** @description 请求粒度 */
                 granularity?: "RAW" | "ONE_MINUTE" | "ONE_HOUR" | "ONE_DAY";
+                /** @description 聚合函数 */
                 aggregation?: "AVG" | "MIN" | "MAX" | "SUM" | "COUNT";
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
@@ -22159,16 +25822,24 @@ export interface operations {
     getConsoleVersionedPropertyHistory: {
         parameters: {
             query: {
+                /** @description 顶层属性 */
                 propertyKey: string;
+                /** @description 精确模型 */
                 expectedModelVersionId: string;
+                /** @description 包含起点 */
                 from: string;
+                /** @description 不含终点 */
                 to: string;
+                /** @description 请求粒度 */
                 granularity?: "RAW" | "ONE_MINUTE" | "ONE_HOUR" | "ONE_DAY";
+                /** @description 聚合方式 */
                 aggregation?: "AVG" | "MIN" | "MAX" | "SUM" | "COUNT";
             };
             header?: never;
             path: {
+                /** @description 项目 */
                 projectId: string;
+                /** @description 设备 */
                 deviceId: string;
             };
             cookie?: never;
@@ -22198,19 +25869,23 @@ export interface operations {
     listConsoleDeviceTaskJobs: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22224,19 +25899,23 @@ export interface operations {
     listConsoleDeviceTaskExecutions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22252,14 +25931,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22273,19 +25954,23 @@ export interface operations {
     listConsoleDeviceSceneExecutions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22299,19 +25984,23 @@ export interface operations {
     listConsoleDeviceSceneCandidates: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22325,25 +26014,35 @@ export interface operations {
     list_16: {
         parameters: {
             query?: {
+                /** @description 可选方向 */
                 direction?: "UP" | "DOWN";
+                /** @description 可选协议 */
                 protocol?: "MQTT" | "HTTP" | "COAP" | "TCP";
+                /** @description 可选开始时刻，包含 */
                 from?: string;
+                /** @description 可选结束时刻，不包含 */
                 to?: string;
+                /** @description 可选精确 traceId */
                 traceId?: string;
+                /** @description 可选消息类型（调试时间线按类型筛选） */
                 messageType?: string;
+                /** @description 可选下一页游标 */
                 cursor?: string;
+                /** @description 每页数量 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22357,19 +26056,23 @@ export interface operations {
     detail_3: {
         parameters: {
             query?: {
+                /** @description 摘要格式：`JSON`（默认）或 `HEX` */
                 format?: string;
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
+                /** @description 日志 ID */
                 logId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22383,19 +26086,23 @@ export interface operations {
     listConsoleDeviceMessageRuleExecutions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22409,19 +26116,23 @@ export interface operations {
     listConsoleDeviceMessageRuleCandidates: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22435,19 +26146,23 @@ export interface operations {
     listConsoleDeviceMessageRuleActions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22461,19 +26176,23 @@ export interface operations {
     listConsoleDeviceEndUsers: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22489,14 +26208,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22512,15 +26233,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
+                /** @description 设备命令标识 */
                 commandId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22536,7 +26260,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 已选择的Console项目 */
                 projectId: string;
+                /** @description 明确选择的设备 */
                 deviceId: string;
             };
             cookie?: never;
@@ -22557,19 +26283,23 @@ export interface operations {
     listConsoleDeviceAutomations: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22583,19 +26313,23 @@ export interface operations {
     listConsoleDeviceAutomationExecutions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22611,14 +26345,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22632,24 +26368,33 @@ export interface operations {
     search: {
         parameters: {
             query?: {
+                /** @description 可选名称、设备标识或位置关键词 */
                 keyword?: string;
+                /** @description 可重复设备类型 ID，集合内部为 OR */
                 deviceTypeIds?: string[];
+                /** @description 可重复状态，集合内部为 OR */
                 statuses?: ("INACTIVE" | "ONLINE" | "OFFLINE")[];
+                /** @description 可选设备组 ID */
                 groupId?: string;
+                /** @description 可选精确标签键，必须与标签值成对 */
                 tagKey?: string;
+                /** @description 可选精确标签值，必须与标签键成对 */
                 tagValue?: string;
+                /** @description 可选下一页游标 */
                 cursor?: string;
+                /** @description 单页数量 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22663,12 +26408,16 @@ export interface operations {
     getConsoleDeviceCatalog: {
         parameters: {
             query: {
+                /** @description 变量声明的精确模型 */
                 modelVersionId: string;
+                /** @description 可选签名游标 */
                 cursor?: string;
+                /** @description 1..50页大小 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 已选项目 */
                 projectId: string;
             };
             cookie?: never;
@@ -22718,14 +26467,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 类型 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22739,18 +26490,21 @@ export interface operations {
     search_1: {
         parameters: {
             query?: {
+                /** @description 上一页游标 */
                 cursor?: string;
+                /** @description 单页数量 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 项目 ID */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22766,15 +26520,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 看板内部ID */
                 dashboardId: string;
+                /** @description 精确看板版本ID */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22790,14 +26547,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前项目 */
                 projectId: string;
+                /** @description 当前看板 */
                 dashboardId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22813,15 +26572,18 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 自动化标识 */
                 id: string;
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22835,19 +26597,23 @@ export interface operations {
     pageManagedAutomationVersions: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 自动化标识 */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22861,22 +26627,29 @@ export interface operations {
     listAutomationExecutions: {
         parameters: {
             query?: {
+                /** @description 自动化标识 */
                 automationId?: string;
+                /** @description 状态筛选条件 */
                 status?: string;
+                /** @description 查询时间区间起点 */
                 from?: string;
+                /** @description 查询时间区间终点 */
                 to?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22892,14 +26665,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 执行记录标识 */
                 executionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22910,20 +26685,589 @@ export interface operations {
             };
         };
     };
+    listAssistantKnowledgeSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前选定项目 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssistantKnowledgeSource"][];
+                };
+            };
+        };
+    };
+    getPersonalEvidenceRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+                /** @description 本人记录标识 */
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonalEvidenceRecordDetail"];
+                };
+            };
+        };
+    };
+    deletePersonalEvidenceRecord: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+                /** @description 本人记录标识 */
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 本人历史记录已删除 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    generatePersonalFactReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前项目标识，不能跨项目读取 */
+                projectId: string;
+                /** @description 本人且未到期的历史记录标识 */
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonalFactReport"];
+                };
+            };
+        };
+    };
+    getAssistantDeviceSnapshot: {
+        parameters: {
+            query: {
+                /** @description 调用方期望的不可变物模型版本 */
+                expectedModelVersionId: string;
+                /** @description 重复propertyKey参数，不支持逗号展开或通配符 */
+                propertyKey: string[];
+            };
+            header?: never;
+            path: {
+                /** @description 接口指定的项目标识 */
+                projectId: string;
+                /** @description 目标设备标识 */
+                deviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 受权证据 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceEvidenceSnapshot"];
+                };
+            };
+            /** @description 参数或模型不合法 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Console身份失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目或设备不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 设备模型已变化 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 读取限流 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事实读取失败 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAssistantDeviceHistory: {
+        parameters: {
+            query: {
+                /** @description 精确当前模型版本标识 */
+                expectedModelVersionId: string;
+                /** @description 单个顶层数值属性键 */
+                propertyKey: string;
+                /** @description 包含起点，带时区时间 */
+                from: string;
+                /** @description 排他终点，最多24小时 */
+                to: string;
+            };
+            header?: never;
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+                /** @description 项目内设备标识 */
+                deviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 历史证据 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantHistoryEvidence"];
+                };
+            };
+            /** @description 参数或时间窗口无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前Console身份无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目或设备不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前模型已变化 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 读取限流 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事实读取失败 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAssistantDeviceAlarms: {
+        parameters: {
+            query: {
+                /** @description 精确当前模型版本 */
+                expectedModelVersionId: string;
+                /** @description 账号和查询绑定的下一页游标 */
+                cursor?: string;
+                /** @description 默认20，允许1至50 */
+                limit?: string;
+            };
+            header?: never;
+            path: {
+                /** @description 当前受权项目 */
+                projectId: string;
+                /** @description 单个项目内设备 */
+                deviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 受权事故事实页 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantAlarmEvidence"];
+                };
+            };
+            /** @description 参数或游标不合法 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前Console身份无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目或设备不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前模型已变化 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 读取限流 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 证据源读取失败 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAssistantAnalysisCall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+                /** @description 本人调用标识 */
+                callId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 封闭输入或幂等键无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Console身份失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前角色无付费分析权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目、设备或本人调用不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 请求身份、设备模型或配置变化 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 共享并发或请求限额已满 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAssistantAnalysisAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 封闭输入或幂等键无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Console身份失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前角色无付费分析权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目、设备或本人调用不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 请求身份、设备模型或配置变化 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 共享并发或请求限额已满 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAssistantAnalysisCallByKey: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 原调用的规范小写UUIDv7幂等键，不是调用ID或模型密钥 */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 封闭输入或幂等键无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Console身份失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前角色无付费分析权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目、设备或本人调用不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 请求身份、设备模型或配置变化 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 共享并发或请求限额已满 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getApplicationVersion: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前选定的项目ID */
                 projectId: string;
+                /** @description 应用内部ID */
                 applicationId: string;
+                /** @description 精确应用版本ID */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22939,14 +27283,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description API 密钥记录标识，不是密钥明文 */
                 keyId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22962,14 +27308,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 管理操作标识，用于定位幂等回执 */
                 operationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22983,18 +27331,21 @@ export interface operations {
     page_1: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -23010,14 +27361,16 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 告警实例标识 */
                 instanceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -23031,19 +27384,23 @@ export interface operations {
     events: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 告警实例标识 */
                 instanceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -23062,6 +27419,7 @@ export interface operations {
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
@@ -23127,18 +27485,21 @@ export interface operations {
     page_2: {
         parameters: {
             query?: {
+                /** @description 可空位置 */
                 cursor?: string;
+                /** @description 每页1至100条 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 当前项目 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -23154,13 +27515,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前项目 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -23174,19 +27536,23 @@ export interface operations {
     deliveries: {
         parameters: {
             query?: {
+                /** @description 告警实例标识 */
                 instanceId?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -23258,7 +27624,9 @@ export interface operations {
     listMyProjectInvitations: {
         parameters: {
             query?: {
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: number;
             };
             header?: never;
@@ -23267,7 +27635,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -23312,6 +27680,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 稳定套餐编码，如 `STANDARD` */
                 planCode: string;
             };
             cookie?: never;
@@ -23352,6 +27721,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 目标租户标识 */
                 tenantId: string;
             };
             cookie?: never;
@@ -23428,7 +27798,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 目标租户标识 */
                 tenantId: string;
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 key: string;
             };
             cookie?: never;
@@ -23677,20 +28049,31 @@ export interface operations {
     getWebAppVersionedPropertyHistory: {
         parameters: {
             query: {
+                /** @description 接口query参数「from」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 from: string;
+                /** @description 接口query参数「to」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 to: string;
+                /** @description 接口query参数「granularity」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 granularity: "RAW" | "ONE_MINUTE" | "ONE_HOUR" | "ONE_DAY";
+                /** @description 接口query参数「aggregation」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 aggregation: "AVG" | "MIN" | "MAX" | "SUM" | "COUNT";
+                /** @description 接口query参数「expectedModelVersionId」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 expectedModelVersionId: string;
             };
             header: {
+                /** @description 接口header参数「X-Application-Key」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Key": string;
+                /** @description 接口header参数「X-Application-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Version": string;
+                /** @description 接口header参数「X-Application-Revision」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Revision": string;
+                /** @description 接口header参数「X-Dashboard-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Dashboard-Version": string;
             };
             path: {
+                /** @description 目标设备标识 */
                 deviceId: string;
+                /** @description 目标属性键 */
                 propertyKey: string;
             };
             cookie?: never;
@@ -23860,6 +28243,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 设备 */
                 deviceId: string;
             };
             cookie?: never;
@@ -23889,14 +28273,21 @@ export interface operations {
     listWebAppDeviceCatalog: {
         parameters: {
             query: {
+                /** @description 接口query参数「modelVersionId」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 modelVersionId: string;
+                /** @description 接口query参数「cursor」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 cursor?: string;
+                /** @description 接口query参数「limit」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 limit?: number;
             };
             header: {
+                /** @description 接口header参数「X-Application-Key」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Key": string;
+                /** @description 接口header参数「X-Application-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Version": string;
+                /** @description 接口header参数「X-Application-Revision」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Application-Revision": string;
+                /** @description 接口header参数「X-Dashboard-Version」；含义见接口说明，类型、必填性和边界见参数 Schema */
                 "X-Dashboard-Version": string;
             };
             path?: never;
@@ -23969,12 +28360,16 @@ export interface operations {
     getWebAppDashboardSchema: {
         parameters: {
             query: {
+                /** @description 正十进制Long字符串 */
                 expectedPublicationRevision: string;
             };
             header?: never;
             path: {
+                /** @description 规范应用公开键 */
                 appKey: string;
+                /** @description 规范小写应用版本UUID */
                 applicationVersionId: string;
+                /** @description 规范小写看板版本UUID */
                 dashboardVersionId: string;
             };
             cookie?: never;
@@ -24043,6 +28438,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 规范应用公开键 */
                 appKey: string;
             };
             cookie?: never;
@@ -24100,6 +28496,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 规范应用公开键 */
                 appKey: string;
             };
             cookie?: never;
@@ -24168,13 +28565,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 当前资源的不可变版本标识 */
                 versionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     /** @description 所有响应禁止缓存 */
@@ -24267,8 +28665,11 @@ export interface operations {
     listOpenDevices: {
         parameters: {
             query?: {
+                /** @description 物模型版本标识 */
                 modelVersionId?: string;
+                /** @description 可选分页游标，继续读取上一页后的记录 */
                 cursor?: string;
+                /** @description 分页条数，具体边界由当前接口校验 */
                 limit?: string;
             };
             header?: never;
@@ -24277,7 +28678,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     /** @description 所有响应禁止缓存 */
@@ -24372,13 +28773,14 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     /** @description 所有响应禁止缓存 */
@@ -24471,15 +28873,22 @@ export interface operations {
     getOpenPropertyHistory: {
         parameters: {
             query: {
+                /** @description 调用方期望的不可变物模型版本 */
                 expectedModelVersionId: string;
+                /** @description 目标属性键 */
                 propertyKey: string;
+                /** @description 查询时间区间起点 */
                 from: string;
+                /** @description 查询时间区间终点 */
                 to: string;
+                /** @description 历史数据时间粒度 */
                 granularity: "RAW" | "ONE_MINUTE" | "ONE_HOUR" | "ONE_DAY";
+                /** @description 历史数据聚合方式 */
                 aggregation: "AVG" | "MIN" | "MAX" | "SUM" | "COUNT";
             };
             header?: never;
             path: {
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
@@ -24581,7 +28990,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 目标设备标识 */
                 deviceId: string;
+                /** @description 设备命令标识 */
                 commandId: string;
             };
             cookie?: never;
@@ -24692,10 +29103,12 @@ export interface operations {
     recoverOpenCommand: {
         parameters: {
             query: {
+                /** @description 本次操作的幂等键，用于识别重复提交 */
                 idempotencyKey: string;
             };
             header?: never;
             path: {
+                /** @description 目标设备标识 */
                 deviceId: string;
             };
             cookie?: never;
@@ -24853,7 +29266,9 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 项目邀请标识 */
                 invitationId: string;
             };
             cookie?: never;
@@ -24932,15 +29347,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 接口指定的项目标识 */
                 projectId: string;
+                /** @description 目标设备标识 */
                 deviceId: string;
+                /** @description 待删除的设备标签键 */
                 key: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -24957,15 +29375,18 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 设备 ID */
                 deviceId: string;
+                /** @description 凭据 ID */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -24982,14 +29403,16 @@ export interface operations {
                 "Idempotency-Key"?: string;
             };
             path: {
+                /** @description 项目 ID */
                 projectId: string;
+                /** @description 子设备 ID */
                 subDeviceId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 请求成功；返回结构见响应 Schema */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -25055,6 +29478,588 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApiError"];
                 };
+            };
+        };
+    };
+    management_get__actuator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 返回运维链接索引 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.spring-boot.actuator.v3+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/vnd.spring-boot.actuator.v2+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description 运维索引要求平台认证，身份未通过 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 当前身份不能访问运维索引 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    management_get__actuator_prometheus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 指标抓取成功；正文为协商的指标文本 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain;version=0.0.4;charset=utf-8": string;
+                    "application/openmetrics-text;version=1.0.0;charset=utf-8": string;
+                    "application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited": string;
+                };
+            };
+            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    management_get__actuator_health__componentPath_: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 健康组或组件的多段相对路径；是否存在与可见性由当前健康配置决定 */
+                componentPath: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 运行健康；内容沿框架健康合同 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.spring-boot.actuator.v3+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/vnd.spring-boot.actuator.v2+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 运行健康降级或不可用；正文为框架健康状态 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.spring-boot.actuator.v3+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/vnd.spring-boot.actuator.v2+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    management_get__actuator_health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 运行健康；内容沿框架健康合同 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.spring-boot.actuator.v3+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/vnd.spring-boot.actuator.v2+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 运行健康降级或不可用；正文为框架健康状态 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.spring-boot.actuator.v3+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/vnd.spring-boot.actuator.v2+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    upgradeShareProperties: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 发送 tc.share.properties.v1 与 share.<分享能力>，凭据必须为规范 sh_ 格式 */
+                "Sec-WebSocket-Protocol": string;
+                /** @description 来源须符合该握手配置的同源或精确允许来源规则 */
+                Origin: string;
+            };
+            path: {
+                /** @description 规范分享标识；通配符注册仍由原握手校验 UUID 和分享状态 */
+                shareId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 协议升级成功，后续内容为 WebSocket 消息帧 */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手格式或升级头无效，错误体不保证为平台 ApiError */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 来源、项目或设备范围不允许本次握手 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 分享不存在、过期或当前不可用 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 分享保护预算或连接租约达到上限 */
+            429: {
+                headers: {
+                    /** @description 再次握手前等待的秒数 */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手依赖不可用，未取得升级资格 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upgradeAppProperties: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 发送 tc.app.properties.v1 与 bearer.<App JWT> */
+                "Sec-WebSocket-Protocol": string;
+                /** @description 来源须符合该握手配置的同源或精确允许来源规则 */
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 协议升级成功，后续内容为 WebSocket 消息帧 */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手格式或升级头无效，错误体不保证为平台 ApiError */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手身份、能力凭据或实时票据无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 来源、项目或设备范围不允许本次握手 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手依赖不可用，未取得升级资格 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upgradeAppDashboard: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 发送 tc.app.dashboard.v2 与 bearer.<App JWT> */
+                "Sec-WebSocket-Protocol": string;
+                /** @description 来源须符合该握手配置的同源或精确允许来源规则 */
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 协议升级成功，后续内容为 WebSocket 消息帧 */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手格式或升级头无效，错误体不保证为平台 ApiError */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手身份、能力凭据或实时票据无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 来源、项目或设备范围不允许本次握手 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手依赖不可用，未取得升级资格 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upgradeConsoleDashboard: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 发送 tc.dashboard.properties.v1 与 bearer.<控制台JWT> */
+                "Sec-WebSocket-Protocol": string;
+                /** @description 来源须符合该握手配置的同源或精确允许来源规则 */
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 协议升级成功，后续内容为 WebSocket 消息帧 */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手格式或升级头无效，错误体不保证为平台 ApiError */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手身份、能力凭据或实时票据无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 来源、项目或设备范围不允许本次握手 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手依赖不可用，未取得升级资格 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upgradeConsoleRealtime: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 按顺序发送 tc-v1 与 bearer.<控制台JWT>，禁止通过 URL 查询串传递 JWT */
+                "Sec-WebSocket-Protocol": string;
+                /** @description 来源须符合该握手配置的同源或精确允许来源规则 */
+                Origin?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 协议升级成功，后续内容为 WebSocket 消息帧 */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手格式或升级头无效，错误体不保证为平台 ApiError */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手身份、能力凭据或实时票据无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 来源、项目或设备范围不允许本次握手 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手依赖不可用，未取得升级资格 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getApplicationStaticResource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 相对静态资源路径，可含多段；原服务继续拒绝编码、穿越及白名单外路径 */
+                resourcePath: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 同次资格校验后的静态文件字节；缓存规则按资源类型决定 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "text/javascript": string;
+                    "text/css": string;
+                    "application/json": string;
+                    "application/manifest+json": string;
+                    "image/png": string;
+                    "image/svg+xml": string;
+                    "font/woff2": string;
+                };
+            };
+            /** @description 路径、查询或资源不符合合同，错误正文为空 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 静态发布资格或依赖不可用，错误正文为空 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    headApplicationStaticResource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 相对静态资源路径，可含多段；原服务继续拒绝编码、穿越及白名单外路径 */
+                resourcePath: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 同次资格校验后的静态文件字节；缓存规则按资源类型决定；HEAD 不返回正文 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 路径、查询或资源不符合合同，错误正文为空；HEAD 不返回正文 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 静态发布资格或依赖不可用，错误正文为空；HEAD 不返回正文 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upgradeOpenRealtime: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 按顺序发送 tc-realtime-v1 与短期 WS 票据，连接消息继续执行原票据资格校验 */
+                "Sec-WebSocket-Protocol": string;
+                /** @description 来源须符合该握手配置的同源或精确允许来源规则 */
+                Origin?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 协议升级成功，后续内容为 WebSocket 消息帧 */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手格式或升级头无效，错误体不保证为平台 ApiError */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手身份、能力凭据或实时票据无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 来源、项目或设备范围不允许本次握手 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 握手依赖不可用，未取得升级资格 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

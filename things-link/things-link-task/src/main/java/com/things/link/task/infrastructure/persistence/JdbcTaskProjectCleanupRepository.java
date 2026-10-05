@@ -22,7 +22,7 @@ public class JdbcTaskProjectCleanupRepository implements TaskProjectCleanupRepos
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectCleanupBatchResult clean(ProjectCleanupClaim claim) {
         int deleted = jdbc.update("""

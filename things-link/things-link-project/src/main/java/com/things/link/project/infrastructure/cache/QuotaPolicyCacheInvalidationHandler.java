@@ -33,7 +33,7 @@ public class QuotaPolicyCacheInvalidationHandler implements CacheInvalidationHan
         this.entitlementProvider = entitlementProvider;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean handle(CacheInvalidationEvent event) {
         if (event.resource() != CacheResource.QUOTA_POLICY) return false;

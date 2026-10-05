@@ -14,7 +14,7 @@ public class JdbcAppCommandCatalogRepository implements AppCommandCatalogReposit
     /** @param jdbc RLS连接访问器 */
     public JdbcAppCommandCatalogRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<Entry> findBounded(UUID projectId, UUID deviceTypeId) {
         return jdbc.query("""

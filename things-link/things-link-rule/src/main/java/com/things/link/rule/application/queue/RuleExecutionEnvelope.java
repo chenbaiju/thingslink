@@ -14,7 +14,7 @@ import java.util.UUID;
  * 上行快照，而队列键决定回执与重放边界。两者不一致必须在入队前失败，不能由重试链路悄悄改写可信身份。</p>
  *
  * @param key 执行幂等身份
- * @param tenantId owner tenant，用于外层公平调度和共享配额
+ * @param tenantId 归属租户，用于外层公平调度和共享配额
  * @param message 已确权且不可变的规则消息快照
  * @param attempt 已开始的尝试次数，首次为 1
  * @param enqueuedAt 本次进入队列的 UTC 时刻

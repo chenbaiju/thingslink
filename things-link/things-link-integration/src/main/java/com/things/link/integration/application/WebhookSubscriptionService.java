@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
+/** Webhook 订阅管理服务；管理鉴权、规范输入、版本更新、操作去重及签名密钥单次交付。 */
 @Service
 @Transactional
 public class WebhookSubscriptionService {

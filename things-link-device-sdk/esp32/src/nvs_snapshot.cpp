@@ -1,8 +1,8 @@
-#include "baijulink/nvs_snapshot.hpp"
-#include "baijulink/command_journal.hpp"
+#include "thingslink/nvs_snapshot.hpp"
+#include "thingslink/command_journal.hpp"
 #include "nvs_flash.h"
 
-namespace baijulink {
+namespace thingslink {
 bool NvsRuntime::initialize() {
     if (faulted_) return false;
     if (initialized_) return true;

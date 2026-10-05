@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.OptionalLong;
 import java.util.UUID;
 
-/** ADR0187: original accepted shadow values, not a best-effort realtime listener. */
+/** ADR0187：记录原始已接受的影子值，不依赖尽力而为的实时监听器。 */
 @Service
 public class DevicePropertyWebhookSource {
     private final PublicWebhookSourceWriter source;
@@ -22,7 +22,7 @@ public class DevicePropertyWebhookSource {
     private final ObjectMapper json;
     public DevicePropertyWebhookSource(PublicWebhookSourceWriter source,ProjectLifecycleAccessService projects,
             TransactionLocalRlsScope rls,ObjectMapper json){this.source=source;this.projects=projects;this.rls=rls;this.json=json;}
-    /** Called before shadow locks; absence means disabled, never a failed project permission. */
+    /** 须在获取影子锁之前调用；缺省表示功能禁用，不代表项目权限检查失败。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public OptionalLong begin(UUID tenant,UUID project){
         if(!source.enabled())return OptionalLong.empty();

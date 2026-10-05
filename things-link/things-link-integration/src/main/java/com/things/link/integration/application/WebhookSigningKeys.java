@@ -8,7 +8,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-/** Master keys never leave this object; only a purpose-separated subscription key is revealed once. */
+/** 主密钥不得离开此对象；仅单次交付按用途隔离的订阅密钥。 */
 @Component
 public class WebhookSigningKeys {
     private final Map<String,byte[]> keys;private final String current;

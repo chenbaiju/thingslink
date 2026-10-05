@@ -34,6 +34,7 @@ import java.time.Instant;
 import java.util.Collections;
 
 /** ADR0107独立浏览器适配，先比较期望代次再允许刷新/撤族或Cookie删除。 */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "App 浏览器会话", description = "浏览器登录、刷新与退出")
 @RestController
 @RequestMapping("/api/v1/app/browser-auth")
 @ApiResponse(responseCode = "400", description = "请求参数不合法")
@@ -68,7 +69,13 @@ public class AppBrowserAuthController {
         this.properties = properties;
     }
 
-    /** 新epoch不需等于旧Cookie；坏单Cookie无撤旧能力，但仍须通过完整新密码认证。 */
+    /**
+     * 新epoch不需等于旧Cookie；坏单Cookie无撤旧能力，但仍须通过完整新密码认证。
+     *
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @param response HTTP 响应对象，用于设置响应头或状态
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<AppBrowserSessionResponse>}
+     */
     @PostMapping(value = "/login", consumes = "application/json", produces = "application/json")
     @Operation(operationId = "loginAppBrowser", summary = "浏览器登录并替换旧会话",
             description = "必须同源JSON请求且不附Bearer；浏览器自动管理tc_app_refresh HttpOnly Cookie，不接收refresh正文，不适用公共幂等缓存。", requestBody = @RequestBody(required = true,
@@ -86,7 +93,13 @@ public class AppBrowserAuthController {
         return success(browser.login(input.projectKey(), input.username(), input.password(), request.getRemoteAddr(), input.browserEpoch(), oldHash), response);
     }
 
-    /** 当前匹配Cookie才调用rotate，旧Cookie不触发独立提交的复用撤族。 */
+    /**
+     * 当前匹配Cookie才调用rotate，旧Cookie不触发独立提交的复用撤族。
+     *
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @param response HTTP 响应对象，用于设置响应头或状态
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<AppBrowserSessionResponse>}
+     */
     @PostMapping(value = "/refresh", consumes = "application/json", produces = "application/json")
     @Operation(operationId = "refreshAppBrowser", summary = "按浏览器代次轮换会话",
             description = "必须同源JSON及专用HttpOnly Cookie；期望代次不匹配拒绝且不清Cookie，响应不含refresh，不自动重试未知结果。", requestBody = @RequestBody(required = true,
@@ -108,7 +121,13 @@ public class AppBrowserAuthController {
         }
     }
 
-    /** 请求必须携带退出前capturedEpoch；缺Cookie幂等，DB失败不清Cookie或伪报已退出。 */
+    /**
+     * 请求必须携带退出前capturedEpoch；缺Cookie幂等，DB失败不清Cookie或伪报已退出。
+     *
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @param response HTTP 响应对象，用于设置响应头或状态
+     * @return 操作完成后的 HTTP 响应，正文为空
+     */
     @PostMapping(value = "/logout", consumes = "application/json")
     @Operation(operationId = "logoutAppBrowser", summary = "退出匹配浏览器代次的会话",
             description = "必须同源JSON，提交退出前捕获的代次；浏览器自动携带专用Cookie，缺Cookie幂等204，数据库失败不清Cookie。", requestBody = @RequestBody(required = true,

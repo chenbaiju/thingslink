@@ -13,7 +13,7 @@ import java.security.*;
 import java.time.Instant;
 import java.util.*;
 
-/** ADR0184: explicit manual recovery is separate from network retry and from subscription revision operations. */
+/** ADR0184：显式人工恢复独立于网络重试和订阅修订操作。 */
 @Service
 @Transactional(timeout=10)
 public class WebhookRecoveryService {

@@ -77,7 +77,7 @@ class DeviceModelBindingUpgradeTests {
             "classpath:db/migration/telemetry", "classpath:db/migration/alarm", "classpath:db/migration/task",
             "classpath:db/migration/rule", "classpath:db/migration/iam", "classpath:db/migration/enduser",
             // verify-11：完整升级必须包含授权外键的看板父表，并与生产迁移域保持一致。
-            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration"
+            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration", "classpath:db/migration/assistant"
     };
     /** 已交付拓扑角色保护、尚未增加设备版本归属守卫的真实旧版本。 */
     private static final String LEGACY_TARGET = "20260903.0200";

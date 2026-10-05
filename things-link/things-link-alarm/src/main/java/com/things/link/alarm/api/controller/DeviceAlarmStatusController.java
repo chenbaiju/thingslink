@@ -32,6 +32,15 @@ public class DeviceAlarmStatusController {
         this.service = service;
     }
 
+    /**
+     * 批量读取设备活动告警状态。
+     * 最多20台不同设备，共享数据库快照；模型异常或设备失效整批拒绝，ACK不影响ACTIVE。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param ids 待查询的设备标识列表
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<DeviceAlarmStatusResponse>}
+     */
     @GetMapping("/api/v1/projects/{projectId}/alarms/device-status")
     @Operation(operationId = "getConsoleDeviceAlarmStatus", summary = "批量读取设备活动告警状态",
             description = "最多20台不同设备，共享数据库快照；模型异常或设备失效整批拒绝，ACK不影响ACTIVE。")
@@ -46,7 +55,7 @@ public class DeviceAlarmStatusController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "429", description = "读取限流"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "内部事实读取失败")
     })
-    public ResponseEntity<DeviceAlarmStatusResponse> read(@PathVariable UUID projectId,
+    public ResponseEntity<DeviceAlarmStatusResponse> read(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
             @Parameter(description = "1..20个不同的规范小写UUID，重复deviceId参数",
                     array = @io.swagger.v3.oas.annotations.media.ArraySchema(minItems = 1, maxItems = 20, uniqueItems = true,
                             schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "uuid")))

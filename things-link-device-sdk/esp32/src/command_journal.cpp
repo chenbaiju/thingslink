@@ -1,9 +1,9 @@
-#include "baijulink/command_journal.hpp"
+#include "thingslink/command_journal.hpp"
 #include "snapshot_codec.hpp"
 #include "buffers.hpp"
 #include <limits>
 
-namespace baijulink {
+namespace thingslink {
 using namespace detail;
 namespace {
 bool valid_request(const Downlink& request) {

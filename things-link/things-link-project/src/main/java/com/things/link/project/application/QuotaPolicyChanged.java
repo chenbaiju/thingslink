@@ -6,7 +6,7 @@ import java.util.UUID;
 /**
  * 租户配额绑定或策略模板更新后的 Redis 失效事件。
  *
- * <p>事件只标记本机条目过期，不携带完整策略也不删除 last-known-good；Redis Pub/Sub 不可重放，TTL
+ * <p>事件只标记本机条目过期，不携带完整策略也不删除 最近一次有效值；Redis Pub/Sub 不可重放，TTL
  * 负责覆盖丢失事件。
  *
  * @param tenantId 被影响的租户 ID

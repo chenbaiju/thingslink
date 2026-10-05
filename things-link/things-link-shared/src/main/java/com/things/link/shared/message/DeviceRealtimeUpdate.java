@@ -15,7 +15,7 @@ import java.util.UUID;
  * @param messageId 原始设备上行消息 ID，用于排障与客户端去重
  * @param tenantId 租户归属，仅供受信内部链路校验和观测，不作为 Redis 频道隔离轴
  * @param projectId 项目隔离轴，也是 Redis 项目频道的组成部分
- * @param deviceId 设备 ID，同时固定作为 Kafka record key 保持单设备顺序
+ * @param deviceId 设备 ID，同时固定作为 Kafka 记录键 保持单设备顺序
  * @param thingModelVersionId 写入时不可变物模型版本 ID
  * @param modelVersion 可读语义版本
  * @param occurredAt 设备声明的属性采集时间

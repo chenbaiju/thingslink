@@ -509,6 +509,13 @@
             :kind="tab.key"
           />
         </ElTabPane>
+        <ElTabPane name="agent-evidence" label="诊断证据" lazy>
+          <DeviceAgentEvidence
+            v-if="detailTab === 'agent-evidence' && projectId && detailTagDeviceId"
+            :project-id="projectId"
+            :device-id="detailTagDeviceId"
+          />
+        </ElTabPane>
         <ElTabPane v-if="hasAuth('enduser:read')" name="end-users" label="终端用户" lazy>
           <DeviceEndUsers
             v-if="detailTab === 'end-users' && projectId && detailTagDeviceId"
@@ -620,6 +627,7 @@
   import DeviceAccessConfiguration from '../components/DeviceAccessConfiguration.vue'
   import DeviceLocationPoint from '../components/DeviceLocationPoint.vue'
   import DeviceCommandHistory from '../components/DeviceCommandHistory.vue'
+  import DeviceAgentEvidence from '../components/DeviceAgentEvidence.vue'
   import DeviceEndUsers from '../components/DeviceEndUsers.vue'
   import DeviceTasks from '../components/DeviceTasks.vue'
   import DeviceAutomations from '../components/DeviceAutomations.vue'

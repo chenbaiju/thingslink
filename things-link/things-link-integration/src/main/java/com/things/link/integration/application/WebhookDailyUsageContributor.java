@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Count original delivery intentions once, never physical attempts or recovery rounds. */
+/** 原始投递意图仅计数一次，不按物理尝试或恢复轮次重复计数。 */
 @Component
 public class WebhookDailyUsageContributor implements DailyUsageContributor {
     private final JdbcTemplate jdbc;

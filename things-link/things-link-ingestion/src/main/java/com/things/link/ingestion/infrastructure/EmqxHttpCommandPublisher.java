@@ -163,8 +163,8 @@ public class EmqxHttpCommandPublisher implements CommandDownlinkPublisher {
      *
      * @param restClientFactory 可重试的客户端工厂
      * @param objectMapper 统一 JSON 映射器
-     * @param apiKey EMQX API Key
-     * @param apiSecret EMQX API Secret
+     * @param apiKey EMQX 管理接口密钥标识
+     * @param apiSecret EMQX 管理接口密钥秘密值
      * @param metrics 固定低基数指标
      */
     EmqxHttpCommandPublisher(
@@ -493,7 +493,7 @@ public class EmqxHttpCommandPublisher implements CommandDownlinkPublisher {
     /**
      * EMQX 5 单条发布请求。
      *
-     * @param topic MQTT Topic
+     * @param topic MQTT 消息主题
      * @param payload UTF-8 JSON 文本
      * @param qos 固定为 1
      * @param retain 固定为 false，防止设备上线后执行过期命令

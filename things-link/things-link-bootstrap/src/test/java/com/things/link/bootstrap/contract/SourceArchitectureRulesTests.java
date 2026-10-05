@@ -33,7 +33,8 @@ class SourceArchitectureRulesTests {
             Map.entry("app_", "things-link-enduser"),
             Map.entry("dash_", "things-link-dashboard"),
             Map.entry("ota_", "things-link-ota"),
-            Map.entry("integ_", "things-link-integration"));
+            Map.entry("integ_", "things-link-integration"),
+            Map.entry("assistant_", "things-link-assistant"));
     /** ADR0096：应用发布表虽使用app_前缀，领域所有者仍是dashboard。 */
     private static final Map<String, String> TABLE_FAMILY_OWNERS = Map.of(
             "app_application", "things-link-dashboard");

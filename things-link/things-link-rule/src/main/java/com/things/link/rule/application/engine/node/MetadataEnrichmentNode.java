@@ -31,19 +31,19 @@ public final class MetadataEnrichmentNode implements RuleNode {
              "additionalProperties":{"type":"string","maxLength":256}},"overwrite":{"type":"boolean","default":false}}}
             """);
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String type() {
         return TYPE;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public JsonNode configSchema() {
         return CONFIG_SCHEMA.deepCopy();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeValidation validate(JsonNode config) {
         if (config == null || !config.isObject() || config.size() < 1 || config.size() > 2
@@ -68,7 +68,7 @@ public final class MetadataEnrichmentNode implements RuleNode {
         return RuleNodeValidation.success();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeResult execute(RuleMessage message, JsonNode config, RuleExecutionContext context) {
         Map<String, String> enriched = new HashMap<>(message.metadata());

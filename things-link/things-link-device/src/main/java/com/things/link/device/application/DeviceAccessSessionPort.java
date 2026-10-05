@@ -165,7 +165,7 @@ public interface DeviceAccessSessionPort {
     ActivityResult recordAuthenticatedActivity(com.things.link.shared.message.AuthenticatedDeviceIdentity identity,
             TransportProtocol expected);
 
-    /** Stable internal admission classification, mapped to existing device protocol errors. */
+    /** 稳定的内部准入分类，映射为现有设备协议错误。 */
     enum ActivityResult { ACCEPTED, PLANE_NOT_ENABLED, PROJECT_UNAVAILABLE, CREDENTIAL_CHANGED }
 
     /**

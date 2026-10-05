@@ -58,7 +58,7 @@ public class JdbcPlanSummaryRepository implements PlanSummaryRepository {
         this.resourcePackageRepository = resourcePackageRepository;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantPlanSummary> findForCurrentProject(UUID projectId, UUID callerAccountId) {
         List<SummaryRow> rows = jdbcTemplate.query("""

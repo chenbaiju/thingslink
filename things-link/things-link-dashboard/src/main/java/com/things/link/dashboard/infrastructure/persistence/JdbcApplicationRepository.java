@@ -136,7 +136,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void create(ApplicationCatalogEntry application, ApplicationDraft draft) {
         requireInitialAggregate(application, draft);
@@ -167,7 +167,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void lockCreationRequest(
@@ -184,7 +184,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 """, Integer.class, tenantId, projectId, accountId, idempotencyKeyDigest);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<ApplicationCreationResult> findCreationResult(
@@ -203,7 +203,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 tenantId, projectId, accountId, idempotencyKeyDigest).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<ApplicationCatalogEntry> findCreationApplication(UUID projectId, UUID applicationId) {
@@ -219,7 +219,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 """, APPLICATION_MAPPER, projectId, applicationId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void createIdempotent(
@@ -266,7 +266,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ApplicationCatalogEntry> find(UUID projectId, UUID applicationId) {
         return jdbcTemplate.query("""
@@ -277,7 +277,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 """, APPLICATION_MAPPER, projectId, applicationId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<ApplicationCatalogEntry> page(UUID projectId, String cursor, int limit) {
         Objects.requireNonNull(projectId, "projectId");
@@ -311,7 +311,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         return CursorPage.of(items, Cursor.encode(last.updatedAt() + "|" + last.id()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<CursorPage<ApplicationVersionSummary>> pageVersions(
             UUID projectId, UUID applicationId, String cursor, int limit) {
@@ -379,7 +379,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 items, Cursor.encode(Long.toString(last.versionNumber()))));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean rename(UUID projectId, UUID applicationId, String managementName,
                           UUID updatedBy, Instant updatedAt) {
@@ -393,7 +393,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 """, managementName, updatedBy, Timestamp.from(updatedAt), projectId, applicationId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ApplicationDraft> findDraft(UUID projectId, UUID applicationId) {
         return jdbcTemplate.query("""
@@ -409,7 +409,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 """, DRAFT_MAPPER, projectId, applicationId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ApplicationDraftSaveResult saveDraft(
             UUID projectId, UUID applicationId, long expectedRevision,
@@ -469,13 +469,13 @@ public class JdbcApplicationRepository implements ApplicationRepository {
                 Timestamp.from(updatedAt), projectId, applicationId, expectedRevision);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ApplicationVersion> findVersion(UUID projectId, UUID applicationId, UUID versionId) {
         return queryVersion(" AND version.id = ?", projectId, applicationId, versionId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ApplicationVersionLookupResult findVersionForManagement(
             UUID projectId, UUID applicationId, UUID versionId) {
@@ -515,19 +515,19 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         return rows.getFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ApplicationVersion> findLatestVersion(UUID projectId, UUID applicationId) {
         return queryVersion(" ORDER BY version.version_number DESC LIMIT 1", projectId, applicationId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ApplicationPublicationState> findPublicationState(UUID projectId, UUID applicationId) {
         return queryPublicationState(projectId, applicationId, "");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<ApplicationPublicationState> lockPublicationState(UUID projectId, UUID applicationId) {
@@ -540,7 +540,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         return queryPublicationState(projectId, applicationId, "");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public ApplicationPublicationAppendResult appendPublication(
@@ -569,7 +569,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         return rows.getFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public ApplicationPublicationRollbackResult rollbackPublication(
@@ -602,7 +602,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         return rows.getFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public ApplicationPublicationWithdrawalResult withdrawPublication(
@@ -635,7 +635,7 @@ public class JdbcApplicationRepository implements ApplicationRepository {
         return rows.getFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public ApplicationSoftDeleteResult softDelete(

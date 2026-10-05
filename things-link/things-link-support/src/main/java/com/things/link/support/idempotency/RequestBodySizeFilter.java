@@ -44,7 +44,7 @@ public class RequestBodySizeFilter extends OncePerRequestFilter {
         this.objectMapper = objectMapper;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

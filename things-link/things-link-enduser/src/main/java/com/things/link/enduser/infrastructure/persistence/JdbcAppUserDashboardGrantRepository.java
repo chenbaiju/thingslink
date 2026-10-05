@@ -47,7 +47,7 @@ public class JdbcAppUserDashboardGrantRepository implements AppUserDashboardGran
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppUserDashboardGrant> find(UUID tenantId, UUID projectId, UUID appUserId, UUID dashboardId) {
         return jdbc.query("""
@@ -56,7 +56,7 @@ public class JdbcAppUserDashboardGrantRepository implements AppUserDashboardGran
                 """, MAPPER, tenantId, projectId, appUserId, dashboardId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<AppUserDashboardGrant> list(UUID tenantId, UUID projectId, UUID appUserId,
                                                 String cursor, int limit) {
@@ -81,7 +81,7 @@ public class JdbcAppUserDashboardGrantRepository implements AppUserDashboardGran
         return CursorPage.of(items, Cursor.encode(items.getLast().dashboardId().toString()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Set<UUID> findActiveDashboardIds(UUID tenantId, UUID projectId, UUID appUserId, List<UUID> dashboardIds) {
         if (dashboardIds == null || dashboardIds.size() > 5 || dashboardIds.stream().anyMatch(java.util.Objects::isNull)
@@ -121,7 +121,7 @@ public class JdbcAppUserDashboardGrantRepository implements AppUserDashboardGran
         return new BusinessException(CommonErrorCode.INVALID_PARAMETER, "分页游标无效");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public WriteResult compareAndSet(UUID candidateId, UUID tenantId, UUID projectId, UUID appUserId,
                                      UUID dashboardId, long expectedRevision, AppUserDashboardGrant.Status status,

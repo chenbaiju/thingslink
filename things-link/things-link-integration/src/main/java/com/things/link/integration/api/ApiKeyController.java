@@ -31,35 +31,86 @@ public class ApiKeyController {
     private final boolean enabled;
     public ApiKeyController(ApiKeyManagementService service,ProjectService projects,
             @Value("${things-link.integration.api-key.enabled:false}") boolean enabled){this.service=service;this.projects=projects;this.enabled=enabled;}
-    @PostMapping @Operation(operationId="issueProjectApiKey",summary="签发项目API Key，仅首次返回秘密")
-    public ResponseEntity<IssuedKey> issue(@PathVariable UUID projectId,@Valid @RequestBody CreateKey request,HttpServletRequest http){
+    /**
+     * 签发项目API Key，仅首次返回秘密。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param request 本次操作的请求数据，结构见 {@code CreateKey}
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<IssuedKey>}
+     */
+    @PostMapping @Operation(operationId="issueProjectApiKey",summary="签发项目API Key，仅首次返回秘密", description = "签发项目API Key，仅首次返回秘密。")
+    public ResponseEntity<IssuedKey> issue(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@Valid @RequestBody CreateKey request,HttpServletRequest http){
         Identity identity=identity(projectId,http);
         var result=service.issue(identity.tenant(),projectId,identity.actor(),request.operationId(),request.spec());
         return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore()).body(IssuedKey.from(result));
     }
-    @PostMapping("/{keyId}/rotate") @Operation(operationId="rotateProjectApiKey",summary="原子轮换并立即撤销旧Key")
-    public ResponseEntity<IssuedKey> rotate(@PathVariable UUID projectId,@PathVariable UUID keyId,@Valid @RequestBody CreateKey request,HttpServletRequest http){
+    /**
+     * 原子轮换并立即撤销旧Key。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param keyId API 密钥记录标识，不是密钥明文
+     * @param request 本次操作的请求数据，结构见 {@code CreateKey}
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<IssuedKey>}
+     */
+    @PostMapping("/{keyId}/rotate") @Operation(operationId="rotateProjectApiKey",summary="原子轮换并立即撤销旧Key", description = "原子轮换并立即撤销旧Key。")
+    public ResponseEntity<IssuedKey> rotate(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "API 密钥记录标识，不是密钥明文") @PathVariable UUID keyId,@Valid @RequestBody CreateKey request,HttpServletRequest http){
         Identity identity=identity(projectId,http);
         var result=service.rotate(identity.tenant(),projectId,identity.actor(),request.operationId(),keyId,request.spec());
         return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore()).body(IssuedKey.from(result));
     }
-    @PostMapping("/{keyId}/revoke") @Operation(operationId="revokeProjectApiKey",summary="撤销项目API Key")
-    public ResponseEntity<ApiKeyView> revoke(@PathVariable UUID projectId,@PathVariable UUID keyId,@Valid @RequestBody RevokeKey request,HttpServletRequest http){
+    /**
+     * 撤销项目API Key。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param keyId API 密钥记录标识，不是密钥明文
+     * @param request 本次操作的请求数据，结构见 {@code RevokeKey}
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<ApiKeyView>}
+     */
+    @PostMapping("/{keyId}/revoke") @Operation(operationId="revokeProjectApiKey",summary="撤销项目API Key", description = "撤销项目API Key。")
+    public ResponseEntity<ApiKeyView> revoke(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "API 密钥记录标识，不是密钥明文") @PathVariable UUID keyId,@Valid @RequestBody RevokeKey request,HttpServletRequest http){
         Identity identity=identity(projectId,http);
         return noStore(service.revoke(identity.tenant(),projectId,identity.actor(),request.operationId(),keyId));
     }
-    @GetMapping @Operation(operationId="listProjectApiKeys",summary="分页读取Key脱敏元数据")
-    public ResponseEntity<CursorPage<ApiKeyView>> list(@PathVariable UUID projectId,@RequestParam(required=false) String cursor,
-            @RequestParam(defaultValue="20") int limit,HttpServletRequest http){
+    /**
+     * 分页读取Key脱敏元数据。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 符合条件的记录页及后续分页游标
+     */
+    @GetMapping @Operation(operationId="listProjectApiKeys",summary="分页读取Key脱敏元数据", description = "分页读取Key脱敏元数据。")
+    public ResponseEntity<CursorPage<ApiKeyView>> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required=false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue="20") int limit,HttpServletRequest http){
         Identity identity=identity(projectId,http);
         return noStore(service.list(identity.tenant(),projectId,identity.actor(),cursor,limit));
     }
-    @GetMapping("/{keyId}") @Operation(operationId="getProjectApiKey",summary="读取Key脱敏元数据")
-    public ResponseEntity<ApiKeyView> get(@PathVariable UUID projectId,@PathVariable UUID keyId,HttpServletRequest http){
+    /**
+     * 读取Key脱敏元数据。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param keyId API 密钥记录标识，不是密钥明文
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<ApiKeyView>}
+     */
+    @GetMapping("/{keyId}") @Operation(operationId="getProjectApiKey",summary="读取Key脱敏元数据", description = "读取Key脱敏元数据。")
+    public ResponseEntity<ApiKeyView> get(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "API 密钥记录标识，不是密钥明文") @PathVariable UUID keyId,HttpServletRequest http){
         Identity identity=identity(projectId,http);return noStore(service.get(identity.tenant(),projectId,identity.actor(),keyId));
     }
-    @GetMapping("/operations/{operationId}") @Operation(operationId="recoverProjectApiKeyOperation",summary="查询原操作结果，不恢复秘密")
-    public ResponseEntity<ApiKeyView> recover(@PathVariable UUID projectId,@PathVariable UUID operationId,HttpServletRequest http){
+    /**
+     * 查询原操作结果，不恢复秘密。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param operationId 管理操作标识，用于定位幂等回执
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<ApiKeyView>}
+     */
+    @GetMapping("/operations/{operationId}") @Operation(operationId="recoverProjectApiKeyOperation",summary="查询原操作结果，不恢复秘密", description = "查询原操作结果，不恢复秘密。")
+    public ResponseEntity<ApiKeyView> recover(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "管理操作标识，用于定位幂等回执") @PathVariable UUID operationId,HttpServletRequest http){
         Identity identity=identity(projectId,http);return noStore(service.recover(identity.tenant(),projectId,identity.actor(),operationId));
     }
     private Identity identity(UUID project,HttpServletRequest request){

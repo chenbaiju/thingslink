@@ -6,6 +6,7 @@ import com.things.link.shared.message.TransportProtocol;
 import java.time.Instant;
 import java.util.UUID;
 
+/** 设备连接历史响应，逐字段映射已有连接事实，不推断当前在线状态。 */
 public record DeviceConnectionResponse(UUID id, UUID deviceId, String sessionId, TransportProtocol protocol,
                                        String brokerNode, String clientIp,
                                        Instant connectedAt, Instant disconnectedAt,

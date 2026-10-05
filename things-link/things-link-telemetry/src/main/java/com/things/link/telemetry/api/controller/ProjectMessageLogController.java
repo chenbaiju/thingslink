@@ -59,21 +59,23 @@ public class ProjectMessageLogController {
      * @param cursor 可选下一页游标
      * @param limit 单页数量
      * @return 消息日志键集分页结果
+     *
+     * @param messageType 消息类型筛选值
      */
     @Operation(summary = "项目消息日志查询",
             description = "按设备、方向、协议、时间和 traceId 组合筛选项目日志摘要，使用 (ts,id) 键集分页")
     @GetMapping
     public ResponseEntity<CursorPage<MessageLogResponse>> list(
-            @PathVariable UUID projectId,
-            @RequestParam(required = false) UUID deviceId,
-            @RequestParam(required = false) DeviceMessageLog.Direction direction,
-            @RequestParam(required = false) TransportProtocol protocol,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) @Size(max = 64) String traceId,
-            @RequestParam(required = false) @Size(max = 32) String messageType,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选设备 ID") @RequestParam(required = false) UUID deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选消息方向") @RequestParam(required = false) DeviceMessageLog.Direction direction,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选传输协议") @RequestParam(required = false) TransportProtocol protocol,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选开始时刻，包含") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选结束时刻，不包含") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选精确追踪 ID") @RequestParam(required = false) @Size(max = 64) String traceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "消息类型筛选值") @RequestParam(required = false) @Size(max = 32) String messageType,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选下一页游标") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "单页数量") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         if (deviceId == null) {
             authorization.requireProjectRead(projectId);
         } else {

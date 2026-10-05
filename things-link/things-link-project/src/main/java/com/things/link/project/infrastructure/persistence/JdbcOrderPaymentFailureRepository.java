@@ -55,7 +55,7 @@ public class JdbcOrderPaymentFailureRepository implements OrderPaymentFailureRep
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID insert(UUID tenantId, UUID orderId, PaymentProvider provider, String providerEventId,
                        String failureCode, long amountCents, String currency, Instant occurredAt) {
@@ -70,7 +70,7 @@ public class JdbcOrderPaymentFailureRepository implements OrderPaymentFailureRep
         return failureId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<OrderPaymentFailure> findByProviderEventId(PaymentProvider provider,
                                                               String providerEventId) {

@@ -4,7 +4,7 @@ import com.things.link.support.tenant.TransactionLocalRlsScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
-/** Durable claim/attempt facts; authority locks precede delivery locks in claim and outbound. */
+/** 持久认领与尝试事实；认领及出站时均先获取权限锁，再获取投递锁。 */
 @Service
 public class WebhookDeliveryState {
     private final WebhookDeliveryRepository deliveries;private final WebhookSubscriptionRepository subscriptions;private final WebhookOutboundAuthority authority;private final TransactionLocalRlsScope rls;

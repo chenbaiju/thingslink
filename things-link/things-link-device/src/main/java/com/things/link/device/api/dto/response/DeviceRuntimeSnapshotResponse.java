@@ -69,7 +69,7 @@ public record DeviceRuntimeSnapshotResponse(
             Instant lastOnlineAt,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID currentModelVersionId) implements DeviceItem { }
 
-    /** @param versionId 模型版本 @param digestAlgorithm 摘要算法 @param digest 完整摘要 @param profile Profile @param properties 属性描述 */
+    /** @param versionId 模型版本 @param digestAlgorithm 摘要算法 @param digest 完整摘要 @param profile 模型运行配置档案 @param properties 属性描述 */
     @Schema(name = "ConsoleDeviceSnapshotModelItem")
     public record ModelItem(
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID versionId,

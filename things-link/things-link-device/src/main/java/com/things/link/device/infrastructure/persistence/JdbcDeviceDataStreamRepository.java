@@ -21,7 +21,7 @@ public class JdbcDeviceDataStreamRepository implements DeviceDataStreamRepositor
     /** @param jdbcTemplate 已接入 RLS 上下文的数据访问模板 */
     public JdbcDeviceDataStreamRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(DeviceDataStream stream) {
         jdbcTemplate.update("""
                 INSERT INTO dev_data_stream
@@ -33,7 +33,7 @@ public class JdbcDeviceDataStreamRepository implements DeviceDataStreamRepositor
                 stream.publishTopic(), stream.subscribeTopic());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DeviceDataStream> findByDeviceType(UUID projectId, UUID deviceTypeId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, stream_key, name, format,
@@ -44,7 +44,7 @@ public class JdbcDeviceDataStreamRepository implements DeviceDataStreamRepositor
                 """, this::map, projectId, deviceTypeId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceDataStream> findById(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, stream_key, name, format,
@@ -54,7 +54,7 @@ public class JdbcDeviceDataStreamRepository implements DeviceDataStreamRepositor
                 """, this::map, projectId, deviceTypeId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(DeviceDataStream stream) {
         return jdbcTemplate.update("""
                 UPDATE dev_data_stream
@@ -66,7 +66,7 @@ public class JdbcDeviceDataStreamRepository implements DeviceDataStreamRepositor
                 stream.deviceTypeId(), stream.id()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean softDelete(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.update("""
                 UPDATE dev_data_stream SET deleted_at = now(), updated_at = now()

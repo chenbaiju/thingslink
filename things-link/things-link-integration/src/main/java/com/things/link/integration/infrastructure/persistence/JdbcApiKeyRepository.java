@@ -59,7 +59,7 @@ public class JdbcApiKeyRepository implements ApiKeyRepository {
                 o.actor(),o.kind(),o.requestDigest(),o.target(),o.result(),Timestamp.from(o.completedAt()));
     }
     private static String array(List<String> values) {
-        // Callers validate the closed scope alphabet and literal IP/CIDR alphabet before SQL.
+        // 执行 SQL 前，调用方须校验封闭范围字符集以及 IP 字面量或 CIDR 字符集。
         return "{"+String.join(",",values)+"}";
     }
     private static ApiKeyFact map(ResultSet r) throws SQLException {

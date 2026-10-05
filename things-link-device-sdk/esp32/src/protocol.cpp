@@ -1,4 +1,4 @@
-#include "baijulink/protocol.hpp"
+#include "thingslink/protocol.hpp"
 #include "buffers.hpp"
 #include "cJSON.h"
 #include <cmath>
@@ -7,7 +7,7 @@
 #include <ctime>
 #include <memory>
 
-namespace baijulink {
+namespace thingslink {
 static_assert(sizeof(std::time_t) >= 8, "SDK requires a 64-bit UTC time_t");
 namespace {
 using Json = std::unique_ptr<cJSON, decltype(&cJSON_Delete)>;

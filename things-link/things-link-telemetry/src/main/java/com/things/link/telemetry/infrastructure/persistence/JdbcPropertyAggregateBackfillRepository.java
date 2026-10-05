@@ -39,7 +39,7 @@ public class JdbcPropertyAggregateBackfillRepository implements PropertyAggregat
         this.maintenanceJdbcTemplate.setQueryTimeout(300);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean request(UUID tenantId, UUID projectId, Instant occurredAt, Instant receivedAt) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
@@ -47,7 +47,7 @@ public class JdbcPropertyAggregateBackfillRepository implements PropertyAggregat
                 tenantId, projectId, Timestamp.from(occurredAt), Timestamp.from(receivedAt)));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<BackfillWindow> claimDue(int maximumRows) {
         return jdbcTemplate.query("""
@@ -61,7 +61,7 @@ public class JdbcPropertyAggregateBackfillRepository implements PropertyAggregat
                 resultSet.getLong("revision")), maximumRows);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void refresh(BackfillWindow window) {
         if (!window.windowStart().isBefore(window.windowEnd())
@@ -111,7 +111,7 @@ public class JdbcPropertyAggregateBackfillRepository implements PropertyAggregat
         });
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long mismatchCount(BackfillWindow window) {
         Long mismatches = jdbcTemplate.queryForObject(
@@ -123,7 +123,7 @@ public class JdbcPropertyAggregateBackfillRepository implements PropertyAggregat
         return mismatches;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean complete(BackfillWindow window) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
@@ -131,7 +131,7 @@ public class JdbcPropertyAggregateBackfillRepository implements PropertyAggregat
                 window.projectId(), Timestamp.from(window.windowStart()), window.revision()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void fail(BackfillWindow window, String failureSummary) {
         jdbcTemplate.queryForObject("SELECT public.fail_property_aggregate_backfill(?, ?, ?)", Object.class,

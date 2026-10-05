@@ -144,6 +144,7 @@ spring:
       # X-02仅登记未来迁移位置；S13-1前不得创建ota_*表或占位版本。
       - classpath:db/migration/ota
       - classpath:db/migration/integration
+      - classpath:db/migration/assistant
     # 迁移用表 owner 身份执行，不受 RLS 约束 —— 迁移中的数据回填需要全量访问。
     # 与上面的 datasource 用不同账号是刻意的，理由见 datasource.username 的注释。
     user: thingslink
@@ -613,9 +614,10 @@ things-link:
       #   - https://console.example.com
 
 springdoc:
-  # 管理 API 契约只包含版本化业务路径。simulator 仅以 test scope 进入 bootstrap 验收
-  # classpath；不限定路径会使其本地 /simulations 端点随测试上下文污染正式契约。
-  paths-to-match: /api/v1/**,/api/open/v1/**
+  # 开发文档扫描版本化 API、设备 HTTP 和受控静态入口；运维与实时握手按真实注册另补文档。
+  # simulator 仅以 test scope 进入 bootstrap 验收；测试目录通过独立 servers 说明进程边界，
+  # 平台开发进程不注册 /simulations 运行路由，生产继续关闭文档。
+  paths-to-match: /api/v1/**,/api/open/v1/**,/device-access/v1/**,/app,/app/**
   api-docs:
     # /v3/api-docs 暴露全部接口结构。开发期必需，生产环境则是一份现成的
     # 攻击面地图。

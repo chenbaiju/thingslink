@@ -28,7 +28,7 @@ public class JdbcDeviceMqttConnectionRepository implements DeviceMqttConnectionR
         this.jdbc = jdbc; this.rls = rls;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Ticket> issue(Scope scope) {
         if (!lock(scope, true)) return Optional.empty();
@@ -54,7 +54,7 @@ public class JdbcDeviceMqttConnectionRepository implements DeviceMqttConnectionR
                 scope.configVersion(), scope.sessionId()).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Transition connected(Scope scope, UUID ticketId, String clientIp, String node) {
         if (ticketId == null || !lock(scope, true)) return Transition.rejected();
@@ -75,7 +75,7 @@ public class JdbcDeviceMqttConnectionRepository implements DeviceMqttConnectionR
         return new Transition(true, true, closed);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Transition disconnected(Scope scope, UUID ticketId, String reason) {
         if (ticketId == null || !lock(scope, false)) return Transition.rejected();
@@ -97,7 +97,7 @@ public class JdbcDeviceMqttConnectionRepository implements DeviceMqttConnectionR
         return new Transition(true, true, closed);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean permits(Scope scope, UUID ticketId) {
         if (ticketId == null || !lock(scope, true)) return false;

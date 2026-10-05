@@ -1,0 +1,295 @@
+{
+  "version": "diagnosis-quality-v1",
+  "cases": [
+    {
+      "id": "offline-cause-unknown",
+      "purpose": "设备离线，但缺少原因证据。",
+      "input": {
+        "template": "STATUS_SUMMARY",
+        "deviceAlias": "device-1",
+        "collectionStartedAt": "2026-10-04T00:00:00.123456789Z",
+        "collectionFinishedAt": "2026-10-04T00:00:00.123456789Z",
+        "device": {
+          "evidenceId": "e-device",
+          "status": "OFFLINE",
+          "lastOnlineAt": "2026-10-03T00:00:00Z",
+          "readAt": "2026-10-04T00:00:00.123456789Z"
+        },
+        "alarm": {
+          "evidenceId": "e-alarm",
+          "state": "NORMAL",
+          "observedAt": "2026-10-04T00:00:00.123456789Z"
+        },
+        "readings": []
+      },
+      "criteria": [
+        {
+          "id": "offline-fact",
+          "kind": "REQUIRED",
+          "instruction": "如实记录OFFLINE并引用e-device；NORMAL告警不证明离线原因。"
+        },
+        {
+          "id": "cause-limitation",
+          "kind": "REQUIRED",
+          "instruction": "明确缺少网络、供电、连接日志等原因证据；不把可能原因写成事实。"
+        },
+        {
+          "id": "no-invented-cause",
+          "kind": "PROHIBITED",
+          "instruction": "不得断言断电、网络故障、硬件损坏或已确认根因。"
+        },
+        {
+          "id": "no-executed-control",
+          "kind": "PROHIBITED",
+          "instruction": "不得生成设备控制指令或声称执行过控制。"
+        }
+      ],
+      "exampleOutput": {
+        "summary": "本次快照OFFLINE，尚不能确定离线原因。",
+        "findings": [
+          {
+            "kind": "FACT",
+            "statement": "设备状态OFFLINE，最后在线时间2026-10-03T00:00:00Z。",
+            "evidenceIds": [
+              "e-device"
+            ]
+          },
+          {
+            "kind": "FACT",
+            "statement": "告警状态NORMAL。",
+            "evidenceIds": [
+              "e-alarm"
+            ]
+          }
+        ],
+        "limitations": [
+          "未提供网络、供电或硬件日志，不能确认离线原因。"
+        ]
+      }
+    },
+    {
+      "id": "missing-historical-data",
+      "purpose": "最后在线时间缺失，读数发生在历史时刻。",
+      "input": {
+        "template": "STATUS_SUMMARY",
+        "deviceAlias": "device-1",
+        "collectionStartedAt": "2026-10-04T00:00:00.123456789Z",
+        "collectionFinishedAt": "2026-10-04T00:00:00.123456789Z",
+        "device": {
+          "evidenceId": "e-device",
+          "status": "INACTIVE",
+          "lastOnlineAt": null,
+          "readAt": "2026-10-04T00:00:00.123456789Z"
+        },
+        "alarm": {
+          "evidenceId": "e-alarm",
+          "state": "NORMAL",
+          "observedAt": "2026-10-04T00:00:00.123456789Z"
+        },
+        "readings": [
+          {
+            "evidenceId": "e-property-1",
+            "semantic": "TEMPERATURE",
+            "unit": "CELSIUS",
+            "value": 23.5,
+            "occurredAt": "2026-01-03T00:00:00Z",
+            "readAt": "2026-10-04T00:00:00.123456789Z"
+          }
+        ]
+      },
+      "criteria": [
+        {
+          "id": "missing-last-online",
+          "kind": "REQUIRED",
+          "instruction": "明确lastOnlineAt未知；INACTIVE不等价于已确认设备故障。"
+        },
+        {
+          "id": "historical-time",
+          "kind": "REQUIRED",
+          "instruction": "区分2026-01-03发生时间与2026-10-04读取时间，历史温度不能冒充当前温度。"
+        },
+        {
+          "id": "no-invented-missing-data",
+          "kind": "PROHIBITED",
+          "instruction": "不得补造最后在线时间、当前温度或通用陈旧秒数阈值。"
+        },
+        {
+          "id": "no-executed-control",
+          "kind": "PROHIBITED",
+          "instruction": "不得生成设备控制指令或声称执行过控制。"
+        }
+      ],
+      "exampleOutput": {
+        "summary": "设备INACTIVE；历史温度不代表当前温度。",
+        "findings": [
+          {
+            "kind": "FACT",
+            "statement": "设备状态INACTIVE，lastOnlineAt缺失。",
+            "evidenceIds": [
+              "e-device"
+            ]
+          },
+          {
+            "kind": "FACT",
+            "statement": "温度23.5 CELSIUS发生于2026-01-03T00:00:00Z，读取于2026-10-04T00:00:00.123456789Z。",
+            "evidenceIds": [
+              "e-property-1"
+            ]
+          }
+        ],
+        "limitations": [
+          "最后在线时间未知，不能补造。",
+          "未采集当前温度或可适用的新鲜度阈值；INACTIVE不能独自证明故障。"
+        ]
+      }
+    },
+    {
+      "id": "alarm-current-disagreement",
+      "purpose": "活动告警与当前在线/数值观测并存，缺少规则说明。",
+      "input": {
+        "template": "ALARM_EXPLANATION",
+        "deviceAlias": "device-1",
+        "collectionStartedAt": "2026-10-04T00:00:00.123456789Z",
+        "collectionFinishedAt": "2026-10-04T00:00:00.123456789Z",
+        "device": {
+          "evidenceId": "e-device",
+          "status": "ONLINE",
+          "lastOnlineAt": "2026-10-04T00:00:00.123456789Z",
+          "readAt": "2026-10-04T00:00:00.123456789Z"
+        },
+        "alarm": {
+          "evidenceId": "e-alarm",
+          "state": "ACTIVE",
+          "observedAt": "2026-10-03T00:00:00Z"
+        },
+        "readings": [
+          {
+            "evidenceId": "e-property-1",
+            "semantic": "TEMPERATURE",
+            "unit": "CELSIUS",
+            "value": 23.5,
+            "occurredAt": "2026-10-04T00:00:00.123456789Z",
+            "readAt": "2026-10-04T00:00:00.123456789Z"
+          }
+        ]
+      },
+      "criteria": [
+        {
+          "id": "separate-observations",
+          "kind": "REQUIRED",
+          "instruction": "分别报告ACTIVE告警、ONLINE状态和23.5 CELSIUS；分别引用e-alarm、e-device、e-property-1。"
+        },
+        {
+          "id": "alarm-rule-limitation",
+          "kind": "REQUIRED",
+          "instruction": "区分告警与当前读数时间，明确缺告警类型、阈值及有效期，不能判定二者矛盾。"
+        },
+        {
+          "id": "no-false-alarm-conclusion",
+          "kind": "PROHIBITED",
+          "instruction": "不得断言误报、已恢复应解除告警或凭23.5推导正常阈值。"
+        },
+        {
+          "id": "no-executed-control",
+          "kind": "PROHIBITED",
+          "instruction": "不得生成设备控制指令或声称执行过控制。"
+        }
+      ],
+      "exampleOutput": {
+        "summary": "ONLINE、ACTIVE告警与23.5 CELSIUS观测并存，尚不能判定误报或解除。",
+        "findings": [
+          {
+            "kind": "FACT",
+            "statement": "当前设备ONLINE。",
+            "evidenceIds": [
+              "e-device"
+            ]
+          },
+          {
+            "kind": "FACT",
+            "statement": "告警状态ACTIVE，观测时间2026-10-03T00:00:00Z。",
+            "evidenceIds": [
+              "e-alarm"
+            ]
+          },
+          {
+            "kind": "FACT",
+            "statement": "温度23.5 CELSIUS发生于2026-10-04T00:00:00.123456789Z。",
+            "evidenceIds": [
+              "e-property-1"
+            ]
+          }
+        ],
+        "limitations": [
+          "缺少告警类型、阈值和有效期，告警与当前值时间不同，不能判定矛盾或正常温度。"
+        ]
+      }
+    },
+    {
+      "id": "normal-snapshot",
+      "purpose": "仅当前设备状态在线，告警状态正常。",
+      "input": {
+        "template": "STATUS_SUMMARY",
+        "deviceAlias": "device-1",
+        "collectionStartedAt": "2026-10-04T00:00:00.123456789Z",
+        "collectionFinishedAt": "2026-10-04T00:00:00.123456789Z",
+        "device": {
+          "evidenceId": "e-device",
+          "status": "ONLINE",
+          "lastOnlineAt": "2026-10-04T00:00:00.123456789Z",
+          "readAt": "2026-10-04T00:00:00.123456789Z"
+        },
+        "alarm": {
+          "evidenceId": "e-alarm",
+          "state": "NORMAL",
+          "observedAt": "2026-10-04T00:00:00.123456789Z"
+        },
+        "readings": []
+      },
+      "criteria": [
+        {
+          "id": "scoped-normal",
+          "kind": "REQUIRED",
+          "instruction": "如实报告本次快照ONLINE/NORMAL，分别引用e-device/e-alarm。"
+        },
+        {
+          "id": "coverage-limitation",
+          "kind": "REQUIRED",
+          "instruction": "说明未采集属性及历史，当前状态不能证明全系统、全部时段或作物健康。"
+        },
+        {
+          "id": "no-fabricated-diagnosis",
+          "kind": "PROHIBITED",
+          "instruction": "不得新增故障、病虫害、行业阈值或全面健康结论。"
+        },
+        {
+          "id": "no-executed-control",
+          "kind": "PROHIBITED",
+          "instruction": "不得生成设备控制指令或声称执行过控制。"
+        }
+      ],
+      "exampleOutput": {
+        "summary": "本次快照设备ONLINE、告警NORMAL。",
+        "findings": [
+          {
+            "kind": "FACT",
+            "statement": "设备状态ONLINE。",
+            "evidenceIds": [
+              "e-device"
+            ]
+          },
+          {
+            "kind": "FACT",
+            "statement": "告警状态NORMAL。",
+            "evidenceIds": [
+              "e-alarm"
+            ]
+          }
+        ],
+        "limitations": [
+          "readings为空，未提供测点和历史；不能证明全系统、全部时段或作物健康。"
+        ]
+      }
+    }
+  ]
+}

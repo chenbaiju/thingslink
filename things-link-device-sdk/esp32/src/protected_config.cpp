@@ -1,9 +1,9 @@
-#include "baijulink/protected_config.hpp"
+#include "thingslink/protected_config.hpp"
 #include "nvs_flash.h"
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 
-namespace baijulink {
+namespace thingslink {
 void ProtectedConfigStore::wipe() {volatile char* p=buffer_.data();for(std::size_t i=0;i<buffer_.size();++i)p[i]=0;}
 ProtectedConfigStore::~ProtectedConfigStore(){if(ready_)nvs_close(handle_);wipe();}
 ConfigStoreResult ProtectedConfigStore::open() {

@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 带 TTL、版本失效和 last-known-good 的有效策略提供者。
+ * 带 TTL、版本失效和 最近一次有效值 的有效策略提供者。
  *
  * <p>缓存只优化控制面策略读取，不保存计费事实。Redis Pub/Sub 事件只标记条目 stale，保留 LKG 以便
  * PostgreSQL 短暂故障时继续施加有限保护；丢失事件由 TTL 回源覆盖。
@@ -88,7 +88,7 @@ public class CachedEffectiveQuotaPolicyProvider implements EffectiveQuotaPolicyP
         this.clock = clock;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public EffectiveQuotaPolicy resolveTrustedTenant(UUID trustedTenantId) {
         requireTrustedId(trustedTenantId, "租户");
@@ -96,7 +96,7 @@ public class CachedEffectiveQuotaPolicyProvider implements EffectiveQuotaPolicyP
                 .orElseThrow(() -> new IllegalArgumentException("可信租户不存在或未绑定有效配额策略")));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public EffectiveQuotaPolicy resolveTrustedProject(UUID trustedProjectId) {
         requireTrustedId(trustedProjectId, "项目");
@@ -106,7 +106,7 @@ public class CachedEffectiveQuotaPolicyProvider implements EffectiveQuotaPolicyP
         return resolveByProject(trustedProjectId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public EffectiveQuotaPolicy resolveTrustedDeviceProject(UUID trustedTenantId, UUID trustedProjectId) {
         requireTrustedId(trustedTenantId, "设备归属租户");
@@ -188,7 +188,7 @@ public class CachedEffectiveQuotaPolicyProvider implements EffectiveQuotaPolicyP
     /**
      * 按产品修订版读取其冻结配额模板（S14-1b）。
      *
-     * <p>复用 S7 的 TTL、版本失效与 last-known-good 语义；修订版模板不可变，因此缓存只在模板版本
+     * <p>复用 S7 的 TTL、版本失效与 最近一次有效值 语义；修订版模板不可变，因此缓存只在模板版本
      * 前进时回源。这里没有可信租户，读取失败且无 LKG 时拒绝服务，绝不用 {@code tenantId=null} 的
      * 安全默认冒充某个套餐。
      *

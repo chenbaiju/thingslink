@@ -56,7 +56,15 @@ public class DashboardShareManagementController {
         this.parser = Objects.requireNonNull(parser, "parser");
     }
 
-    /** 首次签发只返回一次secret；同key重试由领域安全冲突返回shareId。 */
+    /**
+     * 首次签发只返回一次secret；同key重试由领域安全冲突返回shareId。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param dashboardId 看板标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<DashboardShareCreatedResponse>}
+     */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "createDashboardShare", summary = "签发看板只读分享",
             description = "Idempotency-Key必填；首次返回secret，同key重试409/60052且详情仅含shareId")
@@ -66,32 +74,48 @@ public class DashboardShareManagementController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = CreateDashboardShareRequest.class)))
     public ResponseEntity<DashboardShareCreatedResponse> createDashboardShare(
-            @PathVariable UUID projectId, @PathVariable UUID dashboardId,
-            @Parameter(required = true) @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "看板标识") @PathVariable UUID dashboardId,
+            @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody byte[] body) {
         authorization.requireManage(projectId);
         return ResponseEntity.status(201).cacheControl(CacheControl.noStore()).body(
                 DashboardShareCreatedResponse.from(service.create(projectId, dashboardId, key, parser.parseCreate(body))));
     }
 
-    /** 列出全部状态的安全摘要；ARCHIVED只读可用，不返回secret/hash/creator或完整scope。 */
+    /**
+     * 列出全部状态的安全摘要；ARCHIVED只读可用，不返回secret/hash/creator或完整scope。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param dashboardId 看板标识
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 符合条件的记录页及后续分页游标
+     */
     @GetMapping
-    @Operation(operationId = "listDashboardShares", summary = "分页查询看板分享历史")
+    @Operation(operationId = "listDashboardShares", summary = "分页查询看板分享历史", description = "列出全部状态的安全摘要；ARCHIVED只读可用，不返回secret/hash/creator或完整scope。")
     public ResponseEntity<CursorPage<DashboardShareSummaryResponse>> listDashboardShares(
-            @PathVariable UUID projectId, @PathVariable UUID dashboardId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "看板标识") @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
         authorization.requireManage(projectId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(
                 service.page(projectId, dashboardId, cursor, limit).map(DashboardShareSummaryResponse::from));
     }
 
-    /** 无body的不可恢复撤销；重复撤销同一事实成功且不追加审计。 */
+    /**
+     * 无body的不可恢复撤销；重复撤销同一事实成功且不追加审计。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param dashboardId 看板标识
+     * @param shareId 只读分享标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 操作完成后的 HTTP 响应，正文为空
+     */
     @PostMapping("/{shareId}/revoke")
-    @Operation(operationId = "revokeDashboardShare", summary = "撤销看板只读分享")
+    @Operation(operationId = "revokeDashboardShare", summary = "撤销看板只读分享", description = "无body的不可恢复撤销；重复撤销同一事实成功且不追加审计。")
     @ApiResponse(responseCode = "204", description = "已撤销；重复操作无变化")
-    public ResponseEntity<Void> revokeDashboardShare(@PathVariable UUID projectId,
-            @PathVariable UUID dashboardId, @PathVariable UUID shareId,
+    public ResponseEntity<Void> revokeDashboardShare(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板标识") @PathVariable UUID dashboardId, @io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable UUID shareId,
             HttpServletRequest request) throws IOException {
         authorization.requireManage(projectId);
         // 只读取一个字节即可证明违反无body合同，不缓存或绑定无意义的大正文。

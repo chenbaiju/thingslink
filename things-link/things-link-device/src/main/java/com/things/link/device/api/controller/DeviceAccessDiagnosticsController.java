@@ -62,8 +62,8 @@ public class DeviceAccessDiagnosticsController {
     @Operation(summary = "接入连接诊断",
             description = "协议、接入配置版本、会话代次、认证与活动时刻、在线状态与断开原因；归属实例为脱敏短哈希")
     @GetMapping
-    public ResponseEntity<DeviceAccessDiagnosticsResponse> get(@PathVariable UUID projectId,
-                                                              @PathVariable UUID deviceId) {
+    public ResponseEntity<DeviceAccessDiagnosticsResponse> get(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                              @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId) {
         authorization.requireRead(projectId);
         UUID tenantId = projectService.requireProjectTenant(projectId);
         return diagnosticsPort.connection(tenantId, projectId, deviceId)

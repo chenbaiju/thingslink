@@ -4,6 +4,7 @@ import com.things.link.shared.error.BusinessException;
 import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+/** 公开 MQTT 实时交付编排；认领后重新准入，在租约内发送并写入持久结果。 */
 @Service
 public class RealtimeDeliveryDispatcher {
     private final RealtimeDeliveryState state;private final RealtimeOutboundAdmission admission;

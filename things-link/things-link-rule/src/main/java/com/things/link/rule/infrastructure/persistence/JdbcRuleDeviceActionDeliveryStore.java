@@ -16,7 +16,7 @@ public class JdbcRuleDeviceActionDeliveryStore implements RuleDeviceActionDelive
     /** JDBC 入口。 */ private final JdbcTemplate jdbcTemplate;
     /** @param jdbcTemplate JDBC 入口 */
     public JdbcRuleDeviceActionDeliveryStore(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void record(UUID actionId, UUID tenantId, UUID projectId, UUID ruleId, UUID ruleVersionId,
                                  UUID messageId, UUID deviceId, DeviceCommandDispatch.OperationType operationType,
                                  UUID commandId, String status, String failureCode, String traceId, Instant createdAt) {
@@ -24,7 +24,7 @@ public class JdbcRuleDeviceActionDeliveryStore implements RuleDeviceActionDelive
                 Boolean.class, actionId, tenantId, projectId, ruleId, ruleVersionId, messageId, deviceId,
                 operationType.name(), commandId, status, failureCode, traceId, Timestamp.from(createdAt));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void recordScene(UUID actionId, UUID tenantId, UUID projectId, UUID sceneId, UUID sceneVersionId,
                                       UUID sceneExecutionId, UUID deviceId, DeviceCommandDispatch.OperationType operationType,
                                       UUID commandId, String status, String failureCode, String traceId, Instant createdAt) {
@@ -33,7 +33,7 @@ public class JdbcRuleDeviceActionDeliveryStore implements RuleDeviceActionDelive
                 Boolean.class, actionId, tenantId, projectId, sceneId, sceneVersionId, sceneExecutionId, deviceId,
                 operationType.name(), commandId, status, failureCode, traceId, Timestamp.from(createdAt));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void recordAutomation(UUID actionId, UUID tenantId, UUID projectId, UUID automationId,
             UUID automationVersionId, UUID automationExecutionId, UUID deviceId,
             DeviceCommandDispatch.OperationType operationType, UUID commandId, String status,
@@ -45,7 +45,7 @@ public class JdbcRuleDeviceActionDeliveryStore implements RuleDeviceActionDelive
             throw new IllegalStateException("自动化设备投递事实冲突");
         }
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean complete(DeviceCommandTerminalEvent event) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
                 "SELECT rule_device_action_delivery_complete(?,?,?,?,?,?,?)", Boolean.class,

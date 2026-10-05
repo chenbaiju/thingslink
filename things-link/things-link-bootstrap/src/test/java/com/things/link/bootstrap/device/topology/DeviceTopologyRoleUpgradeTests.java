@@ -83,7 +83,7 @@ class DeviceTopologyRoleUpgradeTests {
             "classpath:db/migration/telemetry", "classpath:db/migration/alarm", "classpath:db/migration/task",
             "classpath:db/migration/rule", "classpath:db/migration/iam", "classpath:db/migration/enduser",
             // verify-11：完整升级必须包含授权外键的看板父表，并与生产迁移域保持一致。
-            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration"
+            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration", "classpath:db/migration/assistant"
     };
     /** 已含D-026修复、尚未包含D-111数据库守卫的实际旧版本。 */
     private static final String LEGACY_TARGET = "20260903.0100";

@@ -126,13 +126,13 @@ public sealed interface DashboardPublicationEligibilityRequirement permits
     }
 
     /**
-     * 同项目不可变模型版本及其精确摘要和Profile需求。
+     * 同项目不可变模型版本及其精确摘要和运行配置档案需求。
      *
      * @param modelKey Schema模型别名
      * @param versionId 不可变版本ID
      * @param digestAlgorithm 摘要算法
      * @param digest 摘要
-     * @param profile Profile
+     * @param profile 模型运行配置档案
      */
     record ModelReference(String modelKey, UUID versionId, String digestAlgorithm, String digest, String profile)
             implements DashboardPublicationEligibilityRequirement {

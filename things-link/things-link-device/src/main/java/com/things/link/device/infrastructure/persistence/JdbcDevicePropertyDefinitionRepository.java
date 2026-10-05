@@ -20,7 +20,7 @@ public class JdbcDevicePropertyDefinitionRepository implements DevicePropertyDef
     /** @param jdbcTemplate JDBC 访问器 */
     public JdbcDevicePropertyDefinitionRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(DevicePropertyDefinition value) {
         jdbcTemplate.update("""
                 INSERT INTO dev_property_definition
@@ -33,7 +33,7 @@ public class JdbcDevicePropertyDefinitionRepository implements DevicePropertyDef
                 value.schema(), value.sortOrder());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DevicePropertyDefinition> findByDeviceType(UUID projectId, UUID deviceTypeId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, property_key, name, access_type, data_type,
@@ -45,7 +45,7 @@ public class JdbcDevicePropertyDefinitionRepository implements DevicePropertyDef
                 """, this::map, projectId, deviceTypeId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DevicePropertyDefinition> findById(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, property_key, name, access_type, data_type,
@@ -56,7 +56,7 @@ public class JdbcDevicePropertyDefinitionRepository implements DevicePropertyDef
                 """, this::map, projectId, deviceTypeId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DevicePropertyDefinition> findByPropertyKey(
             UUID projectId, UUID deviceTypeId, String propertyKey) {
         return jdbcTemplate.query("""
@@ -68,7 +68,7 @@ public class JdbcDevicePropertyDefinitionRepository implements DevicePropertyDef
                 """, this::map, projectId, deviceTypeId, propertyKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(DevicePropertyDefinition value) {
         return jdbcTemplate.update("""
                 UPDATE dev_property_definition
@@ -82,7 +82,7 @@ public class JdbcDevicePropertyDefinitionRepository implements DevicePropertyDef
                 value.deviceTypeId(), value.id()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean softDelete(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.update("""
                 UPDATE dev_property_definition SET deleted_at = now(), updated_at = now()

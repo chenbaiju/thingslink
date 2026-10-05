@@ -46,6 +46,8 @@ public class DeviceRegistrationController {
      *
      * @param request 注册请求
      * @return 新设备标识与一次可见 Access Token
+     *
+     * @param httpRequest 原始 HTTP 请求，供头部、查询参数及身份校验使用
      */
     @PostMapping("/api/v1/emqx/register")
     @Operation(summary = "一型一密动态注册", description = "设备使用产品密钥注册，验证通过后自动创建设备实例并返回一机一密凭据")

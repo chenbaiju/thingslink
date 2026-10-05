@@ -11,7 +11,7 @@ import java.util.UUID;
  * @param deviceId 目标设备 ID
  * @param operationType COMMAND 或 PROPERTY_SET
  * @param commandId telemetry 设备操作稳定 ID，受理前拒绝为空
- * @param status ACCEPTED / REJECTED / SUCCEEDED / FAILED / TIMED_OUT
+ * @param status 投递状态：已接受、已拒绝、成功、失败或超时
  * @param failureCode 受理拒绝或设备终态的稳定失败码，不含异常正文
  * @param createdAt 动作受理 UTC 时刻
  * @param completedAt 永久拒绝或设备终态 UTC 时刻

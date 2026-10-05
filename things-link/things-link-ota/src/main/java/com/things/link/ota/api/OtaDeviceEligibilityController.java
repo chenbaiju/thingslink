@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 仅管理端当前资格快照，不是设备HTTP接入或可复用的下载令牌。 */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "OTA 设备资格", description = "读取当前设备升级资格")
 @RestController
 @RequestMapping("/api/v1/projects/{projectId}/ota/devices/{deviceId}/eligibility")
 public class OtaDeviceEligibilityController {
@@ -24,12 +25,19 @@ public class OtaDeviceEligibilityController {
     /** 控制器不接受客户端覆盖报告或能力字段。 */
     public OtaDeviceEligibilityController(OtaDeviceEligibilityService service) { this.service = service; }
 
-    /** 查询指定固件当前交集，不返回对象地址，成功响应禁止缓存。 */
+    /**
+     * 查询指定固件当前交集，不返回对象地址，成功响应禁止缓存。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceId 目标设备标识
+     * @param firmwareId 固件标识
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<Response>}
+     */
     @GetMapping
     @Operation(operationId = "getOtaDeviceEligibility", summary = "查询DIRECT设备当前OTA资格",
             description = "仅OWNER/ADMIN；本次事务快照不代替未来下载或活动授权")
-    public ResponseEntity<Response> check(@PathVariable UUID projectId, @PathVariable UUID deviceId,
-            @RequestParam UUID firmwareId) {
+    public ResponseEntity<Response> check(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "目标设备标识") @PathVariable UUID deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "固件标识") @RequestParam UUID firmwareId) {
         var result = service.check(projectId, deviceId, firmwareId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(new Response(result.eligible(),
                 result.reason(), result.reportRevision() == null ? null : result.reportRevision().toString(),

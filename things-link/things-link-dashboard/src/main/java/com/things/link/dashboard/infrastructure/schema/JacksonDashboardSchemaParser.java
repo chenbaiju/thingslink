@@ -84,7 +84,7 @@ public final class JacksonDashboardSchemaParser implements DashboardSchemaParser
                 .reader();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ParsedDashboardSchema parse(byte[] source) {
         byte[] snapshot = snapshotRawInput(source);
@@ -521,13 +521,13 @@ public final class JacksonDashboardSchemaParser implements DashboardSchemaParser
             this.root = Objects.requireNonNull(root, "root").deepCopy();
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public DashboardSchemaContractVersion contractVersion() {
             return contractVersion;
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public JsonNode root() {
             return root.deepCopy();

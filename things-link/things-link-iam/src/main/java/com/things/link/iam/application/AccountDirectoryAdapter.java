@@ -51,7 +51,7 @@ public class AccountDirectoryAdapter implements AccountDirectory {
                 .toList();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
     public boolean isActive(UUID accountId) {
@@ -61,7 +61,7 @@ public class AccountDirectoryAdapter implements AccountDirectory {
                 .orElse(false);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
     public boolean lockActive(UUID accountId) {

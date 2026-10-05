@@ -26,3 +26,10 @@ things-link-client-contracts/contracts/dashboard-v1.json text eol=lf
 
 things-link-console/src/types/api/schema.d.ts text eol=lf
 things-link-webapp/src/types/api/schema.d.ts text eol=lf
+
+# Agent candidate and release digests bind canonical LF bytes on all platforms.
+things-link-agent/agent/*.py text eol=lf
+things-link-agent/agent/*.json text eol=lf
+things-link-agent/pyproject.toml text eol=lf
+things-link-agent/uv.lock text eol=lf
+things-link/things-link-assistant/src/main/resources/com/things/link/assistant/*.json text eol=lf

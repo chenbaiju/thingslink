@@ -69,7 +69,7 @@ public class JdbcApplicationRuntimeRepository implements ApplicationRuntimeRepos
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ApplicationRuntimeLocation> locateByAppKey(String appKey) {
         return jdbcTemplate.query(LOCATE_SQL, (result, row) -> new ApplicationRuntimeLocation(
@@ -78,7 +78,7 @@ public class JdbcApplicationRuntimeRepository implements ApplicationRuntimeRepos
                 result.getObject("application_id", UUID.class)), appKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<PublishedApplicationRuntimeProjection> findCurrent(
             UUID tenantId, UUID projectId, UUID applicationId, String appKey) {

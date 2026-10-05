@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.DisposableBean;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+/** 有界 Webhook 交付工作器；最多四个并发任务，发送故障保留持久恢复事实。 */
 @Component
 @DataPlaneDatabase
 @ConditionalOnProperty(name="things-link.integration.webhook.enabled",havingValue="true")

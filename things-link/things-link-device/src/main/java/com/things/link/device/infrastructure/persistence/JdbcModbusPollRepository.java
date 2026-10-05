@@ -27,7 +27,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
     /** @param jdbcTemplate 数据访问模板 */
     public JdbcModbusPollRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void syncSchedule(UUID projectId, UUID deviceId, String projectKey, String gatewayKey,
                                        List<ModbusPointMapping> points) {
         jdbcTemplate.update("DELETE FROM dev_modbus_poll WHERE project_id = ? AND device_id = ?",
@@ -47,7 +47,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public List<ModbusPoll> claimDue(int limit) {
@@ -63,7 +63,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
         return List.copyOf(claimed);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<ModbusPoll> claimOneDue(int candidateLimit) {
@@ -128,7 +128,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
                 """, this::map, gatewayId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<ModbusPoll> findByRequestId(UUID requestId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_id, sub_device_id, project_key, gateway_key, property_key, slave_address,
@@ -139,7 +139,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
                 """, this::map, requestId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean completeRequest(UUID id, UUID expectedRequestId, Instant nextPollAt) {
         // D-120：UPDATE等待并发提交后复判关联；RR等强隔离的序列化错误须传播，不能伪装未命中。
         return jdbcTemplate.update("""
@@ -150,7 +150,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
                 """, java.sql.Timestamp.from(nextPollAt), id, expectedRequestId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean complete(UUID id, Instant nextPollAt) {
         return jdbcTemplate.update("""
                 UPDATE dev_modbus_poll
@@ -160,7 +160,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
                 """, java.sql.Timestamp.from(nextPollAt), id) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean pauseUntilNextInterval(UUID id) {
         // ADR0062：next_poll_at与updated_at使用同一数据库时钟，离线不补历史周期也不立即重试。
         return jdbcTemplate.update("""
@@ -171,7 +171,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
                 """, id) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean release(UUID id, Instant nextPollAt) {
         return complete(id, nextPollAt);
     }
@@ -199,7 +199,7 @@ public class JdbcModbusPollRepository implements ModbusPollRepository {
                 """, this::map, limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<ModbusPoll> claimOneExpiredInFlight(int candidateLimit) {

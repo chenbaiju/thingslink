@@ -18,7 +18,7 @@ public class JdbcProjectExportPurgeRepository implements ProjectExportPurgeRepos
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectCleanupBatchResult clean(ProjectCleanupClaim claim) {
         if (Boolean.TRUE.equals(jdbc.queryForObject("""

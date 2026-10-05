@@ -66,7 +66,7 @@ public class JdbcDeviceTopologyRepository implements DeviceTopologyRepository {
                 """, this::map, projectId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean hasIncompatibleRoleForDevice(UUID projectId, UUID deviceId, DeviceType.DeviceKind candidateKind) {
         String candidate = candidateKind == null ? null : candidateKind.name();
@@ -82,7 +82,7 @@ public class JdbcDeviceTopologyRepository implements DeviceTopologyRepository {
         return Boolean.TRUE.equals(incompatible);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean hasIncompatibleRoleForType(UUID projectId, UUID deviceTypeId, DeviceType.DeviceKind candidateKind) {
         String candidate = candidateKind == null ? null : candidateKind.name();
@@ -100,7 +100,7 @@ public class JdbcDeviceTopologyRepository implements DeviceTopologyRepository {
         return Boolean.TRUE.equals(incompatible);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean hasInvalidRolesInGatewayComponent(UUID projectId, UUID gatewayId) {
         // ADR0057：必须先只读验证全部相关角色，再进入多设备锁；LEFT JOIN 让缺失类型显式失败。

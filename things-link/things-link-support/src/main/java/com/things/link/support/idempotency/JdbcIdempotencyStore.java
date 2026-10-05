@@ -92,7 +92,7 @@ public class JdbcIdempotencyStore implements IdempotencyStore {
         jdbcTemplate.update("DELETE FROM sys_idempotency_record WHERE id = ?", id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int deleteExpired(int maximumRows) {
         int boundedRows = Math.max(1, Math.min(maximumRows, 5_000));

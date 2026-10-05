@@ -5,6 +5,7 @@ import com.things.link.support.tenant.TransactionLocalRlsScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+/** Webhook 有界保留清理服务；先锁定项目及推进来源时间底线，再按预算清理持久记录。 */
 @Service
 public class WebhookRetentionService {
     private final WebhookRetentionRepository repository;private final WebhookEventRepository events;

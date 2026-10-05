@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.*;
 
-/** ADR0188: adapter owns the actual protocol fact and device lock; this port records only accepted edges. */
+/** ADR0188：适配器负责真实协议事实与设备锁；此端口仅记录已接受的边沿事件。 */
 @Service
 public class DevicePresenceWebhookSource {
     private final PublicWebhookSourceWriter source;
@@ -24,14 +24,14 @@ public class DevicePresenceWebhookSource {
     private final com.things.link.project.application.ProjectService management;
     public DevicePresenceWebhookSource(PublicWebhookSourceWriter source,ProjectLifecycleAccessService projects,
             TransactionLocalRlsScope rls,JdbcTemplate jdbc,ObjectMapper json,com.things.link.project.application.ProjectService management){this.source=source;this.projects=projects;this.rls=rls;this.jdbc=jdbc;this.json=json;this.management=management;}
-    /** Call before device/session locks; known inactive projects still allow necessary physical cleanup. */
+    /** 须在获取设备或会话锁之前调用；已知不活跃项目仍允许必要的物理连接清理。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public OptionalLong capture(UUID tenant,UUID project){
         if(!source.enabled())return OptionalLong.empty();
         rls.establish(tenant,project);var generation=projects.lockReadableGeneration(tenant,project);
         return generation.isPresent()&&projects.snapshot(tenant,project).writeAllowed()?generation:OptionalLong.empty();
     }
-    /** Existing Console manager check must precede this owner lookup; disabled sources add no lookup. */
+    /** 必须先执行既有 Console 管理权限检查，再查询归属；来源被禁用时不增加查询。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public OptionalLong captureForConsole(UUID project){
         return source.enabled()?capture(management.requireProjectTenant(project),project):OptionalLong.empty();
@@ -41,7 +41,7 @@ public class DevicePresenceWebhookSource {
             String origin,String reason,UUID sourceMessageId,UUID gatewayId,Instant occurredAt){
         append(tenant,project,device,generation,before,after,origin,reason,sourceMessageId,gatewayId,occurredAt,null);
     }
-    /** Null occurredAt denotes a control operation observed at the original database write time. */
+    /** occurredAt 为空表示控制操作，其观测时间取原始数据库写入时间。 */
     @Transactional(propagation=Propagation.MANDATORY)
     public void append(UUID tenant,UUID project,UUID device,OptionalLong generation,String before,String after,
             String origin,String reason,UUID sourceMessageId,UUID gatewayId,Instant occurredAt,String traceId){

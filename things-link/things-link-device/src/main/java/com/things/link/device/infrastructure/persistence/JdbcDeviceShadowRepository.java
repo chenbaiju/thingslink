@@ -40,7 +40,7 @@ public class JdbcDeviceShadowRepository implements DeviceShadowRepository {
                 """, this::map, projectId, deviceId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DeviceShadowSnapshot> findSnapshots(UUID projectId, Collection<UUID> deviceIds) {
         if (deviceIds.isEmpty()) {
             return List.of();
@@ -83,7 +83,7 @@ public class JdbcDeviceShadowRepository implements DeviceShadowRepository {
                 """, desired, projectId, deviceId, version) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public OptionalLong updateReportedPropertyIfNewer(UUID projectId, UUID deviceId, String propertyKey,
                                                            String jsonValue, Instant occurredAt,
                                                            UUID thingModelVersionId) {

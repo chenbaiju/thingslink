@@ -21,7 +21,7 @@ public class JdbcTenantWorkSlotRepository implements TenantWorkSlotRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Lease> tryAcquire(WorkType workType, UUID tenantId, Duration duration) {
         UUID token = Uuid7.generate();
@@ -37,7 +37,7 @@ public class JdbcTenantWorkSlotRepository implements TenantWorkSlotRepository {
                 : Optional.empty();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean release(Lease lease) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
@@ -47,7 +47,7 @@ public class JdbcTenantWorkSlotRepository implements TenantWorkSlotRepository {
                 lease.tenantId(),
                 lease.token()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @org.springframework.transaction.annotation.Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
     public boolean fence(Lease lease) {

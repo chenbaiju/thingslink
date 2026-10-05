@@ -23,7 +23,7 @@ public class JdbcSubscriptionProvenanceRepository implements SubscriptionProvena
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void recordActivation(UUID tenantId, UUID subscriptionId, UUID predecessorId) {
@@ -50,7 +50,7 @@ public class JdbcSubscriptionProvenanceRepository implements SubscriptionProvena
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Facts> current(UUID tenantId, UUID subscriptionId) {
         return jdbc.query("""
@@ -63,7 +63,7 @@ public class JdbcSubscriptionProvenanceRepository implements SubscriptionProvena
                 tenantId,subscriptionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Stored> find(UUID tenantId, UUID subscriptionId) {
         return jdbc.query("""
@@ -76,7 +76,7 @@ public class JdbcSubscriptionProvenanceRepository implements SubscriptionProvena
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<String> appliedChanges(UUID tenantId, UUID subscriptionId) {
         return jdbc.query("""
@@ -85,7 +85,7 @@ public class JdbcSubscriptionProvenanceRepository implements SubscriptionProvena
                 """,(rs,row) -> rs.getString("fact"),tenantId,subscriptionId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void recordVerified(UUID tenantId, UUID subscriptionId, Stored source) {

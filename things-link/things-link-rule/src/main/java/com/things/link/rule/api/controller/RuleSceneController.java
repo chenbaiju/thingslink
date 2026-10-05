@@ -50,100 +50,178 @@ public class RuleSceneController {
         this.service = service; this.authorization = authorization;
     }
 
-    /** 有界场景目录；不返回条件或动作正文。 */
+    /**
+     * 有界场景目录；不返回条件或动作正文。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param name 名称筛选条件
+     * @param status 状态筛选条件
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 当前接口的操作结果，响应结构见 {@code RuleManagementPage<RuleSceneView>}
+     */
     @GetMapping
-    @Operation(operationId = "listManagedScenes", summary = "查询手动场景目录")
-    public RuleManagementPage<RuleSceneView> list(@PathVariable UUID projectId,
-            @RequestParam(required = false) String name, @RequestParam(required = false) String status,
-            @RequestParam(required = false) String cursor, @RequestParam(defaultValue = "20") int limit) {
+    @Operation(operationId = "listManagedScenes", summary = "查询手动场景目录", description = "有界场景目录；不返回条件或动作正文。")
+    public RuleManagementPage<RuleSceneView> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "名称筛选条件") @RequestParam(required = false) String name, @io.swagger.v3.oas.annotations.Parameter(description = "状态筛选条件") @RequestParam(required = false) String status,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required = false) String cursor, @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue = "20") int limit) {
         authorization.requireSceneManage(projectId);
         return service.list(projectId, name, status, cursor, limit);
     }
-    /** 有界版本历史供管理页面使用，旧数组入口保持兼容。 */
+    /**
+     * 有界版本历史供管理页面使用，旧数组入口保持兼容。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 当前接口的操作结果，响应结构见 {@code RuleManagementPage<RuleSceneVersionView>}
+     */
     @GetMapping("/{sceneId}/version-history")
-    @Operation(operationId = "pageManagedSceneVersions", summary = "分页查询手动场景版本")
-    public RuleManagementPage<RuleSceneVersionView> history(@PathVariable UUID projectId,
-            @PathVariable UUID sceneId, @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") int limit) {
+    @Operation(operationId = "pageManagedSceneVersions", summary = "分页查询手动场景版本", description = "有界版本历史供管理页面使用，旧数组入口保持兼容。")
+    public RuleManagementPage<RuleSceneVersionView> history(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId, @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue = "20") int limit) {
         authorization.requireSceneManage(projectId);
         return service.history(projectId, sceneId, cursor, limit);
     }
-    /** 单版本回读包含完整有序条件与动作。 */
+    /**
+     * 单版本回读包含完整有序条件与动作。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param versionId 当前资源的不可变版本标识
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneVersionView}
+     */
     @GetMapping("/{sceneId}/versions/{versionId}")
-    @Operation(operationId = "getManagedSceneVersion", summary = "查询手动场景单版本")
-    public RuleSceneVersionView version(@PathVariable UUID projectId, @PathVariable UUID sceneId,
-            @PathVariable UUID versionId) {
+    @Operation(operationId = "getManagedSceneVersion", summary = "查询手动场景单版本", description = "单版本回读包含完整有序条件与动作。")
+    public RuleSceneVersionView version(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前资源的不可变版本标识") @PathVariable UUID versionId) {
         authorization.requireSceneManage(projectId);
         return service.version(projectId, sceneId, versionId);
     }
-    /** 暂停新执行，保留活动版本与旧执行事实。 */
+    /**
+     * 暂停新执行，保留活动版本与旧执行事实。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param expectedVersion 调用方期望的资源版本，用于并发更新校验
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneView}
+     */
     @PostMapping("/{sceneId}/pause")
-    @Operation(operationId = "pauseManagedScene", summary = "暂停手动场景")
-    public RuleSceneView pause(@PathVariable UUID projectId, @PathVariable UUID sceneId,
-            @RequestParam long expectedVersion) {
+    @Operation(operationId = "pauseManagedScene", summary = "暂停手动场景", description = "暂停新执行，保留活动版本与旧执行事实。")
+    public RuleSceneView pause(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "调用方期望的资源版本，用于并发更新校验") @RequestParam long expectedVersion) {
         authorization.requireSceneManage(projectId);
         return service.pause(projectId, sceneId, expectedVersion);
     }
 
-    /** 创建 DRAFT 场景与版本号 1 的不可变条件/动作事实。 */
+    /**
+     * 创建 DRAFT 场景与版本号 1 的不可变条件/动作事实。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param request 本次操作的请求数据，结构见 {@code CreateSceneRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneView}
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "创建手动场景")
-    public RuleSceneView create(@PathVariable UUID projectId, @Valid @RequestBody CreateSceneRequest request) {
+    @Operation(summary = "创建手动场景", description = "创建 DRAFT 场景与版本号 1 的不可变条件/动作事实。")
+    public RuleSceneView create(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @Valid @RequestBody CreateSceneRequest request) {
         authorization.requireSceneManage(projectId);
         return service.create(projectId, command(request));
     }
 
-    /** 读取场景定义与活动版本指针。 */
+    /**
+     * 读取场景定义与活动版本指针。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneView}
+     */
     @GetMapping("/{sceneId}")
-    @Operation(summary = "查询手动场景")
-    public RuleSceneView get(@PathVariable UUID projectId, @PathVariable UUID sceneId) {
+    @Operation(summary = "查询手动场景", description = "读取场景定义与活动版本指针。")
+    public RuleSceneView get(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId) {
         authorization.requireSceneManage(projectId);
         return service.get(projectId, sceneId);
     }
 
-    /** 追加新不可变版本；expectedVersion 校验定义乐观锁，既有版本绝不覆盖。 */
+    /**
+     * 追加新不可变版本；expectedVersion 校验定义乐观锁，既有版本绝不覆盖。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param request 本次操作的请求数据，结构见 {@code ReviseSceneRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneView}
+     */
     @PutMapping("/{sceneId}")
     @Operation(summary = "修改手动场景", description = "追加新不可变版本，expectedVersion 校验乐观锁")
-    public RuleSceneView revise(@PathVariable UUID projectId, @PathVariable UUID sceneId,
+    public RuleSceneView revise(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId,
                                 @Valid @RequestBody ReviseSceneRequest request) {
         authorization.requireSceneManage(projectId);
         return service.revise(projectId, sceneId, command(request));
     }
 
-    /** 发布指定历史版本为活动版本，兼作显式回滚入口。 */
+    /**
+     * 发布指定历史版本为活动版本，兼作显式回滚入口。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param versionId 当前资源的不可变版本标识
+     * @param expectedVersion 调用方期望的资源版本，用于并发更新校验
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneView}
+     */
     @PostMapping("/{sceneId}/versions/{versionId}/activate")
     @Operation(summary = "发布手动场景版本", description = "把指定历史版本设为活动版本")
-    public RuleSceneView activate(@PathVariable UUID projectId, @PathVariable UUID sceneId,
-                                  @PathVariable UUID versionId, @RequestParam long expectedVersion) {
+    public RuleSceneView activate(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId,
+                                  @io.swagger.v3.oas.annotations.Parameter(description = "当前资源的不可变版本标识") @PathVariable UUID versionId, @io.swagger.v3.oas.annotations.Parameter(description = "调用方期望的资源版本，用于并发更新校验") @RequestParam long expectedVersion) {
         authorization.requireSceneManage(projectId);
         return service.activate(projectId, sceneId, versionId, expectedVersion);
     }
 
-    /** 软删除场景定义，不可变版本与执行事实继续保留。 */
+    /**
+     * 软删除场景定义，不可变版本与执行事实继续保留。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param expectedVersion 调用方期望的资源版本，用于并发更新校验
+     */
     @DeleteMapping("/{sceneId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "删除手动场景")
-    public void delete(@PathVariable UUID projectId, @PathVariable UUID sceneId,
-                       @RequestParam long expectedVersion) {
+    @Operation(summary = "删除手动场景", description = "软删除场景定义，不可变版本与执行事实继续保留。")
+    public void delete(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId,
+                       @io.swagger.v3.oas.annotations.Parameter(description = "调用方期望的资源版本，用于并发更新校验") @RequestParam long expectedVersion) {
         authorization.requireSceneManage(projectId);
         service.delete(projectId, sceneId, expectedVersion);
     }
 
-    /** 读取完整不可变版本历史。 */
+    /**
+     * 读取完整不可变版本历史。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @return 符合当前查询条件的结果列表
+     */
     @GetMapping("/{sceneId}/versions")
-    @Operation(summary = "查询手动场景版本历史")
-    public List<RuleSceneVersionView> versions(@PathVariable UUID projectId, @PathVariable UUID sceneId) {
+    @Operation(summary = "查询手动场景版本历史", description = "读取完整不可变版本历史。")
+    public List<RuleSceneVersionView> versions(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId) {
         authorization.requireSceneManage(projectId);
         return service.versions(projectId, sceneId);
     }
 
-    /** 一键执行活动版本；同步返回封闭终态，同一幂等键同内容重试返回既有事实。 */
+    /**
+     * 一键执行活动版本；同步返回封闭终态，同一幂等键同内容重试返回既有事实。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param request 本次操作的请求数据，结构见 {@code ExecuteSceneRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneExecutionView}
+     */
     @PostMapping("/{sceneId}/executions")
     @Operation(summary = "一键执行手动场景",
             description = "Idempotency-Key 必填；同步返回 DISPATCHED/SKIPPED/FAILED 终态，DISPATCHED 只表示副作用已可靠写入 Outbox")
-    public RuleSceneExecutionView execute(@PathVariable UUID projectId, @PathVariable UUID sceneId,
-                                          @Parameter(required = true) @RequestHeader("Idempotency-Key") String key,
+    public RuleSceneExecutionView execute(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @PathVariable UUID sceneId,
+                                          @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader("Idempotency-Key") String key,
                                           @Valid @RequestBody ExecuteSceneRequest request) {
         authorization.requireSceneManage(projectId);
         return service.execute(projectId, sceneId, key, command(request));

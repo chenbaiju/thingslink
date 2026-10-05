@@ -27,6 +27,7 @@ class IdempotencyReadQueryTests {
     @ParameterizedTest
     @ValueSource(strings = {
             "/api/v1/app/devices/snapshots/query", "/api/v1/app/devices/current-values/query",
+            "/api/v1/projects/id/assistant/fact-reports/collection",
             "/api/v1/app/alarms/query", "/api/v1/projects/id/devices/snapshots/query",
             "/api/v1/projects/id/devices/current-value-snapshots/query", "/api/v1/projects/id/alarms/query"
     })

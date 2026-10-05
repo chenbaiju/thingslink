@@ -12,6 +12,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 
+/** 实时票据 JDBC 仓储，维护数据库时间、身份摘要、连接绑定和清理范围。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcRealtimeTicketRepository implements RealtimeTicketRepository {

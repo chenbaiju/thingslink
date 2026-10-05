@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
-/** Signing adapter only. The caller must hold current-authority and lease fencing through this call. */
+/** 仅提供签名适配；调用方必须在整个调用期间持有当前权限锁与租约隔离保护。 */
 @Component
 public class PublicWebhookSender {
     private final WebhookSigningKeys keys;

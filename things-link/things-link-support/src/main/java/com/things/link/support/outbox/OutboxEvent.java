@@ -66,9 +66,9 @@ public record OutboxEvent(
      * @param aggregateType 聚合类型
      * @param aggregateId 聚合 ID
      * @param eventType 事件类型
-     * @param partitionKey Kafka key
+     * @param partitionKey Kafka 分区键
      * @param payload JSON 载荷
-     * @param traceId trace ID
+     * @param traceId 追踪标识
      * @param availableAt 可投递时间
      */
     public OutboxEvent(

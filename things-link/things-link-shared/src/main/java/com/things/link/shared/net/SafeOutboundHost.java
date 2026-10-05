@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 /**
  * 出站主机安全校验：拒绝环回/内网/链路本地/组播/保留段/特殊用途网段等 SSRF 目标。
  *
- * <p>判定以 IANA IPv4/IPv6 Special-Purpose Address Registries（RFC 6890）为基线，对本地翻译、保留、
+ * <p>判定以 IANA IPv4/IPv6 特殊用途地址注册表（RFC 6890）为基线，对本地翻译、保留、
  * 非全球可达以及可能形成内部路由通道的前缀采取保守拒绝，而非只拦「非全球可达」条目：IPv4 覆盖
  * any-local、RFC1918、CGNAT(100.64/10)、loopback、链路本地(169.254/16)、IETF 协议分配(192.0.0/24)、
  * TEST-NET-1/2/3、废弃 6to4 中继(192.88.99/24)、基准测试(198.18/15)、组播/保留 class E/广播；
@@ -27,7 +27,7 @@ import java.net.UnknownHostException;
  *       hostname 形态跳过，交发送时权威校验兜底，避免在配置写事务里阻塞 DNS。</li>
  * </ul>
  *
- * <p>旧告警/规则发送路径为什么未在解析后把连接钉住到已校验 IP：JDK {@code HttpClient} 无 per-request DNS 钩子，
+ * <p>旧告警/规则发送路径为什么未在解析后把连接钉住到已校验 IP：JDK {@code HttpClient} 无 逐请求 DNS 钩子，
  * 钉住需换 HTTP 栈或自造 TrustManager（后者风险更高）。这里依赖 JVM {@code InetAddress} 正缓存
  * （默认 30s）使校验后微秒级的连接复用同一解析结果；残余 {@code networkaddress.cache.ttl=0} 或
  * 攻击 DNS TTL=0 的微秒级竞态作为明确记录的剩余风险，见 DEBT D-035。公开Webhook使用support的
@@ -95,16 +95,16 @@ public final class SafeOutboundHost {
         int a = b[0] & 0xff;
         int c = b[1] & 0xff;
         int d = b[2] & 0xff;
-        if (a == 0 || a == 10 || a == 127) return true; // any-local / RFC1918 / loopback
-        if (a == 100 && c >= 64 && c <= 127) return true; // CGNAT 100.64/10（RFC 6598）
+        if (a == 0 || a == 10 || a == 127) return true; // 任意本地地址、RFC1918 私有地址及环回地址
+        if (a == 100 && c >= 64 && c <= 127) return true; // 运营商级地址转换网段 100.64/10（RFC 6598）
         if (a == 169 && c == 254) return true; // link-local + 云元数据
-        if (a == 172 && c >= 16 && c <= 31) return true; // RFC1918
+        if (a == 172 && c >= 16 && c <= 31) return true; // RFC1918 私有地址范围
         if (a == 192 && c == 0 && (d == 0 || d == 2)) return true; // IETF 协议分配 192.0.0/24 + TEST-NET-1 192.0.2/24
         if (a == 192 && c == 88 && d == 99) return true; // 废弃 6to4 中继 192.88.99/24（RFC 7526）
-        if (a == 192 && c == 168) return true; // RFC1918
+        if (a == 192 && c == 168) return true; // RFC1918 私有地址范围
         if (a == 198 && c >= 18 && c <= 19) return true; // 基准测试 198.18/15（RFC 2544）
-        if (a == 198 && c == 51 && d == 100) return true; // TEST-NET-2
-        if (a == 203 && c == 0 && d == 113) return true; // TEST-NET-3
+        if (a == 198 && c == 51 && d == 100) return true; // 文档示例地址段 TEST-NET-2
+        if (a == 203 && c == 0 && d == 113) return true; // 文档示例地址段 TEST-NET-3
         return a >= 224; // 组播 224/4 + 保留 class E 240/4 + 广播 255.255.255.255
     }
 
@@ -121,10 +121,10 @@ public final class SafeOutboundHost {
         if (hi == 0xff) return true; // ff00::/8 组播
         if (isNat64WellKnown(b)) return true; // 64:ff9b::/96 NAT64 well-known 前缀（RFC 6052）
         if (isNat64LocalUse(b)) return true; // 64:ff9b:1::/48 NAT64 local-use 前缀（RFC 8215）
-        if (isDiscardOnly(b)) return true; // 100::/64 discard-only（RFC 6666）
+        if (isDiscardOnly(b)) return true; // 100::/64 丢弃专用地址段（RFC 6666）
         if (isIetfProtocolAssignments(b)) return true; // 2001::/23 IETF 协议分配（Teredo/基准/ORCHID）
         if (isDocumentation(b)) return true; // 2001:db8::/32 文档（RFC 3849，独立于 2001::/23）
-        return isSixToFour(b); // 2002::/16 6to4（RFC 3056）
+        return isSixToFour(b); // 2002::/16 IPv6 过渡地址段（RFC 3056）
     }
 
     /** @return 64:ff9b::/96 —— NAT64 well-known 前缀；后 32 位嵌 IPv4，IANA 标为全球可达但保守拒绝以防本地翻译（RFC 6052） */
@@ -161,7 +161,7 @@ public final class SafeOutboundHost {
         return b[0] == 0x20 && b[1] == 0x01 && (b[2] & 0xff) == 0x0d && (b[3] & 0xff) == 0xb8;
     }
 
-    /** @return 2002::/16 —— 6to4（RFC 3056） */
+    /** @return 2002::/16 过渡地址段判定结果（6to4，RFC 3056） */
     private static boolean isSixToFour(byte[] b) {
         return b[0] == 0x20 && b[1] == 0x02;
     }

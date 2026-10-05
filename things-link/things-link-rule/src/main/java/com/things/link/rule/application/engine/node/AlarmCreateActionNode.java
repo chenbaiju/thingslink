@@ -35,19 +35,19 @@ public final class AlarmCreateActionNode implements RuleNode {
              "properties":{"alarmRuleId":{"type":"string","format":"uuid"}}}
             """);
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String type() {
         return TYPE;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public JsonNode configSchema() {
         return SCHEMA.deepCopy();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeValidation validate(JsonNode config) {
         if (config == null || !config.isObject() || config.size() != 1
@@ -57,7 +57,7 @@ public final class AlarmCreateActionNode implements RuleNode {
         return RuleNodeValidation.success();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeResult execute(RuleMessage message, JsonNode config, RuleExecutionContext context) {
         JsonNode payload = new ObjectMapper().createObjectNode()

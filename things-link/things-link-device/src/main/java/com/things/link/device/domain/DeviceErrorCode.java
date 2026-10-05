@@ -138,7 +138,7 @@ public enum DeviceErrorCode implements ErrorCode {
     DeviceErrorCode(int code, String defaultMessage, int httpStatus) {
         this.code = code; this.defaultMessage = defaultMessage; this.httpStatus = httpStatus;
     }
-    /** {@inheritDoc} */ @Override public int code() { return code; }
-    /** {@inheritDoc} */ @Override public String defaultMessage() { return defaultMessage; }
-    /** {@inheritDoc} */ @Override public int httpStatus() { return httpStatus; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public int code() { return code; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public String defaultMessage() { return defaultMessage; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public int httpStatus() { return httpStatus; }
 }

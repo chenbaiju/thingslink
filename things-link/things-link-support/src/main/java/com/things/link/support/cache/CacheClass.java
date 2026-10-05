@@ -8,7 +8,7 @@ package com.things.link.support.cache;
 public enum CacheClass {
     /** PostgreSQL 事实的可丢失投影，故障时回源事实。 */
     DERIVED,
-    /** 带版本和 last-known-good 的控制面策略。 */
+    /** 带版本和 最近一次有效值 的控制面策略。 */
     CONTROL,
     /** 凭据与权限等不可 fail-open 的安全判断。 */
     SECURITY

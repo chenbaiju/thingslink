@@ -81,10 +81,17 @@ public class WebAppRuntimeDataController {
         this.objectMapper = objectMapper;
     }
 
-    /** 读取设备描述与模型属性元数据快照。 */
+    /**
+     * 读取设备描述与模型属性元数据快照。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @PostMapping(value = "/devices/snapshots/query", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "queryWebAppDeviceSnapshots", summary = "查询WebApp设备描述快照")
+    @Operation(operationId = "queryWebAppDeviceSnapshots", summary = "查询WebApp设备描述快照", description = "读取设备描述与模型属性元数据快照。")
     @ApiResponse(responseCode = "200", description = "设备与模型描述快照",
             headers = @Header(name = HttpHeaders.CACHE_CONTROL,
                     schema = @Schema(type = "string", allowableValues = "no-store")),
@@ -105,10 +112,17 @@ public class WebAppRuntimeDataController {
                 input.devices().stream().map(WebAppRuntimeDataController::device).toList())));
     }
 
-    /** 读取稀疏PG当前值及来源模型。 */
+    /**
+     * 读取稀疏PG当前值及来源模型。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @PostMapping(value = "/devices/current-values/query", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "queryWebAppDeviceCurrentValues", summary = "查询WebApp设备当前值")
+    @Operation(operationId = "queryWebAppDeviceCurrentValues", summary = "查询WebApp设备当前值", description = "读取稀疏PG当前值及来源模型。")
     @ApiResponse(responseCode = "200", description = "设备稀疏当前值",
             headers = @Header(name = HttpHeaders.CACHE_CONTROL,
                     schema = @Schema(type = "string", allowableValues = "no-store")),
@@ -127,9 +141,15 @@ public class WebAppRuntimeDataController {
                 input.devices().stream().map(WebAppRuntimeDataController::currentDevice).toList())));
     }
 
-    /** 读取按精确模型过滤的已授权设备目录。 */
+    /**
+     * 读取按精确模型过滤的已授权设备目录。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @GetMapping(value = "/devices/catalog", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "listWebAppDeviceCatalog", summary = "分页查询WebApp设备目录")
+    @Operation(operationId = "listWebAppDeviceCatalog", summary = "分页查询WebApp设备目录", description = "读取按精确模型过滤的已授权设备目录。")
     @ApiResponse(responseCode = "200", description = "模型过滤的设备目录页",
             headers = @Header(name = HttpHeaders.CACHE_CONTROL,
                     schema = @Schema(type = "string", allowableValues = "no-store")),
@@ -154,7 +174,15 @@ public class WebAppRuntimeDataController {
                 WebAppRuntimeContextReader.read(request), model, cursor, limit)));
     }
 
-    /** 读取单设备属性完整版本化历史。 */
+    /**
+     * 读取单设备属性完整版本化历史。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param deviceId 目标设备标识
+     * @param propertyKey 目标属性键
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "503", description = "套餐历史窗口不可用（50048）", content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = com.things.link.shared.error.ApiError.class)))
     @GetMapping(value = "/devices/{deviceId}/properties/{propertyKey}/history/versioned",
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -178,8 +206,8 @@ public class WebAppRuntimeDataController {
                     schema = @Schema(type = "string", format = "uuid"))
     })
     public ResponseEntity<byte[]> history(@AuthenticationPrincipal Jwt jwt,
-            @PathVariable String deviceId,
-            @PathVariable @Pattern(regexp = "^[A-Za-z0-9_-]{1,64}$") String propertyKey,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标设备标识") @PathVariable String deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标属性键") @PathVariable @Pattern(regexp = "^[A-Za-z0-9_-]{1,64}$") String propertyKey,
             HttpServletRequest request) throws IOException {
         requireEmptyBody(request);
         requireQueryNames(request, Set.of("from", "to", "granularity", "aggregation", "expectedModelVersionId"),
@@ -192,10 +220,17 @@ public class WebAppRuntimeDataController {
                 singleQuery(request, "granularity", true), singleQuery(request, "aggregation", true), Instant.now())));
     }
 
-    /** 读取按指定设备和条件过滤后的告警实例页。 */
+    /**
+     * 读取按指定设备和条件过滤后的告警实例页。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @PostMapping(value = "/alarms/query", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "queryWebAppAlarms", summary = "分页查询WebApp告警实例")
+    @Operation(operationId = "queryWebAppAlarms", summary = "分页查询WebApp告警实例", description = "读取按指定设备和条件过滤后的告警实例页。")
     @ApiResponse(responseCode = "200", description = "过滤后的告警实例页",
             headers = @Header(name = HttpHeaders.CACHE_CONTROL,
                     schema = @Schema(type = "string", allowableValues = "no-store")),

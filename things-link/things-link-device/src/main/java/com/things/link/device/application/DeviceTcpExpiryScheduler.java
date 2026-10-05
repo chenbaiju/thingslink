@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.UUID;
-/** A surviving instance closes expired persistent TCP sessions; no local socket or finally block is required. */
+/** 存活实例关闭已过期的持久 TCP 会话，无需原实例的本地套接字或清理代码块。 */
 @Component
 @DataPlaneDatabase
 @ConditionalOnProperty(name="things-link.device.tcp-expiry.enabled",havingValue="true",matchIfMissing=true)

@@ -84,7 +84,7 @@ public class EmqxHttpDeviceSessionTerminator implements DeviceSessionTerminator 
         this.metrics = metrics;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void disconnectAfterCommit(UUID projectId, UUID deviceId) {
         // 在控制事务关闭事实前捕获；提交回调只消费快照，不能重新查活跃行。

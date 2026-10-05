@@ -36,11 +36,11 @@ public record DeviceType(UUID id, UUID tenantId, UUID projectId, String typeKey,
         /** DTU 从机映射的 Modbus RTU 云网关。 */ MODBUS_RTU_CLOUD_GATEWAY }
 
     /** 设备物理或链路通信媒介；它不决定云端传输协议。 */
-    public enum NetworkType { /** WiFi。 */ WIFI, /** 以太网。 */ ETHERNET,
+    public enum NetworkType { /** WiFi 无线局域网协议。 */ WIFI, /** 以太网。 */ ETHERNET,
         /** 蜂窝 2G。 */ CELLULAR_2G, /** 蜂窝 3G。 */ CELLULAR_3G,
         /** 蜂窝 4G。 */ CELLULAR_4G, /** 蜂窝 5G。 */ CELLULAR_5G,
-        /** 窄带物联网。 */ NB_IOT, /** 低功耗蓝牙。 */ BLE, /** Zigbee。 */ ZIGBEE,
-        /** LoRa。 */ LORA, /** RS485 总线。 */ RS485, /** 未枚举媒介。 */ OTHER }
+        /** 窄带物联网。 */ NB_IOT, /** 低功耗蓝牙。 */ BLE, /** Zigbee 低功耗无线通信协议。 */ ZIGBEE,
+        /** LoRa 远距离无线通信协议。 */ LORA, /** RS485 总线。 */ RS485, /** 未枚举媒介。 */ OTHER }
 
     /** 物模型发布状态。 */
     public enum Status { /** 尚可编辑的草稿。 */ DRAFT, /** 已冻结的发布版本。 */ PUBLISHED }

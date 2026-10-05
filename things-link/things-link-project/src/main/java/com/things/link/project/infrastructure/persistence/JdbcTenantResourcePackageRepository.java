@@ -91,7 +91,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID insert(UUID tenantId, String dimensionCode, long amount, String unit, String window,
                        Instant startsAt, Instant endsAt, ResourcePackageSource source,
@@ -113,7 +113,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
         return packageId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantResourcePackage> findById(UUID packageId) {
         return jdbcTemplate.query("SELECT " + PACKAGE_COLUMNS + " FROM sys_tenant_resource_package "
@@ -121,7 +121,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantResourcePackage> findBySourceOrder(UUID orderId) {
         return jdbcTemplate.query("SELECT " + PACKAGE_COLUMNS + " FROM sys_tenant_resource_package "
@@ -129,7 +129,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantResourcePackage> findAdjustmentByKey(UUID tenantId, String idempotencyKey) {
         return jdbcTemplate.query("SELECT " + PACKAGE_COLUMNS + " FROM sys_tenant_resource_package "
@@ -138,7 +138,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<TenantResourcePackage> findLiveByTenant(UUID tenantId) {
         return jdbcTemplate.query("SELECT " + PACKAGE_COLUMNS + " FROM sys_tenant_resource_package "
@@ -147,7 +147,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 PACKAGE_ROW_MAPPER, tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<ResourcePackageAddition> findActiveAdditions(UUID tenantId, Instant at) {
         return jdbcTemplate.query("""
@@ -166,7 +166,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                         resultSet.getLong("total")), tenantId, Timestamp.from(at), Timestamp.from(at));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<TenantResourcePackage> findDueForExpiry(Instant now, int limit) {
         return jdbcTemplate.query("SELECT " + PACKAGE_COLUMNS + " FROM sys_tenant_resource_package "
@@ -174,7 +174,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 PACKAGE_ROW_MAPPER, Timestamp.from(now), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<TenantResourcePackage> findDueForActivation(Instant now, int limit) {
         return jdbcTemplate.query("SELECT " + PACKAGE_COLUMNS + " FROM sys_tenant_resource_package p "
@@ -185,7 +185,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 PACKAGE_ROW_MAPPER, Timestamp.from(now), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markExpired(UUID packageId, Instant now) {
         return jdbcTemplate.update("""
@@ -195,7 +195,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 """, packageId, Timestamp.from(now)) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean activatePending(UUID packageId, Instant now) {
         return jdbcTemplate.update("""
@@ -205,7 +205,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 """, packageId, Timestamp.from(now)) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean cancelAdjustment(UUID packageId, Instant now) {
         return jdbcTemplate.update("""
@@ -217,7 +217,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 """, Timestamp.from(now), packageId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markRefunded(UUID packageId, Instant now) {
         return jdbcTemplate.update("""
@@ -229,7 +229,7 @@ public class JdbcTenantResourcePackageRepository implements TenantResourcePackag
                 """, Timestamp.from(now), packageId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean isCurrentlyEffective(UUID packageId) {
         // 判定与合成函数 tenant_resource_package_addon() 用同一个时间基准（数据库 now()），

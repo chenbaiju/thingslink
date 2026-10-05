@@ -18,7 +18,7 @@ public class JdbcIamProjectCleanupRepository implements IamProjectCleanupReposit
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectCleanupBatchResult clean(ProjectCleanupClaim claim) {
         return jdbc.queryForObject("SELECT * FROM public.iam_project_cleanup_batch(?,?,?,?)",

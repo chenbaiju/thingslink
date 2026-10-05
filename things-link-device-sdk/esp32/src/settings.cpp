@@ -1,9 +1,9 @@
-#include "baijulink/settings.hpp"
+#include "thingslink/settings.hpp"
 #include "cJSON.h"
 #include <cstring>
 #include <cmath>
 
-namespace baijulink {
+namespace thingslink {
 namespace {
 void wipe(char* data, std::size_t n) { volatile char* p=data; while(n--) *p++=0; }
 void clear_tree(cJSON* node) {

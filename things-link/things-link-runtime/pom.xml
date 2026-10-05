@@ -23,6 +23,7 @@
         <dependency><groupId>com.things.link</groupId><artifactId>things-link-device</artifactId></dependency>
         <dependency><groupId>com.things.link</groupId><artifactId>things-link-telemetry</artifactId></dependency>
         <dependency><groupId>com.things.link</groupId><artifactId>things-link-ingestion</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-assistant</artifactId></dependency>
         <dependency><groupId>com.things.link</groupId><artifactId>things-link-alarm</artifactId></dependency>
         <dependency><groupId>com.things.link</groupId><artifactId>things-link-task</artifactId></dependency>
         <dependency><groupId>com.things.link</groupId><artifactId>things-link-rule</artifactId></dependency>

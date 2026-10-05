@@ -122,6 +122,7 @@ class ProjectCleanupIamTests {
                 ProjectCleanupDashboardCompatibilityFixture.emptyContributor(),
                 ProjectCleanupDashboardCompatibilityFixture.emptyOtaContributor(owner),
                 ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner),
+                ProjectCleanupDashboardCompatibilityFixture.emptyAssistantContributor(owner),
                 proxy(new TelemetryProjectCleanupContributor(new JdbcTelemetryProjectCleanupRepository(app))),
                 proxy(new DeviceProjectCleanupContributor(new JdbcDeviceProjectCleanupRepository(app))));
         tokens = new JdbcIamProjectCleanupRepository(app);

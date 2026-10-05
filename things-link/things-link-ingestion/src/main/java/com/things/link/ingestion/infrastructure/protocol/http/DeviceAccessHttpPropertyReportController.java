@@ -11,7 +11,6 @@ import com.things.link.ingestion.application.InvalidUplinkMessageException;
 import com.things.link.shared.message.AuthenticatedDeviceIdentity;
 import com.things.link.shared.message.TransportProtocol;
 import com.things.link.support.trace.TraceContext;
-import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -33,15 +32,15 @@ import java.util.Map;
  * <p>端点本身只做四件事：取已认证身份、检查媒体类型与体积、把原始字节交给受理用例、把受理结果映射成冻结合同的
  * 响应。业务校验（载荷契约、幂等、预算、总线接管）全部在受理用例里，控制器不重复判断，也不解析设备 JSON。</p>
  *
- * <p>不进管理面 OpenAPI 契约（{@link Hidden}）：设备面线格式冻结在接入合同 §3，把它生成成控制台 TypeScript
- * 类型只会产出前端永远不会调用的模型；管理面契约的读者是控制台，设备面的读者是设备 SDK。</p>
+ * <p>统一 HTTP 目录按设备接入功能登记本端点；认证、原始载荷和错误体仍沿设备协议合同。
+ * 文档登记不把设备身份转换为管理面 JWT，也不表示生产开放接口文档。</p>
  *
  * <p>错误映射逐行对照 §3.5：载荷非法 400、体积超限 413、媒体类型不符 415、同键异载荷 409、预算 429（带
  * {@code Retry-After}）、总线未接管 503。响应体只含稳定错误码与一句说明，绝不回显载荷或凭据。</p>
  */
-@Hidden
 @ConditionalOnProperty(name = "things-link.deployment.role",
         havingValue = "device-access", matchIfMissing = true)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "设备 HTTP 上报", description = "设备身份认证后的持久受理与幂等上报")
 @RestController
 public class DeviceAccessHttpPropertyReportController {
 
@@ -72,6 +71,7 @@ public class DeviceAccessHttpPropertyReportController {
      * @return 202 与受理结果；失败由下方异常处理器映射
      * @throws IOException 读取请求体失败
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "reportDeviceAccessProperties", summary = "受理一次属性上报", description = "受理一次属性上报。")
     @PostMapping(PROPERTY_REPORT_PATH)
     public ResponseEntity<Map<String, Object>> report(HttpServletRequest request) throws IOException {
         Object attribute = request.getAttribute(DeviceAccessHttpAuthenticationFilter.IDENTITY_ATTRIBUTE);

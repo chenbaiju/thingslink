@@ -21,7 +21,7 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ProjectCleanupClaim> claimNext(UUID token) {
         return jdbc.query("""
@@ -52,7 +52,7 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
                 rs.getBoolean("admitted")), token).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean lockCurrent(ProjectCleanupClaim claim) {
         // 先锁身份行，再用独立RC语句按数据库实际时钟复核；等待期间租约可能已过期或被接管。
@@ -69,7 +69,7 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
                 """, Boolean.class, claim.tenantId(), claim.projectId(), claim.generation(), claim.stage(), claim.leaseToken()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean defer(ProjectCleanupClaim claim, String failureCode) {
         return jdbc.update("""
@@ -81,7 +81,7 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
                 """, failureCode, claim.tenantId(), claim.projectId(), claim.generation(), claim.stage(), claim.leaseToken()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean completeBatch(ProjectCleanupClaim claim, String nextStage, int deletedRows, String blockedReason) {
         return jdbc.update("""
@@ -97,7 +97,7 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
                 claim.tenantId(), claim.projectId(), claim.generation(), claim.stage(), claim.leaseToken()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectCleanupBatchResult cleanMembers(ProjectCleanupClaim claim) {
         return jdbc.queryForObject("SELECT * FROM public.project_member_cleanup_batch(?,?,?,?)",
@@ -105,14 +105,14 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
                 claim.tenantId(),claim.projectId(),claim.generation(),claim.leaseToken());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean hasMembers(ProjectCleanupClaim claim) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM public.sys_project_member WHERE project_id=?)",
                 Boolean.class, claim.projectId()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean finalizeProject(ProjectCleanupClaim claim) {
         return jdbc.update("""

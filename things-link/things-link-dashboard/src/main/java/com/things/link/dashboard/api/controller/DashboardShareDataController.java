@@ -84,15 +84,21 @@ public class DashboardShareDataController {
         this.parser = parser; this.service = service; this.mapper = mapper;
     }
 
-    /** 元信息只由已声明的模型和每设备实际绑定属性投影。 */
+    /**
+     * 元信息只由已声明的模型和每设备实际绑定属性投影。
+     *
+     * @param shareId 只读分享标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @PostMapping(value = "/devices/snapshots/query", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "queryDashboardShareDeviceSnapshots", summary = "查询匿名分享设备描述快照",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
-                    content = @Content(schema = @Schema(implementation = DashboardShareDataRequest.Snapshot.class))))
+                    content = @Content(schema = @Schema(implementation = DashboardShareDataRequest.Snapshot.class))), description = "元信息只由已声明的模型和每设备实际绑定属性投影。")
     @ApiResponse(responseCode = "200", description = "设备状态与精确模型描述",
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string", allowableValues = "no-store")),
             content = @Content(schema = @Schema(implementation = DashboardShareDataResponse.Snapshot.class)))
-    public ResponseEntity<byte[]> snapshots(@PathVariable String shareId, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> snapshots(@io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable String shareId, HttpServletRequest request) throws IOException {
         DashboardSharePrincipal principal = principal(shareId, request);
         DashboardShareDataRequest.Snapshot input = parser.parseSnapshot(postBody(request));
         return guarded(() -> DashboardShareDataResponse.Snapshot.from(service.snapshots(principal,
@@ -100,24 +106,36 @@ public class DashboardShareDataController {
                         model.digest(), model.profile())).toList(), input.devices().stream().map(DashboardShareDataController::device).toList())));
     }
 
-    /** 当前值按PG权威来源版本返回五态，scope外错误不得降为NO_VALUE。 */
+    /**
+     * 当前值按PG权威来源版本返回五态，scope外错误不得降为NO_VALUE。
+     *
+     * @param shareId 只读分享标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @PostMapping(value = "/devices/current-values/query", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "queryDashboardShareCurrentValues", summary = "查询匿名分享设备当前值",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
-                    content = @Content(schema = @Schema(implementation = DashboardShareDataRequest.Current.class))))
+                    content = @Content(schema = @Schema(implementation = DashboardShareDataRequest.Current.class))), description = "当前值按PG权威来源版本返回五态，scope外错误不得降为NO_VALUE。")
     @ApiResponse(responseCode = "200", description = "设备当前值与来源模型",
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string", allowableValues = "no-store")),
             content = @Content(schema = @Schema(implementation = DashboardShareDataResponse.Current.class)))
-    public ResponseEntity<byte[]> currentValues(@PathVariable String shareId, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> currentValues(@io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable String shareId, HttpServletRequest request) throws IOException {
         DashboardSharePrincipal principal = principal(shareId, request);
         DashboardShareDataRequest.Current input = parser.parseCurrent(postBody(request));
         return guarded(() -> DashboardShareDataResponse.Current.from(service.currentValues(principal,
                 input.devices().stream().map(value -> new RuntimeDeviceQuery(value.deviceId(), value.expectedModelVersionId(), value.propertyKeys())).toList())));
     }
 
-    /** 目录只选一个冻结变量候选，不接受客户端模型或全项目设备查询。 */
+    /**
+     * 目录只选一个冻结变量候选，不接受客户端模型或全项目设备查询。
+     *
+     * @param shareId 只读分享标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @GetMapping(value = "/devices/catalog", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "getDashboardShareDeviceCatalog", summary = "分页读取分享变量设备目录")
+    @Operation(operationId = "getDashboardShareDeviceCatalog", summary = "分页读取分享变量设备目录", description = "目录只选一个冻结变量候选，不接受客户端模型或全项目设备查询。")
     @ApiResponse(responseCode = "200", description = "变量scope内仍匹配模型的设备目录",
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string", allowableValues = "no-store")),
             content = @Content(schema = @Schema(implementation = DashboardShareDataResponse.Catalog.class)))
@@ -126,7 +144,7 @@ public class DashboardShareDataController {
             @Parameter(name = "cursor", in = ParameterIn.QUERY, schema = @Schema(type = "string", maxLength = 2048)),
             @Parameter(name = "limit", in = ParameterIn.QUERY, schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "50"))
     })
-    public ResponseEntity<byte[]> catalog(@PathVariable String shareId, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> catalog(@io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable String shareId, HttpServletRequest request) throws IOException {
         DashboardSharePrincipal principal = principal(shareId, request);
         emptyBody(request);
         queries(request, Set.of("variableKey", "cursor", "limit"), Set.of("variableKey"));
@@ -138,7 +156,15 @@ public class DashboardShareDataController {
         return guarded(() -> DashboardShareDataResponse.Catalog.from(service.catalog(principal, variable, cursor, limit)));
     }
 
-    /** 历史只接受声明preset及本轮DB anchor，不把设备时间或本机now当授权窗口。 */
+    /**
+     * 历史只接受声明preset及本轮DB anchor，不把设备时间或本机now当授权窗口。
+     *
+     * @param shareId 只读分享标识
+     * @param deviceId 目标设备标识
+     * @param propertyKey 目标属性键
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @GetMapping(value = "/devices/{deviceId}/properties/{propertyKey}/history", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "getDashboardSharePropertyHistory", summary = "读取匿名分享声明窗口属性历史", description = "声明窗口还须与所属租户套餐窗口求交；聚合仅返回完整区间桶，缺投影503/50048")
     @ApiResponse(responseCode = "200", description = "含实际from/to的完整版本化历史",
@@ -151,8 +177,8 @@ public class DashboardShareDataController {
             @Parameter(name = "granularity", in = ParameterIn.QUERY, required = true, schema = @Schema(type = "string", allowableValues = {"RAW", "ONE_MINUTE", "ONE_HOUR", "ONE_DAY"})),
             @Parameter(name = "aggregation", in = ParameterIn.QUERY, required = true, schema = @Schema(type = "string", allowableValues = {"AVG", "MIN", "MAX", "SUM", "COUNT"}))
     })
-    public ResponseEntity<byte[]> history(@PathVariable String shareId, @PathVariable String deviceId,
-            @PathVariable String propertyKey, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> history(@io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable String shareId, @io.swagger.v3.oas.annotations.Parameter(description = "目标设备标识") @PathVariable String deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标属性键") @PathVariable String propertyKey, HttpServletRequest request) throws IOException {
         DashboardSharePrincipal principal = principal(shareId, request);
         emptyBody(request);
         Set<String> fields = Set.of("expectedModelVersionId", "windowPreset", "anchorAt", "granularity", "aggregation");
@@ -171,15 +197,21 @@ public class DashboardShareDataController {
                 model, preset, anchor, granularity, aggregation), anchor.minus(PRESETS.get(preset)), anchor));
     }
 
-    /** 告警的整次设备集合与三组过滤必须由服务证明来自同一实际绑定。 */
+    /**
+     * 告警的整次设备集合与三组过滤必须由服务证明来自同一实际绑定。
+     *
+     * @param shareId 只读分享标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @PostMapping(value = "/alarms/query", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "queryDashboardShareAlarms", summary = "分页读取匿名分享告警实例",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
-                    content = @Content(schema = @Schema(implementation = DashboardShareDataRequest.Alarms.class))))
+                    content = @Content(schema = @Schema(implementation = DashboardShareDataRequest.Alarms.class))), description = "告警的整次设备集合与三组过滤必须由服务证明来自同一实际绑定。")
     @ApiResponse(responseCode = "200", description = "同一绑定过滤后的告警页",
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string", allowableValues = "no-store")),
             content = @Content(schema = @Schema(implementation = DashboardShareDataResponse.AlarmPage.class)))
-    public ResponseEntity<byte[]> alarms(@PathVariable String shareId, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> alarms(@io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable String shareId, HttpServletRequest request) throws IOException {
         DashboardSharePrincipal principal = principal(shareId, request);
         DashboardShareDataRequest.Alarms input = parser.parseAlarms(postBody(request));
         return guarded(() -> DashboardShareDataResponse.AlarmPage.from(service.alarms(principal,

@@ -153,7 +153,7 @@ public class UplinkKafkaConfiguration {
     }
 
     /**
-     * 创建 raw topic listener。
+     * 创建 原始消息主题监听器。
      *
      * @param normalizer 原始报文标准化器
      * @param topologyNormalizer 拓扑报文标准化器

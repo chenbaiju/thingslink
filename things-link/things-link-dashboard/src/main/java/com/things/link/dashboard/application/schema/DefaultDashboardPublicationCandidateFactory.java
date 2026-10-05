@@ -48,7 +48,7 @@ public class DefaultDashboardPublicationCandidateFactory implements DashboardPub
         this.canonicalizer = Objects.requireNonNull(canonicalizer, "canonicalizer");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DashboardPublicationCandidate prepare(DashboardDraft draft) {
         Objects.requireNonNull(draft, "draft");
@@ -56,7 +56,7 @@ public class DefaultDashboardPublicationCandidateFactory implements DashboardPub
                 draft.content(), draft.modelReferences());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DashboardPublicationCandidate prepareHistoricalVersion(DashboardVersion version) {
         Objects.requireNonNull(version, "version");

@@ -32,13 +32,13 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
         this.objectMapper = objectMapper;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<RuleScene> lock(UUID projectId, UUID sceneId) {
         return jdbcTemplate.query(sceneSelect() + " WHERE project_id = ? AND id = ? AND deleted_at IS NULL FOR UPDATE",
                 this::mapScene, projectId, sceneId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<RuleScene> search(UUID projectId, String name, String status, Instant beforeTime, UUID beforeId, int limit) {
         return jdbcTemplate.query(sceneSelect() + """
@@ -49,7 +49,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, this::mapScene, projectId, name, status, status,
                 beforeTime == null ? null : time(beforeTime), beforeTime == null ? null : time(beforeTime), beforeId, limit);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<RuleSceneVersion> history(UUID projectId, UUID sceneId, Long beforeVersion, int limit) {
         return jdbcTemplate.query(versionSelect() + """
@@ -58,7 +58,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, this::mapVersion, projectId, sceneId, beforeVersion, beforeVersion, limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean pause(UUID projectId, UUID sceneId, long expectedVersion) {
         return jdbcTemplate.update("""
@@ -67,7 +67,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, projectId, sceneId, expectedVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean create(RuleScene scene, RuleSceneVersion initialVersion) {
         int definitions = jdbcTemplate.update("""
@@ -81,7 +81,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
         return definitions == 1 && insertVersion(initialVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<RuleScene> find(UUID projectId, UUID sceneId) {
         return jdbcTemplate.query(sceneSelect() + """
@@ -89,7 +89,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, this::mapScene, projectId, sceneId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<RuleSceneVersion> findVersion(UUID projectId, UUID sceneId, UUID versionId) {
         return jdbcTemplate.query(versionSelect() + """
@@ -97,7 +97,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, this::mapVersion, projectId, sceneId, versionId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<RuleSceneVersion> versions(UUID projectId, UUID sceneId) {
         return jdbcTemplate.query(versionSelect() + """
@@ -105,7 +105,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, this::mapVersion, projectId, sceneId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long nextVersionNumber(UUID projectId, UUID sceneId) {
         Long value = jdbcTemplate.queryForObject("""
@@ -115,7 +115,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
         return value == null ? 1L : value;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean revise(RuleScene replacement, long expectedVersion, RuleSceneVersion newVersion) {
         int definitions = jdbcTemplate.update("""
@@ -127,7 +127,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
         return definitions == 1 && insertVersion(newVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean activate(UUID projectId, UUID sceneId, UUID versionId, long expectedVersion) {
         return jdbcTemplate.update("""
@@ -142,7 +142,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, versionId, projectId, sceneId, expectedVersion, versionId, versionId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean softDelete(UUID projectId, UUID sceneId, long expectedVersion) {
         return jdbcTemplate.update("""
@@ -152,7 +152,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, projectId, sceneId, expectedVersion) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<RuleSceneExecution> findExecutionByKey(
             UUID projectId, UUID sceneId, String idempotencyKey) {
@@ -161,7 +161,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 """, this::mapExecution, projectId, sceneId, idempotencyKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean insertExecution(RuleSceneExecution execution) {
         return jdbcTemplate.update("""
@@ -178,7 +178,7 @@ public class JdbcRuleSceneRepository implements RuleSceneRepository {
                 time(execution.createdAt()), time(execution.completedAt())) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<RuleSceneExecution> findExecution(UUID projectId, UUID executionId) {
         return jdbcTemplate.query(executionSelect() + """

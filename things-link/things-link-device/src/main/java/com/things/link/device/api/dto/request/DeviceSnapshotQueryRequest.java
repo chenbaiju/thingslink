@@ -20,7 +20,7 @@ public record DeviceSnapshotQueryRequest(
                 arraySchema = @Schema(requiredMode = Schema.RequiredMode.REQUIRED))
         List<DeviceRequest> devices) {
 
-    /** @param versionId 模型版本 @param digestAlgorithm 摘要算法 @param digest 摘要 @param profile Profile */
+    /** @param versionId 模型版本 @param digestAlgorithm 摘要算法 @param digest 摘要 @param profile 模型运行配置档案 */
     @Schema(name = "ConsoleDeviceSnapshotModelReference")
     public record ModelReference(
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID versionId,

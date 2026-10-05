@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
 
-/** ADR0190: the activity transaction owns the window and its reliable edges. */
+/** ADR0190：活跃事实的原事务负责维护窗口及其可靠边沿事件。 */
 @Service
 public class DeviceAccessActivityService {
     public static final long WINDOW_SECONDS = 300;
@@ -73,7 +73,7 @@ public class DeviceAccessActivityService {
         return DeviceAccessSessionPort.ActivityResult.ACCEPTED;
     }
 
-    /** Candidate is only a locator. Recheck while holding the same device lock as activity. */
+    /** 候选仅用于定位；必须持有与活跃事实写入相同的设备锁后重新检查。 */
     @Transactional(timeout=5)
     public boolean expire(UUID tenant, UUID project, UUID device) {
         rls.establish(tenant,project);
@@ -86,7 +86,7 @@ public class DeviceAccessActivityService {
         if(!b.online()||(b.protocol()!=TransportProtocol.HTTP&&b.protocol()!=TransportProtocol.COAP)
                 ||b.last().plusSeconds(WINDOW_SECONDS).isAfter(now()))return false;
         jdbc.update("UPDATE dev_access_binding SET activity_online=false WHERE project_id=? AND device_id=?",project,device);
-        // Deleted devices/projects are cleanup only, never new public source facts.
+        // 已删除设备或项目仅作清理，不产生新的公开来源事实。
         if(Boolean.TRUE.equals(jdbc.queryForObject("SELECT deleted_at IS NULL FROM dev_device WHERE project_id=? AND id=?",Boolean.class,project,device)))
             edge(tenant,project,device,generation,b,"ONLINE","OFFLINE","ACTIVITY_EXPIRED",b.last().plusSeconds(WINDOW_SECONDS));
         return true;

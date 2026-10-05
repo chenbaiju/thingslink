@@ -140,7 +140,7 @@ public class DeviceAccessTcpSessionRegistry implements DeviceAccessPushPort {
                 .isPresent();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean owns(Push push) {
         DeviceAccessTcpConnection connection = sessions.get(push.deviceId());
         return connection != null && connection.isOpen() && stillOwns(push, connection);

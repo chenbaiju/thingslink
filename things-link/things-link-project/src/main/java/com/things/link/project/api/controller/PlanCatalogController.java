@@ -83,7 +83,7 @@ public class PlanCatalogController {
             @ApiResponse(responseCode = "404", description = "套餐编码不存在",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<PlanResponse> detail(@PathVariable String planCode) {
+    public ResponseEntity<PlanResponse> detail(@io.swagger.v3.oas.annotations.Parameter(description = "稳定套餐编码，如 `STANDARD`") @PathVariable String planCode) {
         return ResponseEntity.ok(PlanResponse.from(planCatalogService.plan(planCode)));
     }
 }

@@ -24,7 +24,7 @@ public class JdbcSubscriptionRefundQuoteRepository implements SubscriptionRefund
     /** @param jdbc 原事务连接 @param json JSON编解码 */
     public JdbcSubscriptionRefundQuoteRepository(JdbcTemplate jdbc,ObjectMapper json) { this.jdbc=jdbc; this.json=json; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<SubscriptionRefundQuote> find(UUID tenant,UUID operation) {
         return jdbc.query("""
@@ -37,7 +37,7 @@ public class JdbcSubscriptionRefundQuoteRepository implements SubscriptionRefund
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void insert(SubscriptionRefundQuote q) {
         jdbc.update("""
@@ -48,7 +48,7 @@ public class JdbcSubscriptionRefundQuoteRepository implements SubscriptionRefund
                 Timestamp.from(q.expiresAt()),q.reason(),q.algorithm(),q.totalCents(),q.stateSnapshot(),json.writeValueAsString(q.lines()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<String> tenantSnapshot(UUID tenant) {
         return jdbc.query("""

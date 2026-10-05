@@ -28,19 +28,19 @@ public final class PayloadPropertyCompareNode implements RuleNode {
              "operator":{"enum":["EQ","NE","GT","GTE","LT","LTE","EXISTS"]},"value":{}}}
             """);
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String type() {
         return TYPE;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public JsonNode configSchema() {
         return CONFIG_SCHEMA.deepCopy();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeValidation validate(JsonNode config) {
         if (config == null || !config.isObject() || config.size() < 2 || config.size() > 3
@@ -67,7 +67,7 @@ public final class PayloadPropertyCompareNode implements RuleNode {
         return RuleNodeValidation.success();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleNodeResult execute(RuleMessage message, JsonNode config, RuleExecutionContext context) {
         JsonNode actual = message.payload().at(config.get("pointer").stringValue());

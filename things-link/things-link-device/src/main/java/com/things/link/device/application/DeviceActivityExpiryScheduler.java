@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.UUID;
 
-/** Bounded maintenance, independent of the public Webhook feature switch. */
+/** 有界维护任务，与公开 Webhook 功能开关无关。 */
 @Component
 @DataPlaneDatabase
 @ConditionalOnProperty(name="things-link.device.activity-expiry.enabled",havingValue="true",matchIfMissing=true)

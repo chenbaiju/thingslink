@@ -34,7 +34,7 @@ public class JdbcPlanQuotaTemplateRepository implements PlanQuotaTemplateReposit
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void lockSeed(String revision) {
         // 与目录播种使用不同键，避免两个播种事务互相阻塞；锁只在本次事务内持有。
@@ -42,7 +42,7 @@ public class JdbcPlanQuotaTemplateRepository implements PlanQuotaTemplateReposit
                 resultSet -> null, "plan-quota-template:" + revision);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Map<String, PlanQuotaTemplate> findByRevision(String revision) {
         Map<String, PlanQuotaTemplate> templates = new LinkedHashMap<>();
@@ -87,7 +87,7 @@ public class JdbcPlanQuotaTemplateRepository implements PlanQuotaTemplateReposit
         return templates;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID ensureTemplate(String planCode, String policyCode, PlanQuotaTemplate template) {
         jdbcTemplate.update("""
@@ -138,7 +138,7 @@ public class JdbcPlanQuotaTemplateRepository implements PlanQuotaTemplateReposit
                 "SELECT id FROM sys_quota_policy WHERE code = ?", UUID.class, policyCode);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void linkIfAbsent(String revision, String planCode, UUID policyId) {
         int updated = jdbcTemplate.update("""

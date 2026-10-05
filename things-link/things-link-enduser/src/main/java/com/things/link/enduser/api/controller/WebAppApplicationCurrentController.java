@@ -38,13 +38,13 @@ import java.util.Objects;
 /**
  * 已认证WebApp当前应用运行描述接口。
  *
- * <p>S12-2a4b从App access Bearer取得实际身份与项目代次，领域服务在同一事务重验身份、应用current、
+ * <p>S12-2a4b从应用访问令牌取得实际身份与项目代次，领域服务在同一事务重验身份、应用current、
  * 看板运行状态及READ grant。控制器只封闭HTTP输入、投影九个根字段并执行最终UTF-8大小守卫。</p>
  */
 @RestController
 @Validated
 @RequestMapping("/api/v1/app/applications")
-@Tag(name = "WebApp 应用运行", description = "已认证WebApp应用运行描述")
+@Tag(name = "WebApp 应用运行", description = "WebApp 公开定位与已认证应用运行描述")
 @SecurityScheme(name = "appAccessBearer", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT",
         description = "WebApp登录后签发的专用App access令牌")
 public class WebAppApplicationCurrentController {
@@ -112,7 +112,7 @@ public class WebAppApplicationCurrentController {
     })
     public ResponseEntity<byte[]> current(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable
+            @io.swagger.v3.oas.annotations.Parameter(description = "规范应用公开键") @PathVariable
             @Pattern(regexp = "^app_[0-9a-f]{32}$", message = "应用公开键格式不合法") String appKey,
             HttpServletRequest request) throws IOException {
         requireClosedRequest(request);

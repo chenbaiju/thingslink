@@ -37,7 +37,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<AlarmNotificationGroup> pageGroups(UUID projectId, String cursor, int limit) {
         return page(
@@ -54,7 +54,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 AlarmNotificationGroup::id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AlarmNotificationGroup> findGroup(UUID projectId, UUID id) {
         return one(
@@ -64,7 +64,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean createGroup(AlarmNotificationGroup v) {
         return jdbcTemplate.update(
@@ -82,7 +82,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean updateGroup(AlarmNotificationGroup v) {
         return jdbcTemplate.update(
@@ -98,13 +98,13 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean deleteGroup(UUID projectId, UUID id, int version) {
         return softDelete("alarm_notification_group", projectId, id, version);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<AlarmNotificationRecipient> listRecipients(UUID projectId, UUID groupId) {
         return jdbcTemplate.query(
@@ -116,7 +116,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 groupId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AlarmNotificationRecipient> findRecipient(UUID projectId, UUID id) {
         return one(
@@ -126,7 +126,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean createRecipient(AlarmNotificationRecipient v) {
         return jdbcTemplate.update(
@@ -146,7 +146,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean updateRecipient(AlarmNotificationRecipient v) {
         return jdbcTemplate.update(
@@ -163,13 +163,13 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean deleteRecipient(UUID projectId, UUID id, int version) {
         return softDelete("alarm_notification_recipient", projectId, id, version);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<AlarmNotificationTemplate> pageTemplates(
             UUID projectId, String cursor, int limit) {
@@ -187,7 +187,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 AlarmNotificationTemplate::id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AlarmNotificationTemplate> findTemplate(UUID projectId, UUID id) {
         return one(
@@ -197,7 +197,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean createTemplate(AlarmNotificationTemplate v) {
         return jdbcTemplate.update(
@@ -218,7 +218,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean updateTemplate(AlarmNotificationTemplate v) {
         return jdbcTemplate.update(
@@ -237,13 +237,13 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean deleteTemplate(UUID projectId, UUID id, int version) {
         return softDelete("alarm_notification_template", projectId, id, version);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<AlarmNotificationBinding> listBindings(UUID projectId, UUID ruleId) {
         return jdbcTemplate.query(
@@ -255,7 +255,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 ruleId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AlarmNotificationBinding> findBinding(UUID projectId, UUID id) {
         return one(
@@ -265,7 +265,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 id);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean createBinding(AlarmNotificationBinding v) {
         return jdbcTemplate.update(
@@ -286,7 +286,7 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean updateBinding(AlarmNotificationBinding v) {
         return jdbcTemplate.update(
@@ -304,13 +304,13 @@ public class JdbcAlarmNotificationRepository implements AlarmNotificationReposit
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean deleteBinding(UUID projectId, UUID id, int version) {
         return softDelete("alarm_notification_binding", projectId, id, version);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DeliveryTarget> findDeliveryTargets(UUID projectId, UUID ruleId) {
         return jdbcTemplate.query(
@@ -338,7 +338,7 @@ SELECT b.id b_id,b.tenant_id b_tenant_id,b.project_id b_project_id,b.rule_id b_r
                 ruleId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<PushDeliveryRoute> findPushDeliveryRoutes(UUID projectId, UUID ruleId) {
         return jdbcTemplate.query(
@@ -365,7 +365,7 @@ SELECT b.id b_id,b.tenant_id b_tenant_id,b.project_id b_project_id,b.rule_id b_r
                 ruleId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean createDelivery(AlarmNotificationDelivery v) {
         return jdbcTemplate.update(
@@ -401,7 +401,7 @@ ON CONFLICT DO NOTHING
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AlarmNotificationDelivery> findDelivery(UUID projectId, UUID deliveryId) {
         return jdbcTemplate
@@ -414,7 +414,7 @@ ON CONFLICT DO NOTHING
                 .findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean acceptQueuedDelivery(
             UUID projectId, UUID deliveryId, UUID eventId, int attemptNo) {
@@ -433,7 +433,7 @@ SELECT EXISTS(
         return Boolean.TRUE.equals(accepted);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean startDelivery(
             UUID projectId,
@@ -462,7 +462,7 @@ UPDATE alarm_notification_delivery
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DispatchClaim claimDispatches(int limit, Duration leaseDuration) {
         UUID leaseToken = Uuid7.generate();
@@ -484,7 +484,7 @@ UPDATE alarm_notification_delivery
         return new DispatchClaim(leaseToken, List.copyOf(values));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DispatchAges dispatchAges() {
         return jdbcTemplate.queryForObject(
@@ -494,7 +494,7 @@ UPDATE alarm_notification_delivery
                         Duration.ofSeconds(result.getLong("sending_seconds"))));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean releaseDispatch(
             UUID projectId, UUID deliveryId, UUID leaseToken, Duration retryDelay) {
@@ -507,7 +507,7 @@ UPDATE alarm_notification_delivery
                 Math.toIntExact(retryDelay.toSeconds())));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markDeliverySucceeded(
             UUID projectId,
@@ -531,7 +531,7 @@ UPDATE alarm_notification_delivery
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markDeliveryRetry(
             UUID projectId,
@@ -556,7 +556,7 @@ UPDATE alarm_notification_delivery
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markDeliveryDeadLetter(
             UUID projectId,
@@ -580,7 +580,7 @@ UPDATE alarm_notification_delivery
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markDeliverySkippedAuthorization(
             UUID projectId, UUID deliveryId, int attemptNo, Instant completedAt) {
@@ -601,7 +601,7 @@ UPDATE alarm_notification_delivery
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RetryClaim claimRetries(int limit, Duration leaseDuration) {
         UUID leaseToken = Uuid7.generate();
@@ -622,7 +622,7 @@ UPDATE alarm_notification_delivery
         return new RetryClaim(leaseToken, List.copyOf(values));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean requeueClaimedRetry(
             UUID projectId,
@@ -653,7 +653,7 @@ UPDATE alarm_notification_delivery
                 == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean stopClaimedRetryForProjectFreeze(UUID tenantId, UUID projectId, UUID deliveryId,
                                                   UUID retryToken, int expectedAttemptNo, Instant now) {
@@ -662,7 +662,7 @@ UPDATE alarm_notification_delivery
                 tenantId, projectId, deliveryId, retryToken, expectedAttemptNo, time(now)));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<AlarmNotificationDelivery> pageDeliveries(
             UUID projectId, UUID instanceId, String cursor, int limit) {
@@ -906,14 +906,14 @@ UPDATE alarm_notification_delivery
     }
 
     /**
-     * @return nullable UUID
+     * @return 可为空的 UUID 标识
      */
     private static UUID uuid(ResultSet r, String c) throws SQLException {
         return r.getObject(c, UUID.class);
     }
 
     /**
-     * @return nullable instant
+     * @return 可为空的时间点
      */
     private static Instant instant(ResultSet r, String c) throws SQLException {
         Timestamp t = r.getTimestamp(c);
@@ -921,7 +921,7 @@ UPDATE alarm_notification_delivery
     }
 
     /**
-     * @return nullable JDBC instant
+     * @return 从 JDBC 时间戳转换得到的可空时间点
      */
     private static Timestamp time(Instant v) {
         return v == null ? null : Timestamp.from(v);

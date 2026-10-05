@@ -43,17 +43,22 @@ public class OpenApiConfiguration {
     @Bean
     public OpenAPI thingsLinkOpenApi() {
         return new OpenAPI().info(new Info()
-                .title("ThingsLink 管理 API")
+                .title("ThingsLink HTTP 接口目录")
                 .version("v1")
                 .description("""
-                        多租户 IoT PaaS 的控制台与开放 API。
+                        多租户 IoT PaaS 的 HTTP 接口目录，按模块功能分组。
+                        覆盖管理面、App、开放集成、设备 HTTP 接入、WebSocket 握手及受控静态资源。
+                        独立模拟器仅作工具目录登记，使用独立 servers，不在平台生产进程提供。
+                        条件接口和暂停能力保留契约，不表示已启用、已公开部署或取得验收资格。
+                        框架健康、指标及运维索引另列运行分组；文档自身和内部错误转发沿框架合同。
+                        生产必须关闭 springdoc 文档，设备身份和非 JSON 响应不能套用管理面合同。
 
                         约定（架构文档 11.1）：
                         - 路径形如 /api/v1/projects/{projectId}/...
                         - 适用的业务写支持 Idempotency-Key；认证及明确只读POST不使用公共幂等缓存
-                        - 错误响应统一为 { code, message, traceId, details }，\
+                        - 管理面错误响应统一为 { code, message, traceId, details }，\
                         HTTP 状态码表达语义类别，业务错误码表达具体原因
-                        - 列表统一游标分页 { items, nextCursor, hasMore }，\
+                        - 管理面列表按各接口合同使用游标分页 { items, nextCursor, hasMore }，\
                         海量日志与时序点禁止深度 offset
                         - 时间一律 RFC3339 UTC 字符串，不返回已本地化的时间文本
                         """)

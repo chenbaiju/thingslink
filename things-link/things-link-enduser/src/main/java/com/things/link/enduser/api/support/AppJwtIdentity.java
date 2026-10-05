@@ -25,7 +25,7 @@ public final class AppJwtIdentity {
     }
 
     /**
-     * 取终端用户 ID（App JWT subject）。
+     * 取终端用户 ID（应用 JWT 主体）。
      *
      * @param jwt 已通过校验的 App 令牌
      * @return 终端用户 ID

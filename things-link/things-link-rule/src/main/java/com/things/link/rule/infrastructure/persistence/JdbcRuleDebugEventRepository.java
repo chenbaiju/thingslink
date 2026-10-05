@@ -19,7 +19,7 @@ public class JdbcRuleDebugEventRepository implements RuleDebugEventRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void save(RuleDebugEvent event) {
         jdbcTemplate.update("""
@@ -34,7 +34,7 @@ public class JdbcRuleDebugEventRepository implements RuleDebugEventRepository {
                 Timestamp.from(event.createdAt()), Timestamp.from(event.expiresAt()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int deleteExpired(int batchSize) {
         Integer deleted = jdbcTemplate.queryForObject(

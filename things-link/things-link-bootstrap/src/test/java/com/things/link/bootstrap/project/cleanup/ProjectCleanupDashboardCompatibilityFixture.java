@@ -18,7 +18,7 @@ final class ProjectCleanupDashboardCompatibilityFixture {
 
     /** 已接受的阶段闭集迁移是唯一约束来源，避免测试复制一份允许值后再次漂移。 */
     private static final ClassPathResource STAGE_CONSTRAINT_MIGRATION = new ClassPathResource(
-            "db/migration/project/V20260920_0370__integration_cleanup_stage.sql");
+            "db/migration/project/V20261003_0100__assistant_cleanup_stage.sql");
 
     /** 工具类不持有状态。 */
     private ProjectCleanupDashboardCompatibilityFixture() {
@@ -59,6 +59,13 @@ final class ProjectCleanupDashboardCompatibilityFixture {
         if (Boolean.TRUE.equals(owner.queryForObject("SELECT to_regclass('public.integ_api_key') IS NOT NULL",Boolean.class)))
             throw new IllegalStateException("已有Key事实的测试必须装配真实清理贡献器");
         return emptyContributor(ProjectCleanupStage.INTEGRATION);
+    }
+
+    /** 历史库没有Agent表，不能对当前库用空贡献器冒充物理删除。 */
+    static ProjectCleanupContributor emptyAssistantContributor(JdbcTemplate owner) {
+        if (Boolean.TRUE.equals(owner.queryForObject("SELECT to_regclass('public.assistant_model_configuration') IS NOT NULL",Boolean.class)))
+            throw new IllegalStateException("已有Agent凭据的测试必须装配真实清理贡献器");
+        return emptyContributor(ProjectCleanupStage.ASSISTANT);
     }
 
     /** 仅供历史不存在领域的测试装配，禁止用于生产配置。 */

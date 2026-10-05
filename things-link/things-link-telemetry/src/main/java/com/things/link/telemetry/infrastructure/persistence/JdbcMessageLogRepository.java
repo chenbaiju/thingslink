@@ -37,7 +37,7 @@ public class JdbcMessageLogRepository implements MessageLogRepository {
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean tryAcquire(DeviceMessageLog entry) {
         return jdbc.update("""
@@ -47,7 +47,7 @@ public class JdbcMessageLogRepository implements MessageLogRepository {
                 """, entry.messageId(), entry.projectId(), Timestamp.from(entry.receivedAt())) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void save(DeviceMessageLog entry) {
         jdbc.update("""
@@ -65,7 +65,7 @@ public class JdbcMessageLogRepository implements MessageLogRepository {
                 time(entry.deliveredAt()), time(entry.repliedAt()), entry.truncated(), entry.sampled());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<DeviceMessageLog> find(MessageLogQuery query) {
         CursorPosition position = decodeCursor(query.cursor());
@@ -123,7 +123,7 @@ public class JdbcMessageLogRepository implements MessageLogRepository {
         return CursorPage.of(items, encodeCursor(last));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(readOnly = true, timeout = 3)
     public MessageLogStatistics summarize(UUID projectId, Instant from, Instant to) {
@@ -179,7 +179,7 @@ public class JdbcMessageLogRepository implements MessageLogRepository {
                 resultSet.getBoolean("truncated"), resultSet.getBoolean("sampled"));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public java.util.Optional<DeviceMessageLog> findByLogId(java.util.UUID projectId, java.util.UUID deviceId,
                                                             java.util.UUID logId) {

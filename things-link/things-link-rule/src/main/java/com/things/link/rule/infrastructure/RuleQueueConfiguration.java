@@ -175,19 +175,19 @@ public class RuleQueueConfiguration {
         /** Kafka 官方字符串解码器；配置与 close 生命周期必须原样转发。 */
         private final StringDeserializer delegate = new StringDeserializer();
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void configure(Map<String, ?> configs, boolean isKey) {
             delegate.configure(configs, isKey);
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public Object deserialize(String topic, byte[] data) {
             return delegate.deserialize(topic, data);
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void close() {
             delegate.close();

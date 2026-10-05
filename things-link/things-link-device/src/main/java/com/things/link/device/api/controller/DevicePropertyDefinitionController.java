@@ -24,20 +24,33 @@ public class DevicePropertyDefinitionController {
     /** @param service 属性定义服务 */
     public DevicePropertyDefinitionController(DevicePropertyDefinitionService service, DeviceApiAuthorization authorization) { this.service = service; this.authorization = authorization; }
 
-    /** @param projectId 项目 ID @param deviceTypeId 类型 ID @return 属性定义列表 */
+    /**
+     * 属性列表。
+     *
+     * @param projectId 项目 ID
+     * @param deviceTypeId 类型 ID
+     * @return 属性定义列表
+     */
     @GetMapping
     @Operation(summary = "属性列表", description = "获取设备类型下的全部属性定义")
-    public ResponseEntity<List<DevicePropertyDefinitionResponse>> list(@PathVariable UUID projectId,
-                                                                        @PathVariable UUID deviceTypeId) {
+    public ResponseEntity<List<DevicePropertyDefinitionResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                                        @io.swagger.v3.oas.annotations.Parameter(description = "类型 ID") @PathVariable UUID deviceTypeId) {
         authorization.requireRead(projectId); return ResponseEntity.ok(service.list(projectId, deviceTypeId).stream()
                 .map(DevicePropertyDefinitionResponse::from).toList());
     }
 
-    /** @param projectId 项目 ID @param deviceTypeId 类型 ID @param request 创建请求 @return 新属性 */
+    /**
+     * 创建属性。
+     *
+     * @param projectId 项目 ID
+     * @param deviceTypeId 类型 ID
+     * @param request 创建请求
+     * @return 新属性
+     */
     @PostMapping
     @Operation(summary = "创建属性", description = "为设备类型添加新的属性定义。Number 可配量程和精度，Enum 可配枚举选项，Switch 可配开关文字，Object/List 必须提供受限 JSON Schema")
-    public ResponseEntity<DevicePropertyDefinitionResponse> create(@PathVariable UUID projectId,
-                                                                    @PathVariable UUID deviceTypeId,
+    public ResponseEntity<DevicePropertyDefinitionResponse> create(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                                    @io.swagger.v3.oas.annotations.Parameter(description = "类型 ID") @PathVariable UUID deviceTypeId,
                                                                     @Valid @RequestBody SaveDevicePropertyDefinitionRequest request) {
         authorization.requireWrite(projectId); return ResponseEntity.status(HttpStatus.CREATED).body(DevicePropertyDefinitionResponse.from(service.create(
                 projectId, deviceTypeId, request.propertyKey(), request.name(), request.accessType(), request.dataType(),
@@ -45,12 +58,20 @@ public class DevicePropertyDefinitionController {
                 request.enumOptions(), request.onLabel(), request.offLabel(), request.schema(), request.sortOrder())));
     }
 
-    /** @param projectId 项目 ID @param deviceTypeId 类型 ID @param id 属性 ID @param request 修改请求 @return 属性 */
+    /**
+     * 修改属性。
+     *
+     * @param projectId 项目 ID
+     * @param deviceTypeId 类型 ID
+     * @param id 属性 ID
+     * @param request 修改请求
+     * @return 属性
+     */
     @PutMapping("/{id}")
     @Operation(summary = "修改属性", description = "修改草稿设备类型的属性定义。已发布类型不可修改")
-    public ResponseEntity<DevicePropertyDefinitionResponse> update(@PathVariable UUID projectId,
-                                                                    @PathVariable UUID deviceTypeId,
-                                                                    @PathVariable UUID id,
+    public ResponseEntity<DevicePropertyDefinitionResponse> update(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                                    @io.swagger.v3.oas.annotations.Parameter(description = "类型 ID") @PathVariable UUID deviceTypeId,
+                                                                    @io.swagger.v3.oas.annotations.Parameter(description = "属性 ID") @PathVariable UUID id,
                                                                     @Valid @RequestBody SaveDevicePropertyDefinitionRequest request) {
         authorization.requireWrite(projectId); return ResponseEntity.ok(DevicePropertyDefinitionResponse.from(service.update(projectId, deviceTypeId, id,
                 request.propertyKey(), request.name(), request.accessType(), request.dataType(), request.unit(),
@@ -58,12 +79,19 @@ public class DevicePropertyDefinitionController {
                 request.onLabel(), request.offLabel(), request.schema(), request.sortOrder())));
     }
 
-    /** @param projectId 项目 ID @param deviceTypeId 类型 ID @param id 属性 ID @return 空响应 */
+    /**
+     * 删除属性。
+     *
+     * @param projectId 项目 ID
+     * @param deviceTypeId 类型 ID
+     * @param id 属性 ID
+     * @return 空响应
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除属性", description = "软删除草稿设备类型的属性定义")
-    public ResponseEntity<Void> delete(@PathVariable UUID projectId,
-                                       @PathVariable UUID deviceTypeId,
-                                       @PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "类型 ID") @PathVariable UUID deviceTypeId,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "属性 ID") @PathVariable UUID id) {
         authorization.requireWrite(projectId); service.delete(projectId, deviceTypeId, id);
         return ResponseEntity.noContent().build();
     }

@@ -66,7 +66,7 @@ public class AppPushTokenService {
      *
      * @param tenantId JWT 恢复的租户 ID
      * @param projectId 已验证 JWT 的当前项目 ID，仅作为写入许可来源
-     * @param appUserId JWT subject
+     * @param appUserId JWT 主体，即终端用户标识
      * @param installationId 客户端稳定安装实例 UUID
      * @param provider 厂商通道
      * @param plainToken 厂商 token 明文
@@ -103,7 +103,7 @@ public class AppPushTokenService {
      *
      * @param tenantId JWT 恢复的租户 ID
      * @param projectId 已验证 JWT 的当前项目 ID，仅作为写入许可来源
-     * @param appUserId JWT subject
+     * @param appUserId JWT 主体，即终端用户标识
      * @param installationId 安装实例 UUID
      */
     @Transactional
@@ -117,10 +117,10 @@ public class AppPushTokenService {
     }
 
     /**
-     * 保护 service 直调路径，不能只依赖 HTTP Bean Validation。
+     * 保护服务直接调用路径，不能只依赖 HTTP 入口的声明式参数校验。
      *
      * @param tenantId JWT 恢复的租户 ID
-     * @param appUserId JWT subject
+     * @param appUserId JWT 主体，即终端用户标识
      * @param installationId 客户端稳定安装实例 UUID
      * @param provider 厂商通道
      * @param plainToken 厂商 token 明文

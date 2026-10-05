@@ -34,7 +34,7 @@ def checked_artifacts(app):
     config = build / 'sdkconfig.requested'
     if hashlib.sha256(config.read_bytes()).hexdigest() != receipt.get('sdkconfig_sha256'):
         raise ValueError('Generated configuration differs from the verified build')
-    names = {0: 'bootloader/bootloader.bin', 0x8000: 'partition_table/partition-table.bin', 0x10000: f'baijulink_{app}.bin'}
+    names = {0: 'bootloader/bootloader.bin', 0x8000: 'partition_table/partition-table.bin', 0x10000: f'thingslink_{app}.bin'}
     if set(receipt.get('artifact_sha256', {})) != set(names.values()):
         raise ValueError('Unexpected flash artifact set')
     result = {}

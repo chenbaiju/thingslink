@@ -36,7 +36,9 @@ class PlatformApiRoleComponentScanTests {
     void explicitPlatformRoleExcludesAccessComponentsButKeepsManagementApi() {
         Set<String> platform = scan("platform-api");
         assertThat(platform).doesNotContainAnyElementsOf(ACCESS_COMPONENTS);
-        assertThat(platform).contains("com.things.link.project.api.controller.ProjectController");
+        assertThat(platform).contains("com.things.link.project.api.controller.ProjectController",
+                "com.things.link.assistant.api.controller.DeviceEvidenceController",
+                "com.things.link.assistant.application.DeviceEvidenceService");
     }
 
     @Test

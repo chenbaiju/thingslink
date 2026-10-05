@@ -22,7 +22,7 @@ public final class KafkaRuleExecutionSuccessPublisher implements RuleExecutionSu
         this.messageMapper = messageMapper;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void publish(RuleExecutionEnvelope envelope, RuleMessage transformedMessage) {
         StandardUplinkMessage processed = messageMapper.toStandardMessage(envelope.message(), transformedMessage);

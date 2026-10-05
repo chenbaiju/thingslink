@@ -92,7 +92,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, memberId, projectId, accountId, role.name());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void lockTenantProjectQuota(UUID tenantId) {
         // 命名空间 12014 与设备 735、仪表盘 12012/12013、OTA 13026 互不相同：
@@ -104,7 +104,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, Integer.class, tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int countOwnedProjects(UUID tenantId) {
         // 不 join 成员关系：外部协作身份属于他人租户的项目，不能消耗本租户名额。
@@ -115,7 +115,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         return count == null ? 0 : count;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<ProjectMembership> findMembershipsByAccount(UUID accountId) {
         // ⚠️ project 与 project_member 都豁免 RLS，**这条 join 就是唯一的隔离手段**。
@@ -135,7 +135,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, MEMBERSHIP_MAPPER, accountId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ProjectMembership> findMembership(UUID projectId, UUID accountId) {
         // ADR0064决策5：与列表同样限定项目、账号及可读状态；保留成员行不等于保留删除项目资格。
@@ -247,7 +247,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, projectId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DeletedProject> findDeletedOwnedBy(UUID accountId) {
         // 两表均豁免RLS；accountId、ACTIVE成员和OWNER角色缺一都会泄露其他账号的回收站。
@@ -264,7 +264,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, DELETED_PROJECT_MAPPER, accountId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean isRetainedActiveOwner(UUID projectId, UUID accountId) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject("""
@@ -278,7 +278,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, Boolean.class, projectId, accountId));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeletedProject> lockDeletedForRecovery(UUID projectId) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()
@@ -301,7 +301,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, DELETED_PROJECT_MAPPER, projectId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int restoreWithinWindow(UUID projectId) {
         // 单次取数据库墙钟同时用于期限与updated_at，避免锁等待跨过截止后复用事务起点now()。
@@ -319,7 +319,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         return jdbcTemplate.query("SELECT role FROM sys_project_member WHERE project_id=? AND account_id=? FOR SHARE",(r,n)->ProjectRole.valueOf(r.getString(1)),projectId,accountId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ProjectRole> findRole(UUID projectId, UUID accountId) {
         // ADR0064决策5：DELETING即使尚无deleted_at也已失权；ARCHIVED只读仍保留原成员角色。
@@ -338,7 +338,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Project> findByProjectKey(String projectKey) {
         return jdbcTemplate.query("""
@@ -354,7 +354,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 projectKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Project> findById(UUID projectId) {
         return jdbcTemplate.query("""
@@ -370,7 +370,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 projectId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Project> findLiveByIdentity(UUID tenantId, UUID projectId) {
         // sys_project明文豁免RLS，二元组必须进入SQL；只过滤deleted_at以保留ARCHIVED只读语义。
@@ -406,7 +406,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 tenantId, projectId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Project> findForProjectToken(UUID accountId, UUID projectId) {
         // JWT中的pid已验签，但成员可能被移除；显式账号连接是本豁免RLS查询唯一的授权边界。
@@ -424,7 +424,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 rs.getLong("lifecycle_generation")), projectId, accountId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public OptionalLong lockActiveGenerationForProjectToken(UUID accountId, UUID projectId) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()
@@ -447,7 +447,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         return generations.isEmpty() ? OptionalLong.empty() : OptionalLong.of(generations.getFirst());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Project> lockForManagement(UUID projectId) {
         // 直调仓储也不能在auto-commit中观察隔离级别后换连接加锁；必须沿原非只读事务连接执行。
@@ -477,13 +477,13 @@ public class JdbcProjectRepository implements ProjectRepository {
                 projectId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean lockActiveForWrite(UUID tenantId, UUID projectId) {
         return lockActiveForWrite(tenantId, projectId, null);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean lockActiveForWrite(UUID tenantId, UUID projectId, long expectedGeneration) {
         if (expectedGeneration < 0) {
@@ -522,7 +522,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 expectedGeneration, expectedGeneration).isEmpty();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public java.util.List<UUID> findOwnedLiveProjectIds(UUID tenantId) {
         // created_at 相同时以 id 兜底，保证「最早创建」在重跑之间稳定选出同一个项目。
@@ -533,7 +533,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """, (rs, rowNum) -> rs.getObject("id", UUID.class), tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public java.util.List<UUID> findActiveOwnedLiveProjectIds(UUID tenantId) {
         return jdbcTemplate.query("""
@@ -542,7 +542,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 """,(rs,row) -> rs.getObject("id",UUID.class),tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int restrictCommercialWrite(java.util.Collection<UUID> projectIds) {
         if (projectIds.isEmpty()) {
@@ -561,7 +561,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         });
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int restoreCommercialWrite(java.util.Collection<UUID> projectIds) {
         if (projectIds.isEmpty()) {

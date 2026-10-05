@@ -1,8 +1,8 @@
-#include "baijulink/mqtt_frames.hpp"
+#include "thingslink/mqtt_frames.hpp"
 #include "buffers.hpp"
 #include <cstring>
 
-namespace baijulink {
+namespace thingslink {
 void MqttFrames::reset() {
     assembling_ = false; packet_id_ = 0; total_ = 0; received_ = 0;
     topic_.fill(0); payload_.fill(0);

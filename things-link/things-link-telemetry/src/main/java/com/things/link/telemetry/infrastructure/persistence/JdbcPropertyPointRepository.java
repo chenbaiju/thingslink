@@ -34,7 +34,7 @@ public class JdbcPropertyPointRepository implements PropertyPointRepository {
         this.jdbc = jdbc;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void save(PropertyPoint point) {
         jdbc.update("""
@@ -49,7 +49,7 @@ public class JdbcPropertyPointRepository implements PropertyPointRepository {
                 point.valueJson(), point.quality());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<PropertyPoint> findByDevice(UUID projectId, UUID deviceId, String propertyKey,
                                                    Instant from, Instant to, String cursor, int limit) {
@@ -102,7 +102,7 @@ public class JdbcPropertyPointRepository implements PropertyPointRepository {
         return CursorPage.of(items, encodeCursor(last));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<PropertyHistoryPoint> findHistory(UUID projectId, UUID deviceId, String propertyKey,
                                                   Instant from, Instant to, HistoryGranularity granularity,
@@ -140,7 +140,7 @@ public class JdbcPropertyPointRepository implements PropertyPointRepository {
                 projectId, deviceId, propertyKey, Timestamp.from(from), Timestamp.from(to), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean hasNonNumericData(UUID projectId, UUID deviceId, String propertyKey, Instant from, Instant to) {
         Boolean result = jdbc.queryForObject("""

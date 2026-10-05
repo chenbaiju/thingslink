@@ -16,7 +16,7 @@ import java.util.UUID;
 /** 项目概要查询入口。 */
 @RestController
 @RequestMapping("/api/v1/projects/{projectId}/overview")
-@Tag(name = "Project Overview")
+@Tag(name = "项目概要", description = "当前项目设备、告警及用量概要")
 public class OverviewController {
     /** 概要应用服务。 */
     private final OverviewService service;
@@ -29,10 +29,15 @@ public class OverviewController {
         this.authorization = authorization;
     }
 
-    /** @param projectId 项目 ID @return 项目概要 */
+    /**
+     * 查询项目概要统计。
+     *
+     * @param projectId 项目 ID
+     * @return 项目概要
+     */
     @GetMapping
-    @Operation(summary = "查询项目概要统计")
-    public ResponseEntity<OverviewResponse> get(@PathVariable UUID projectId) {
+    @Operation(summary = "查询项目概要统计", description = "查询项目概要统计。")
+    public ResponseEntity<OverviewResponse> get(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(OverviewResponse.from(service.get(projectId)));
     }

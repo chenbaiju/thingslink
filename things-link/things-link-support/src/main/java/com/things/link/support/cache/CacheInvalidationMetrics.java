@@ -29,7 +29,7 @@ public class CacheInvalidationMetrics {
      * 记录统一失效事件结果。
      *
      * @param resource 固定缓存资源
-     * @param result published/applied/ignored/failure
+     * @param result 失效事件结果：已发布、已应用、已忽略或失败
      */
     public void recordInvalidation(CacheResource resource, Result result) {
         Counter.builder("thingslink.cache.invalidation")
@@ -44,7 +44,7 @@ public class CacheInvalidationMetrics {
      * 记录缓存读取结果。
      *
      * @param resource 固定缓存资源
-     * @param result hit/miss/load/error
+     * @param result 缓存操作结果：命中、未命中、加载或错误
      */
     public void recordAccess(CacheResource resource, AccessResult result) {
         Counter.builder("thingslink.cache.access")

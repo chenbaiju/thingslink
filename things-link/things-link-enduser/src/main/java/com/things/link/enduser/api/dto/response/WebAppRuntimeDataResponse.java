@@ -95,7 +95,7 @@ public final class WebAppRuntimeDataResponse {
      * @param versionId 模型版本
      * @param digestAlgorithm 摘要算法
      * @param digest 摘要
-     * @param profile Profile
+     * @param profile 模型运行配置档案
      * @param properties 实际请求键并集的属性描述
      */
     @Schema(name = "WebAppRuntimeModelResponse")

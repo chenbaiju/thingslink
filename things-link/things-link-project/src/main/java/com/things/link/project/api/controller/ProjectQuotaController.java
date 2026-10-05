@@ -58,7 +58,7 @@ public class ProjectQuotaController {
             @ApiResponse(responseCode = "404", description = "项目不存在、不是成员或不是当前已选项目",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<ProjectQuotaOverviewResponse> get(@PathVariable UUID projectId) {
+    public ResponseEntity<ProjectQuotaOverviewResponse> get(@io.swagger.v3.oas.annotations.Parameter(description = "路径项目 ID；必须与当前令牌已选项目一致") @PathVariable UUID projectId) {
         return ResponseEntity.ok(ProjectQuotaOverviewResponse.from(projectQuotaService.get(projectId)));
     }
 }

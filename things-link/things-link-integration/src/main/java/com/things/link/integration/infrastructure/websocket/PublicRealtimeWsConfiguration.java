@@ -14,6 +14,7 @@ import org.springframework.web.socket.config.annotation.*;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 import java.util.*;
+/** 公开实时 WebSocket 装配；独立握手链使用专用票据并检查来源、协议及客户端地址。 */
 @Configuration(proxyBeanMethods=false)
 @EnableWebSocket
 public class PublicRealtimeWsConfiguration implements WebSocketConfigurer {
@@ -41,4 +42,22 @@ public class PublicRealtimeWsConfiguration implements WebSocketConfigurer {
         @Override public void afterHandshake(ServerHttpRequest request,ServerHttpResponse response,WebSocketHandler handler,Exception failure){}
     }).setHandshakeHandler(new DefaultHandshakeHandler(){@Override protected String selectProtocol(List<String> protocols,WebSocketHandler handler){return "tc-realtime-v1";}});}
     private static boolean deny(ServerHttpResponse response,HttpStatus status){response.setStatusCode(status);return false;}
+
+    /**
+     * 描述原生 HTTP 升级入口，生产关闭文档时不创建此文档 Bean。
+     *
+     * @return 只维护契约、不注册运行路由的文档修正器
+     */
+    @org.springframework.context.annotation.Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "springdoc.api-docs.enabled", havingValue = "true", matchIfMissing = true)
+    public org.springdoc.core.customizers.OpenApiCustomizer publicRealtimeHandshakeDocumentation() {
+        return api -> {
+            com.things.link.support.openapi.HttpTransportOpenApiDocumentation.webSocket(api,
+                    PATH, "upgradeOpenRealtime", "使用短期票据建立开放实时连接",
+                    "只接受保留状态的 WS 票据及原客户端地址；若提供 Origin 须匹配精确允许来源。"
+                            + "禁止查询串、Authorization、X-Api-Key 与 Cookie。",
+                    "按顺序发送 tc-realtime-v1 与短期 WS 票据，连接消息继续执行原票据资格校验", false);
+        };
+    }
 }

@@ -35,7 +35,7 @@ public class OtaJobCompletionSource implements OtaJobCompletionCapture {
         this.source=source; this.rls=rls; this.json=json;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation=Propagation.MANDATORY)
     public void capture(UUID tenant, UUID project) {

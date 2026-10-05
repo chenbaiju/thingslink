@@ -48,7 +48,7 @@ public class EmqxAuthService {
     /**
      * 校验一机一密凭据。
      *
-     * @param username {@code projectKey/deviceKey}
+     * @param username 用户名，格式为 {@code projectKey/deviceKey}
      * @param password 设备密钥明文
      * @param clientId 原MQTT Client ID，用于服务器会话隔离
      * @return 允许或拒绝
@@ -62,7 +62,7 @@ public class EmqxAuthService {
      *
      * @param username MQTT 用户名或内部订阅身份
      * @param password 设备密钥明文或内部订阅密码
-     * @param clientId MQTT Client ID
+     * @param clientId MQTT 客户端标识
      * @return 认证结果与同一次校验的设备身份
      */
     public Authentication authenticateIdentity(String username, String password, String clientId) {

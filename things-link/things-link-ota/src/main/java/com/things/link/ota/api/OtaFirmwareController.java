@@ -44,17 +44,24 @@ public class OtaFirmwareController {
         this.authorization = authorization;
         this.parser = parser;
     }
-    /** 创建或按领域映射恢复同一未取消草稿。 */
+    /**
+     * 创建或按领域映射恢复同一未取消草稿。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaFirmwareResponse>}
+     */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "createOtaFirmware", summary = "创建OTA固件草稿")
+    @Operation(operationId = "createOtaFirmware", summary = "创建OTA固件草稿", description = "创建或按领域映射恢复同一未取消草稿。")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201",
             description = "创建或恢复原始草稿成功", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = OtaFirmwareResponse.class)))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = OtaFirmwareRequestParser.CreateRequest.class)))
-    public ResponseEntity<OtaFirmwareResponse> create(@PathVariable UUID projectId,
-            @Parameter(required = true) @RequestHeader(value = "Idempotency-Key", required = false) String key,
+    public ResponseEntity<OtaFirmwareResponse> create(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody byte[] body) {
         requireManage(projectId);
         OtaFirmwareRequestParser.CreateRequest request = parser.create(body);
@@ -63,30 +70,51 @@ public class OtaFirmwareController {
         return ResponseEntity.created(URI.create("/api/v1/projects/" + projectId + "/ota/firmwares/" + result.id()))
                 .body(result);
     }
-    /** 成员读取草稿及取消终态，默认每页20项。 */
+    /**
+     * 成员读取草稿及取消终态，默认每页20项。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 符合条件的记录页及后续分页游标
+     */
     @GetMapping
-    @Operation(operationId = "listOtaFirmwares", summary = "OTA固件游标分页")
-    public ResponseEntity<CursorPage<OtaFirmwareResponse>> list(@PathVariable UUID projectId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit) {
+    @Operation(operationId = "listOtaFirmwares", summary = "OTA固件游标分页", description = "成员读取草稿及取消终态，默认每页20项。")
+    public ResponseEntity<CursorPage<OtaFirmwareResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.list(projectId, cursor, limit).map(OtaFirmwareResponse::from));
     }
-    /** 精确项目读取，不向跨项目请求区分真实存在性。 */
+    /**
+     * 精确项目读取，不向跨项目请求区分真实存在性。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param firmwareId 固件标识
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaFirmwareResponse>}
+     */
     @GetMapping("/{firmwareId}")
-    @Operation(operationId = "getOtaFirmware", summary = "OTA固件详情")
-    public ResponseEntity<OtaFirmwareResponse> find(@PathVariable UUID projectId, @PathVariable UUID firmwareId) {
+    @Operation(operationId = "getOtaFirmware", summary = "OTA固件详情", description = "精确项目读取，不向跨项目请求区分真实存在性。")
+    public ResponseEntity<OtaFirmwareResponse> find(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "固件标识") @PathVariable UUID firmwareId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(OtaFirmwareResponse.from(service.find(projectId, firmwareId)));
     }
-    /** 取消采用必填公共写幂等及领域修订终态规则。 */
+    /**
+     * 取消采用必填公共写幂等及领域修订终态规则。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param firmwareId 固件标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaFirmwareResponse>}
+     */
     @PostMapping(value = "/{firmwareId}/cancel", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "cancelOtaFirmware", summary = "取消OTA固件草稿")
+    @Operation(operationId = "cancelOtaFirmware", summary = "取消OTA固件草稿", description = "取消采用必填公共写幂等及领域修订终态规则。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = OtaFirmwareRequestParser.CancelRequest.class)))
-    public ResponseEntity<OtaFirmwareResponse> cancel(@PathVariable UUID projectId, @PathVariable UUID firmwareId,
-            @Parameter(required = true) @RequestHeader(value = "Idempotency-Key", required = false) String key,
+    public ResponseEntity<OtaFirmwareResponse> cancel(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "固件标识") @PathVariable UUID firmwareId,
+            @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody byte[] body) {
         requireManage(projectId);
         OtaFirmwareRequestParser.CancelRequest request = parser.cancel(body);

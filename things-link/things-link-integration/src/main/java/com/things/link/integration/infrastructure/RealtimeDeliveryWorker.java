@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.DisposableBean;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+/** 有界公开实时交付工作器；最多四个并发任务，饱和时停止本轮提交并保留持久恢复。 */
 @Component
 @DataPlaneDatabase
 @ConditionalOnProperty(name="things-link.integration.realtime.enabled",havingValue="true")

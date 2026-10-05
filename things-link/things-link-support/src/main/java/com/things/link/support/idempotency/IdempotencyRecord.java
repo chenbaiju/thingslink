@@ -13,7 +13,7 @@ import java.util.UUID;
  * @param requestMethod   HTTP 方法
  * @param requestPath     请求路径
  * @param requestBodyHash 请求体的 SHA-256 十六进制
- * @param status          {@link Status}
+ * @param status          当前状态，取值见 {@link Status}
  * @param expiresAt       过期时间
  */
 public record IdempotencyRecord(

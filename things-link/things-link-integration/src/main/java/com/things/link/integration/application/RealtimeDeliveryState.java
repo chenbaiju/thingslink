@@ -14,7 +14,7 @@ public class RealtimeDeliveryState {
     @Transactional(timeout=10) public Optional<RealtimeDeliveryRepository.Delivery> claim(RealtimeDeliveryRepository.Candidate candidate,boolean sendingEnabled){
         rls.establish(candidate.tenant(),candidate.project());
         var generation=projects.lockReadableGeneration(candidate.tenant(),candidate.project());
-        // No ticket write while holding delivery lock: admission uses ticket -> delivery.
+        // 持有投递锁期间不写票据；准入的加锁顺序为票据后投递。
         var found=deliveries.lock(candidate.id());if(found.isEmpty())return Optional.empty();var d=found.get();var now=tickets.now();
         if(!Set.of("READY","IN_FLIGHT").contains(d.status())||("IN_FLIGHT".equals(d.status())?d.leaseUntil().isAfter(now):d.nextAttempt().isAfter(now)))return Optional.empty();
         var t=tickets.find(d.ticket());
@@ -28,7 +28,7 @@ public class RealtimeDeliveryState {
     }
     @Transactional(timeout=10) public void cancel(RealtimeDeliveryRepository.Candidate candidate,RealtimeDeliveryRepository.Delivery claim,String reason){
         rls.establish(candidate.tenant(),candidate.project());projects.lockReadableGeneration(candidate.tenant(),candidate.project());
-        // Ticket before delivery matches ingress and avoids a lock upgrade in outbound admission.
+        // 先锁票据再锁投递，与接入顺序一致，避免出站准入时升级锁。
         tickets.lockForTermination(claim.ticket());
         deliveries.lock(candidate.id()).ifPresent(d->{if(claim.token().equals(d.token())&&d.leaseUntil().isAfter(tickets.now())){
             if("RESYNC_REQUIRED".equals(reason))tickets.close(claim.ticket(),reason);

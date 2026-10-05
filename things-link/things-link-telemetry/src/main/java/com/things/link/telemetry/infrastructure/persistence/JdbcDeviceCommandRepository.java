@@ -23,7 +23,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
     /** @param jdbcTemplate JDBC 访问器 */
     public JdbcDeviceCommandRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean create(DeviceCommand value) {
         return jdbcTemplate.update("""
                 INSERT INTO ts_device_command
@@ -64,13 +64,13 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 time(value.acknowledgedAt()), time(value.completedAt()), time(value.updatedAt()), keyId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean hasPublicOrigin(UUID projectId, UUID commandId, UUID keyId) {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject("SELECT EXISTS(SELECT 1 FROM ts_device_command WHERE project_id=? AND id=? AND integration_key_id=?)",
             Boolean.class,projectId,commandId,keyId));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void createAttempt(DeviceCommandAttempt value) {
         // ADR0070：先锁父命令并核当前计数；失败必须回滚，禁止先插attempt留下孤立事实。
         int parent = jdbcTemplate.update("""
@@ -93,32 +93,32 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
         requireChanged(attempt, "创建命令尝试失败");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceCommand> findByIdempotencyKey(UUID projectId, String key) {
         return jdbcTemplate.query(select() + " WHERE project_id = ? AND idempotency_key = ?",
                 this::mapCommand, projectId, key).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceCommand> findById(UUID projectId, UUID deviceId, UUID commandId) {
         return jdbcTemplate.query(select() + " WHERE project_id = ? AND target_device_id = ? AND id = ?",
                 this::mapCommand, projectId, deviceId, commandId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceCommand> findByCommandId(UUID projectId, UUID commandId) {
         return jdbcTemplate.query(select() + " WHERE project_id = ? AND id = ?",
                 this::mapCommand, projectId, commandId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceCommand> lockByIdentity(UUID tenantId, UUID projectId, UUID commandId) {
         // 所有新工作先取得project许可，再以完整可信三元组锁父命令；等待后读取当前已提交事实。
         return jdbcTemplate.query(select() + " WHERE tenant_id = ? AND project_id = ? AND id = ? FOR UPDATE",
                 this::mapCommand, tenantId, projectId, commandId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DeviceCommandAttempt> findAttempts(UUID projectId, UUID commandId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, command_id, attempt_no, outbox_event_id,
@@ -128,7 +128,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 """, this::mapAttempt, projectId, commandId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markDispatched(UUID projectId, UUID commandId, int attemptNo, Instant publishedAt) {
         int attempt = jdbcTemplate.update("""
                 UPDATE ts_device_command_attempt
@@ -146,7 +146,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean markAttemptDispatchFailed(UUID projectId, UUID commandId, int attemptNo,
                                                        String failureCode, String failureMessage, Instant at) {
         return jdbcTemplate.update("""
@@ -156,7 +156,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 """, failureCode, failureMessage, time(at), projectId, commandId, attemptNo) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean terminalDispatchRetryExhausted(UUID projectId, UUID commandId, int attemptNo, Instant at) {
         return jdbcTemplate.update("""
                 UPDATE ts_device_command
@@ -168,7 +168,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 """, time(at), projectId, commandId, attemptNo) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean scheduleDispatchRetry(UUID projectId, UUID commandId, int attemptNo, Instant nextAttemptAt) {
         return jdbcTemplate.update("""
                 UPDATE ts_device_command
@@ -178,7 +178,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 """, time(nextAttemptAt), projectId, commandId, attemptNo) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean applyReply(UUID projectId, UUID commandId, UUID connectionDeviceId,
                                        UUID replyMessageId, String replyStatus, String responseJson,
                                        String errorCode, String errorMessage, Instant at) {
@@ -232,7 +232,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long countPending(UUID projectId, UUID deviceId) {
         Long pending = jdbcTemplate.queryForObject("""
@@ -243,7 +243,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
         return pending == null ? 0L : pending;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int accelerateOfflinePending(UUID tenantId, UUID projectId, UUID deviceId) {
         return jdbcTemplate.update("""
@@ -267,7 +267,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 """, tenantId, projectId, deviceId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<DueCommand> claimDue(int limit) {
@@ -279,7 +279,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                         rs.getObject("retry_token", UUID.class), rs.getInt("expected_attempt"), ClaimKind.valueOf(rs.getString("claim_kind"))), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean consumeRetryClaim(DueCommand due) {
         if (due == null || due.tenantId() == null || due.projectId() == null || due.commandId() == null
                 || due.retryToken() == null || due.expectedAttempt() < 1 || due.claimKind() == null) return false;
@@ -312,21 +312,21 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 due.claimKind().name()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean stopForProjectFreeze(UUID tenantId, UUID projectId, UUID commandId,
                                                  int expectedAttempt, Instant at) {
         return stopDelivery(tenantId, projectId, commandId, expectedAttempt, at,
                 "PROJECT_FROZEN", "项目已冻结，停止命令交付", false);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean stopForPropertyCapability(UUID tenantId, UUID projectId, UUID commandId,
             int expectedAttempt, Instant at) {
         return stopDelivery(tenantId, projectId, commandId, expectedAttempt, at,
                 "PROPERTY_SET_PROTOCOL_UNSUPPORTED", "当前接收设备不具备MQTT属性设置能力", true);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean stopForUnavailableReceiver(UUID tenantId, UUID projectId, UUID commandId,
             int expectedAttempt, Instant at) {
         return stopDelivery(tenantId, projectId, commandId, expectedAttempt, at,
@@ -372,7 +372,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public RetryDecision prepareRetry(UUID projectId, UUID commandId,
                                                 int currentAttempt, int maxAttempts, Instant now) {
         int attempt = jdbcTemplate.update("""
@@ -405,12 +405,12 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
         return RetryDecision.RETRY;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Instant databaseNow() {
         return jdbcTemplate.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean timeoutFinalClaim(UUID projectId, UUID commandId, int expectedAttempt, Instant at) {
         return jdbcTemplate.update("""
                 UPDATE ts_device_command c
@@ -426,7 +426,7 @@ public class JdbcDeviceCommandRepository implements DeviceCommandRepository {
                 """, time(at), projectId, commandId, expectedAttempt) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public double oldestPendingAgeSeconds() {
         return jdbcTemplate.queryForObject("SELECT device_command_oldest_pending_age()", Double.class);
     }

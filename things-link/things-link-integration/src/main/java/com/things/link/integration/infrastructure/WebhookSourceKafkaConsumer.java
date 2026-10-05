@@ -10,7 +10,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-/** Trusted internal topic, raw bytes and redacted failures; admission transaction commits before return. */
+/** 可信内部主题、原始字节及脱敏故障；返回前必须提交准入事务。 */
 @Component
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="things-link.integration.webhook.enabled",havingValue="true")
 @DataPlaneDatabase
@@ -29,7 +29,7 @@ public class WebhookSourceKafkaConsumer {
             if(!Arrays.equals(record.key(),source.aggregateId().toString().getBytes(StandardCharsets.UTF_8)))throw new IllegalArgumentException();
             admission.acceptSource(source);
         } catch(RuntimeException failure){
-            // Jackson/SQL exceptions may embed input; deliberately omit causes across the Kafka log boundary.
+            // Jackson 或 SQL 异常可能携带输入；跨越 Kafka 日志边界时刻意省略原始异常原因。
             throw new IllegalStateException("WEBHOOK_SOURCE_NOT_ADMITTED");
         }
     }

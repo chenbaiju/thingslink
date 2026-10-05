@@ -126,8 +126,8 @@ public class DashboardManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = CreateDashboardRequest.class)))
     public ResponseEntity<DashboardCreationResponse> createDashboard(
-            @PathVariable UUID projectId,
-            @Parameter(required = true)
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @Parameter(required = true, description = "客户端生成且在当前项目创建范围内唯一的幂等键")
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
         authorization.requireManage(projectId);
@@ -150,9 +150,9 @@ public class DashboardManagementController {
     @Operation(operationId = "listDashboards", summary = "看板目录分页",
             description = "使用不透明游标读取当前项目的未删除看板")
     public ResponseEntity<CursorPage<DashboardCatalogResponse>> list(
-            @PathVariable UUID projectId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "上一页返回的不透明游标；首页为空") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "单页数量，默认50，允许1至200") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.list(projectId, cursor, limit).map(DashboardCatalogResponse::from));
     }
@@ -168,8 +168,8 @@ public class DashboardManagementController {
     @Operation(operationId = "find_1", summary = "看板目录详情",
             description = "读取当前项目内的单个未删除看板")
     public ResponseEntity<DashboardCatalogResponse> find(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(DashboardCatalogResponse.from(service.find(projectId, dashboardId)));
     }
@@ -185,8 +185,8 @@ public class DashboardManagementController {
     @Operation(operationId = "getDraft_1", summary = "看板草稿详情",
             description = "读取当前项目内未删除看板的可变草稿")
     public ResponseEntity<DashboardDraftResponse> getDraft(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(DashboardDraftResponse.from(service.getDraft(projectId, dashboardId)));
     }
@@ -204,10 +204,10 @@ public class DashboardManagementController {
     @Operation(operationId = "listDashboardVersions", summary = "看板历史版本分页",
             description = "按版本号倒序读取未删除看板的轻量不可变版本元数据")
     public ResponseEntity<CursorPage<DashboardVersionSummaryResponse>> listDashboardVersions(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "上一页返回的不透明版本号游标；首页为空") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "单页数量，默认50，允许1至200") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.listVersions(projectId, dashboardId, cursor, limit)
                 .map(DashboardVersionSummaryResponse::from));
@@ -225,9 +225,9 @@ public class DashboardManagementController {
     @Operation(operationId = "getDashboardVersion", summary = "看板历史版本详情",
             description = "读取未删除看板的精确不可变版本Schema与派生需求")
     public ResponseEntity<DashboardVersionResponse> getDashboardVersion(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
-            @PathVariable UUID versionId) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "精确看板版本ID") @PathVariable UUID versionId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(DashboardVersionResponse.from(
                 service.getVersion(projectId, dashboardId, versionId)));
@@ -261,8 +261,8 @@ public class DashboardManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = PublishDashboardVersionRequest.class)))
     public ResponseEntity<DashboardVersionResponse> publishDashboardVersion(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -305,9 +305,9 @@ public class DashboardManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = DashboardPublicationRevisionRequest.class)))
     public ResponseEntity<DashboardVersionResponse> rollbackDashboardVersion(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
-            @PathVariable UUID versionId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "目标历史版本ID") @PathVariable UUID versionId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -339,8 +339,8 @@ public class DashboardManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = DashboardPublicationRevisionRequest.class)))
     public ResponseEntity<Void> withdrawDashboardPublication(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -369,8 +369,8 @@ public class DashboardManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = DashboardPublicationRevisionRequest.class)))
     public ResponseEntity<Void> softDeleteDashboard(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
             @Parameter(description = "可选公共写幂等键；重放完成结果时按公共墓碑合同处理", required = false)
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody byte[] body) {
@@ -397,8 +397,8 @@ public class DashboardManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = RenameDashboardRequest.class)))
     public ResponseEntity<DashboardCatalogResponse> rename(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
             @RequestBody byte[] body) {
         authorization.requireManage(projectId);
         RenameDashboardRequest request = requestParser.parseRename(body);
@@ -423,8 +423,8 @@ public class DashboardManagementController {
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = SaveDashboardDraftRequest.class)))
     public ResponseEntity<DashboardDraftResponse> saveDraft(
-            @PathVariable UUID projectId,
-            @PathVariable UUID dashboardId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前选定的项目ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "看板内部ID") @PathVariable UUID dashboardId,
             @RequestBody byte[] body) {
         authorization.requireManage(projectId);
         SaveDashboardDraftRequest request = requestParser.parseSaveDraft(body);

@@ -45,18 +45,30 @@ public class DeviceGroupController {
         this.authorization = authorization;
     }
 
-    /** @return 项目有效设备组 */
+    /**
+     * 设备组列表。
+     *
+     * @return 项目有效设备组
+     *
+     * @param projectId 接口指定的项目标识
+     */
     @GetMapping("/device-groups")
     @Operation(summary = "设备组列表", description = "读取项目内静态组和动态组；动态成员仅在成员查询时实时求值")
-    public ResponseEntity<List<DeviceGroupResponse>> list(@PathVariable UUID projectId) {
+    public ResponseEntity<List<DeviceGroupResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.list(projectId).stream().map(DeviceGroupResponse::from).toList());
     }
 
-    /** 创建一个静态或动态设备组。 */
+    /**
+     * 创建一个静态或动态设备组。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param request 本次操作的请求数据，结构见 {@code SaveDeviceGroupRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<DeviceGroupResponse>}
+     */
     @PostMapping("/device-groups")
-    @Operation(summary = "创建设备组")
-    public ResponseEntity<DeviceGroupResponse> create(@PathVariable UUID projectId,
+    @Operation(summary = "创建设备组", description = "创建一个静态或动态设备组。")
+    public ResponseEntity<DeviceGroupResponse> create(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
                                                        @Valid @RequestBody SaveDeviceGroupRequest request) {
         authorization.requireDeviceWrite(projectId);
         DeviceGroup group = service.create(projectId, request.name(), request.description(), request.type(),
@@ -64,11 +76,18 @@ public class DeviceGroupController {
         return ResponseEntity.status(HttpStatus.CREATED).body(DeviceGroupResponse.from(group));
     }
 
-    /** 更新设备组；组类型创建后不可修改。 */
+    /**
+     * 更新设备组；组类型创建后不可修改。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param groupId 设备组标识
+     * @param request 本次操作的请求数据，结构见 {@code SaveDeviceGroupRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<DeviceGroupResponse>}
+     */
     @PutMapping("/device-groups/{groupId}")
-    @Operation(summary = "修改设备组")
-    public ResponseEntity<DeviceGroupResponse> update(@PathVariable UUID projectId,
-                                                       @PathVariable UUID groupId,
+    @Operation(summary = "修改设备组", description = "更新设备组；组类型创建后不可修改。")
+    public ResponseEntity<DeviceGroupResponse> update(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                                       @io.swagger.v3.oas.annotations.Parameter(description = "设备组标识") @PathVariable UUID groupId,
                                                        @Valid @RequestBody SaveDeviceGroupRequest request) {
         authorization.requireDeviceWrite(projectId);
         DeviceGroup group = service.update(projectId, groupId, request.type(), request.name(), request.description(),
@@ -76,62 +95,101 @@ public class DeviceGroupController {
         return ResponseEntity.ok(DeviceGroupResponse.from(group));
     }
 
-    /** 软删除设备组。 */
+    /**
+     * 软删除设备组。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param groupId 设备组标识
+     * @return 操作完成后的 HTTP 响应，正文为空
+     */
     @DeleteMapping("/device-groups/{groupId}")
-    @Operation(summary = "删除设备组")
-    public ResponseEntity<Void> delete(@PathVariable UUID projectId, @PathVariable UUID groupId) {
+    @Operation(summary = "删除设备组", description = "软删除设备组。")
+    public ResponseEntity<Void> delete(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "设备组标识") @PathVariable UUID groupId) {
         authorization.requireDeviceWrite(projectId);
         service.delete(projectId, groupId);
         return ResponseEntity.noContent().build();
     }
 
-    /** 读取静态成员或动态规则的实时结果。 */
+    /**
+     * 读取静态成员或动态规则的实时结果。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param groupId 设备组标识
+     * @return 符合当前查询条件的结果列表
+     */
     @GetMapping("/device-groups/{groupId}/devices")
     @Operation(summary = "设备组成员（兼容）",
             description = "最多兼容返回 200 条；请使用 /devices/search?groupId=... 键集分页", deprecated = true)
-    public ResponseEntity<List<DeviceResponse>> members(@PathVariable UUID projectId,
-                                                         @PathVariable UUID groupId) {
+    public ResponseEntity<List<DeviceResponse>> members(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                                         @io.swagger.v3.oas.annotations.Parameter(description = "设备组标识") @PathVariable UUID groupId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.members(projectId, groupId).stream().map(DeviceResponse::from).toList());
     }
 
-    /** 原子替换静态组全部成员。 */
+    /**
+     * 原子替换静态组全部成员。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param groupId 设备组标识
+     * @param request 本次操作的请求数据，结构见 {@code ReplaceDeviceGroupMembersRequest}
+     * @return 操作完成后的 HTTP 响应，正文为空
+     */
     @PutMapping("/device-groups/{groupId}/devices")
-    @Operation(summary = "替换静态组成员")
-    public ResponseEntity<Void> replaceMembers(@PathVariable UUID projectId,
-                                               @PathVariable UUID groupId,
+    @Operation(summary = "替换静态组成员", description = "原子替换静态组全部成员。")
+    public ResponseEntity<Void> replaceMembers(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                               @io.swagger.v3.oas.annotations.Parameter(description = "设备组标识") @PathVariable UUID groupId,
                                                @Valid @RequestBody ReplaceDeviceGroupMembersRequest request) {
         authorization.requireDeviceWrite(projectId);
         service.replaceMembers(projectId, groupId, request.deviceIds());
         return ResponseEntity.noContent().build();
     }
 
-    /** 读取单台设备的全部键值标签。 */
+    /**
+     * 读取单台设备的全部键值标签。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceId 目标设备标识
+     * @return 符合当前查询条件的结果列表
+     */
     @GetMapping("/devices/{deviceId}/tags")
-    @Operation(summary = "设备标签列表")
-    public ResponseEntity<List<DeviceTagResponse>> tags(@PathVariable UUID projectId,
-                                                         @PathVariable UUID deviceId) {
+    @Operation(summary = "设备标签列表", description = "读取单台设备的全部键值标签。")
+    public ResponseEntity<List<DeviceTagResponse>> tags(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                                         @io.swagger.v3.oas.annotations.Parameter(description = "目标设备标识") @PathVariable UUID deviceId) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok(service.tags(projectId, deviceId).stream().map(DeviceTagResponse::from).toList());
     }
 
-    /** 新增或覆盖一个设备标签。 */
+    /**
+     * 新增或覆盖一个设备标签。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceId 目标设备标识
+     * @param request 本次操作的请求数据，结构见 {@code PutDeviceTagRequest}
+     * @return 操作完成后的 HTTP 响应，正文为空
+     */
     @PutMapping("/devices/{deviceId}/tags")
-    @Operation(summary = "设置设备标签")
-    public ResponseEntity<Void> putTag(@PathVariable UUID projectId,
-                                       @PathVariable UUID deviceId,
+    @Operation(summary = "设置设备标签", description = "新增或覆盖一个设备标签。")
+    public ResponseEntity<Void> putTag(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "目标设备标识") @PathVariable UUID deviceId,
                                        @Valid @RequestBody PutDeviceTagRequest request) {
         authorization.requireDeviceWrite(projectId);
         service.putTag(projectId, deviceId, request.key(), request.value());
         return ResponseEntity.noContent().build();
     }
 
-    /** 删除一个设备标签键。 */
+    /**
+     * 删除一个设备标签键。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deviceId 目标设备标识
+     * @param key 待删除的设备标签键
+     * @return 操作完成后的 HTTP 响应，正文为空
+     */
     @DeleteMapping("/devices/{deviceId}/tags/{key}")
-    @Operation(summary = "删除设备标签")
-    public ResponseEntity<Void> deleteTag(@PathVariable UUID projectId,
-                                          @PathVariable UUID deviceId,
-                                          @PathVariable String key) {
+    @Operation(summary = "删除设备标签", description = "删除一个设备标签键。")
+    public ResponseEntity<Void> deleteTag(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+                                          @io.swagger.v3.oas.annotations.Parameter(description = "目标设备标识") @PathVariable UUID deviceId,
+                                          @io.swagger.v3.oas.annotations.Parameter(description = "待删除的设备标签键") @PathVariable String key) {
         authorization.requireDeviceWrite(projectId);
         service.deleteTag(projectId, deviceId, key);
         return ResponseEntity.noContent().build();

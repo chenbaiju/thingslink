@@ -97,7 +97,7 @@ public class RawUplinkKafkaConsumer {
     /** 安装前原子停止与状态观察入口。 */
     private final OtaInstallStopUplinkHandler otaInstallStop;
 
-    /** 继承 support 模块 trace producer interceptor 的 Kafka 模板。 */
+    /** 继承 support 模块 追踪生产者拦截器 的 Kafka 模板。 */
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     /**
@@ -142,7 +142,7 @@ public class RawUplinkKafkaConsumer {
      *
      * @param record 原始上行 Kafka 记录
      */
-//    @KafkaListener(topics = RAW_UPLINK_TOPIC)
+//       示例：@KafkaListener(topics = RAW_UPLINK_TOPIC)
     @KafkaListener(topics = RAW_UPLINK_TOPIC, groupId = "${things-link.kafka.group-prefix:things-link}-ingestion-raw",
             containerFactory = "dataKafkaListenerContainerFactory",
             concurrency = "${things-link.kafka.concurrency.ingestion-raw:4}")

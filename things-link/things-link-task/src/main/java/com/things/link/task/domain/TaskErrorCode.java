@@ -14,7 +14,7 @@ public enum TaskErrorCode implements ErrorCode {
     /** 默认中文消息。 */ private final String message;
     /** HTTP 状态。 */ private final int status;
     /** 创建错误码。 */ TaskErrorCode(int code, String message, int status) { this.code = code; this.message = message; this.status = status; }
-    /** {@inheritDoc} */ @Override public int code() { return code; }
-    /** {@inheritDoc} */ @Override public String defaultMessage() { return message; }
-    /** {@inheritDoc} */ @Override public int httpStatus() { return status; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public int code() { return code; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public String defaultMessage() { return message; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public int httpStatus() { return status; }
 }

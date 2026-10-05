@@ -18,7 +18,7 @@ public class JdbcDeviceCommandDefinitionRepository implements DeviceCommandDefin
     /** @param jdbcTemplate JDBC 访问器 */
     public JdbcDeviceCommandDefinitionRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(DeviceCommandDefinition value) {
         jdbcTemplate.update("""
                 INSERT INTO dev_command_definition
@@ -31,7 +31,7 @@ public class JdbcDeviceCommandDefinitionRepository implements DeviceCommandDefin
                 value.inputSchema(), value.outputSchema(), value.timeoutSeconds(), value.sortOrder());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DeviceCommandDefinition> findByDeviceType(UUID projectId, UUID deviceTypeId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, command_key, name, description,
@@ -42,7 +42,7 @@ public class JdbcDeviceCommandDefinitionRepository implements DeviceCommandDefin
                 """, this::map, projectId, deviceTypeId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceCommandDefinition> findById(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, command_key, name, description,
@@ -52,7 +52,7 @@ public class JdbcDeviceCommandDefinitionRepository implements DeviceCommandDefin
                 """, this::map, projectId, deviceTypeId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceCommandDefinition> findByCommandKey(
             UUID projectId, UUID deviceTypeId, String commandKey) {
         return jdbcTemplate.query("""
@@ -63,7 +63,7 @@ public class JdbcDeviceCommandDefinitionRepository implements DeviceCommandDefin
                 """, this::map, projectId, deviceTypeId, commandKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(DeviceCommandDefinition value) {
         return jdbcTemplate.update("""
                 UPDATE dev_command_definition
@@ -76,7 +76,7 @@ public class JdbcDeviceCommandDefinitionRepository implements DeviceCommandDefin
                 value.projectId(), value.deviceTypeId(), value.id()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean softDelete(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.update("""
                 UPDATE dev_command_definition SET deleted_at = now(), updated_at = now()

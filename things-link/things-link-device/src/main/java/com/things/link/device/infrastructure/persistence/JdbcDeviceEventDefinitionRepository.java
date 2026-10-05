@@ -21,7 +21,7 @@ public class JdbcDeviceEventDefinitionRepository implements DeviceEventDefinitio
     /** @param jdbcTemplate JDBC 访问器 */
     public JdbcDeviceEventDefinitionRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(DeviceEventDefinition value) {
         jdbcTemplate.update("""
                 INSERT INTO dev_event_definition
@@ -32,7 +32,7 @@ public class JdbcDeviceEventDefinitionRepository implements DeviceEventDefinitio
         insertParameters(value);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<DeviceEventDefinition> findByDeviceType(UUID projectId, UUID deviceTypeId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, event_key, name, level, description,
@@ -43,7 +43,7 @@ public class JdbcDeviceEventDefinitionRepository implements DeviceEventDefinitio
                 """, this::map, projectId, deviceTypeId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DeviceEventDefinition> findById(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, event_key, name, level, description,
@@ -53,7 +53,7 @@ public class JdbcDeviceEventDefinitionRepository implements DeviceEventDefinitio
                 """, this::map, projectId, deviceTypeId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(DeviceEventDefinition value) {
         int affected = jdbcTemplate.update("""
                 UPDATE dev_event_definition
@@ -69,7 +69,7 @@ public class JdbcDeviceEventDefinitionRepository implements DeviceEventDefinitio
         return true;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean softDelete(UUID projectId, UUID deviceTypeId, UUID id) {
         return jdbcTemplate.update("""
                 UPDATE dev_event_definition SET deleted_at = now(), updated_at = now()

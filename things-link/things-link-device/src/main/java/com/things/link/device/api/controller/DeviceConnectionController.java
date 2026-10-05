@@ -22,10 +22,17 @@ public class DeviceConnectionController {
     /** @param service 连接记录查询服务 */
     public DeviceConnectionController(DeviceConnectionService service) { this.service = service; }
 
-    /** @param projectId 项目 ID @param deviceId 设备 ID @return 最近一百条连接记录 */
+    /**
+     * 查询当前项目设备的最近一百条连接记录。
+     *
+     * @param projectId 项目 ID
+     * @param deviceId 设备 ID
+     * @return 最近一百条连接记录
+     */
+    @io.swagger.v3.oas.annotations.Operation(summary = "查询设备最近连接记录", description = "返回当前项目可见设备的最近一百条连接记录，不提供游标分页。")
     @GetMapping
-    public ResponseEntity<List<DeviceConnectionResponse>> list(@PathVariable UUID projectId,
-                                                                @PathVariable UUID deviceId) {
+    public ResponseEntity<List<DeviceConnectionResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                                @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId) {
         return ResponseEntity.ok(service.list(projectId, deviceId).stream()
                 .map(DeviceConnectionResponse::from).toList());
     }

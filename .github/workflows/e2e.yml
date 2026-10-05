@@ -192,10 +192,11 @@ jobs:
           path: |
             things-link-console/playwright-report/
             things-link-console/test-results/
-            things-link-console/logs/target-e2e-backend.log
-            things-link-console/logs/target-e2e-simulator.log
-            things-link-console/logs/target-e2e-vite.log
-            things-link-console/logs/target-e2e-dependencies.log
-            things-link-console/logs/target-e2e-stack.log
-            things-link-console/logs/target-e2e-signer.log
-            things-link-console/logs/target-e2e-webapp.log
+            things-link-console/logs/target-e2e-backend-*.log
+            things-link-console/logs/target-e2e-simulator-*.log
+            things-link-console/logs/target-e2e-vite-*.log
+            things-link-console/logs/target-e2e-dependencies-*.log
+            things-link-console/logs/target-e2e-stack-*.log
+            things-link-console/logs/target-e2e-signer-*.log
+            things-link-console/logs/target-e2e-webapp-*.log
+            things-link-console/logs/controlled-smtp-*.log

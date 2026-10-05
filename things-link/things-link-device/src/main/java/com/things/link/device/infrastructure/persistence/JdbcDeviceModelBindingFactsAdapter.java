@@ -21,7 +21,7 @@ public class JdbcDeviceModelBindingFactsAdapter implements DeviceModelBindingFac
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceModelBindingFacts> find(UUID projectId, UUID deviceId) {
         Objects.requireNonNull(projectId, "projectId");

@@ -18,7 +18,7 @@ public class JdbcModbusPointMappingRepository implements ModbusPointMappingRepos
     /** @param jdbcTemplate 已接入 RLS 上下文的数据访问模板 */
     public JdbcModbusPointMappingRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void create(ModbusPointMapping point) {
         jdbcTemplate.update("""
                 INSERT INTO dev_modbus_point_mapping
@@ -32,7 +32,7 @@ public class JdbcModbusPointMappingRepository implements ModbusPointMappingRepos
                 point.pollingIntervalMs(), point.version(), point.status().name());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<ModbusPointMapping> findByDevice(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_id, sub_device_id, property_key, slave_address,
@@ -44,7 +44,7 @@ public class JdbcModbusPointMappingRepository implements ModbusPointMappingRepos
                 """, this::map, projectId, deviceId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public List<ModbusPointMapping> findPublished(UUID projectId, UUID deviceId) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_id, sub_device_id, property_key, slave_address,
@@ -58,7 +58,7 @@ public class JdbcModbusPointMappingRepository implements ModbusPointMappingRepos
                 """, this::map, projectId, deviceId, projectId, deviceId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<ModbusPointMapping> findById(UUID projectId, UUID id) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_id, sub_device_id, property_key, slave_address,
@@ -69,7 +69,7 @@ public class JdbcModbusPointMappingRepository implements ModbusPointMappingRepos
                 """, this::map, projectId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(ModbusPointMapping point) {
         return jdbcTemplate.update("""
                 UPDATE dev_modbus_point_mapping
@@ -82,7 +82,7 @@ public class JdbcModbusPointMappingRepository implements ModbusPointMappingRepos
                 point.offset(), point.pollingIntervalMs(), point.projectId(), point.id()) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean delete(UUID projectId, UUID id) {
         return jdbcTemplate.update("""
                 DELETE FROM dev_modbus_point_mapping
@@ -90,7 +90,7 @@ public class JdbcModbusPointMappingRepository implements ModbusPointMappingRepos
                 """, projectId, id) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean publish(UUID projectId, UUID deviceId) {
         return jdbcTemplate.update("""
                 UPDATE dev_modbus_point_mapping

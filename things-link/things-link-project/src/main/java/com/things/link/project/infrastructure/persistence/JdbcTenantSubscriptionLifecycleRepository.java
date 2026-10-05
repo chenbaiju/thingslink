@@ -60,7 +60,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long lockTenantAndReadAssignmentVersion(UUID tenantId) {
         Long version = jdbcTemplate.queryForObject(
@@ -73,26 +73,26 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
         return version;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID readPolicyId(UUID tenantId) {
         return jdbcTemplate.queryForObject(
                 "SELECT quota_policy_id FROM sys_tenant WHERE id = ?", UUID.class, tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ActiveSubscription> lockActiveSubscription(UUID tenantId) {
         return selectActive("WHERE tenant_id = ? AND status = 'ACTIVE' FOR UPDATE", tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ActiveSubscription> findBySourceOrder(UUID orderId) {
         return selectActive("WHERE source_order_id = ?", orderId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void supersede(UUID subscriptionId) {
         int updated = jdbcTemplate.update("""
@@ -108,7 +108,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID activate(UUID tenantId, UUID planRevisionId, Instant startsAt, Instant endsAt,
                          String billingPeriod, long priceCents, String currency, UUID sourceOrderId) {
@@ -123,14 +123,14 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
         return subscriptionId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<SubscriptionLifecycleState> findState(UUID subscriptionId) {
         return jdbcTemplate.query(SELECT_STATE + " WHERE id = ?", STATE_MAPPER, subscriptionId)
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<SubscriptionLifecycleState> findCurrentState(UUID tenantId) {
         return jdbcTemplate.query(SELECT_STATE + """
@@ -141,7 +141,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
                         """, STATE_MAPPER, tenantId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<SubscriptionLifecycleState> findDueForGrace(Instant now, int limit) {
         return jdbcTemplate.query(SELECT_STATE + """
@@ -151,7 +151,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
                         """, STATE_MAPPER, Timestamp.from(now), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<SubscriptionLifecycleState> findDueForRestriction(Instant now, int limit) {
         // 「租户当前没有 ACTIVE 订阅」是续费保护：宽限期内续费新建 ACTIVE 后，旧 GRACE 行必须失去推进资格。
@@ -166,7 +166,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
                         """, STATE_MAPPER, Timestamp.from(now), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<SubscriptionLifecycleState> findCurrentWithPeriodEnd(int limit) {
         return jdbcTemplate.query(SELECT_STATE + """
@@ -176,7 +176,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
                         """, STATE_MAPPER, limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean enterGrace(UUID subscriptionId, Instant graceEndsAt, Instant now) {
         return jdbcTemplate.update("""
@@ -189,7 +189,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
                 """, Timestamp.from(graceEndsAt), subscriptionId, Timestamp.from(now)) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean enterRestrictedFree(UUID subscriptionId, Instant restrictedAt, Instant now) {
         return jdbcTemplate.update("""
@@ -202,7 +202,7 @@ public class JdbcTenantSubscriptionLifecycleRepository implements TenantSubscrip
                 """, Timestamp.from(restrictedAt), subscriptionId, Timestamp.from(now)) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean changePlanRevision(UUID subscriptionId, UUID planRevisionId) {
         return jdbcTemplate.update("""

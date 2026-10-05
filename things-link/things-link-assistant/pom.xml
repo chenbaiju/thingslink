@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent><groupId>com.things.link</groupId><artifactId>things-link</artifactId><version>0.0.1-SNAPSHOT</version></parent>
+    <artifactId>things-link-assistant</artifactId>
+    <description>Console Agent 受权证据与分析接入</description>
+    <dependencies>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-shared</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-support</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-project</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-device</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-alarm</artifactId></dependency>
+        <dependency><groupId>com.things.link</groupId><artifactId>things-link-telemetry</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+    </dependencies>
+</project>

@@ -105,7 +105,7 @@ public class RealtimeTicketService {
             @Override public void afterCommit(){leases.release(new RealtimeConnectionLease.ConnectionLease(ticket.identity().tenant(),ticket.leaseMember()));}
         });
     }
-    /** Trusted Broker enumeration only; not a public proof-by-ID endpoint. */
+    /** 仅供可信 Broker 枚举，不是凭标识证明权限的公开入口。 */
     @Transactional public void closeMqttById(UUID id){
         repository.connected(id).ifPresent(t->{if(t.request().protocol()==RealtimeTicketRequest.Protocol.MQTT)closeRejected(new RealtimeTicketRepository.Candidate(t.identity().tenant(),t.identity().project(),id));});
     }

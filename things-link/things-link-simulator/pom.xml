@@ -19,6 +19,12 @@
     <description>独立设备模拟器：通过真实 MQTT Broker 模拟连接与周期属性上报</description>
 
     <dependencies>
+        <!-- 仅描述本地控制 HTTP 契约，不引入 springdoc 服务或平台业务模块。 -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>${swagger-annotations.version}</version>
+        </dependency>
         <!-- 仅复用与框架无关的 UUIDv7；禁止依赖 device、telemetry 等业务模块。 -->
         <dependency>
             <groupId>com.things.link</groupId>

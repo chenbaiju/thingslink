@@ -24,27 +24,27 @@ public class JdbcOtaCommitPermitDeliveryRepository implements OtaCommitPermitDel
     private final JdbcTemplate jdbc;
     /** 注入数据平面。 */
     public JdbcOtaCommitPermitDeliveryRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> claimOne() {
         return jdbc.query("SELECT s.*, "+PROJECTION+" FROM ota_commit_claim_one() s",JdbcOtaCommitPermitDeliveryRepository::claim).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> authoritativeClaim(UUID permitId,UUID token) {
         return jdbc.query("SELECT s.*, "+PROJECTION+" FROM ota_commit_authoritative_claim(?,?) s",
                 JdbcOtaCommitPermitDeliveryRepository::claim,permitId,token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> authoritativeTransport(UUID id,UUID token) {
         return jdbc.query("SELECT s.*, "+PROJECTION+" FROM ota_commit_authoritative_transport(?,?) s",
                 (r,row)->transport(r,permit(r)),id,token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> reserveSend(Claim c,String topic) {
         return jdbc.query("SELECT * FROM ota_commit_reserve(?,?,?,?,?)",(r,row)->new Transport(id(r,"id"),c.permit(),
                 r.getInt("transport_no"),id(r,"reservation_token"),id(r,"delivery_lease_token"),at(r,"reserved_at"),topic),
                 c.permit().id(),c.leaseToken(),c.revision(),topic,c.permit().canonical()).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean deferIneligible(Claim c,String reason) {
         return jdbc.update("""
                 UPDATE ota_commit_delivery SET status='RETRY_WAIT',revision=revision+1,
@@ -53,25 +53,25 @@ public class JdbcOtaCommitPermitDeliveryRepository implements OtaCommitPermitDel
                     AND lease_until>clock_timestamp() AND deadline_at>clock_timestamp() AND status IN ('WAITING','RETRY_WAIT')
                 """,reason,c.permit().id(),c.leaseToken(),c.revision())==1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recordObservation(Transport t,String outcome,Integer httpStatus,String errorCode) {
         return jdbc.update("UPDATE ota_commit_transport SET outcome=?,http_status=?,error_code=?,observed_at=clock_timestamp()"
                 +" WHERE id=? AND reservation_token=? AND tenant_id=? AND project_id=? AND event_id=? AND outcome IS NULL",
                 outcome,httpStatus,errorCode,t.id(),t.reservationToken(),t.permit().tenantId(),t.permit().projectId(),t.permit().id())==1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean settleCurrent(Claim c,UUID transportId) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_commit_settle(?,?,?,?)",Boolean.class,c.permit().id(),c.leaseToken(),c.revision(),transportId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recoverExpired(Claim c) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_commit_recover(?,?,?)",Boolean.class,c.permit().id(),c.leaseToken(),c.revision()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean exhaustDue(Claim c,String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_commit_exhaust(?,?,?,?)",Boolean.class,c.permit().id(),c.leaseToken(),c.revision(),reason));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean pauseSecurity(Claim c,String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_commit_pause(?,?,?,?)",Boolean.class,c.permit().id(),c.leaseToken(),c.revision(),reason));
     }

@@ -61,7 +61,7 @@ class FlywayUpgradePathTests {
             "classpath:db/migration/alarm", "classpath:db/migration/task",
             "classpath:db/migration/rule", "classpath:db/migration/iam",
             "classpath:db/migration/enduser", "classpath:db/migration/export",
-            "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration"
+            "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration", "classpath:db/migration/assistant"
     };
 
     /** S13 已发布库的最末版本：S14 的两条目录迁移在它之前，因而在存量库中被判 IGNORED。 */
@@ -137,8 +137,10 @@ class FlywayUpgradePathTests {
                 .as("两条白名单迁移必须真的写入历史")
                 .containsAll(S14_CATALOG_SCRIPTS);
 
-        // 4. 目录事实与 S14 表就位。
+        // 4. 目录事实、S14表与后续Agent元数据增量表就位。
         try (Connection connection = owner()) {
+            assertThat(tableExists(connection, "assistant_analysis_call")).as("Agent增量调用保护表").isTrue();
+            assertThat(tableExists(connection, "assistant_analysis_slot")).as("Agent持久并发槽表").isTrue();
             for (String table : S14_TABLES) {
                 assertThat(tableExists(connection, table)).as("缺少表 %s", table).isTrue();
             }

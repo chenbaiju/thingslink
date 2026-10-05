@@ -166,6 +166,11 @@ public class AppDeviceController {
 
     /**
      * 列出当前终端用户在本项目可访问的设备（游标分页）。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 符合条件的记录页及后续分页游标
      */
     @GetMapping
     @Operation(summary = "设备列表",
@@ -188,6 +193,10 @@ public class AppDeviceController {
 
     /**
      * 单设备详情。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param deviceId 目标设备标识
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<AppDeviceResponse>}
      */
     @GetMapping("/{deviceId}")
     @Operation(summary = "设备详情",
@@ -209,6 +218,11 @@ public class AppDeviceController {
 
     /**
      * 单设备多属性当前值。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param deviceId 目标设备标识
+     * @param keys 要读取的设备属性键列表
+     * @return 符合当前查询条件的结果列表
      */
     @GetMapping("/{deviceId}/current-values")
     @Operation(summary = "设备当前值",
@@ -234,6 +248,15 @@ public class AppDeviceController {
 
     /**
      * 单设备属性历史聚合曲线。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param deviceId 目标设备标识
+     * @param propertyKey 目标属性键
+     * @param from 查询时间区间起点
+     * @param to 查询时间区间终点
+     * @param granularity 历史数据时间粒度
+     * @param aggregation 历史数据聚合方式
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<AppHistoryResponse>}
      */
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "503", description = "套餐历史窗口不可用（50048）", content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = com.things.link.shared.error.ApiError.class)))
     @GetMapping("/{deviceId}/telemetry/history")
@@ -268,6 +291,12 @@ public class AppDeviceController {
 
     /**
      * 下发设备命令。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param deviceId 目标设备标识
+     * @param idempotencyKey 本次操作的幂等键，用于识别重复提交
+     * @param request 本次操作的请求数据，结构见 {@code AppSubmitCommandRequest}
+     * @return 当前接口的操作结果，响应结构见 {@code AppCommandResponse}
      */
     @PostMapping("/{deviceId}/commands")
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -299,6 +328,11 @@ public class AppDeviceController {
 
     /**
      * 回读命令状态。
+     *
+     * @param jwt 认证框架已解析的应用访问令牌
+     * @param deviceId 目标设备标识
+     * @param commandId 设备命令标识
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<AppCommandResponse>}
      */
     @GetMapping("/{deviceId}/commands/{commandId}")
     @Operation(summary = "命令状态",

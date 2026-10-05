@@ -20,7 +20,7 @@ public class JdbcRuleExecutionLogStore implements RuleExecutionLogStore {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean append(RuleExecutionLogEntry entry) {
         java.util.List<Object> args = new java.util.ArrayList<>(java.util.List.of(Uuid7.generate(), entry.tenantId(), entry.key().projectId(),

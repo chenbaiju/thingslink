@@ -41,6 +41,7 @@ ALLOWED_MIGRATION_DOMAINS = frozenset(
         "dashboard",
         "ota",
         "integration",
+        "assistant",
     }
 )
 # 这两份已提交并在持久库执行的迁移不能改名或改字节；仅原路径与原文豁免旧排序槽。

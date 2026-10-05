@@ -36,27 +36,27 @@ public class JdbcOtaInstallStopDeliveryRepository implements OtaInstallStopDeliv
     private final JdbcTemplate jdbc;
     /** 注入数据平面。 */
     public JdbcOtaInstallStopDeliveryRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> claimOne() {
         return jdbc.query("SELECT s.*, "+PROJECTION+" FROM ota_install_stop_claim_one() s",JdbcOtaInstallStopDeliveryRepository::claim).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Claim> authoritativeClaim(UUID permitId,UUID token) {
         return jdbc.query("SELECT s.*, "+PROJECTION+" FROM ota_install_stop_authoritative_claim(?,?) s",
                 JdbcOtaInstallStopDeliveryRepository::claim,permitId,token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> authoritativeTransport(UUID id,UUID token) {
         return jdbc.query("SELECT s.*, "+PROJECTION+" FROM ota_install_stop_authoritative_transport(?,?) s",
                 (r,row)->transport(r,query(r)),id,token).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Transport> reserveSend(Claim c,String topic) {
         return jdbc.query("SELECT * FROM ota_install_stop_reserve(?,?,?,?,?)",(r,row)->new Transport(id(r,"id"),c.envelope(),
                 r.getInt("transport_no"),id(r,"reservation_token"),id(r,"delivery_lease_token"),at(r,"reserved_at"),topic),
                 c.envelope().id(),c.leaseToken(),c.revision(),topic,c.envelope().canonical()).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean deferIneligible(Claim c,String reason) {
         return jdbc.update("""
                 UPDATE ota_install_stop_delivery SET status='RETRY_WAIT',revision=revision+1,
@@ -65,21 +65,21 @@ public class JdbcOtaInstallStopDeliveryRepository implements OtaInstallStopDeliv
                     AND lease_until>clock_timestamp() AND deadline_at>clock_timestamp() AND status IN ('WAITING','RETRY_WAIT')
                 """,reason,c.envelope().id(),c.leaseToken(),c.revision())==1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recordObservation(Transport t,String outcome,Integer httpStatus,String errorCode) {
         return jdbc.update("UPDATE ota_install_stop_transport SET outcome=?,http_status=?,error_code=?,observed_at=clock_timestamp()"
                 +" WHERE id=? AND reservation_token=? AND tenant_id=? AND project_id=? AND event_id=? AND outcome IS NULL",
                 outcome,httpStatus,errorCode,t.id(),t.reservationToken(),t.envelope().tenantId(),t.envelope().projectId(),t.envelope().id())==1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean settleCurrent(Claim c,UUID transportId) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_install_stop_settle(?,?,?,?)",Boolean.class,c.envelope().id(),c.leaseToken(),c.revision(),transportId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean recoverExpired(Claim c) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_install_stop_recover(?,?,?)",Boolean.class,c.envelope().id(),c.leaseToken(),c.revision()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean exhaustDue(Claim c,String reason) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_install_stop_exhaust(?,?,?,?)",Boolean.class,c.envelope().id(),c.leaseToken(),c.revision(),reason));
     }

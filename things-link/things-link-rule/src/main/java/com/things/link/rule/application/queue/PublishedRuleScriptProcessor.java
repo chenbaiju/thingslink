@@ -53,7 +53,7 @@ public final class PublishedRuleScriptProcessor implements RuleExecutionProcesso
         this.clock = clock;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RuleExecutionResult process(RuleExecutionEnvelope envelope) {
         RuleMessage current = envelope.message();

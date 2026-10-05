@@ -19,6 +19,6 @@ public record DeviceDataStream(UUID id, UUID tenantId, UUID projectId, UUID devi
      * 控制面公开契约已下线，本枚举在 V1 内不再对外暴露；S15 接线时按新契约恢复。
      */
     public enum Format { /** HEX 表示的任意二进制消息。 */ HEX, /** Plaintext 文本消息。 */ TEXT, /** JSON 格式消息。 */ JSON,
-        /** Modbus RTU。 */ MODBUS_RTU, /** Modbus TCP。 */ MODBUS_TCP,
+        /** Modbus RTU 串行通信协议。 */ MODBUS_RTU, /** Modbus TCP 网络通信协议。 */ MODBUS_TCP,
         /** 电力行业 645-2007。 */ DLT645_2007, /** 环保 HJ212-2017。 */ HJ212_2017 }
 }

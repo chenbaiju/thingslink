@@ -159,7 +159,7 @@ public class SecurityConfiguration {
     private final RestQuotaRateLimitMetrics restQuotaRateLimitMetrics;
     /** PostgreSQL 权威 UTC 日额度判定服务。 */
     private final ProjectDailyQuotaDecisionService dailyQuotaDecisionService;
-    /** 已认证 REST append-only 用量事实端口。 */
+    /** 已认证 REST 只追加 用量事实端口。 */
     private final ProjectUsageFactRecorder usageFactRecorder;
     /** 控制台JWT建立租户范围前的项目代次权威核验端口。 */
     private final ProjectLifecycleAccessService projectLifecycleAccessService;

@@ -82,7 +82,7 @@ public class MinioPrivateObjectStorage implements PrivateObjectStorage {
         this.internalUploadClient = internalUploadClient;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void upload(String bucket, String objectKey, Path source, String contentType,
                        Map<String, String> metadata) {
@@ -97,7 +97,7 @@ public class MinioPrivateObjectStorage implements PrivateObjectStorage {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void upload(String bucket, String objectKey, Path source, String contentType,
                        Map<String, String> metadata, ObjectUploadControl control) {
@@ -166,7 +166,7 @@ public class MinioPrivateObjectStorage implements PrivateObjectStorage {
         return new ObjectUploadAbortedException(message, control.timedOut());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void delete(String bucket, String objectKey) {
         try {
@@ -176,7 +176,7 @@ public class MinioPrivateObjectStorage implements PrivateObjectStorage {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public URI presignGet(String bucket, String objectKey, Duration ttl) {
         if (ttl == null || ttl.isZero() || ttl.isNegative() || ttl.compareTo(Duration.ofDays(7)) > 0) {

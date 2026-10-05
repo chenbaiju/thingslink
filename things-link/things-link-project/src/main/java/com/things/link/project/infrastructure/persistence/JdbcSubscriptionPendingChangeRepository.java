@@ -51,26 +51,26 @@ public class JdbcSubscriptionPendingChangeRepository implements TenantSubscripti
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean lockTenant(UUID tenantId) {
         return !jdbcTemplate.queryForList(
                 "SELECT id FROM sys_tenant WHERE id = ? FOR UPDATE", UUID.class, tenantId).isEmpty();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<SubscriptionPendingChange> findById(UUID changeId) {
         return selectChange("WHERE id = ?", changeId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<SubscriptionPendingChange> findPending(UUID tenantId) {
         return selectChange("WHERE tenant_id = ? AND status = 'PENDING'", tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID insertPending(UUID tenantId, UUID subscriptionId, UUID fromPlanRevisionId,
                               UUID targetPlanRevisionId, Instant effectiveAt) {
@@ -86,7 +86,7 @@ public class JdbcSubscriptionPendingChangeRepository implements TenantSubscripti
         return changeId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean cancelPending(UUID changeId) {
         return jdbcTemplate.update("""
@@ -99,7 +99,7 @@ public class JdbcSubscriptionPendingChangeRepository implements TenantSubscripti
                 """, changeId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public java.util.List<SubscriptionPendingChange> findDuePending(Instant now, int limit) {
         return jdbcTemplate.query("""
@@ -113,7 +113,7 @@ public class JdbcSubscriptionPendingChangeRepository implements TenantSubscripti
                 """, CHANGE_ROW_MAPPER, Timestamp.from(now), limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markApplied(UUID changeId, Instant appliedAt) {
         return jdbcTemplate.update("""

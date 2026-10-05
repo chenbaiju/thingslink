@@ -30,7 +30,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Acceptance accept(RuleNotificationDeliveryRequest request) {
         String result = jdbcTemplate.queryForObject("""
@@ -46,7 +46,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
         return Acceptance.valueOf(result);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean startClaimed(
             UUID projectId,
@@ -60,7 +60,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                 Timestamp.from(startedAt), Timestamp.from(recoveryAt));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DispatchClaim claimDispatches(int limit, Duration lease) {
         UUID leaseToken = Uuid7.generate();
@@ -92,7 +92,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
         return new DispatchClaim(leaseToken, List.copyOf(deliveries));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DispatchAges dispatchAges() {
         return jdbcTemplate.queryForObject(
@@ -102,7 +102,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                         Duration.ofSeconds(result.getLong("sending_seconds"))));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean releaseDispatch(
             UUID projectId, UUID deliveryId, UUID dispatchToken, Duration retryDelay) {
@@ -110,7 +110,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                 projectId, deliveryId, dispatchToken, Math.toIntExact(retryDelay.toSeconds()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markDelivered(
             UUID projectId,
@@ -122,7 +122,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                 projectId, deliveryId, attemptNo, providerMessageId, Timestamp.from(deliveredAt));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markRetry(
             UUID projectId,
@@ -136,7 +136,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                 Timestamp.from(updatedAt));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markDeadLetter(
             UUID projectId,
@@ -148,7 +148,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                 projectId, deliveryId, attemptNo, errorCode, Timestamp.from(terminalAt));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RetryClaim claimDueRetries(int limit, Duration lease) {
         UUID leaseToken = Uuid7.generate();
@@ -180,7 +180,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
         return new RetryClaim(leaseToken, deliveries);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean matchesClaimedRetry(RetryCandidate candidate, UUID leaseToken, Instant now) {
         // APP仅有SELECT权限；不以FOR UPDATE扩大表权限。不可变字段先核验，最终写函数再仲裁有效租约。
@@ -205,7 +205,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                 candidate.subject(), candidate.body(), candidate.traceId()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean stopClaimedRetryForProjectFreeze(UUID tenantId, UUID projectId, UUID deliveryId,
             UUID leaseToken, int expectedAttemptNo, Instant now) {
@@ -213,7 +213,7 @@ public class JdbcRuleNotificationDeliveryStore implements RuleNotificationDelive
                 deliveryId, leaseToken, expectedAttemptNo, Timestamp.from(now));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean requeueClaimedRetry(
             UUID projectId,

@@ -62,7 +62,7 @@ public class RedisDeviceCurrentValueCache implements DeviceCurrentValueCache {
                 .with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Map<ValueKey, DeviceCurrentValue> findAll(UUID projectId, Collection<ValueKey> keys) {
         List<ValueKey> orderedKeys = new ArrayList<>(keys);
@@ -85,7 +85,7 @@ public class RedisDeviceCurrentValueCache implements DeviceCurrentValueCache {
         return result;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void merge(UUID projectId, UUID deviceId, Map<String, ReportedValue> values) {
         String ttl = Long.toString(ENTRY_TTL.toMillis());
@@ -115,7 +115,7 @@ public class RedisDeviceCurrentValueCache implements DeviceCurrentValueCache {
 
     /** 键显式携带项目隔离轴，防止相同设备或属性标识跨项目碰撞。 */
     private static String redisKey(UUID projectId, ValueKey key) {
-        // 项目花括号是 Redis Cluster hash tag，使同一批项目键可安全执行 MGET。
+        // 项目花括号是 Redis 集群哈希标签，使同一批项目键可安全执行 MGET。
         return "things-link:shadow:v2:{" + projectId + "}:" + key.deviceId() + ':' + key.propertyKey();
     }
 }

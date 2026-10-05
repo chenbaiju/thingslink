@@ -54,7 +54,7 @@ public class JdbcAppDeviceBindTokenRepository implements AppDeviceBindTokenRepos
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean save(AppDeviceBindToken token, byte[] tokenHash) {
         return jdbcTemplate.update("""
@@ -76,7 +76,7 @@ public class JdbcAppDeviceBindTokenRepository implements AppDeviceBindTokenRepos
                 Timestamp.from(token.updatedAt())) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppDeviceBindToken> findByProjectAndHash(UUID projectId, byte[] tokenHash) {
         // 不过滤 consumed_at/expires_at/attempt_count：后续状态机必须看见历史事实，
@@ -93,7 +93,7 @@ public class JdbcAppDeviceBindTokenRepository implements AppDeviceBindTokenRepos
                 .findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppDeviceBindToken> findByProjectAndHashForUpdate(UUID projectId, byte[] tokenHash) {
         return jdbcTemplate.query("""
@@ -109,7 +109,7 @@ public class JdbcAppDeviceBindTokenRepository implements AppDeviceBindTokenRepos
                 .findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int incrementAttempt(UUID projectId, UUID tokenId) {
         return jdbcTemplate.update("""
@@ -121,7 +121,7 @@ public class JdbcAppDeviceBindTokenRepository implements AppDeviceBindTokenRepos
                         """, projectId, tokenId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int consume(UUID projectId, UUID tokenId, UUID appUserId, Instant consumedAt) {
         return jdbcTemplate.update("""

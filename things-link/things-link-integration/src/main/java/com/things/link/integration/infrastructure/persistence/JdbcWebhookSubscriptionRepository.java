@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.*;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
+/** Webhook 订阅 JDBC 仓储，维护版本校验、稳定分页及管理操作回执。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcWebhookSubscriptionRepository implements WebhookSubscriptionRepository {

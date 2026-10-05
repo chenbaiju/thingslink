@@ -41,7 +41,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
     /** 注入数据平面连接。 */
     public JdbcOtaCampaignRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void lockCreation(UUID tenant, UUID project, UUID account, String keyDigest) {
         jdbc.queryForObject("SELECT 1 FROM pg_advisory_xact_lock(hashtextextended("
@@ -49,7 +49,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
                 Integer.class, tenant, project, account, keyDigest);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Creation> findCreation(UUID project, UUID account, String keyDigest) {
         return jdbc.query("SELECT campaign_id,request_digest FROM ota_campaign_creation_request"
@@ -58,7 +58,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
                 project, account, keyDigest).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<OtaCampaign> find(UUID project, UUID campaign, boolean exclusive) {
         return jdbc.query("SELECT " + COLUMNS + " FROM ota_campaign WHERE project_id=? AND id=?"
@@ -66,7 +66,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<Summary> search(UUID project, String cursor, int limit) {
         if (limit < 1 || limit > 100) { throw invalidCursor(); }
@@ -96,7 +96,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
         return CursorPage.of(items, Cursor.encode(project + "|" + last.createdAt() + "|" + last.id()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void create(OtaCampaign c, String keyDigest, String requestDigest) {
         jdbc.update("INSERT INTO ota_campaign (" + COLUMNS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -110,7 +110,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
         transition(c, null, "DRAFT", 0, c.createdBy(), c.createdAt(), null);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean schedule(long expectedRevision, OtaCampaign frozen, List<Target> targets, int batchSize,
             UUID actor, Instant occurredAt) {
@@ -159,7 +159,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean cancelUndispatched(long expectedRevision, OtaCampaign supplied, UUID actor,
             Instant occurredAt, String reason) {
@@ -208,14 +208,14 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
                 c.projectId(), c.id(), transition, revision, to, time(at));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<Target> targets(UUID project, UUID campaign) {
         return jobs(project, campaign).stream().map(j -> new Target(j.deviceId(), j.deviceTypeId(),
                 j.thingModelVersionId(), j.credentialVersion())).toList();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<Job> jobs(UUID project, UUID campaign) {
         List<Job> result = jdbc.query("SELECT id,batch_number,device_id,device_type_id,thing_model_version_id,"
@@ -228,7 +228,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
         return List.copyOf(result);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<JobSummary> jobs(UUID project, UUID campaign, String cursor, int limit) {
         if (limit < 1 || limit > 200) { throw invalidJobCursor(); }
@@ -289,7 +289,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
         return CursorPage.of(items, Cursor.encode(project + "|" + device + "|" + items.getLast().id()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<JobDetail> job(UUID project, UUID campaign, UUID job) {
         Optional<JobSummary> found = jdbc.query("SELECT " + JOB_SUMMARY_COLUMNS + " FROM ota_device_job"
@@ -305,7 +305,7 @@ public class JdbcOtaCampaignRepository implements OtaCampaignRepository {
         return Optional.of(new JobDetail(found.get(), transitions));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<Batch> batches(UUID project, UUID campaign) {
         // 计数口径与运行投影完全一致：只认真实作业终态，不从计划或策略推算。

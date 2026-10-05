@@ -63,19 +63,19 @@ public class DefaultApplicationPublicationCandidateFactory implements Applicatio
         this.snapshotCanonicalizer = Objects.requireNonNull(snapshotCanonicalizer, "snapshotCanonicalizer");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ApplicationPublicationCandidate prepare(ApplicationDraft draft) {
         return prepare(draft, false, false);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ApplicationPublicationCandidate prepareLocked(ApplicationDraft draft) {
         return prepare(draft, true, false);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ApplicationPublicationCandidate prepareHistoricalVersionLocked(ApplicationVersion version) {
         Objects.requireNonNull(version, "version");

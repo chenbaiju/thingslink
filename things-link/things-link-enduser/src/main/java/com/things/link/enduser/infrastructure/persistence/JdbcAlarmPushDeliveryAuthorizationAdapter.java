@@ -44,7 +44,7 @@ public class JdbcAlarmPushDeliveryAuthorizationAdapter
         this.lifecycleAccessService = lifecycleAccessService;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AuthorizedPushTarget> authorize(
             UUID tenantId, UUID projectId, UUID deviceId, UUID appUserId, UUID pushTokenId) {

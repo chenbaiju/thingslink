@@ -76,7 +76,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean tenantExists(UUID tenantId) {
         Boolean exists = jdbcTemplate.queryForObject(
@@ -84,7 +84,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
         return Boolean.TRUE.equals(exists);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<PlanPurchase> findPlanPurchase(UUID planRevisionId) {
         return jdbcTemplate.query("""
@@ -106,19 +106,19 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantOrder> findOrder(UUID orderId) {
         return selectOrder("WHERE id = ?", orderId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantOrder> lockOrder(UUID orderId) {
         return selectOrder("WHERE id = ? FOR UPDATE", orderId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<TenantOrder> findByProviderEventId(PaymentProvider provider, String providerEventId) {
         return jdbcTemplate.query("""
@@ -137,7 +137,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID insertOrder(UUID tenantId, UUID planRevisionId, PaymentProvider provider,
                             long amountCents, String currency) {
@@ -156,7 +156,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
         return orderId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID insertUpgradeOrder(UUID tenantId, UUID planRevisionId, UUID sourcePlanRevisionId,
                                    SubscriptionUpgradeProration proration, PaymentProvider provider,
@@ -182,7 +182,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
         return orderId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public UUID insertPackageOrder(UUID tenantId, ResourcePackagePurchase purchase, PaymentProvider provider,
                                    long amountCents, String currency) {
@@ -207,7 +207,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
         return orderId;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<Instant> markPaid(UUID orderId, PaymentProvider provider, String providerEventId) {
         return jdbcTemplate.query("""
@@ -226,7 +226,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean cancelOrder(UUID orderId) {
         return jdbcTemplate.update("""
@@ -238,7 +238,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
                 """, orderId) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean reserveFullRefund(UUID orderId, long amountCents) {
         return jdbcTemplate.update("""
@@ -253,7 +253,7 @@ public class JdbcTenantOrderRepository implements TenantOrderRepository {
                 """, orderId, amountCents) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean reserveRefund(UUID orderId, long amountCents) {
         return jdbcTemplate.update("""

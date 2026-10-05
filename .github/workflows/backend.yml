@@ -20,6 +20,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  agent-contracts:
+    name: Agent 离线合同
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: 安装 Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - name: 安装固定 uv
+        run: python -m pip install uv==0.12.23
+      - name: 验证 Agent 合同
+        run: bash things-link-agent/scripts/verify.sh
+
   verify:
     name: Maven 全量验证
     runs-on: ubuntu-latest

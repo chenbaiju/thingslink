@@ -57,6 +57,8 @@ public class AlarmDeviceQueryController {
     }
 
     /**
+     * 按设备和状态读取告警实例。
+     *
      * @param projectId Console路径项目
      * @param body 原始UTF-8 JSON信封
      * @param request 禁止额外query成为未登记过滤条件
@@ -95,7 +97,7 @@ public class AlarmDeviceQueryController {
                             schema = @Schema(type = "string", allowableValues = "no-store")),
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
-    public ResponseEntity<byte[]> query(@PathVariable UUID projectId, @RequestBody byte[] body, HttpServletRequest request) {
+    public ResponseEntity<byte[]> query(@io.swagger.v3.oas.annotations.Parameter(description = "Console路径项目") @PathVariable UUID projectId, @RequestBody byte[] body, HttpServletRequest request) {
         authorization.requireRead(projectId);
         if (request.getQueryString() != null) throw new BusinessException(CommonErrorCode.INVALID_PARAMETER);
         AlarmDeviceQueryRequest parsed = parser.parse(body);

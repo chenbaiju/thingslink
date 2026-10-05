@@ -28,7 +28,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
     /** @param jdbcTemplate 已配置项目 RLS 上下文的数据访问模板 */
     public JdbcDeviceTypeRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void create(DeviceType type) {
         jdbcTemplate.update("""
@@ -41,7 +41,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 type.version(), type.status().name(), type.productKey(), type.productSecretHash());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceType> findById(UUID projectId, UUID id) {
         return jdbcTemplate.query("""
@@ -52,7 +52,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 """, this::map, projectId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceType> findByTypeKey(UUID projectId, String typeKey) {
         return jdbcTemplate.query("""
@@ -63,7 +63,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 """, this::map, projectId, typeKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceType> findByIdForUpdate(UUID projectId, UUID id) {
         return jdbcTemplate.query("""
@@ -73,7 +73,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 """, this::map, projectId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceType> findByIdForShareNowait(UUID projectId, UUID id) {
         // ADR0057：KEY SHARE 挡不住 kind/deleted_at 的非键更新；NOWAIT 保证设备→类型不形成阻塞反向边。
@@ -97,7 +97,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<DeviceType> search(UUID projectId, String cursor, int limit) {
         CursorPosition position = decodeCursor(cursor);
@@ -144,7 +144,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
     /** @param createdAt 创建时刻 @param id 稳定并列键 */
     private record CursorPosition(Instant createdAt, UUID id) { }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean update(DeviceType type) {
         return DeviceTopologyConstraintTranslator.execute(() -> jdbcTemplate.update("""
@@ -156,7 +156,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 type.projectId(), type.id()) == 1);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean softDelete(UUID projectId, UUID id) {
         return DeviceTopologyConstraintTranslator.execute(() -> jdbcTemplate.update("""
@@ -166,7 +166,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 """, projectId, id) == 1);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean publish(UUID projectId, UUID id) {
         return jdbcTemplate.update("""
@@ -176,7 +176,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 """, projectId, id) == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DeviceType> findPublishedByProductKey(UUID projectId, String productKey) {
         return jdbcTemplate.query("""
@@ -187,7 +187,7 @@ public class JdbcDeviceTypeRepository implements DeviceTypeRepository {
                 """, this::map, projectId, productKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean updateProductCredential(UUID projectId, UUID id, String productKey, String productSecretHash) {
         return jdbcTemplate.update("""

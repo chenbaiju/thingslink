@@ -38,7 +38,7 @@ import java.util.Objects;
 @RestController
 @Validated
 @RequestMapping("/api/v1/app/applications")
-@Tag(name = "WebApp 应用运行", description = "登录前公开应用定位")
+@Tag(name = "WebApp 应用运行", description = "WebApp 公开定位与已认证应用运行描述")
 public class WebAppApplicationController {
 
     /** 冻结合同以最终 JSON 的 UTF-8 字节数计量，不能用 Java 字符数近似。 */
@@ -97,7 +97,7 @@ public class WebAppApplicationController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<byte[]> resolve(
-            @PathVariable
+            @io.swagger.v3.oas.annotations.Parameter(description = "规范应用公开键") @PathVariable
             @Pattern(regexp = "^app_[0-9a-f]{32}$", message = "应用公开键格式不合法") String appKey,
             HttpServletRequest request) throws IOException {
         requireClosedRequest(request);

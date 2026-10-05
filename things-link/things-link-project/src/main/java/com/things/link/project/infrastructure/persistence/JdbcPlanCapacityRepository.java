@@ -19,19 +19,19 @@ public class JdbcPlanCapacityRepository implements PlanCapacityRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public OptionalLong findEndUsersLimit(UUID tenantId, UUID projectId) {
         return findLimit(tenantId, projectId, "end_users_max", "END_USERS_MAX");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public OptionalLong findDashboardsLimit(UUID tenantId, UUID projectId) {
         return findLimit(tenantId, projectId, "dashboards_max", "DASHBOARDS_MAX");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public OptionalLong findExternalSeatsLimit(UUID tenantId, UUID projectId) {
         return findLimit(tenantId, projectId, "external_collaborator_seats", "EXTERNAL_COLLABORATOR_SEATS");

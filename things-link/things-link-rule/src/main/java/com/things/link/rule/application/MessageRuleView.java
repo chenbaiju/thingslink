@@ -9,7 +9,7 @@ import java.util.UUID;
  * @param id 规则 ID
  * @param name 名称
  * @param description 用途说明
- * @param status DRAFT/ACTIVE/PAUSED
+ * @param status 规则状态：草稿、启用或暂停
  * @param activeVersionId 活动版本 ID
  * @param version 乐观锁版本
  * @param createdAt 创建时刻

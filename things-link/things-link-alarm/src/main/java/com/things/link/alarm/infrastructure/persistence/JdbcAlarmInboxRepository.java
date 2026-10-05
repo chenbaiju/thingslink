@@ -26,13 +26,13 @@ public class JdbcAlarmInboxRepository implements AlarmInboxRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Instant databaseTime() {
         return jdbcTemplate.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<AlarmInboxItem> page(UUID tenantId, UUID projectId, UUID accountId, Instant windowStart, Instant windowEnd,
                                     Instant positionTime, UUID positionId, int fetchLimit) {
@@ -54,7 +54,7 @@ public class JdbcAlarmInboxRepository implements AlarmInboxRepository {
                 time(positionTime), time(positionTime), positionId, fetchLimit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int countUnread(UUID tenantId, UUID projectId, UUID accountId, Instant windowStart, Instant windowEnd) {
         // ADR0093只承诺99+，先LIMIT再COUNT避免为角标扫描全部匹配事实。
@@ -72,7 +72,7 @@ public class JdbcAlarmInboxRepository implements AlarmInboxRepository {
         return count == null ? 0 : count;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<AlarmInboxEvent> findActivatedEvents(UUID tenantId, UUID projectId, List<UUID> eventIds) {
         if (eventIds.isEmpty()) return List.of();
@@ -90,7 +90,7 @@ public class JdbcAlarmInboxRepository implements AlarmInboxRepository {
                         rs.getTimestamp("received_at").toInstant()), parameters.toArray());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int insertReads(UUID tenantId, UUID projectId, UUID accountId, List<UUID> eventIds, Instant readAt) {
         int inserted = 0;

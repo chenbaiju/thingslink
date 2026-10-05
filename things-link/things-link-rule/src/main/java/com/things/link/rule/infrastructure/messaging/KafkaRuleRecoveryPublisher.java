@@ -45,14 +45,14 @@ public class KafkaRuleRecoveryPublisher implements RuleRecoveryPublisher {
         this.kafkaTemplate = new KafkaTemplate<>(isolatedFactory);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void publishRetry(RuleExecutionEnvelope envelope, Duration delay) {
         String topic = topic(delay);
         kafkaTemplate.send(topic, envelope.key().messageId().toString(), envelope).join();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void publishDeadLetter(RuleExecutionEnvelope envelope, RuleExecutionFailure failure) {
         kafkaTemplate.send(DEAD_LETTER_TOPIC, envelope.key().messageId().toString(),

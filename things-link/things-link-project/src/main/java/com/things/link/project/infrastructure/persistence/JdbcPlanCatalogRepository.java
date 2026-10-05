@@ -56,7 +56,7 @@ public class JdbcPlanCatalogRepository implements PlanCatalogRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<PlanCatalogEntry> findByProductRevision(String productRevision) {
         return assemble(jdbcTemplate.query("""
@@ -71,7 +71,7 @@ public class JdbcPlanCatalogRepository implements PlanCatalogRepository {
                 """, REVISION_ROW_MAPPER, productRevision));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<PlanCatalogEntry> findEffectiveCatalog(Instant at) {
         Timestamp atTimestamp = Timestamp.from(at);
@@ -97,7 +97,7 @@ public class JdbcPlanCatalogRepository implements PlanCatalogRepository {
                 """, REVISION_ROW_MAPPER, atTimestamp, atTimestamp));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<PlanCatalogEntry> findEffectiveByPlanCode(String planCode, Instant at) {
         Timestamp atTimestamp = Timestamp.from(at);
@@ -125,7 +125,7 @@ public class JdbcPlanCatalogRepository implements PlanCatalogRepository {
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void lockSeed(String productRevision) {
         // 事务级 advisory lock：同一修订版的并发播种串行化。hashtext 与业务键一一对应即可，
@@ -134,7 +134,7 @@ public class JdbcPlanCatalogRepository implements PlanCatalogRepository {
                 resultSet -> null, productRevision);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean insertIfAbsent(PlanDefinition definition, Instant validFrom) {
         jdbcTemplate.update("""

@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  *       项目范围由RLS与{@code project_id}双重限定；无域的项目返回200空页而不是404。</li>
  * </ul>
  */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "OTA 信任域目录", description = "信任域游标分页")
 @RestController
 @Validated
 @RequestMapping("/api/v1/projects/{projectId}/ota/trust-domains")
@@ -42,13 +43,20 @@ public class OtaTrustDomainCollectionController {
         this.service = service; this.authorization = authorization;
     }
 
-    /** 成员读取本项目全部信任域，按域名升序；空集合返回空页。 */
+    /**
+     * 成员读取本项目全部信任域，按域名升序；空集合返回空页。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 符合条件的记录页及后续分页游标
+     */
     @GetMapping
     @Operation(operationId = "listOtaTrustDomains", summary = "OTA信任域游标分页",
             description = "仅当前项目成员；未知项目按不可见404；不含规范包、签名或私钥材料，也不提供状态变更")
-    public ResponseEntity<CursorPage<OtaTrustDomainSummaryResponse>> list(@PathVariable UUID projectId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit) {
+    public ResponseEntity<CursorPage<OtaTrustDomainSummaryResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit) {
         authorization.requireRead(projectId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(service.domains(projectId, cursor, limit)

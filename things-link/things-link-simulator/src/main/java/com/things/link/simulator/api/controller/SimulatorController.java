@@ -20,9 +20,10 @@ import java.util.UUID;
 /**
  * 独立模拟器进程的本地控制端点。
  *
- * <p>该 Controller 不会进入 ThingsLink 管理 API 的 classpath，也不属于主 OpenAPI 契约。
+ * <p>该 Controller 不会进入平台的生产 classpath；统一 HTTP 目录仅聚合其独立工具契约。
  * 部署时只应把 8090 绑定到本机或测试网络，设备 Token 会随启动请求进入此工具进程。</p>
  */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "测试工具 · 设备模拟器", description = "独立模拟器进程的本地控制面，不部署在平台进程")
 @RestController
 @RequestMapping("/simulations")
 public class SimulatorController {
@@ -59,6 +60,7 @@ public class SimulatorController {
      * @param request 模拟参数与设备凭据
      * @return 启动后的统计快照
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "startDeviceSimulation", servers = @io.swagger.v3.oas.annotations.servers.Server(url = "http://127.0.0.1:8090", description = "独立模拟器本地控制端口；不属于平台服务"), summary = "建立设备连接并开始周期上报", description = "建立设备连接并开始周期上报。\n\n 超分片规模的请求在此被拒绝：10,000 台应由多个模拟器进程/节点分片，而不是一个无限大的单次请求。\n `@Size(max=1000)` 是 HTTP 层硬保护，本校验是可配置的服务层软保护，两者职责不同。")
     @PostMapping("/start")
     public ResponseEntity<SimulationStats> start(@Valid @RequestBody SimulationRequest request) {
         if (request.devices().size() > maxShardDevices) {
@@ -75,6 +77,7 @@ public class SimulatorController {
      *
      * @return 停止后的统计快照
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "stopDeviceSimulation", servers = @io.swagger.v3.oas.annotations.servers.Server(url = "http://127.0.0.1:8090", description = "独立模拟器本地控制端口；不属于平台服务"), summary = "停止全部设备并主动断开", description = "停止全部设备并主动断开。")
     @PostMapping("/stop")
     public ResponseEntity<SimulationStats> stop() {
         simulator.stop();
@@ -86,6 +89,7 @@ public class SimulatorController {
      *
      * @return 故障注入后的即时统计；调用方继续轮询 stats 观察恢复分散度
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "reconnectDeviceSimulation", servers = @io.swagger.v3.oas.annotations.servers.Server(url = "http://127.0.0.1:8090", description = "独立模拟器本地控制端口；不属于平台服务"), summary = "强制当前批次全部设备异常断线并进入带抖动的生产重连流程", description = "强制当前批次全部设备异常断线并进入带抖动的生产重连流程。")
     @PostMapping("/reconnect-storm")
     public ResponseEntity<SimulationStats> reconnectStorm() {
         simulator.reconnectStorm();
@@ -100,6 +104,7 @@ public class SimulatorController {
      *
      * @return 本次属性报文自己的业务 messageId
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "publishDeviceSimulationProperties", servers = @io.swagger.v3.oas.annotations.servers.Server(url = "http://127.0.0.1:8090", description = "独立模拟器本地控制端口；不属于平台服务"), summary = "让当前批次每台在线设备立即补发一条属性报文", description = "让当前批次每台在线设备立即补发一条属性报文。\n\n 该入口只控制真实 MQTT 设备连接，不接触后端或数据库；C4a 故障矩阵借此把单条业务\n `messageId` 精确放入故障窗口。调用返回只代表 MQTT 发布已发起，PUBACK 仍须从 stats 与 manifest 对账。")
     @PostMapping("/publish-once")
     public ResponseEntity<UUID> publishOnce() {
         return ResponseEntity.ok(simulator.publishOnce());
@@ -114,8 +119,9 @@ public class SimulatorController {
      * @param commandId 已由平台受理的 UUIDv7 命令
      * @return 本次回复自己的业务 messageId
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "publishDeviceSimulationCommandReply", servers = @io.swagger.v3.oas.annotations.servers.Server(url = "http://127.0.0.1:8090", description = "独立模拟器本地控制端口；不属于平台服务"), summary = "以当前唯一设备连接发布指定命令的成功终态", description = "以当前唯一设备连接发布指定命令的成功终态。\n\n 数据库停机场景必须先经生产 API 受理命令，再在数据库不可用时送入回复；专用入口避免\n 暴露可伪造任意 Topic/payload 的通用发布器。commandId 仍由服务层复核 UUIDv7。")
     @PostMapping("/publish-command-reply/{commandId}")
-    public ResponseEntity<UUID> publishCommandReply(@PathVariable UUID commandId) {
+    public ResponseEntity<UUID> publishCommandReply(@io.swagger.v3.oas.annotations.Parameter(description = "已由平台受理的 UUIDv7 命令") @PathVariable UUID commandId) {
         return ResponseEntity.ok(simulator.publishCommandReply(commandId));
     }
 
@@ -124,6 +130,7 @@ public class SimulatorController {
      *
      * @return 状态快照
      */
+    @io.swagger.v3.oas.annotations.Operation(operationId = "getDeviceSimulationStats", servers = @io.swagger.v3.oas.annotations.servers.Server(url = "http://127.0.0.1:8090", description = "独立模拟器本地控制端口；不属于平台服务"), summary = "查询不含凭据的运行统计", description = "查询不含凭据的运行统计。")
     @GetMapping("/stats")
     public ResponseEntity<SimulationStats> stats() {
         return ResponseEntity.ok(simulator.stats());

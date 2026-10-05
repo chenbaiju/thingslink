@@ -110,7 +110,7 @@ public class RedisTenantConnectionLease implements TenantConnectionLease {
         this.leaseTtl = leaseTtl;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public LeaseDecision acquire(ConnectionLease lease, Long connectionLimit) {
         // 显式不限由调用方保留本机物理上限即可，不在 Redis 制造无意义租约。
@@ -134,13 +134,13 @@ public class RedisTenantConnectionLease implements TenantConnectionLease {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ConnectionLease create(UUID ownerTenantId, String connectionId) {
         return new ConnectionLease(ownerTenantId, member(connectionId));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public RenewDecision renew(ConnectionLease lease) {
         try {
@@ -157,7 +157,7 @@ public class RedisTenantConnectionLease implements TenantConnectionLease {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void release(ConnectionLease lease) {
         try {

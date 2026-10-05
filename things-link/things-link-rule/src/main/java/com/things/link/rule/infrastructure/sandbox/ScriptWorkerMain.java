@@ -239,7 +239,7 @@ public final class ScriptWorkerMain {
             this.maximumBytes = maximumBytes;
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void write(int value) throws IOException {
             written++;

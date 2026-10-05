@@ -77,7 +77,7 @@ public class AppJwtConfiguration {
      * App 令牌签发器。
      *
      * @param key App 签名密钥
-     * @return JwtEncoder
+     * @return JWT 编码器
      */
     @Bean
     public JwtEncoder appJwtEncoder(@Qualifier("appJwtSecretKey") SecretKeySpec key) {
@@ -92,7 +92,7 @@ public class AppJwtConfiguration {
      * 阶段即互相拒绝（ADR 0036 的双向互斥）。
      *
      * @param key App 签名密钥
-     * @return JwtDecoder
+     * @return JWT 解码器
      */
     @Bean
     public JwtDecoder appJwtDecoder(@Qualifier("appJwtSecretKey") SecretKeySpec key) {

@@ -43,7 +43,7 @@ public class JdbcProjectCommercialRestrictionRepository implements ProjectCommer
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean recordActive(UUID tenantId, UUID projectId, UUID subscriptionId, Instant restrictedAt) {
         int inserted = jdbcTemplate.update("""
@@ -56,7 +56,7 @@ public class JdbcProjectCommercialRestrictionRepository implements ProjectCommer
         return inserted == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<UUID> findPendingTenantIds() {
         return jdbcTemplate.query("""
@@ -67,7 +67,7 @@ public class JdbcProjectCommercialRestrictionRepository implements ProjectCommer
                 """,(rs,row) -> rs.getObject("tenant_id",UUID.class));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<ProjectCommercialRestriction> findActiveByTenant(UUID tenantId) {
         return jdbcTemplate.query("""
@@ -79,7 +79,7 @@ public class JdbcProjectCommercialRestrictionRepository implements ProjectCommer
                 """,RESTRICTION_MAPPER,tenantId);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean markLifted(UUID restrictionId, Instant liftedAt) {
         return jdbcTemplate.update("""

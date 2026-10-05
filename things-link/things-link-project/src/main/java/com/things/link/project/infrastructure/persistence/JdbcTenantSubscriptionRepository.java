@@ -36,7 +36,7 @@ public class JdbcTenantSubscriptionRepository implements TenantSubscriptionRepos
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<FreeSubscriptionSnapshot> findFreeSubscriptionSnapshot() {
         return jdbcTemplate.query("""
@@ -60,7 +60,7 @@ public class JdbcTenantSubscriptionRepository implements TenantSubscriptionRepos
                 .stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean createFreeSubscriptionIfAbsent(UUID tenantId, FreeSubscriptionSnapshot snapshot) {
         int inserted = jdbcTemplate.update("""
@@ -77,7 +77,7 @@ public class JdbcTenantSubscriptionRepository implements TenantSubscriptionRepos
         return inserted == 1;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public java.util.OptionalLong findFreeProjectsMax() {
         return jdbcTemplate.query("""

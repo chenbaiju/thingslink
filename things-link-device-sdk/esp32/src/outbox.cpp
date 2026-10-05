@@ -1,10 +1,10 @@
-#include "baijulink/outbox.hpp"
+#include "thingslink/outbox.hpp"
 #include "snapshot_codec.hpp"
 #include "buffers.hpp"
 #include <cstring>
 #include <limits>
 
-namespace baijulink {
+namespace thingslink {
 using namespace detail;
 
 bool Outbox::valid_message(const Outbound& message) const {

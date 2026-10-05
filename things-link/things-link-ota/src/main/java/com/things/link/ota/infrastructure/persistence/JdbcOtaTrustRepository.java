@@ -35,13 +35,13 @@ public class JdbcOtaTrustRepository implements OtaTrustRepository {
             """;
     /** 注入当前物理事务的JDBC。 */
     public JdbcOtaTrustRepository(JdbcTemplate jdbc){this.jdbc=jdbc;}
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void lockImport(UUID tenantId,UUID projectId,String trustDomain) {
         jdbc.queryForObject("SELECT 1 FROM pg_advisory_xact_lock(hashtextextended("
                 +"concat_ws(':','ota-trust-import-v1',?::text,?::text,?),13018::bigint))",
                 Integer.class,tenantId,projectId,trustDomain);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaTrustState> find(UUID projectId,String domain,boolean exclusive,boolean shared) {
         if(exclusive && shared)throw new IllegalArgumentException("信任域锁模式互斥");
         return jdbc.query(SELECT_CURRENT+" WHERE d.project_id=? AND d.trust_domain=?"

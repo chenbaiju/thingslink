@@ -16,7 +16,7 @@ public class JdbcDashboardHostDeployment implements DashboardHostDeploymentPort 
     /** @param jdbc 加入调用方同一控制面事务的数据源 */
     public JdbcDashboardHostDeployment(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DashboardHostDeploymentSelection> admitCurrent() {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("宿主准入必须加入调用方事务");

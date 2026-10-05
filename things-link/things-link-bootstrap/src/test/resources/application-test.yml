@@ -41,10 +41,15 @@ spring:
       # X-02登记OTA域位置；S13-1加入首个迁移后会自动进入Testcontainers空库验收。
       - classpath:db/migration/ota
       - classpath:db/migration/integration
+      - classpath:db/migration/assistant
       # 测试专用：hypertable 探针表。不在生产迁移路径里
       - classpath:db/migration-test
 
 things-link:
+  assistant:
+    evidence-retention:
+      # 到龄夹具由专项显式驱动，避免共享上下文自动回收其他测试的历史事实。
+      enabled: false
   automation:
     retention:
       # 历史夹具由专项显式清理，缓存上下文不能抢删其他测试的老事实。

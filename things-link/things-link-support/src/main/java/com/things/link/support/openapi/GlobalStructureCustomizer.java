@@ -18,6 +18,36 @@ import java.util.Set;
 public final class GlobalStructureCustomizer implements OpenApiCustomizer {
     @Override public void customise(OpenAPI api) {
         api.getPaths().forEach((path, item) -> item.readOperationsMap().forEach((method, operation) -> {
+            if (operation.getRequestBody() != null && !hasChinese(operation.getRequestBody().getDescription())) {
+                operation.getRequestBody().setDescription(operation.getSummary()
+                        + "的请求数据；结构、必填字段和校验边界见请求 Schema");
+            }
+            if (operation.getParameters() != null) operation.getParameters().forEach(parameter -> {
+                if (!hasChinese(parameter.getDescription())) {
+                    parameter.setDescription(switch (parameter.getName()) {
+                        case "Idempotency-Key" -> "业务写幂等键；是否必填及重放语义以本接口合同为准";
+                        case "Authorization" -> "本接口认证链要求的身份凭据；不要写入日志或查询串";
+                        default -> "接口" + parameter.getIn() + "参数「" + parameter.getName()
+                                + "」；含义见接口说明，类型、必填性和边界见参数 Schema";
+                    });
+                }
+            });
+            if (operation.getResponses() != null) operation.getResponses().forEach((status, response) -> {
+                if (!hasChinese(response.getDescription())) response.setDescription(switch (status) {
+                    case "200" -> "请求成功；返回结构见响应 Schema";
+                    case "201" -> "资源创建成功；返回结构见响应 Schema";
+                    case "202" -> "请求已受理；后续处理终态需沿对应业务合同确认";
+                    case "204" -> "请求成功，无响应正文";
+                    case "400" -> "请求格式或参数无效";
+                    case "401" -> "身份认证失败";
+                    case "403" -> "当前身份无权执行本操作";
+                    case "404" -> "目标资源不存在或对当前身份不可见";
+                    case "409" -> "请求与当前资源或幂等状态冲突";
+                    case "429" -> "请求超过当前适用额度或速率限制";
+                    case "503" -> "依赖暂不可用或当前不具备执行条件";
+                    default -> "接口响应；状态码为 " + status;
+                });
+            });
             if (supportsOptionalHeader(method.name(), path)
                     && (operation.getParameters() == null || operation.getParameters().stream()
                     .noneMatch(parameter -> "Idempotency-Key".equalsIgnoreCase(parameter.getName())))) {
@@ -25,7 +55,10 @@ public final class GlobalStructureCustomizer implements OpenApiCustomizer {
                         .description("可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文")
                         .schema(new StringSchema()));
             }
-            if (!path.startsWith("/api/v1/emqx/") && operation.getResponses() != null) {
+            if (!path.startsWith("/api/v1/emqx/") && !path.startsWith("/device-access/")
+                    && !path.startsWith("/actuator") && !path.startsWith("/simulations/") && !path.startsWith("/app")
+                    && !"websocket-upgrade".equals(operation.getExtensions() == null ? null
+                            : operation.getExtensions().get("x-transport")) && operation.getResponses() != null) {
                 operation.getResponses().forEach((status, response) -> {
                     if (status.matches("[45][0-9Xx]{2}")) {
                         response.setContent(new Content().addMediaType("application/json", new MediaType()
@@ -45,17 +78,25 @@ public final class GlobalStructureCustomizer implements OpenApiCustomizer {
         });
     }
 
+    /** 只补缺失的中文说明，不覆盖模块已经冻结的契约文字。 */
+    private static boolean hasChinese(String value) {
+        return value != null && value.codePoints().anyMatch(point -> point >= 0x4e00 && point <= 0x9fff);
+    }
+
     /** 与冻结逐操作矩阵独立实现；矩阵在测试中拦截新增操作或分类漂移。 */
     private static boolean supportsOptionalHeader(String method, String path) {
         if (!Set.of("POST", "PUT", "PATCH", "DELETE").contains(method)) return false;
         if (!(path.equals("/api/v1/projects") || path.startsWith("/api/v1/projects/")
                 || path.startsWith("/api/v1/app/"))) return false;
+        if (method.equals("POST") && path.equals("/api/v1/projects/{projectId}/assistant/model-probes/{sampleIndex}")) return false;
         if (path.startsWith("/api/v1/app/auth/") || path.startsWith("/api/v1/app/browser-auth/")) return false;
         if (method.equals("PUT") && path.endsWith("/uploads/{sessionId}/content")) return false;
         if (Set.of("/api/v1/app/device-claims", "/api/v1/app/device-shares", "/api/v1/app/device-transfers",
                 "/api/v1/app/devices/{deviceId}/binding", "/api/v1/app/push-tokens",
                 "/api/v1/app/push-tokens/{installationId}").contains(path)) return false;
         return !method.equals("POST") || !Set.of(
+                "/api/v1/projects/{projectId}/assistant/fact-reports/collection",
+                "/api/v1/projects/{projectId}/assistant/knowledge/search",
                 "/api/v1/projects/{projectId}/devices/current-values/query",
                 "/api/v1/projects/{projectId}/devices/current-value-snapshots/query",
                 "/api/v1/projects/{projectId}/devices/snapshots/query",

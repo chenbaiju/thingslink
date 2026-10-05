@@ -23,9 +23,9 @@ public final class DevicePropertySetActionNode implements RuleNode {
              "properties":{"properties":{"type":"object","minProperties":1}}}
             """);
 
-    /** {@inheritDoc} */ @Override public String type() { return TYPE; }
-    /** {@inheritDoc} */ @Override public JsonNode configSchema() { return SCHEMA.deepCopy(); }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public String type() { return TYPE; }
+    /** 沿用接口定义的契约。{@inheritDoc} */ @Override public JsonNode configSchema() { return SCHEMA.deepCopy(); }
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public RuleNodeValidation validate(JsonNode config) {
         if (config == null || !config.isObject() || config.size() != 1
                 || !config.path("properties").isObject() || config.path("properties").isEmpty()) {
@@ -33,7 +33,7 @@ public final class DevicePropertySetActionNode implements RuleNode {
         }
         return RuleNodeValidation.success();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public RuleNodeResult execute(RuleMessage message, JsonNode config, RuleExecutionContext context) {
         JsonNode payload = new ObjectMapper().createObjectNode()
                 .put("deviceId", message.deviceId().toString())

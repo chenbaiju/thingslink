@@ -69,11 +69,11 @@ public class OtaAuditController {
      * @return 游标分页的审计时间线
      */
     @GetMapping
-    @Operation(operationId = "listOtaAudits", summary = "OTA审计时间线")
-    public ResponseEntity<CursorPage<OtaAuditResponse>> list(@PathVariable UUID projectId,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
-            @RequestParam(required = false) String action) {
+    @Operation(operationId = "listOtaAudits", summary = "OTA审计时间线", description = "读取本项目 OTA 审计时间线，最新在前。")
+    public ResponseEntity<CursorPage<OtaAuditResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "游标，可为空表示首页") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "每页条数，1..100，默认 20") @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
+            @io.swagger.v3.oas.annotations.Parameter(description = "精确动作编码，可为空；必须是 `ota.` 命名空间") @RequestParam(required = false) String action) {
         // 权限优先于查询参数校验，不向无权调用方泄露动作命名空间的校验细节。
         if (!authorization.mayDeploy(projectId)) {
             throw new BusinessException(OtaAuditErrorCode.FORBIDDEN);

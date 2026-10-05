@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
 import java.util.Optional;
 
-/** ADR0182/0184: project -> author account/member -> subscription; caller locks delivery last. */
+/** ADR0182/0184：加锁顺序为项目、作者账号及成员、订阅；调用方最后获取投递锁。 */
 @Service
 public class WebhookOutboundAuthority {
     private final ProjectLifecycleAccessService projects;

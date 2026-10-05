@@ -18,7 +18,7 @@ import java.util.Objects;
  *
  * <p>S12-2a2a先通过只接受{@code appKey}的受限函数取得可信隔离身份，再在同一只读事务
  * 建立项目RLS范围，并分别重验当前应用发布事实与项目可读事实。定位结果不是用户授权或
- * Dashboard READ grant，后续运行请求仍须重新确权。</p>
+ * 看板读取授权，后续运行请求仍须重新确权。</p>
  */
 @Service
 public class WebAppApplicationResolutionService {

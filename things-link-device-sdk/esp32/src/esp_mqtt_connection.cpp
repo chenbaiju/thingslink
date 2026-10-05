@@ -1,20 +1,20 @@
-#include "baijulink/esp_mqtt_connection.hpp"
+#include "thingslink/esp_mqtt_connection.hpp"
 #include "sdkconfig.h"
 #include <ctime>
 #include <limits>
 #include <cstdio>
 
 #if defined(CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY) || !defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
-#error "BaijuLink requires server certificate and certificate validity-time verification"
+#error "ThingsLink requires server certificate and certificate validity-time verification"
 #endif
 #if !defined(CONFIG_MQTT_CUSTOM_OUTBOX) || !defined(CONFIG_MQTT_MSG_ID_INCREMENTAL)
-#error "BaijuLink requires the controlled outbox policy and incremental packet IDs"
+#error "ThingsLink requires the controlled outbox policy and incremental packet IDs"
 #endif
 #if !defined(CONFIG_MQTT_TRANSPORT_SSL) || !defined(CONFIG_MQTT_PROTOCOL_311)
-#error "BaijuLink requires MQTT 3.1.1 over TLS"
+#error "ThingsLink requires MQTT 3.1.1 over TLS"
 #endif
 
-namespace baijulink {
+namespace thingslink {
 ConnectResult EspMqttConnection::start(const ConnectionInput& input, std::uint64_t utc, bool trusted,
                                      ConnectionObserver observer, void* context, MessageObserver messages) {
     if (client_) return ConnectResult::Busy;

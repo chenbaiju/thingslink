@@ -31,7 +31,12 @@ public class EmqxEventController {
     /** @param service 连接事件服务 */
     public EmqxEventController(EmqxConnectionEventService service) { this.service = service; }
 
-    /** @param body EMQX client.connected 事件 @return 是否处理成功 */
+    /**
+     * 设备上线。
+     *
+     * @param body EMQX client.connected 事件
+     * @return 是否处理成功
+     */
     @PostMapping("/connected")
     @Operation(summary = "设备上线", description = "EMQX 在设备 CONNECT 成功后回调，记录连接并更新设备状态为 ONLINE")
     public ResponseEntity<Map<String, Boolean>> connected(@RequestBody Map<String, Object> body) {
@@ -42,7 +47,12 @@ public class EmqxEventController {
         return ResponseEntity.ok(Map.of("accepted", accepted));
     }
 
-    /** @param body EMQX client.disconnected 事件 @return 是否处理成功 */
+    /**
+     * 设备下线。
+     *
+     * @param body EMQX client.disconnected 事件
+     * @return 是否处理成功
+     */
     @PostMapping("/disconnected")
     @Operation(summary = "设备下线", description = "EMQX 在设备断开连接时回调，记录断开会话并更新设备状态为 OFFLINE")
     public ResponseEntity<Map<String, Boolean>> disconnected(@RequestBody Map<String, Object> body) {

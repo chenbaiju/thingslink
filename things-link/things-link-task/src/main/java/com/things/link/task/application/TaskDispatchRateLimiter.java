@@ -13,7 +13,7 @@ public class TaskDispatchRateLimiter {
     /**
      * 单作用域令牌桶脚本。
      *
-     * <p>项目与租户键使用不同 Redis Cluster hash tag，不能放进同一 Lua；否则集群模式会以
+     * <p>项目与租户键使用不同 Redis 集群哈希标签，不能放进同一 Lua；否则集群模式会以
      * CROSSSLOT 拒绝。两级按项目、租户顺序保守扣减，后一级拒绝时允许前一级少量多消耗。</p>
      */
     private static final DefaultRedisScript<Long> SCRIPT = new DefaultRedisScript<>("""

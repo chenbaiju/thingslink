@@ -13,7 +13,7 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 import java.util.HashMap;
 
-/** No DLQ recovery may turn an unavailable durable admission into a committed offset. */
+/** 任何死信队列恢复都不能将持久准入不可用的消息推进为已提交偏移。 */
 @Configuration(proxyBeanMethods=false)
 public class WebhookSourceKafkaConfiguration {
     @Bean("webhookSourceKafkaListenerContainerFactory")
@@ -30,7 +30,7 @@ public class WebhookSourceKafkaConfiguration {
             new FixedBackOff(1000,FixedBackOff.UNLIMITED_ATTEMPTS));
         errors.setClassifications(java.util.Map.of(Exception.class,true),true);
         errors.setAckAfterHandle(false);
-        // Exceptions below contain only fixed reason codes, never the source body.
+        // 下方异常仅包含固定原因码，不包含来源正文。
         factory.setCommonErrorHandler(errors);
         return factory;
     }

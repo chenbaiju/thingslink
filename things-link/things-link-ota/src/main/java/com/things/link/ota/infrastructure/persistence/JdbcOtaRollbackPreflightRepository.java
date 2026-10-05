@@ -25,7 +25,7 @@ public class JdbcOtaRollbackPreflightRepository implements OtaRollbackPreflightR
     private final JdbcTemplate jdbc;
     /** 注入当前数据平面连接。 */
     public JdbcOtaRollbackPreflightRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaJobProgressRepository.Context> nextCandidate() {
         return jdbc.query("SELECT * FROM ota_rollback_preflight_next_candidate()", (r,row) ->
                 new OtaJobProgressRepository.Context(id(r,"tenant_id"),id(r,"project_id"),id(r,"campaign_id"),
@@ -34,16 +34,16 @@ public class JdbcOtaRollbackPreflightRepository implements OtaRollbackPreflightR
                         r.getString("manifest_sha256"),id(r,"authorization_id"),at(r,"deadline_at")))
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean deferCandidate(OtaJobProgressRepository.Context c) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_rollback_preflight_defer_candidate(?,?)",
                 Boolean.class,c.jobId(),c.revision()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean expireQuery(UUID queryId) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_rollback_preflight_expire(?)",Boolean.class,queryId));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean createQuery(OtaJobProgressRepository.Context c, OtaRollbackPreflightQuery q) {
         if (!c.jobId().equals(q.jobId()) || c.revision() != q.recoveryRevision()) return false;
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_rollback_preflight_create("
@@ -54,38 +54,38 @@ public class JdbcOtaRollbackPreflightRepository implements OtaRollbackPreflightR
                 q.sourceSlot(),q.targetSlot(),q.manifestSha256(),q.canonical(),q.payloadHash(),
                 q.baselineCanonical(),q.typeBaselineCanonical(),time(q.createdAt()),time(q.deadlineAt())));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaRollbackPreflightQuery> findQuery(UUID id) {
         return jdbc.query("SELECT * FROM ota_rollback_preflight_query WHERE id=?",JdbcOtaRollbackPreflightRepository::query,id)
                 .stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaRollbackPreflightQuery> currentQuery(UUID job,int attempt) {
         return jdbc.query("SELECT q.* FROM ota_rollback_preflight_control c JOIN ota_rollback_preflight_query q"
                 + " ON q.id=c.current_query_id WHERE c.job_id=? AND c.attempt_no=?",
                 JdbcOtaRollbackPreflightRepository::query,job,attempt).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaRollbackPreflightResult> findReport(UUID device,UUID report) {
         return jdbc.query("SELECT * FROM ota_rollback_preflight_report WHERE device_id=? AND report_id=?",
                 JdbcOtaRollbackPreflightRepository::receipt,device,report).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaRollbackPreflightResult> findReportForQuery(UUID queryId) {
         return jdbc.query("SELECT * FROM ota_rollback_preflight_report WHERE query_id=?",
                 JdbcOtaRollbackPreflightRepository::receipt,queryId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean hasSendReservation(UUID query) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM ota_rollback_preflight_transport WHERE event_id=?)",
                 Boolean.class,query));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean adoptionAllowed(OtaJobProgressRepository.Context c,UUID query,Instant brokerAt) {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT ota_rollback_preflight_adoption_allowed(?,?,?)",
                 Boolean.class,query,c.revision(),time(brokerAt)));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean acceptReport(OtaJobProgressRepository.Context c,OtaRollbackPreflightReceipt r,
             String disposition,String reason,byte[] qualificationCanonical) {
         if (!c.jobId().equals(r.jobId())) return false;
@@ -95,13 +95,13 @@ public class JdbcOtaRollbackPreflightRepository implements OtaRollbackPreflightR
                 r.queryId(),r.reportId(),r.bootId(),r.committedSecurityVersion(),r.canonical(),r.payloadHash(),
                 time(r.brokerReceivedAt()),time(r.acceptedAt()),c.revision(),disposition,reason,qualificationCanonical));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaRollbackPreflightResult> latestReport(UUID job,int attempt) {
         return jdbc.query("SELECT r.* FROM ota_rollback_preflight_report r JOIN ota_rollback_preflight_control c"
                 + " ON c.current_query_id=r.query_id WHERE r.job_id=? AND r.attempt_no=?",
                 JdbcOtaRollbackPreflightRepository::receipt,job,attempt).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public OptionalLong maxObservedCommitted(UUID job,int attempt) {
         Long value=jdbc.queryForObject("SELECT max(committed_security_version) FROM ota_rollback_preflight_report"
                 + " WHERE job_id=? AND attempt_no=?",Long.class,job,attempt);

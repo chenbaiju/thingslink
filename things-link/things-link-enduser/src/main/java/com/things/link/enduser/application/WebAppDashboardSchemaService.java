@@ -26,7 +26,7 @@ public class WebAppDashboardSchemaService {
     private final AppRuntimeIdentityService identity;
     /** 仅返回目标精确版本，不能借current加载所有引用或其他Schema。 */
     private final ApplicationRuntimeSchemaService schemas;
-    /** 本域只查询该目标Dashboard的ACTIVE READ grant。 */
+    /** 本域只查询该目标Dashboard的处于启用状态的读取授权。 */
     private final AppUserDashboardGrantRepository grants;
 
     /** 创建Schema编排；Dashboard端口负责元数据与持久摘要完整性。 */

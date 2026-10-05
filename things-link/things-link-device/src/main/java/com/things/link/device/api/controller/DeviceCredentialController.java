@@ -26,30 +26,49 @@ public class DeviceCredentialController {
     /** 凭据应用服务。 */ private final DeviceCredentialService service;
     public DeviceCredentialController(DeviceCredentialService service) { this.service = service; }
 
-    /** @param projectId 项目 ID @param deviceId 设备 ID @return 凭据列表（不含明文密钥） */
+    /**
+     * 凭据列表。
+     *
+     * @param projectId 项目 ID
+     * @param deviceId 设备 ID
+     * @return 凭据列表（不含明文密钥）
+     */
     @GetMapping
     @Operation(summary = "凭据列表", description = "获取设备的有效凭据列表，不含明文密钥")
-    public ResponseEntity<List<DeviceCredentialResponse>> list(@PathVariable UUID projectId,
-                                                                @PathVariable UUID deviceId) {
+    public ResponseEntity<List<DeviceCredentialResponse>> list(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                                @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId) {
         return ResponseEntity.ok(service.list(projectId, deviceId).stream()
                 .map(DeviceCredentialResponse::from).toList());
     }
 
-    /** @param projectId 项目 ID @param deviceId 设备 ID @return 新凭据，这是唯一一次返回明文密钥 */
+    /**
+     * 生成凭据。
+     *
+     * @param projectId 项目 ID
+     * @param deviceId 设备 ID
+     * @return 新凭据，这是唯一一次返回明文密钥
+     */
     @PostMapping
     @Operation(summary = "生成凭据", description = "为设备生成新的一机一密凭据，明文密钥仅在本次响应中返回，关闭后不可再次查看")
-    public ResponseEntity<CredentialCreatedResponse> generate(@PathVariable UUID projectId,
-                                                               @PathVariable UUID deviceId) {
+    public ResponseEntity<CredentialCreatedResponse> generate(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                                               @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CredentialCreatedResponse.from(service.generate(projectId, deviceId)));
     }
 
-    /** @param projectId 项目 ID @param deviceId 设备 ID @param id 凭据 ID @return 空响应 */
+    /**
+     * 作废凭据。
+     *
+     * @param projectId 项目 ID
+     * @param deviceId 设备 ID
+     * @param id 凭据 ID
+     * @return 空响应
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "作废凭据", description = "作废指定凭据，使用该密钥的设备将无法连接")
-    public ResponseEntity<Void> revoke(@PathVariable UUID projectId,
-                                       @PathVariable UUID deviceId,
-                                       @PathVariable UUID id) {
+    public ResponseEntity<Void> revoke(@io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId,
+                                       @io.swagger.v3.oas.annotations.Parameter(description = "凭据 ID") @PathVariable UUID id) {
         service.revoke(projectId, deviceId, id);
         return ResponseEntity.noContent().build();
     }

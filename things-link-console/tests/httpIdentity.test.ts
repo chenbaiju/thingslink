@@ -401,3 +401,110 @@ describe('HTTP当前标签身份围栏（ADR0094）', () => {
     expect(showError).not.toHaveBeenCalled()
   })
 })
+
+describe('分析提交单次发送', () => {
+  const url =
+    '/api/v1/projects/11111111-2222-4333-8444-555555555555/assistant/analysis-runs' as const
+  it.each([401, 403, 429, 500, 503, 'network', 'timeout'])(
+    '%s不重发原分析请求，401不刷新或自动清除身份',
+    async (kind) => {
+      const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+      axios.defaults.adapter = refresh
+      const adapter = vi.fn<AxiosAdapter>(async (config) => {
+        if (typeof kind !== 'number')
+          throw new AxiosError(
+            'network unavailable',
+            kind === 'timeout' ? 'ECONNABORTED' : 'ERR_NETWORK',
+            config
+          )
+        throw new AxiosError('failure', 'ERR_BAD_RESPONSE', config, undefined, {
+          status: kind,
+          statusText: 'Failed',
+          headers: {},
+          config,
+          data: { code: kind, message: 'PRIVATE_RESPONSE', details: ['PRIVATE_DETAIL'] }
+        })
+      })
+      const logout = vi.spyOn(user, 'logOut')
+      const result = await outcome(
+        http.post({ url, data: { template: 'STATUS_SUMMARY' }, adapter, showErrorMessage: false })
+      )
+      expect(result).toBeInstanceOf(HttpError)
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(refresh).not.toHaveBeenCalled()
+      expect(logout).not.toHaveBeenCalled()
+      expect(user.accessToken).toBe('initial-token')
+      if (kind === 401) {
+        expect(result).toMatchObject({
+          code: 401,
+          message: '分析请求未重发，请恢复登录后查询原调用状态。'
+        })
+        expect(JSON.stringify(result)).not.toContain('PRIVATE_')
+        expect(showError).not.toHaveBeenCalled()
+      }
+    }
+  )
+
+  it.each(['status-get', 'other-post'])('%s仍按原合同刷新一次并恢复', async (kind) => {
+    const refresh = vi.fn<AxiosAdapter>(async (config) =>
+      success(config, { accessToken: 'refreshed' })
+    )
+    axios.defaults.adapter = refresh
+    const adapter = vi.fn<AxiosAdapter>(async (config) => {
+      if (config.headers.get('Authorization') !== 'Bearer refreshed') throw unauthorized(config)
+      return success(config)
+    })
+    const result =
+      kind === 'status-get'
+        ? await http.get({ url: `${url}/status`, adapter })
+        : await http.post({ url: '/api/v1/projects', data: {}, adapter })
+    expect(result).toEqual({ value: 'result' })
+    expect(refresh).toHaveBeenCalledOnce()
+    expect(adapter).toHaveBeenCalledTimes(2)
+  })
+
+  it('分析401不加入另一只读请求正在进行的刷新，也不在刷新成功后再发送', async () => {
+    const started = deferred<InternalAxiosRequestConfig>()
+    const response = deferred<ReturnType<typeof success>>()
+    axios.defaults.adapter = (config) => {
+      started.resolve(config)
+      return response.promise
+    }
+    const reader: AxiosAdapter = async (config) => {
+      if (config.headers.get('Authorization') !== 'Bearer refreshed') throw unauthorized(config)
+      return success(config)
+    }
+    const reading = http.get({ url: '/api/v1/projects', adapter: reader })
+    const refreshConfig = await started.promise
+    const analysis = vi.fn<AxiosAdapter>(async (config) => {
+      throw unauthorized(config)
+    })
+    const result = await outcome(http.post({ url, adapter: analysis }))
+    expect(result).toMatchObject({ code: 401 })
+    response.resolve(success(refreshConfig, { accessToken: 'refreshed' }))
+    expect(await reading).toEqual({ value: 'result' })
+    expect(analysis).toHaveBeenCalledOnce()
+    expect(user.accessToken).toBe('refreshed')
+  })
+
+  it('分析在途切换身份后，旧401只取消，不提示或影响新登录', async () => {
+    const entered = deferred<InternalAxiosRequestConfig>()
+    const response = deferred<ReturnType<typeof success>>()
+    const adapter = vi.fn<AxiosAdapter>((config) => {
+      entered.resolve(config)
+      return response.promise
+    })
+    const refresh = vi.fn<AxiosAdapter>(async (config) => success(config))
+    axios.defaults.adapter = refresh
+    const result = outcome(http.post({ url, adapter }))
+    const config = await entered.promise
+    user.setToken('next-login')
+    response.reject(unauthorized(config))
+    expect(axios.isCancel(await result)).toBe(true)
+    expect(adapter).toHaveBeenCalledOnce()
+    expect(refresh).not.toHaveBeenCalled()
+    expect(showError).not.toHaveBeenCalled()
+    expect(user.accessToken).toBe('next-login')
+  })
+})

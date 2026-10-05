@@ -126,7 +126,7 @@ public class ProjectMemberController {
      * @param projectId 项目 ID
      * @param accountId 目标账号 ID
      * @param request   新角色
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PatchMapping("/{accountId}")
     @Operation(summary = "修改成员角色",
@@ -158,7 +158,7 @@ public class ProjectMemberController {
      *
      * @param projectId 项目 ID
      * @param accountId 新 OWNER 账号 ID
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @PostMapping("/{accountId}/transfer-owner")
     @Operation(summary = "转让项目所有权",
@@ -188,7 +188,7 @@ public class ProjectMemberController {
      * 需要先转让所有权，或在项目只剩自己时删除项目。
      *
      * @param projectId 项目 ID
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @DeleteMapping("/me")
     @Operation(summary = "退出项目",
@@ -216,7 +216,7 @@ public class ProjectMemberController {
      *
      * @param projectId 项目 ID
      * @param accountId 目标账号 ID
-     * @return 204
+     * @return HTTP 204 响应，表示本次操作的处理结果
      */
     @DeleteMapping("/{accountId}")
     @Operation(summary = "移除成员",

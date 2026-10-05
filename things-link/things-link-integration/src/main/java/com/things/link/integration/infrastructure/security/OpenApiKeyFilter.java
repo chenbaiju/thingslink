@@ -64,7 +64,7 @@ final class OpenApiKeyFilter extends OncePerRequestFilter {
         }
     }
     private boolean hasSessionCookie(HttpServletRequest request){
-        // Raw header also rejects malformed name-only cookies instead of depending on container normalization.
+        // 同时检查原始请求头并拒绝只有名称的畸形 Cookie，不依赖容器规范化。
         for(String header:Collections.list(request.getHeaders("Cookie")))
             for(String part:header.split(";")){
                 String name=part.split("=",2)[0].trim();

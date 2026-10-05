@@ -62,9 +62,11 @@ class MavenModuleAssemblyTests {
         assertThat(applicationYaml)
                 .contains("classpath:db/migration/dashboard")
                 .contains("classpath:db/migration/ota")
-                .contains("classpath:db/migration/integration");
+                .contains("classpath:db/migration/integration")
+                .contains("classpath:db/migration/assistant");
         assertThat(Files.readString(backend.resolve("things-link-bootstrap/src/test/resources/application-test.yml")))
-                .contains("classpath:db/migration/integration");
+                .contains("classpath:db/migration/integration")
+                .contains("classpath:db/migration/assistant");
     }
 
     /**
@@ -118,6 +120,7 @@ class MavenModuleAssemblyTests {
     void frozenModuleDependencyDirectionsMustRemainAcyclic() throws Exception {
         Map<String, Set<String>> graph = internalDependencyGraph(locateBackendRoot());
 
+        assertThat(graph.get("things-link-assistant")).contains("things-link-telemetry");
         assertThat(graph.get("things-link-enduser")).contains("things-link-dashboard");
         assertThat(graph.get("things-link-ingestion")).contains("things-link-enduser");
         assertThat(graph.get("things-link-dashboard"))

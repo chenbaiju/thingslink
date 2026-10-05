@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace baijulink::detail {
+namespace thingslink::detail {
 template<std::size_t N> std::size_t length(const std::array<char, N>& s) {
     std::size_t n = 0;
     while (n < N && s[n]) ++n;

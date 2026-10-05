@@ -39,13 +39,13 @@ public class WebhookNotificationSender implements NotificationChannelSender {
         this.sender = sender;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public NotificationChannel channel() {
         return NotificationChannel.WEBHOOK;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String send(AlarmNotificationDelivery delivery) {
         try {

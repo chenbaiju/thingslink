@@ -84,6 +84,9 @@ vi.mock('@/views/device/components/DeviceAlarmStatus.vue', () => ({
 vi.mock('@/views/device/components/DeviceCommandHistory.vue', () => ({
   default: { render: () => null }
 }))
+vi.mock('@/views/device/components/DeviceAgentEvidence.vue', () => ({
+  default: { render: () => null }
+}))
 vi.mock('@/views/device/components/DeviceEndUsers.vue', () => ({
   default: { template: '<div />' }
 }))

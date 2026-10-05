@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import java.util.*;
+/** 实时交付 JDBC 仓储，维护候选、租约令牌、重试时间及终态。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcRealtimeDeliveryRepository implements RealtimeDeliveryRepository {

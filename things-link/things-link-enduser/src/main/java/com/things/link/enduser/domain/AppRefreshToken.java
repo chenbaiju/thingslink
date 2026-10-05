@@ -14,7 +14,7 @@ import java.util.UUID;
  * @param appUserId  所属终端用户。第二类身份，与控制台 account_id 分离
  * @param tenantId   签发时所在的租户。刷新时沿用它，不重新推导 —— 登录时由 projectKey
  *                   唯一确定，是「用哪个」的选择而非可事后推断的属性
- * @param projectId  会话绑定的项目。App access token 是单项目令牌，因此本项目列
+ * @param projectId  会话绑定的项目。应用访问令牌 是单项目令牌，因此本项目列
  *                   <b>NOT NULL</b>，与控制台（可未选项目）不同
  * @param projectGeneration 签发时项目生命周期代次；轮换前必须与项目当前代次一致
  * @param familyId   轮换族。同一次登录派生出的所有令牌共享它

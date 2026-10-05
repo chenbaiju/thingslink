@@ -57,7 +57,7 @@ class DeviceTopologyRepairUpgradeTests {
             "classpath:db/migration/iam",
             "classpath:db/migration/enduser",
             // verify-11：完整升级必须包含授权外键的看板父表，并与生产迁移域保持一致。
-            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration"
+            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration", "classpath:db/migration/assistant"
     };
 
     /** D-026 修复迁移的全局前驱；含旧代码可能留下的有效悬挂关系。 */

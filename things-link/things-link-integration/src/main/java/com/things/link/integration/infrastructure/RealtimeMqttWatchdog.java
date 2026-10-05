@@ -7,7 +7,7 @@ import org.springframework.beans.factory.DisposableBean;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-/** Five-second admission cadence, independently bounded I/O; Broker remains the retry fact. */
+/** 每五秒执行一次准入，输入输出独立限时；重试事实仍以 Broker 为准。 */
 @Component
 @DataPlaneDatabase
 public class RealtimeMqttWatchdog implements DisposableBean {

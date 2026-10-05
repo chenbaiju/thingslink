@@ -41,6 +41,8 @@ public class DeviceCurrentValuesController {
     }
 
     /**
+     * 批量读取当前值。
+     *
      * @param projectId 项目 ID
      * @param request 多设备、多属性查询条件
      * @return 每台请求设备的当前值
@@ -49,7 +51,7 @@ public class DeviceCurrentValuesController {
     @Operation(summary = "批量读取当前值",
             description = "一次查询最多100台设备×50个属性；PG核验接受序号，Redis缺失或故障时回源；历史未知序号不缓存")
     public ResponseEntity<BatchCurrentValuesResponse> query(
-            @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
             @Valid @RequestBody BatchCurrentValuesRequest request) {
         authorization.requireRead(projectId);
         List<DeviceCurrentValue> values = service.findAll(projectId, request.deviceIds(), request.propertyKeys());

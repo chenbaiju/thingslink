@@ -24,7 +24,7 @@ public class JdbcQuotaPolicyAssignmentRepository implements QuotaPolicyAssignmen
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<QuotaPolicyChanged> assign(UUID tenantId, UUID policyId, long expectedAssignmentVersion) {
         if (expectedAssignmentVersion <= 0) {

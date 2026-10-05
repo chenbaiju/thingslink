@@ -45,7 +45,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
      * {@inheritDoc}
      *
      * <p>行不存在时 {@code FOR UPDATE} 无法加锁，因此用两个 int 的事务 advisory lock 建立串行点。
-     * Java UUID hash 碰撞只会让无关注册短暂串行，不会放宽唯一性或隔离。
+     * Java UUID 哈希 碰撞只会让无关注册短暂串行，不会放宽唯一性或隔离。
      */
     @Override
     public void lockRegistration(UUID tenantId, UUID appUserId, UUID installationId) {
@@ -54,7 +54,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
         jdbcTemplate.query("SELECT pg_advisory_xact_lock(?, ?)", resultSet -> null, firstKey, secondKey);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int insert(AppPushToken token, EncryptedPushToken encrypted) {
         return jdbcTemplate.update("""
@@ -69,7 +69,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
                 Timestamp.from(token.createdAt()), Timestamp.from(token.updatedAt()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<AppPushToken> findForUpdate(UUID tenantId, UUID appUserId, UUID installationId) {
         return jdbcTemplate.query("""
@@ -81,7 +81,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
                         """, TOKEN_MAPPER, tenantId, appUserId, installationId).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int activate(AppPushToken token, EncryptedPushToken encrypted) {
         return jdbcTemplate.update("""
@@ -94,7 +94,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
                 Timestamp.from(token.updatedAt()), token.tenantId(), token.appUserId(), token.installationId(), token.id());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public int revoke(UUID tenantId, UUID appUserId, UUID installationId, Instant revokedAt) {
         return jdbcTemplate.update("""

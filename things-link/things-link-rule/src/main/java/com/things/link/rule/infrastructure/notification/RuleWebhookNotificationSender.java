@@ -25,13 +25,13 @@ public class RuleWebhookNotificationSender implements RuleNotificationSender {
         this.sender = sender;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String channel() {
         return "WEBHOOK";
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String send(RuleNotificationDelivery delivery) {
         try {

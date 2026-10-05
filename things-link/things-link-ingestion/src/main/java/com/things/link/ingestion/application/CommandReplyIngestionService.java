@@ -178,7 +178,7 @@ public class CommandReplyIngestionService {
      *
      * @param messageId 设备生成的 UUIDv7 幂等键
      * @param occurredAt 设备首次处理该阶段的发生时间
-     * @param status ACK/SUCCESS/FAILED
+     * @param status 回复状态：确认、成功或失败
      * @param output 输出对象；省略时按空对象处理
      * @param errorCode 失败诊断码
      * @param message 失败诊断摘要

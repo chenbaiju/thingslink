@@ -955,7 +955,7 @@ public class DeviceSimulator {
     /**
      * 读取进程 RSS；Linux 直接读 procfs，macOS 用受控的 {@code ps} 回退。
      *
-     * <p>不能用 committed virtual memory 冒充 RSS：JVM 保留地址空间可能远大于实际驻留页，会让内存余量结论失真。
+     * <p>不能用 已提交虚拟内存 冒充 RSS：JVM 保留地址空间可能远大于实际驻留页，会让内存余量结论失真。
      * 资格运行若两个入口都不可用则返回 -1，并由聚合器把指标缺失判为失败。</p>
      */
     private static long processRssBytes() {

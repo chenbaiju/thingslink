@@ -30,7 +30,7 @@ public class JdbcThingModelVersionDescriptorAdapter implements ThingModelVersion
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ThingModelVersionDescriptor> find(UUID projectId, UUID versionId) {
         Objects.requireNonNull(projectId, "projectId");

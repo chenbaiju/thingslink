@@ -35,12 +35,19 @@ public class DashboardShareConfigurationController {
         this.service = Objects.requireNonNull(service, "service");
     }
 
-    /** @param projectId 当前项目 @param dashboardId 当前看板 @param request 拒绝未声明query @return 不可缓存的公开配置 */
+    /**
+     * 读取看板分享运行配置。
+     *
+     * @param projectId 当前项目
+     * @param dashboardId 当前看板
+     * @param request 拒绝未声明query
+     * @return 不可缓存的公开配置
+     */
     @GetMapping
     @Operation(operationId = "getDashboardShareConfiguration", summary = "读取看板分享运行配置",
             description = "仅管理者可读；当前运行启用且受管宿主验证成功时提供精确Origin与稳定版本范围，其余字段全null。")
-    public ResponseEntity<DashboardShareConfigurationResponse> configuration(@PathVariable UUID projectId,
-            @PathVariable UUID dashboardId, HttpServletRequest request) {
+    public ResponseEntity<DashboardShareConfigurationResponse> configuration(@io.swagger.v3.oas.annotations.Parameter(description = "当前项目") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前看板") @PathVariable UUID dashboardId, HttpServletRequest request) {
         authorization.requireManage(projectId);
         if (request.getQueryString() != null) throw new BusinessException(CommonErrorCode.INVALID_PARAMETER);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(

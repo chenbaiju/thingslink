@@ -8,7 +8,7 @@ endif()
 if(NOT SDK_APP MATCHES "^(probe|device)$")
     message(FATAL_ERROR "SDK_APP must be probe or device")
 endif()
-project(baijulink_${SDK_APP})
+project(thingslink_${SDK_APP})
 # Custom outbox must live in the MQTT archive, per its component contract. A
 # protocol-only probe can discard MQTT and cannot expose an archive-order error.
 idf_component_get_property(mqtt_component esp-mqtt COMPONENT_LIB)

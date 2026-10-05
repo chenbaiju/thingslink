@@ -26,7 +26,7 @@ public class JdbcThingModelPropertyFactsAdapter implements ThingModelPropertyFac
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ThingModelPropertyFacts> find(
             UUID projectId, UUID versionId, String propertyKey) {

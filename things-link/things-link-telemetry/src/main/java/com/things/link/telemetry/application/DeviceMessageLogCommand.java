@@ -17,7 +17,7 @@ import java.util.UUID;
  * @param messageId 标准消息信封 ID
  * @param protocol 传输协议
  * @param direction 消息方向
- * @param topic MQTT Topic 或 HTTP 路径
+ * @param topic MQTT 消息主题 或 HTTP 路径
  * @param payloadSummary 已脱敏的载荷摘要
  * @param rawBytes 原始报文字节数
  * @param errorCode 可选处理错误码

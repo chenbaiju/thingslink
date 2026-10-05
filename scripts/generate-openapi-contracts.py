@@ -385,7 +385,15 @@ def validate_consumer_registration(console: Path) -> str:
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise GenerationError(f"已注册消费端清单不可读：{exc}") from exc
     scripts = package.get("scripts")
-    if not isinstance(scripts, dict) or scripts.get("api:generate") != CONSOLE_GENERATION_ALIAS:
+    # 兼容目标既有的 Windows/Unix Python 入口，只接受固定启动器和根生成器。
+    portable_alias = (
+        isinstance(scripts, dict)
+        and scripts.get("api:generate") == "pnpm run python ../scripts/generate-openapi-contracts.py"
+        and scripts.get("python") == 'node -e "const { spawnSync } = require(\'node:child_process\'); const r = spawnSync(process.env.PYTHON || (process.platform === \'win32\' ? \'python\' : \'python3\'), process.argv.slice(1), { stdio: \'inherit\', env: { ...process.env, PYTHONUTF8: \'1\' } }); if (r.error) console.error(r.error.message); process.exit(r.status ?? 1)" --'
+    )
+    if not isinstance(scripts, dict) or (
+        scripts.get("api:generate") != CONSOLE_GENERATION_ALIAS and not portable_alias
+    ):
         raise GenerationError(
             "消费端 api:generate必须委托OpenAPI根入口，禁止恢复独立文件写入"
         )

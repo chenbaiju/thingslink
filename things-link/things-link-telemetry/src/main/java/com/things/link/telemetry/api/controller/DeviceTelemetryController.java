@@ -71,14 +71,14 @@ public class DeviceTelemetryController {
     @GetMapping("/property")
     @Operation(summary = "属性历史查询", description = "按设备和时间窗口查询属性时序数据点，支持游标分页；查询先与所属租户套餐历史窗口求交，缺投影503/50048")
     public ResponseEntity<CursorPage<PropertyPointResponse>> listProperties(
-            @PathVariable UUID projectId,
-            @PathVariable UUID deviceId,
-            @RequestParam(required = false)
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选属性标识符") @RequestParam(required = false)
             @Pattern(regexp = "[A-Za-z0-9_-]+", message = "属性标识符格式不合法") String propertyKey,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "100") @Min(1) @Max(500) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选开始时刻，包含") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选结束时刻，不包含") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选下一页游标") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "每页数量") @RequestParam(defaultValue = "100") @Min(1) @Max(500) int limit) {
         return ResponseEntity.ok(ingestion.listProperties(
                 projectId, deviceId, propertyKey, from, to, cursor, limit)
                 .map(point -> PropertyPointResponse.from(point, objectMapper)));
@@ -101,13 +101,13 @@ public class DeviceTelemetryController {
     @Operation(summary = "属性聚合历史查询",
             description = "查询单个数值属性，最多返回 2000 点；超限按 RAW、ONE_MINUTE、ONE_HOUR、ONE_DAY 自动升粒度；先裁剪至套餐窗口，仅返回完整区间聚合桶，缺投影503/50048")
     public ResponseEntity<PropertyHistoryResponse> history(
-            @PathVariable UUID projectId,
-            @PathVariable UUID deviceId,
-            @RequestParam @Pattern(regexp = "[A-Za-z0-9_-]+", message = "属性标识符格式不合法") String propertyKey,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(defaultValue = "RAW") HistoryGranularity granularity,
-            @RequestParam(defaultValue = "AVG") HistoryAggregation aggregation) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "项目 ID") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "设备 ID") @PathVariable UUID deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "属性标识符") @RequestParam @Pattern(regexp = "[A-Za-z0-9_-]+", message = "属性标识符格式不合法") String propertyKey,
+            @io.swagger.v3.oas.annotations.Parameter(description = "开始时刻，包含") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @io.swagger.v3.oas.annotations.Parameter(description = "结束时刻，不包含") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @io.swagger.v3.oas.annotations.Parameter(description = "请求粒度") @RequestParam(defaultValue = "RAW") HistoryGranularity granularity,
+            @io.swagger.v3.oas.annotations.Parameter(description = "聚合函数") @RequestParam(defaultValue = "AVG") HistoryAggregation aggregation) {
         return ResponseEntity.ok(PropertyHistoryResponse.from(historyService.query(
                 projectId, deviceId, propertyKey, from, to, granularity, aggregation)));
     }

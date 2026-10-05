@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import java.util.UUID;
+/** 实时来源 JDBC 仓储，记录去重结果并为票据生成持久交付记录。 */
 @Repository
 @Transactional(propagation=Propagation.MANDATORY)
 public class JdbcRealtimeEventRepository implements RealtimeEventRepository {

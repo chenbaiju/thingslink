@@ -59,4 +59,29 @@ public class DashboardWebSocketConfiguration implements WebSocketConfigurer {
                 .setHandshakeHandler(new DashboardHandshakeHandler(DashboardHandshakeInterceptor.CONSOLE_PROTOCOL))
                 .setAllowedOrigins(properties.consoleAllowedOrigins().toArray(String[]::new));
     }
+
+    /**
+     * 描述原生 HTTP 升级入口，生产关闭文档时不创建此文档 Bean。
+     *
+     * @return 只维护契约、不注册运行路由的文档修正器
+     */
+    @org.springframework.context.annotation.Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "springdoc.api-docs.enabled", havingValue = "true", matchIfMissing = true)
+    public org.springdoc.core.customizers.OpenApiCustomizer dashboardHandshakeDocumentation() {
+        return api -> {
+            com.things.link.support.openapi.HttpTransportOpenApiDocumentation.webSocket(api,
+                    "/ws/app/properties", "upgradeAppProperties", "建立 App 属性实时连接",
+                    "必须提供精确允许的 Origin；使用 App JWT 并校验当前绑定设备资格。",
+                    "发送 tc.app.properties.v1 与 bearer.<App JWT>", true);
+            com.things.link.support.openapi.HttpTransportOpenApiDocumentation.webSocket(api,
+                    "/ws/app/dashboard", "upgradeAppDashboard", "建立 App 看板实时连接",
+                    "必须提供精确允许的 Origin；使用 App JWT，按看板协议重新校验授权。",
+                    "发送 tc.app.dashboard.v2 与 bearer.<App JWT>", true);
+            com.things.link.support.openapi.HttpTransportOpenApiDocumentation.webSocket(api,
+                    "/ws/dashboard/properties", "upgradeConsoleDashboard", "建立控制台看板实时连接",
+                    "必须提供精确允许的 Origin；使用控制台 JWT 和当前项目成员身份。",
+                    "发送 tc.dashboard.properties.v1 与 bearer.<控制台JWT>", true);
+        };
+    }
 }

@@ -53,7 +53,7 @@ public class JdbcDeviceCredentialRepository implements DeviceCredentialRepositor
                 """, projectId, deviceId, authType.name());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long incrementCredentialVersion(UUID projectId, UUID deviceId) {
         Long version = jdbcTemplate.queryForObject("""

@@ -1,6 +1,7 @@
 package com.things.link.integration.domain;
 import java.time.Instant;
 import java.util.*;
+/** 实时票据持久端口，负责身份证明、连接绑定、锁定及到期清理。 */
 public interface RealtimeTicketRepository {
     Instant now();
     void insert(RealtimeTicket ticket,String digest);

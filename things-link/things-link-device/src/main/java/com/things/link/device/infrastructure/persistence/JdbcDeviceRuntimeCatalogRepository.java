@@ -23,7 +23,7 @@ public class JdbcDeviceRuntimeCatalogRepository implements DeviceRuntimeCatalogR
         this.jdbc = Objects.requireNonNull(jdbc, "jdbc");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<Item> find(UUID projectId, UUID modelVersionId, List<UUID> candidateIds,
                            Instant beforeTime, UUID beforeId, int limit) {
@@ -48,7 +48,7 @@ public class JdbcDeviceRuntimeCatalogRepository implements DeviceRuntimeCatalogR
                 rs.getTimestamp("created_at").toInstant()), projectId, modelVersionId,
                 candidateIds.toArray(UUID[]::new), before, before, beforeId, limit);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<Item> findConsole(UUID projectId, UUID modelVersionId, Instant beforeTime, UUID beforeId, int limit) {
         if (projectId == null || modelVersionId == null || (beforeTime == null) != (beforeId == null)

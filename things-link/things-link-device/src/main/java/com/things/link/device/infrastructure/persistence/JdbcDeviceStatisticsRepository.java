@@ -20,7 +20,7 @@ public class JdbcDeviceStatisticsRepository implements DeviceStatisticsRepositor
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DeviceStatistics summarize(UUID projectId, Instant since) {
         return jdbcTemplate.queryForObject("""

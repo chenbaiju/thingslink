@@ -90,7 +90,7 @@ public class ManagedWebAppHostQualificationAdapter implements DashboardHostQuali
         this.deployment = Optional::empty;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DashboardHostQualificationDescriptor> current() {
         try {
             var selected = deployment.admitCurrent();
@@ -106,7 +106,7 @@ public class ManagedWebAppHostQualificationAdapter implements DashboardHostQuali
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<DashboardRegisteredHostQualification> findRegistered(String hostVersion) {
         return snapshot(hostVersion).map(VerifiedSnapshot::qualification);
     }
@@ -183,7 +183,7 @@ public class ManagedWebAppHostQualificationAdapter implements DashboardHostQuali
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<byte[]> readCurrent(String path) {
         try {
             var selected = deployment.admitCurrent();
@@ -196,7 +196,7 @@ public class ManagedWebAppHostQualificationAdapter implements DashboardHostQuali
             return Optional.ofNullable(actual.files().get(path)).map(byte[]::clone);
         } catch (RuntimeException failure) { throw new DashboardPublicHostUnavailableException(); }
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<byte[]> readRelease(String digest, String path) {
         if (digest == null || !digest.matches("[a-f0-9]{64}")) return Optional.empty();
         for (var actual : publicSnapshots()) {
@@ -204,7 +204,7 @@ public class ManagedWebAppHostQualificationAdapter implements DashboardHostQuali
         }
         return Optional.empty();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<byte[]> readAsset(String path) {
         byte[] result = null;
         for (var actual : publicSnapshots()) {

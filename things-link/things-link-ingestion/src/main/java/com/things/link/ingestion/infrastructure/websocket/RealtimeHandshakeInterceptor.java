@@ -35,7 +35,7 @@ public class RealtimeHandshakeInterceptor implements HandshakeInterceptor {
     /** bearer 子协议前缀，JWT 本身不含空格以符合 HTTP token 语法。 */
     private static final String BEARER_PROTOCOL_PREFIX = "bearer.";
 
-    /** WebSocket session attributes 中保存的已校验身份。 */
+    /** WebSocket 会话属性 中保存的已校验身份。 */
     public static final String PRINCIPAL_ATTRIBUTE = RealtimePrincipal.class.getName();
 
     /** 平台 JwtDecoder，使用 iam 装配的 HS256 验签与有效期校验。 */
@@ -54,7 +54,7 @@ public class RealtimeHandshakeInterceptor implements HandshakeInterceptor {
         this.authorizationService = authorizationService;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler webSocketHandler, Map<String, Object> attributes) {
@@ -93,7 +93,7 @@ public class RealtimeHandshakeInterceptor implements HandshakeInterceptor {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                WebSocketHandler webSocketHandler, Exception exception) {

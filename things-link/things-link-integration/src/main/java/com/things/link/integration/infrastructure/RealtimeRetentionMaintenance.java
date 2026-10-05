@@ -3,7 +3,7 @@ import com.things.link.integration.application.RealtimeTicketService;
 import com.things.link.support.tenant.DataPlaneDatabase;
 import org.springframework.stereotype.Component;
 import org.springframework.scheduling.annotation.Scheduled;
-/** Retention is independent of the public admission feature switch. */
+/** 保留与清理不受公开准入功能开关影响。 */
 @Component
 @DataPlaneDatabase
 public class RealtimeRetentionMaintenance {

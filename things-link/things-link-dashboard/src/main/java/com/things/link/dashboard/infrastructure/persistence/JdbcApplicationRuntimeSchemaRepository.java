@@ -140,7 +140,7 @@ public class JdbcApplicationRuntimeSchemaRepository implements ApplicationRuntim
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<RuntimeDashboardSchemaProjection> findSchema(

@@ -27,7 +27,7 @@ public class JdbcDeviceRuntimeRepository implements DeviceRuntimeRepository {
         return jdbcTemplate.query("SELECT id FROM dev_device WHERE project_id=? AND id=ANY(?::uuid[]) AND deleted_at IS NULL ORDER BY id FOR SHARE",(r,n)->r.getObject(1,UUID.class),projectId,"{"+ids.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(","))+"}").size();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DeviceFact> inspect(UUID projectId, List<DeviceRequest> requests) {
         SqlRequest sql = deviceRequestTable(requests);
@@ -42,7 +42,7 @@ public class JdbcDeviceRuntimeRepository implements DeviceRuntimeRepository {
                 """.formatted(sql.placeholders()), this::deviceFact, arguments(sql.arguments(), projectId));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<DeviceModelFact> snapshot(UUID projectId, List<DeviceRequest> requests) {
         SqlRequest sql = deviceRequestTable(requests);
@@ -67,7 +67,7 @@ public class JdbcDeviceRuntimeRepository implements DeviceRuntimeRepository {
                 result.getString("schema_profile")), arguments(sql.arguments(), projectId));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<CurrentValueFact> currentValues(UUID projectId, List<PropertyRequest> requests) {
         SqlRequest sql = propertyRequestTable(requests);

@@ -230,7 +230,7 @@ final class DashboardSchemaBindingRules {
         return new DashboardSchemaValidationException(reason, path, detail);
     }
 
-    /** 六种冻结binding source。 */
+    /** 六种冻结绑定来源。 */
     enum BindingSource {
         /** 当前属性值。 */ CURRENT_VALUE,
         /** 历史属性序列。 */ HISTORY_SERIES,
@@ -243,7 +243,7 @@ final class DashboardSchemaBindingRules {
     /**
      * 供后续组件slot检查source、变量基数和外部属性事实的内部投影。
      *
-     * @param source binding source
+     * @param source 已冻结的绑定来源
      * @param variableKey 主设备或文本变量key
      * @param variableType 已解析变量类型
      * @param modelKey 设备变量引用的模型key，非设备变量为空

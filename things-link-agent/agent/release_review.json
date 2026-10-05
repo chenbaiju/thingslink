@@ -1,0 +1,26 @@
+{
+  "version": "agent-release-review-v1",
+  "decision": "PENDING",
+  "model": "deepseek-flash",
+  "modelVersion": "DeepSeek-V4.1-Flash",
+  "promptVersion": "thingslink-agent-single-analysis-v1",
+  "executionCandidateSha256": "abe35f14065feffd2b0d00d50223deacbd5cdefb5a07c9a348d6004ccad46445",
+  "counterSha256": "4419e0648eeff6c8bdd998e42eb0d8a6a58a62695cba4242d86bc50be3345c60",
+  "requestContractSha256": "10f0d15475b1beb590311b2d0c0ed3da883226419353360256e22df74243c4e2",
+  "evidenceManifestSha256": "a1469ccb2412beda70e938852bb4eafd431f3efed91684be467a29b79361444a",
+  "providerFingerprintSha256": null,
+  "reviewedAt": "2026-10-04T00:00:00Z",
+  "expiresAt": "2026-10-11T00:00:00Z",
+  "checks": [
+    {
+      "checkId": "ONLINE_COUNTER_CONTRACT",
+      "decision": "PENDING",
+      "evidenceSha256": null
+    },
+    {
+      "checkId": "SUPPLIER_DATA_HANDLING",
+      "decision": "PENDING",
+      "evidenceSha256": null
+    }
+  ]
+}

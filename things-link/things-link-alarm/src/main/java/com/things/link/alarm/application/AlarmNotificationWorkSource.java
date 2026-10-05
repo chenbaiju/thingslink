@@ -27,7 +27,7 @@ public class AlarmNotificationWorkSource implements NotificationWorkSource {
         this.service = service;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<NotificationWork> claim(int limit, Duration leaseDuration) {
         AlarmNotificationRepository.DispatchClaim claim = repository.claimDispatches(limit, leaseDuration);
@@ -50,13 +50,13 @@ public class AlarmNotificationWorkSource implements NotificationWorkSource {
         }).toList();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String sourceName() {
         return "alarm";
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public BacklogAges observeAges() {
         AlarmNotificationRepository.DispatchAges ages = repository.dispatchAges();

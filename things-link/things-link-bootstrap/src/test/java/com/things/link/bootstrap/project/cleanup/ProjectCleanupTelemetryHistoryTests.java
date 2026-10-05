@@ -142,7 +142,8 @@ class ProjectCleanupTelemetryHistoryTests {
                 proxy(new AppProjectCleanupContributor(new JdbcAppProjectCleanupRepository(app))),
                 ProjectCleanupDashboardCompatibilityFixture.emptyContributor(),
                 ProjectCleanupDashboardCompatibilityFixture.emptyOtaContributor(owner),
-                ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner));
+                ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner),
+                ProjectCleanupDashboardCompatibilityFixture.emptyAssistantContributor(owner));
         batches = batch(this::history);
     }
 

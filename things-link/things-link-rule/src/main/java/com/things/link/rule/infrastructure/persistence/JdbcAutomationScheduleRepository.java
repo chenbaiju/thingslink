@@ -7,6 +7,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 
+/** 自动化调度 JDBC 仓储，维护项目内调度候选、运行锁及持久时间状态。 */
 @Repository
 public class JdbcAutomationScheduleRepository implements AutomationScheduleRepository {
     private final JdbcTemplate jdbc;

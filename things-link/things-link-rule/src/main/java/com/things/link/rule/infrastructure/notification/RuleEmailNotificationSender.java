@@ -25,13 +25,13 @@ public class RuleEmailNotificationSender implements RuleNotificationSender {
         this.sender = sender;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String channel() {
         return "EMAIL";
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String send(RuleNotificationDelivery delivery) {
         try {

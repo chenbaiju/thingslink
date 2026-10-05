@@ -43,12 +43,19 @@ public class EmqxAclController {
         this.ingressProperties=ingressProperties;this.applications=applications.getIfAvailable();this.accessService=accessService;
     }
 
+    /**
+     * MQTT Topic 授权。
+     * 校验设备上下行或应用票据精确Topic；应用仅允许QoS1订阅并复核当前资格
+     *
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<Map<String, String>>}
+     */
     @PostMapping("/api/v1/emqx/acl")
     @Operation(summary = "MQTT Topic 授权", description = "校验设备上下行或应用票据精确Topic；应用仅允许QoS1订阅并复核当前资格")
     /** @param body EMQX 回调的 JSON 载荷，包含 username、topic、access、clientid */
     public ResponseEntity<Map<String, String>> acl(@RequestBody Map<String, Object> body) {
         String username = string(body, "username"), topic = string(body, "topic"),
-               access = string(body, "access"); // "1"=subscribe, "2"=publish
+               access = string(body, "access"); // "1" 表示订阅，"2" 表示发布
 
         if (username == null || topic == null) return deny();
         String zone=string(body,"zone");

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 固定单活 MQTT 3.1.1 ingress，在下游持久事实形成后才 manual ACK。
  *
- * <p>连接必须等到 {@link ApplicationReadyEvent}：Broker HTTP authenticator 回调本应用，若在 Web Server 就绪前同步 CONNECT
+ * <p>连接必须等到 {@link ApplicationReadyEvent}：消息代理 HTTP 认证器 回调本应用，若在 Web 服务就绪前同步 CONNECT
  * 会形成自依赖死锁。回调线程同步处理一条消息，禁止把 ACK 所有权转交给无持久 executor。</p>
  */
 @Component
@@ -145,10 +145,10 @@ public class DurableUplinkMqttIngress implements MqttCallbackExtended {
     }
 
     /**
-     * 同步完成下游接管再调用 Paho manual ACK；暂时故障在当前 callback 原地重试，不主动制造重连。
+     * 同步完成下游接管再调用 Paho 手动确认；暂时故障在当前 callback 原地重试，不主动制造重连。
      *
      * @param topic 必须是固定内部 Topic
-     * @param message Broker durable session 投递
+     * @param message 消息代理持久会话 投递
      * @throws Exception 暂时故障或 ACK 失败，禁止吞掉
      */
     @Override

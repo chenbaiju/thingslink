@@ -30,7 +30,7 @@ public final class SecureRandomApplicationKeyGenerator implements ApplicationKey
         this.secureRandom = java.util.Objects.requireNonNull(secureRandom, "secureRandom");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String generate() {
         byte[] random = new byte[RANDOM_BYTES];

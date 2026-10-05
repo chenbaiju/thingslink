@@ -29,7 +29,7 @@ public class JdbcDeviceRepository implements DeviceRepository {
     /** @param jdbcTemplate JDBC 访问器 */
     public JdbcDeviceRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public void lockTenantDeviceQuota(UUID tenantId) {
         // 事务级 advisory lock 不读取 project 表，却能让同一 owner tenant 的跨项目创建共享一把锁。
@@ -83,7 +83,7 @@ public class JdbcDeviceRepository implements DeviceRepository {
                 """, this::map, projectId, deviceKey).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Device> findByIdForUpdate(UUID projectId, UUID id) {
         return jdbcTemplate.query("""
                 SELECT id, tenant_id, project_id, device_type_id, gateway_id, device_key,
@@ -93,7 +93,7 @@ public class JdbcDeviceRepository implements DeviceRepository {
                 """, this::map, projectId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<Device> findByIdForKeyShare(UUID projectId, UUID id) {
         // ADR0056删除入口显式FOR UPDATE；仅UPDATE deleted_at取得的NO KEY UPDATE不足以互斥本锁。
         return jdbcTemplate.query("""
@@ -104,7 +104,7 @@ public class JdbcDeviceRepository implements DeviceRepository {
                 """, this::map, projectId, id).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean hasModelVersionBinding(UUID projectId, UUID deviceId) {
         // ADR0059：只看当前指针会把“指针被清空但历史仍在”的异常设备误当成可重新选型的新身份。
@@ -120,7 +120,7 @@ public class JdbcDeviceRepository implements DeviceRepository {
         return Boolean.TRUE.equals(bound);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<Device> search(DeviceSearchQuery query, DeviceGroup group) {
         CursorPosition position = decodeCursor(query.cursor());
@@ -151,7 +151,7 @@ public class JdbcDeviceRepository implements DeviceRepository {
         return CursorPage.of(items, Cursor.encode(last.createdAt() + "|" + last.id()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public CursorPage<Device> searchByIds(UUID projectId, Set<UUID> deviceIds, String cursor, int limit) {
         CursorPosition position = decodeCursor(cursor);
@@ -314,7 +314,7 @@ public class JdbcDeviceRepository implements DeviceRepository {
                 device.projectId(), device.id()) == 1);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public boolean bindInitialModelVersion(UUID projectId, UUID deviceId, UUID deviceTypeId) {
         // ADR0059：目标类型锁阻止正常发布并发，单条SQL固定最新版本ID并以UPDATE RETURNING驱动唯一INITIAL。

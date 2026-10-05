@@ -65,7 +65,7 @@ public final class JacksonApplicationDraftContractValidator implements Applicati
     /** token审计和建树共用严格JSON工厂。 */
     private final ObjectReader objectReader = JsonMapper.builder(JsonFactory.builder().build()).build().reader();
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ValidatedApplicationDraft validate(String expectedRevision, byte[] source) {
         byte[] snapshot = snapshotRawInput(source);

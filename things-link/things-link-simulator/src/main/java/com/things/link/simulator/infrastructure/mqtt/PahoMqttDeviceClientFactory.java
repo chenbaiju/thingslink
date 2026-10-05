@@ -86,7 +86,7 @@ public class PahoMqttDeviceClientFactory implements MqttDeviceClientFactory {
         this.reconnectJitter = reconnectJitter;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public MqttDeviceClient connect(String brokerUri, String projectKey, String deviceKey, String accessToken) {
         try {
@@ -177,7 +177,7 @@ public class PahoMqttDeviceClientFactory implements MqttDeviceClientFactory {
             this.reconnectJitter = reconnectJitter;
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void subscribe(String topic, int qos, MqttDeviceMessageHandler handler) {
             Subscription subscription = new Subscription(qos, handler);
@@ -185,7 +185,7 @@ public class PahoMqttDeviceClientFactory implements MqttDeviceClientFactory {
             subscribeNow(topic, subscription);
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public CompletableFuture<Void> publish(String topic, byte[] payload, int qos, boolean retained) {
             // 已关闭即失败完成：关闭后任何迟到 publish 都不能再往在途集合登记，否则 close 的结算循环可能已退出，
@@ -293,7 +293,7 @@ public class PahoMqttDeviceClientFactory implements MqttDeviceClientFactory {
             }
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void forceConnectionLoss() {
             if (closed.get()) {
@@ -313,19 +313,19 @@ public class PahoMqttDeviceClientFactory implements MqttDeviceClientFactory {
             }
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public boolean isConnected() {
             return client.isConnected();
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public long connectionGeneration() {
             return connectionGeneration.get();
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public Instant lastConnectedAt() {
             return lastConnectedAt;
@@ -389,7 +389,7 @@ public class PahoMqttDeviceClientFactory implements MqttDeviceClientFactory {
             }
         }
 
-        /** {@inheritDoc} */
+        /** 沿用接口定义的契约。{@inheritDoc} */
         @Override
         public void close() {
             if (!closed.compareAndSet(false, true)) {

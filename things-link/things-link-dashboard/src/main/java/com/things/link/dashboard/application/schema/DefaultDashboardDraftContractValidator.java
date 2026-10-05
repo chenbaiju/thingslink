@@ -36,7 +36,7 @@ public class DefaultDashboardDraftContractValidator implements DashboardDraftCon
         this.schemaValidator = DashboardSchemaValidator.using(Objects.requireNonNull(parser, "parser"));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ValidatedDashboardDraft validate(String expectedRevision, byte[] source) {
         long revision = requireRevision(expectedRevision);

@@ -146,6 +146,7 @@ class ProjectCleanupDeviceTests {
                 ProjectCleanupDashboardCompatibilityFixture.emptyContributor(),
                 ProjectCleanupDashboardCompatibilityFixture.emptyOtaContributor(owner),
                 ProjectCleanupDashboardCompatibilityFixture.emptyIntegrationContributor(owner),
+                ProjectCleanupDashboardCompatibilityFixture.emptyAssistantContributor(owner),
                 proxy(new TelemetryProjectCleanupContributor(new JdbcTelemetryProjectCleanupRepository(app))));
         devices = new JdbcDeviceProjectCleanupRepository(app);
         List<ProjectCleanupContributor> contributors = new ArrayList<>(prerequisites);

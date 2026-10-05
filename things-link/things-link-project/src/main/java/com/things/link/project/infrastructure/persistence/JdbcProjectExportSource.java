@@ -33,7 +33,7 @@ public class JdbcProjectExportSource implements ProjectExportSource {
         this.accountDirectory = accountDirectory;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectExportScope authorizeRequest(UUID accountId, UUID projectId) {
         requireWritableTransaction();
@@ -63,7 +63,7 @@ public class JdbcProjectExportSource implements ProjectExportSource {
         return scope;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectDownloadScope authorizeDownload(UUID accountId, UUID projectId) {
         requireWritableTransaction();
@@ -90,7 +90,7 @@ public class JdbcProjectExportSource implements ProjectExportSource {
         return scope;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ProjectExportProject lockSnapshot(UUID tenantId, UUID projectId, long generation) {
         requireRepeatableReadTransaction();
@@ -110,7 +110,7 @@ public class JdbcProjectExportSource implements ProjectExportSource {
                 .stream().findFirst().orElseThrow(JdbcProjectExportSource::invisible);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public long streamMembers(UUID tenantId, UUID projectId, MemberSink sink) {
         long[] count = {0L};

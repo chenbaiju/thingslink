@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * C4a-1c 同步逐 handoff 证据记录器。
  *
- * <p>资格启用时，记录必须在 MQTT manual ACK 前写入并 {@link FileChannel#force(boolean)}；证据写失败会向上抛出，
+ * <p>资格启用时，记录必须在 MQTT 手动确认 前写入并 {@link FileChannel#force(boolean)}；证据写失败会向上抛出，
  * 从而保留 Broker 未确认消息。正常生产关闭时所有方法均为常数时间空操作。</p>
  */
 @Component

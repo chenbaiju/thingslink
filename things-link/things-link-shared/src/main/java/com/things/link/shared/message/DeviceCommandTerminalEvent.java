@@ -7,7 +7,7 @@ import java.util.UUID;
  * 设备命令或属性设置进入终态后，经事务 Outbox 发布的低敏回写事件。
  *
  * @param eventId Outbox 事件与消费幂等 ID
- * @param tenantId owner tenant
+ * @param tenantId 归属租户
  * @param projectId 项目隔离轴
  * @param commandId 稳定设备操作 ID
  * @param operationType 命令或属性设置

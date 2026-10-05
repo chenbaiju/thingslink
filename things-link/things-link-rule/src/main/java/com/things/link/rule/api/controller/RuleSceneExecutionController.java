@@ -37,34 +37,56 @@ public class RuleSceneExecutionController {
         this.service = service; this.authorization = authorization;
     }
 
-    /** 按场景、状态与落库时间查询执行事实，游标分页。 */
+    /**
+     * 按场景、状态与落库时间查询执行事实，游标分页。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param sceneId 手动场景标识
+     * @param status 状态筛选条件
+     * @param from 查询时间区间起点
+     * @param to 查询时间区间终点
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @return 符合条件的记录页及后续分页游标
+     */
     @GetMapping
     @Operation(summary = "查询场景执行记录", description = "手动场景执行事实列表，支持按场景、状态与时间筛选")
     public ResponseEntity<CursorPage<RuleSceneExecutionResponse>> list(
-            @PathVariable UUID projectId,
-            @RequestParam(required = false) UUID sceneId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "手动场景标识") @RequestParam(required = false) UUID sceneId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "状态筛选条件") @RequestParam(required = false) String status,
+            @io.swagger.v3.oas.annotations.Parameter(description = "查询时间区间起点") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @io.swagger.v3.oas.annotations.Parameter(description = "查询时间区间终点") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required = false) String cursor,
+            @io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
         authorization.requireProjectRead(projectId);
         RuleSceneExecutionQuery query = new RuleSceneExecutionQuery(projectId, sceneId, status, from, to, cursor, limit);
         return ResponseEntity.ok(service.list(query).map(RuleSceneExecutionResponse::from));
     }
 
-    /** 查询一次场景执行的详情：执行事实本体 + 通知与设备动作投递状态摘要。 */
+    /**
+     * 查询一次场景执行的详情：执行事实本体 + 通知与设备动作投递状态摘要。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param executionId 执行记录标识
+     * @return 当前接口的操作结果，响应结构见 {@code RuleSceneExecutionDetailResponse}
+     */
     @GetMapping("/{executionId}")
     @Operation(summary = "查询场景执行详情", description = "执行事实 + 通知与设备动作投递状态摘要")
-    public RuleSceneExecutionDetailResponse detail(@PathVariable UUID projectId, @PathVariable UUID executionId) {
+    public RuleSceneExecutionDetailResponse detail(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "执行记录标识") @PathVariable UUID executionId) {
         authorization.requireProjectRead(projectId);
         return RuleSceneExecutionDetailResponse.from(service.detail(projectId, executionId));
     }
 
-    /** 查询已产生过执行事实的场景选项，作为筛选下拉框数据源。 */
+    /**
+     * 查询已产生过执行事实的场景选项，作为筛选下拉框数据源。
+     *
+     * @param projectId 接口指定的项目标识
+     * @return 符合当前查询条件的结果列表
+     */
     @GetMapping("/scene-options")
     @Operation(summary = "查询场景执行记录筛选选项", description = "已产生过执行事实的场景 id 与当前名称，只读")
-    public List<RuleOptionResponse> sceneOptions(@PathVariable UUID projectId) {
+    public List<RuleOptionResponse> sceneOptions(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId) {
         authorization.requireProjectRead(projectId);
         return service.sceneOptions(projectId).stream().map(RuleOptionResponse::from).toList();
     }

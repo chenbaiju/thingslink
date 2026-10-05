@@ -34,7 +34,7 @@ public class JdbcTransactionalOutboxRepository implements TransactionalOutboxRep
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void append(OutboxEvent event) {
@@ -48,7 +48,7 @@ public class JdbcTransactionalOutboxRepository implements TransactionalOutboxRep
                 Timestamp.from(event.availableAt()));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public OutboxClaim claimReady(int maximumEvents, Duration leaseDuration) {
@@ -62,7 +62,7 @@ public class JdbcTransactionalOutboxRepository implements TransactionalOutboxRep
         return new OutboxClaim(leaseToken, events);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public Duration oldestUnpublishedAge(Instant now) {
@@ -74,7 +74,7 @@ public class JdbcTransactionalOutboxRepository implements TransactionalOutboxRep
         return Duration.ofSeconds(Math.max(0L, seconds == null ? 0L : seconds));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean markPublished(UUID eventId, UUID leaseToken) {
@@ -82,7 +82,7 @@ public class JdbcTransactionalOutboxRepository implements TransactionalOutboxRep
                 "SELECT mark_sys_outbox_event_published(?, ?)", Boolean.class, eventId, leaseToken));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean markRetry(UUID eventId, UUID leaseToken, Instant nextAvailableAt, String failureMessage) {

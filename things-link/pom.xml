@@ -51,6 +51,8 @@
 		<module>things-link-ingestion</module>
 		<!-- S6 告警域：拥有 alarm_ 表和告警状态机，不能借 telemetry 表存放告警事实。 -->
 		<module>things-link-alarm</module>
+		<!-- AG-1a：管理面受权证据，随 runtime 同源装配。 -->
+		<module>things-link-assistant</module>
 		<!-- S7 任务域：拥有 task_ 事实，并通过公开端口分页设备、投递命令。 -->
 		<module>things-link-task</module>
 		<!-- S8 规则域：先落不可信脚本沙箱，再逐片接规则事实与消息钩子。 -->
@@ -114,6 +116,8 @@
 		  升级 Spring Boot 时必须重新验证 /v3/api-docs 是否仍然正常。
 		-->
 		<springdoc.version>2.8.6</springdoc.version>
+		<!-- 模拟器只引用文档注解；与现有 springdoc 的注解版本一致，不引入平台服务依赖。 -->
+		<swagger-annotations.version>2.2.29</swagger-annotations.version>
 		<!-- MinIO Java SDK 同时兼容部署锁定的 S3 服务端；版本不在 Boot BOM 中，故集中声明。 -->
 		<minio.version>9.0.3</minio.version>
 		<!-- MinIO 9.0.3 的 Maven POM只带OkHttp多平台元数据包，JVM实现必须显式同版引入。 -->
@@ -176,6 +180,11 @@
 			<dependency>
 				<groupId>com.things.link</groupId>
 				<artifactId>things-link-ingestion</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.things.link</groupId>
+				<artifactId>things-link-assistant</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

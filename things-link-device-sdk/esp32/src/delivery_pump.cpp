@@ -1,6 +1,6 @@
-#include "baijulink/delivery_pump.hpp"
+#include "thingslink/delivery_pump.hpp"
 
-namespace baijulink {
+namespace thingslink {
 bool DeliveryPump::connected(std::uint64_t generation) {
     if (generation == 0 || generation <= generation_) return false;
     generation_ = generation; online_ = true; packet_id_ = last_packet_id_ = 0;

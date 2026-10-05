@@ -89,6 +89,14 @@ public class IdempotencyFilter extends OncePerRequestFilter {
      * 会把领域的稳定重试结果降成10014；新增同类端点必须同步此清单及领域幂等测试。
      */
     private static final List<DomainIdempotencyRoute> DOMAIN_IDEMPOTENCY_ROUTES = List.of(
+            // Agent凭据使用项目锁和版本CAS；每次重试确权，不持久原始秘密的请求摘要。
+            domainRoute("PUT", "^/api/v1/projects/[^/]+/assistant/model-configurations/deepseek-chat$"),
+            domainRoute("PATCH", "^/api/v1/projects/[^/]+/assistant/model-configurations/deepseek-chat$"),
+            domainRoute("DELETE", "^/api/v1/projects/[^/]+/assistant/model-configurations/deepseek-chat$"),
+            // 合成探针按冻结批次/样本持久单次认领，重放必须复核当前身份且返回409。
+            domainRoute("POST", "^/api/v1/projects/[^/]+/assistant/model-probes/[1-3]$"),
+            // 分析调用只依赖持久领域台账，同键重放必须重新确权，不能缓存运行响应。
+            domainRoute("POST", "^/api/v1/projects/[^/]+/assistant/analysis-runs$"),
             // 邀请接受由持久单次状态仲裁，不能让公共墓碑代替当前身份/码/权限复验。
             domainRoute("POST", "^/api/v1/project-invitations/[^/]+/accept$"),
             // 自部署申请按封套/部署身份在发行方库中幂等；公共墓碑不能抢先变成10014。
@@ -118,6 +126,10 @@ public class IdempotencyFilter extends OncePerRequestFilter {
      * 精确列举避免把普通POST误判为读。包含尚待S12实现的合同路由，用于阻止实现时默认落入旧行为。
      */
     private static final List<Pattern> READ_ONLY_POST_PATHS = List.of(
+            // 个人集合报告每次重验来源和权限，不能重放已删除或撤权的正文。
+            Pattern.compile("^/api/v1/projects/[^/]+/assistant/fact-reports/collection$"),
+            // 项目知识只读检索，每次重验当前授权和版本，不写公共墓碑。
+            Pattern.compile("^/api/v1/projects/[^/]+/assistant/knowledge/search$"),
             Pattern.compile("^/api/open/v1/devices/current-values/query$"),
             Pattern.compile("^/api/open/v1/alarms/query$"),
             Pattern.compile("^/api/v1/projects/[^/]+/devices/current-values/query$"),

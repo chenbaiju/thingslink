@@ -22,26 +22,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** JDBC 实例仓储；所有状态更新都以 version 作为 Compare-And-Set 前置条件。 */
+/** JDBC 实例仓储；所有状态更新都以 version 作为 比较后交换的前置条件。 */
 @Repository
 public class JdbcAlarmInstanceRepository implements AlarmInstanceRepository {
     /** 数据库访问器。 */ private final JdbcTemplate jdbcTemplate;
     /** @param jdbcTemplate 数据库访问器 */
     public JdbcAlarmInstanceRepository(JdbcTemplate jdbcTemplate) { this.jdbcTemplate = jdbcTemplate; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<AlarmInstance> findActive(UUID projectId, UUID ruleId, UUID originatorId, String alarmType) {
         return jdbcTemplate.query(instanceSelect() + """
                  WHERE project_id = ? AND rule_id = ? AND originator_id = ? AND alarm_type = ?
                    AND condition_state IN ('PENDING', 'ACTIVE')
                 """, this::mapInstance, projectId, ruleId, originatorId, alarmType).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<AlarmInstance> findById(UUID projectId, UUID instanceId) {
         return jdbcTemplate.query(instanceSelect() + " WHERE project_id = ? AND id = ?", this::mapInstance,
                 projectId, instanceId).stream().findFirst();
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public CursorPage<AlarmInstance> page(UUID projectId, String cursor, int limit) {
         Cursor position = Cursor.decode(cursor);
         List<AlarmInstance> rows = jdbcTemplate.query(instanceSelect() + """
@@ -53,7 +53,7 @@ public class JdbcAlarmInstanceRepository implements AlarmInstanceRepository {
         AlarmInstance last = items.getLast();
         return CursorPage.of(items, Cursor.encode(last.updatedAt(), last.id()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<AlarmInstance> findByDevices(UUID tenantId, UUID projectId, List<UUID> deviceIds,
             Set<AlarmInstance.ConditionState> conditionStates, Set<AlarmInstance.AckState> ackStates,
@@ -85,7 +85,7 @@ public class JdbcAlarmInstanceRepository implements AlarmInstanceRepository {
         return String.join(",", Collections.nCopies(count, "?"));
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public CursorPage<AlarmEvent> pageEvents(UUID projectId, UUID instanceId, String cursor, int limit) {
         Cursor position = Cursor.decode(cursor);
         List<AlarmEvent> rows = jdbcTemplate.query(eventSelect() + """
@@ -98,7 +98,7 @@ public class JdbcAlarmInstanceRepository implements AlarmInstanceRepository {
         AlarmEvent last = items.getLast();
         return CursorPage.of(items, Cursor.encode(last.receivedAt(), last.id()));
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public long countDistinctActiveDevices(UUID projectId) {
         Long count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(DISTINCT originator_id) FROM alarm_instance
@@ -143,7 +143,7 @@ public class JdbcAlarmInstanceRepository implements AlarmInstanceRepository {
                         }), projectId, afterDeviceId, afterDeviceId, limit);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean create(AlarmInstance value) {
         return jdbcTemplate.update("""
                 INSERT INTO alarm_instance (id, tenant_id, project_id, rule_id, originator_type, originator_id,
@@ -161,7 +161,7 @@ public class JdbcAlarmInstanceRepository implements AlarmInstanceRepository {
                 time(value.lastOccurredAt()), value.lastValue(), value.version(), time(value.createdAt()),
                 time(value.updatedAt())) == 1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean update(AlarmInstance value) {
         return jdbcTemplate.update("""
                 UPDATE alarm_instance SET severity = ?, condition_state = ?, ack_state = ?, clear_reason = ?,
@@ -175,7 +175,7 @@ public class JdbcAlarmInstanceRepository implements AlarmInstanceRepository {
                 time(value.lastReceivedAt()), time(value.lastOccurredAt()), value.lastValue(), time(value.updatedAt()),
                 value.projectId(), value.id(), value.version()) == 1;
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public boolean appendEvent(AlarmEvent event) {
         return jdbcTemplate.update("""
                 INSERT INTO alarm_event (id, tenant_id, project_id, instance_id, event_type, source_message_id,

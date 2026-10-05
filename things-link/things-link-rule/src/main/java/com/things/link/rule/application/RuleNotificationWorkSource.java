@@ -25,7 +25,7 @@ public class RuleNotificationWorkSource implements NotificationWorkSource {
         this.service = service;
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public List<NotificationWork> claim(int limit, Duration leaseDuration) {
         RuleNotificationDeliveryStore.DispatchClaim claim = store.claimDispatches(limit, leaseDuration);
@@ -45,13 +45,13 @@ public class RuleNotificationWorkSource implements NotificationWorkSource {
         }).toList();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public String sourceName() {
         return "rule";
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public BacklogAges observeAges() {
         RuleNotificationDeliveryStore.DispatchAges ages = store.dispatchAges();

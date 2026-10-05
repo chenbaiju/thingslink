@@ -39,44 +39,74 @@ public class OtaCampaignRuntimeController {
         this.authorization = authorization;
         this.service = service;
     }
-    /** 读取当前执行事实，不返回URL或租约。 */
+    /**
+     * 读取当前执行事实，不返回URL或租约。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param campaignId 升级活动标识
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaCampaignExecutionResponse>}
+     */
     @GetMapping("/execution")
-    @Operation(operationId = "getOtaCampaignExecution", summary = "读取OTA活动执行事实")
-    public ResponseEntity<OtaCampaignExecutionResponse> find(@PathVariable UUID projectId, @PathVariable UUID campaignId) {
+    @Operation(operationId = "getOtaCampaignExecution", summary = "读取OTA活动执行事实", description = "读取当前执行事实，不返回URL或租约。")
+    public ResponseEntity<OtaCampaignExecutionResponse> find(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "升级活动标识") @PathVariable UUID campaignId) {
         manage(projectId);
         return response(service.find(projectId, campaignId));
     }
-    /** 到达冻结排程时间后启动第一批，实际准入由后台事务执行。 */
+    /**
+     * 到达冻结排程时间后启动第一批，实际准入由后台事务执行。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param campaignId 升级活动标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaCampaignExecutionResponse>}
+     */
     @PostMapping(value = "/starting", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "startOtaCampaign", summary = "启动OTA活动")
+    @Operation(operationId = "startOtaCampaign", summary = "启动OTA活动", description = "到达冻结排程时间后启动第一批，实际准入由后台事务执行。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = Starting.class)))
-    public ResponseEntity<OtaCampaignExecutionResponse> start(@PathVariable UUID projectId, @PathVariable UUID campaignId,
-            @Parameter(required = true) @RequestHeader(value = "Idempotency-Key", required = false) String key,
+    public ResponseEntity<OtaCampaignExecutionResponse> start(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "升级活动标识") @PathVariable UUID campaignId,
+            @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody byte[] body) {
         manage(projectId);
         var fields = fields(body, Set.of("expectedRevision"));
         return response(service.start(projectId, campaignId, key, fields.get("expectedRevision")));
     }
-    /** 关闭新准入，不撤回已受理通知或中断刷写。 */
+    /**
+     * 关闭新准入，不撤回已受理通知或中断刷写。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param campaignId 升级活动标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaCampaignExecutionResponse>}
+     */
     @PostMapping(value = "/pauses", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "pauseOtaCampaign", summary = "暂停OTA活动")
+    @Operation(operationId = "pauseOtaCampaign", summary = "暂停OTA活动", description = "关闭新准入，不撤回已受理通知或中断刷写。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = Change.class)))
-    public ResponseEntity<OtaCampaignExecutionResponse> pause(@PathVariable UUID projectId, @PathVariable UUID campaignId,
-            @Parameter(required = true) @RequestHeader(value = "Idempotency-Key", required = false) String key,
+    public ResponseEntity<OtaCampaignExecutionResponse> pause(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "升级活动标识") @PathVariable UUID campaignId,
+            @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody byte[] body) {
         manage(projectId);
         var fields = fields(body, Set.of("expectedRevision", "reason"));
         return response(service.pause(projectId, campaignId, key, fields.get("expectedRevision"), fields.get("reason")));
     }
-    /** 重新验真安全条件，人工原因不能覆盖安全暂停。 */
+    /**
+     * 重新验真安全条件，人工原因不能覆盖安全暂停。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param campaignId 升级活动标识
+     * @param key 本次操作的幂等键，用于识别重复提交
+     * @param body 原始请求体字节，由当前接口按请求契约解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<OtaCampaignExecutionResponse>}
+     */
     @PostMapping(value = "/resumptions", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "resumeOtaCampaign", summary = "恢复OTA活动")
+    @Operation(operationId = "resumeOtaCampaign", summary = "恢复OTA活动", description = "重新验真安全条件，人工原因不能覆盖安全暂停。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = Change.class)))
-    public ResponseEntity<OtaCampaignExecutionResponse> resume(@PathVariable UUID projectId, @PathVariable UUID campaignId,
-            @Parameter(required = true) @RequestHeader(value = "Idempotency-Key", required = false) String key,
+    public ResponseEntity<OtaCampaignExecutionResponse> resume(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "升级活动标识") @PathVariable UUID campaignId,
+            @Parameter(required = true, description = "本次操作的幂等键，用于识别重复提交") @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody byte[] body) {
         manage(projectId);
         var fields = fields(body, Set.of("expectedRevision", "reason"));

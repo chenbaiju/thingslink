@@ -25,7 +25,7 @@ public enum DashboardSchemaContractVersion {
     /**
      * 返回稳定协议值。
      *
-     * @return {@code tc.dashboard/v1}
+     * @return 固定的看板契约版本 {@code tc.dashboard/v1}
      */
     public String value() {
         return value;

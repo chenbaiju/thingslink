@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
 
-/** Caller owns project permission/generation before domain row locks; this port only persists its trusted fact. */
+/** 调用方须在领域行锁之前持有项目权限及代次保护；此端口仅持久化可信事实。 */
 @Component
 public class PublicWebhookSourceWriter {
     private final TransactionalOutboxRepository outbox;

@@ -50,7 +50,7 @@ class ApiKeyCleanupIntegrationTests extends AbstractIntegrationTest {
         assertThat(tx.execute(s->cleanup.clean(claim(a))).complete()).isTrue();
         assertThat(owner.queryForObject("SELECT count(*) FROM integ_api_key_operation WHERE project_id=?",Integer.class,a.project())).isEqualTo(1);
         assertThat(ProjectCleanupStage.OTA.next()).isEqualTo(ProjectCleanupStage.INTEGRATION);
-        assertThat(ProjectCleanupStage.INTEGRATION.next()).isEqualTo(ProjectCleanupStage.TELEMETRY);
+        assertThat(ProjectCleanupStage.INTEGRATION.next()).isEqualTo(ProjectCleanupStage.ASSISTANT);
     }
     @Test void wrongTokenTenantGenerationStageAndExpiredLeaseCannotDelete(){
         var a=seed(1);var normal=claim(a);

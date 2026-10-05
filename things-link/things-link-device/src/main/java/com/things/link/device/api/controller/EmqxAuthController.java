@@ -31,6 +31,13 @@ public class EmqxAuthController {
         this.service=service;this.applications=applications.getIfAvailable();
     }
 
+    /**
+     * MQTT 客户端认证。
+     * 校验设备、durable ingress或独立应用票据；应用必须有受信zone及peerhost
+     *
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<Map<String, Object>>}
+     */
     @PostMapping("/api/v1/emqx/auth")
     @Operation(summary = "MQTT 客户端认证", description = "校验设备、durable ingress或独立应用票据；应用必须有受信zone及peerhost")
     /** @param body EMQX 回调的 JSON 载荷，包含 username、password、clientid */

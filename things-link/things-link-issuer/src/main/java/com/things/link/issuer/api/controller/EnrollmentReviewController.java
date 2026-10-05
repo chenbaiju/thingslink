@@ -31,9 +31,16 @@ public class EnrollmentReviewController {
         this.reviews = reviews;
     }
 
+    /**
+     * 读取待审申请的核验摘要。
+     * 仅审核者可读取申请摘要和核验进度；不返回原始公钥或组织材料
+     *
+     * @param requestId 自部署登记申请标识
+     * @return 当前接口的操作结果，响应结构见 {@code ReviewDetail}
+     */
     @GetMapping
     @Operation(summary = "读取待审申请的核验摘要", description = "仅审核者可读取申请摘要和核验进度；不返回原始公钥或组织材料")
-    public ReviewDetail detail(@PathVariable UUID requestId) {
+    public ReviewDetail detail(@io.swagger.v3.oas.annotations.Parameter(description = "自部署登记申请标识") @PathVariable UUID requestId) {
         try {
             return reviews.detail(requestId);
         } catch (EnrollmentReviewNotFoundException absent) {
@@ -43,9 +50,17 @@ public class EnrollmentReviewController {
         }
     }
 
+    /**
+     * 追加申请核验事实。
+     * 审核者须独立核对部署、租户、双摘要、组织材料及档位；此操作不签发授权
+     *
+     * @param requestId 自部署登记申请标识
+     * @param input 待追加的申请核验事实
+     * @return 当前接口的操作结果，响应结构见 {@code ReviewProgress}
+     */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "追加申请核验事实", description = "审核者须独立核对部署、租户、双摘要、组织材料及档位；此操作不签发授权")
-    public ReviewProgress attest(@PathVariable UUID requestId, @RequestBody ReviewInput input) {
+    public ReviewProgress attest(@io.swagger.v3.oas.annotations.Parameter(description = "自部署登记申请标识") @PathVariable UUID requestId, @RequestBody ReviewInput input) {
         try {
             return reviews.attest(requestId, input);
         } catch (EnrollmentReviewNotFoundException absent) {

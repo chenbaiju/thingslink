@@ -6,6 +6,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/ci-common.sh"
 run_backend() {
   verify_java
   verify_need python3
+  bash "$VERIFY_ROOT/things-link-agent/scripts/verify.sh"
   python3 -m unittest scripts.tests.test_workflow_contracts
   python3 -m unittest scripts.tests.test_ci_resource_monitor
   python3 -m unittest scripts.tests.test_check_flyway_migrations

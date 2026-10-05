@@ -9,6 +9,7 @@ import com.things.link.project.application.ProjectDailyQuotaDecisionService;
 import com.things.link.project.application.QuotaMetric;
 import com.things.link.project.application.QuotaStatus;
 import org.springframework.transaction.annotation.Transactional;
+/** 可信 Webhook 来源准入；同一事务内校验项目代次、去重、预算及积压，再写入投递意图。 */
 @Service
 public class WebhookEventAdmission {
     private final WebhookEventRepository events;private final WebhookEventCodec codec;private final ProjectLifecycleAccessService projects;private final TransactionLocalRlsScope rls;private final WebhookAdmissionMetrics metrics;private final boolean enabled;private final ProjectDailyQuotaDecisionService quota;

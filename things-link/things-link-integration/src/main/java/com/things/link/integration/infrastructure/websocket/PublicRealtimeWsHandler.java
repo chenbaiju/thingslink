@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-/** One writer per connection; persistent data budget 256 and independent control budget 16. */
+/** 每条连接仅一个写入者；持久数据预算为 256，独立控制预算为 16。 */
 @Component
 @DataPlaneDatabase
 public class PublicRealtimeWsHandler extends AbstractWebSocketHandler implements DisposableBean {

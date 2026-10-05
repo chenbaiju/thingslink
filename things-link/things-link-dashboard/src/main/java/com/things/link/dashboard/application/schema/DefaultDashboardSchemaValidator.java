@@ -29,7 +29,7 @@ final class DefaultDashboardSchemaValidator implements DashboardSchemaValidator 
         this.parser = Objects.requireNonNull(parser, "parser");
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public DashboardSchemaValidationResult validateAndNormalize(byte[] source) {
         ParsedDashboardSchema parsed = parser.parse(source);

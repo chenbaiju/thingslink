@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /** 独立Console严格历史入口，保留旧历史接口的既有响应与失败语义。 */
+@io.swagger.v3.oas.annotations.tags.Tag(name = "控制台版本化历史", description = "按模型版本和属性键查询遥测历史")
 @RestController
 @Validated
 @RequestMapping("/api/v1/projects/{projectId}/devices/{deviceId}/telemetry/property/history/versioned")
@@ -53,9 +54,19 @@ public class ConsoleVersionedHistoryController {
         this.mapper = mapper;
     }
 
-    /** @param projectId 项目 @param deviceId 设备 @param propertyKey 顶层属性 @param expectedModelVersionId 精确模型
-     * @param from 包含起点 @param to 不含终点 @param granularity 请求粒度 @param aggregation 聚合方式
-     * @param request 原始参数集合 @return 不缓存的完整有界版本化响应
+    /**
+     * 读取Console 严格版本化属性历史。
+     *
+     * @param projectId 项目
+     * @param deviceId 设备
+     * @param propertyKey 顶层属性
+     * @param expectedModelVersionId 精确模型
+     * @param from 包含起点
+     * @param to 不含终点
+     * @param granularity 请求粒度
+     * @param aggregation 聚合方式
+     * @param request 原始参数集合
+     * @return 不缓存的完整有界版本化响应
      */
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "503", description = "套餐历史窗口不可用（50048）", content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = com.things.link.shared.error.ApiError.class)))
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,13 +74,13 @@ public class ConsoleVersionedHistoryController {
     @SecurityRequirement(name = "consoleAccessBearer")
     @ApiResponse(responseCode = "200", description = "完整历史，最多2000点和4MiB；最终粒度仍超限则拒绝",
             content = @Content(schema = @Schema(implementation = PropertyHistoryResponse.class)))
-    public ResponseEntity<byte[]> query(@PathVariable UUID projectId, @PathVariable UUID deviceId,
-            @RequestParam @Pattern(regexp = "[A-Za-z0-9_-]{1,64}") String propertyKey,
-            @RequestParam UUID expectedModelVersionId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(defaultValue = "RAW") HistoryGranularity granularity,
-            @RequestParam(defaultValue = "AVG") HistoryAggregation aggregation, HttpServletRequest request) {
+    public ResponseEntity<byte[]> query(@io.swagger.v3.oas.annotations.Parameter(description = "项目") @PathVariable UUID projectId, @io.swagger.v3.oas.annotations.Parameter(description = "设备") @PathVariable UUID deviceId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "顶层属性") @RequestParam @Pattern(regexp = "[A-Za-z0-9_-]{1,64}") String propertyKey,
+            @io.swagger.v3.oas.annotations.Parameter(description = "精确模型") @RequestParam UUID expectedModelVersionId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "包含起点") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @io.swagger.v3.oas.annotations.Parameter(description = "不含终点") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @io.swagger.v3.oas.annotations.Parameter(description = "请求粒度") @RequestParam(defaultValue = "RAW") HistoryGranularity granularity,
+            @io.swagger.v3.oas.annotations.Parameter(description = "聚合方式") @RequestParam(defaultValue = "AVG") HistoryAggregation aggregation, HttpServletRequest request) {
         projects.requireRoleInProject(projectId);
         if (request.getParameterMap().entrySet().stream().anyMatch(entry -> !PARAMETERS.contains(entry.getKey())
                 || entry.getValue().length != 1 || entry.getValue()[0].isBlank())) {

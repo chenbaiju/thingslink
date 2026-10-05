@@ -108,7 +108,7 @@ public class KafkaTraceConfiguration {
      *
      * @param configurer Boot 默认配置器
      * @param consumerFactory 消费者工厂
-     * @return 默认 Kafka listener factory
+     * @return 默认 Kafka 监听器工厂
      */
     @Bean(name = "kafkaListenerContainerFactory")
     @ConditionalOnMissingBean(name = "kafkaListenerContainerFactory")
@@ -271,7 +271,7 @@ public class KafkaTraceConfiguration {
     /**
      * 为已具备稳定幂等身份的数据库持久入口建立异常分类与 offset 边界。
      *
-     * @param recoverer 只有 DLQ Broker ACK 后才返回的恢复器
+     * @param recoverer 只有 死信队列消息代理确认 后才返回的恢复器
      * @param backOff 有界数据库恢复窗口
      * @return 默认拒绝未知错误、只重试数据库基础设施异常和窄化租约冲突的处理器
      */

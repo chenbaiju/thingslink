@@ -32,7 +32,7 @@ public class JdbcDashboardShareRuntimeRepository implements DashboardShareRuntim
     /** @param jdbc 已配置项目RLS的事务感知连接 */
     public JdbcDashboardShareRuntimeRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<DashboardShareRuntimeIdentity> locate(UUID shareId, String secretHash) {
         return jdbc.query("SELECT tenant_id, project_id FROM public.resolve_dashboard_share_identity(?,?)",
@@ -40,7 +40,7 @@ public class JdbcDashboardShareRuntimeRepository implements DashboardShareRuntim
                         row.getObject("project_id", UUID.class)), shareId, secretHash).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<DashboardShareRuntimeState> findState(UUID tenantId, UUID projectId, UUID shareId, String secretHash) {
@@ -64,7 +64,7 @@ public class JdbcDashboardShareRuntimeRepository implements DashboardShareRuntim
                 tenantId, projectId, shareId, secretHash).stream().findFirst();
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public List<DashboardShareVariableScope> findScopes(UUID tenantId, UUID projectId, UUID shareId) {

@@ -72,7 +72,9 @@ public final class AccessComponentFilter implements TypeFilter {
         var metadata = reader.getClassMetadata();
         var annotations = reader.getAnnotationMetadata();
         String name = metadata.getClassName();
-        if (name.startsWith("com.things.link.ota.")
+        if (name.startsWith("com.things.link.assistant.")
+                || name.equals("com.things.link.device.application.ConsoleDeviceEvidenceService")
+                || name.startsWith("com.things.link.ota.")
                 || name.startsWith("com.things.link.export.")
                 || name.startsWith("com.things.link.rule.")
                 || name.startsWith("com.things.link.alarm.")

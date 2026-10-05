@@ -75,7 +75,7 @@ public class GraalJsScriptSandbox implements ScriptSandbox {
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ScriptValidationResult validate(ScriptKind kind, String source) {
         if (kind == null || source == null || source.isBlank()) {
@@ -111,7 +111,7 @@ public class GraalJsScriptSandbox implements ScriptSandbox {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public ScriptExecutionResult execute(ScriptExecutionRequest request) {
         long started = System.nanoTime();

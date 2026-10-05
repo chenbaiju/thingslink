@@ -77,7 +77,7 @@ public class JdbcDeviceAccessSessionRepository implements DeviceAccessSessionRep
                 """, this::mapBinding, deviceId, tenantId, projectId, protocol.name(), heartbeatSeconds);
     }
 
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public DeviceAccessBinding changeBinding(UUID tenantId, UUID projectId, UUID deviceId, long expectedVersion,

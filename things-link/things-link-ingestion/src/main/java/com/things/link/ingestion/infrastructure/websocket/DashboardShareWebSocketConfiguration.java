@@ -40,4 +40,21 @@ public class DashboardShareWebSocketConfiguration implements WebSocketConfigurer
                 .setHandshakeHandler(new DashboardHandshakeHandler(DashboardShareHandshakeInterceptor.PROTOCOL))
                 .setAllowedOrigins(properties.enabled()?new String[]{properties.hostOrigin()}:new String[0]);
     }
+
+    /**
+     * 描述原生 HTTP 升级入口，生产关闭文档时不创建此文档 Bean。
+     *
+     * @return 只维护契约、不注册运行路由的文档修正器
+     */
+    @org.springframework.context.annotation.Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "springdoc.api-docs.enabled", havingValue = "true", matchIfMissing = true)
+    public org.springdoc.core.customizers.OpenApiCustomizer shareHandshakeDocumentation() {
+        return api -> {
+            com.things.link.support.openapi.HttpTransportOpenApiDocumentation.webSocket(api,
+                    "/ws/shares/*/properties", "upgradeShareProperties", "建立匿名分享属性实时连接",
+                    "默认关闭；启用后必须匹配配置的宿主 Origin、分享能力与连接租约；不借用 Console JWT。",
+                    "发送 tc.share.properties.v1 与 share.<分享能力>，凭据必须为规范 sh_ 格式", true);
+        };
+    }
 }

@@ -30,7 +30,7 @@ public interface MqttDeviceClient {
      *
      * @param topic 完整 Topic
      * @param payload UTF-8 或二进制载荷
-     * @param qos MQTT QoS
+     * @param qos MQTT 服务质量等级
      * @param retained 是否保留消息
      * @return 发布交付收据；连接断开前未收到 PUBACK 时以异常完成
      */

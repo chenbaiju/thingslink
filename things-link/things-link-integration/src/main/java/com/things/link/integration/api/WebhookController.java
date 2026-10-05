@@ -25,7 +25,7 @@ import java.util.*;
 /** ADR0211：Console管理适配，写入保留原事务/操作身份，秘密不参与恢复。 */
 @RestController
 @RequestMapping("/api/v1/projects/{projectId}/webhooks")
-@Tag(name="公开Webhook管理")
+@Tag(name="公开Webhook管理", description = "项目 Webhook 订阅、签名密钥、投递与恢复状态")
 public class WebhookController {
     private final WebhookSubscriptionService subscriptions; private final WebhookRecoveryService recovery;
     private final WebhookQueryService queries; private final ProjectService projects;
@@ -34,74 +34,199 @@ public class WebhookController {
             ProjectService projects,ObjectMapper json,Validator validator,@Value("${things-link.integration.webhook.enabled:false}") boolean enabled) {
         this.subscriptions=subscriptions;this.recovery=recovery;this.queries=queries;this.projects=projects;this.json=json;this.validator=validator;this.enabled=enabled;
     }
+    /**
+     * 创建Webhook并首次展示签名秘密。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookIssued>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
-    @PostMapping @Operation(operationId="createProjectWebhook",summary="创建Webhook并首次展示签名秘密")
+    @PostMapping @Operation(operationId="createProjectWebhook",summary="创建Webhook并首次展示签名秘密", description = "创建Webhook并首次展示签名秘密。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=WebhookCreate.class)))
-    public ResponseEntity<WebhookIssued> create(@PathVariable UUID projectId,@RequestBody JsonNode body,HttpServletRequest http) {
+    public ResponseEntity<WebhookIssued> create(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@RequestBody JsonNode body,HttpServletRequest http) {
         var actor=identity(projectId,http);var input=parse(body,WebhookCreate.class,http);var result=subscriptions.create(actor.tenant(),projectId,actor.actor(),input.operationId(),input.spec());
         return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore()).body(WebhookIssued.from(result));
     }
+    /**
+     * 更新Webhook冻结修订，换目标时首次展示新秘密。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param subscriptionId Webhook 订阅标识
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookIssued>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
-    @PutMapping("/{subscriptionId}") @Operation(operationId="updateProjectWebhook",summary="更新Webhook冻结修订，换目标时首次展示新秘密")
+    @PutMapping("/{subscriptionId}") @Operation(operationId="updateProjectWebhook",summary="更新Webhook冻结修订，换目标时首次展示新秘密", description = "更新Webhook冻结修订，换目标时首次展示新秘密。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=WebhookUpdate.class)))
-    public ResponseEntity<WebhookIssued> update(@PathVariable UUID projectId,@PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http) {
+    public ResponseEntity<WebhookIssued> update(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "Webhook 订阅标识") @PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http) {
         var actor=identity(projectId,http);long revision=revision(body);var input=parse(body,WebhookUpdate.class,http);
         return noStore(WebhookIssued.from(subscriptions.change(actor.tenant(),projectId,actor.actor(),input.operationId(),subscriptionId,revision,"UPDATE",input.spec())));
     }
+    /**
+     * 暂停Webhook，禁止旧修订发送。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param subscriptionId Webhook 订阅标识
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookIssued>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
-    @PostMapping("/{subscriptionId}/pause") @Operation(operationId="pauseProjectWebhook",summary="暂停Webhook，禁止旧修订发送")
+    @PostMapping("/{subscriptionId}/pause") @Operation(operationId="pauseProjectWebhook",summary="暂停Webhook，禁止旧修订发送", description = "暂停Webhook，禁止旧修订发送。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=WebhookChange.class)))
-    public ResponseEntity<WebhookIssued> pause(@PathVariable UUID projectId,@PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"PAUSE");}
+    public ResponseEntity<WebhookIssued> pause(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "Webhook 订阅标识") @PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"PAUSE");}
+    /**
+     * 恢复Webhook，仅接收之后新事件。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param subscriptionId Webhook 订阅标识
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookIssued>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
-    @PostMapping("/{subscriptionId}/resume") @Operation(operationId="resumeProjectWebhook",summary="恢复Webhook，仅接收之后新事件")
+    @PostMapping("/{subscriptionId}/resume") @Operation(operationId="resumeProjectWebhook",summary="恢复Webhook，仅接收之后新事件", description = "恢复Webhook，仅接收之后新事件。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=WebhookChange.class)))
-    public ResponseEntity<WebhookIssued> resume(@PathVariable UUID projectId,@PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"RESUME");}
+    public ResponseEntity<WebhookIssued> resume(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "Webhook 订阅标识") @PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"RESUME");}
+    /**
+     * 永久撤销Webhook。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param subscriptionId Webhook 订阅标识
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookIssued>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
-    @PostMapping("/{subscriptionId}/revoke") @Operation(operationId="revokeProjectWebhook",summary="永久撤销Webhook")
+    @PostMapping("/{subscriptionId}/revoke") @Operation(operationId="revokeProjectWebhook",summary="永久撤销Webhook", description = "永久撤销Webhook。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=WebhookChange.class)))
-    public ResponseEntity<WebhookIssued> revoke(@PathVariable UUID projectId,@PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"REVOKE");}
+    public ResponseEntity<WebhookIssued> revoke(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "Webhook 订阅标识") @PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"REVOKE");}
+    /**
+     * 轮换Webhook签名秘密，仅首次展示。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param subscriptionId Webhook 订阅标识
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookIssued>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
-    @PostMapping("/{subscriptionId}/rotate") @Operation(operationId="rotateProjectWebhook",summary="轮换Webhook签名秘密，仅首次展示")
+    @PostMapping("/{subscriptionId}/rotate") @Operation(operationId="rotateProjectWebhook",summary="轮换Webhook签名秘密，仅首次展示", description = "轮换Webhook签名秘密，仅首次展示。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=WebhookChange.class)))
-    public ResponseEntity<WebhookIssued> rotate(@PathVariable UUID projectId,@PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"ROTATE");}
+    public ResponseEntity<WebhookIssued> rotate(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "Webhook 订阅标识") @PathVariable UUID subscriptionId,@RequestBody JsonNode body,HttpServletRequest http){return change(projectId,subscriptionId,body,http,"ROTATE");}
     private ResponseEntity<WebhookIssued> change(UUID project,UUID id,JsonNode body,HttpServletRequest http,String kind) {
         var actor=identity(project,http);long revision=revision(body);var input=parse(body,WebhookChange.class,http);
         return noStore(WebhookIssued.from(subscriptions.change(actor.tenant(),project,actor.actor(),input.operationId(),id,revision,kind,null)));
     }
-    @GetMapping @Operation(operationId="listProjectWebhooks",summary="分页查询当前Webhook订阅")
-    public ResponseEntity<CursorPage<WebhookSubscriptionView>> list(@PathVariable UUID projectId,@RequestParam(required=false) String cursor,@RequestParam(defaultValue="20") int limit,HttpServletRequest http) {
+    /**
+     * 分页查询当前Webhook订阅。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 符合条件的记录页及后续分页游标
+     */
+    @GetMapping @Operation(operationId="listProjectWebhooks",summary="分页查询当前Webhook订阅", description = "分页查询当前Webhook订阅。")
+    public ResponseEntity<CursorPage<WebhookSubscriptionView>> list(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required=false) String cursor,@io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue="20") int limit,HttpServletRequest http) {
         var actor=identity(projectId,http);return noStore(subscriptions.list(actor.tenant(),projectId,actor.actor(),cursor,limit).map(WebhookSubscriptionView::from));
     }
-    @GetMapping("/{subscriptionId}") @Operation(operationId="getProjectWebhook",summary="查询当前订阅，不返回秘密")
-    public ResponseEntity<WebhookSubscriptionView> get(@PathVariable UUID projectId,@PathVariable UUID subscriptionId,HttpServletRequest http) {
+    /**
+     * 查询当前订阅，不返回秘密。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param subscriptionId Webhook 订阅标识
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookSubscriptionView>}
+     */
+    @GetMapping("/{subscriptionId}") @Operation(operationId="getProjectWebhook",summary="查询当前订阅，不返回秘密", description = "查询当前订阅，不返回秘密。")
+    public ResponseEntity<WebhookSubscriptionView> get(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "Webhook 订阅标识") @PathVariable UUID subscriptionId,HttpServletRequest http) {
         var actor=identity(projectId,http);return noStore(WebhookSubscriptionView.from(subscriptions.get(actor.tenant(),projectId,actor.actor(),subscriptionId)));
     }
-    @GetMapping("/operations/{operationId}") @Operation(operationId="recoverProjectWebhookOperation",summary="恢复原订阅操作元数据，不恢复秘密")
-    public ResponseEntity<WebhookOperationView> operation(@PathVariable UUID projectId,@PathVariable UUID operationId,HttpServletRequest http) {
+    /**
+     * 恢复原订阅操作元数据，不恢复秘密。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param operationId 管理操作标识，用于定位幂等回执
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookOperationView>}
+     */
+    @GetMapping("/operations/{operationId}") @Operation(operationId="recoverProjectWebhookOperation",summary="恢复原订阅操作元数据，不恢复秘密", description = "恢复原订阅操作元数据，不恢复秘密。")
+    public ResponseEntity<WebhookOperationView> operation(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "管理操作标识，用于定位幂等回执") @PathVariable UUID operationId,HttpServletRequest http) {
         var actor=identity(projectId,http);var value=subscriptions.recover(actor.tenant(),projectId,actor.actor(),operationId);
         return noStore(new WebhookOperationView(value.operationId(),value.resultId(),value.kind(),value.resultRevision(),WebhookSubscriptionView.from(value.current())));
     }
-    @GetMapping("/deliveries") @Operation(operationId="listProjectWebhookDeliveries",summary="按当前管理资格分页查询投递")
-    public ResponseEntity<CursorPage<WebhookQueryRepository.DeliveryView>> deliveries(@PathVariable UUID projectId,@RequestParam(required=false) UUID subscriptionId,@RequestParam(required=false) String status,@RequestParam(required=false) String cursor,@RequestParam(defaultValue="20") int limit,HttpServletRequest http) {
+    /**
+     * 按当前管理资格分页查询投递。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param subscriptionId Webhook 订阅标识
+     * @param status 状态筛选条件
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 符合条件的记录页及后续分页游标
+     */
+    @GetMapping("/deliveries") @Operation(operationId="listProjectWebhookDeliveries",summary="按当前管理资格分页查询投递", description = "按当前管理资格分页查询投递。")
+    public ResponseEntity<CursorPage<WebhookQueryRepository.DeliveryView>> deliveries(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "Webhook 订阅标识") @RequestParam(required=false) UUID subscriptionId,@io.swagger.v3.oas.annotations.Parameter(description = "状态筛选条件") @RequestParam(required=false) String status,@io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required=false) String cursor,@io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue="20") int limit,HttpServletRequest http) {
         var actor=identity(projectId,http);return noStore(queries.deliveries(actor.tenant(),projectId,actor.actor(),subscriptionId,status,cursor,limit));
     }
-    @GetMapping("/deliveries/{deliveryId}") @Operation(operationId="getProjectWebhookDelivery",summary="查询冻结目标及有界尝试，不返回正文或租约")
-    public ResponseEntity<WebhookQueryRepository.DeliveryDetail> delivery(@PathVariable UUID projectId,@PathVariable UUID deliveryId,HttpServletRequest http) {
+    /**
+     * 查询冻结目标及有界尝试，不返回正文或租约。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deliveryId 投递记录标识
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookQueryRepository.DeliveryDetail>}
+     */
+    @GetMapping("/deliveries/{deliveryId}") @Operation(operationId="getProjectWebhookDelivery",summary="查询冻结目标及有界尝试，不返回正文或租约", description = "查询冻结目标及有界尝试，不返回正文或租约。")
+    public ResponseEntity<WebhookQueryRepository.DeliveryDetail> delivery(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "投递记录标识") @PathVariable UUID deliveryId,HttpServletRequest http) {
         var actor=identity(projectId,http);return noStore(queries.detail(actor.tenant(),projectId,actor.actor(),deliveryId));
     }
-    @GetMapping("/events") @Operation(operationId="listProjectWebhookEvents",summary="查询指定事件类型的受理与拒绝元数据")
-    public ResponseEntity<CursorPage<WebhookQueryRepository.EventView>> events(@PathVariable UUID projectId,@RequestParam String eventType,@RequestParam(required=false) String result,@RequestParam(required=false) String cursor,@RequestParam(defaultValue="20") int limit,HttpServletRequest http) {
+    /**
+     * 查询指定事件类型的受理与拒绝元数据。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param eventType 事件类型筛选值
+     * @param result 受理结果筛选值
+     * @param cursor 可选分页游标，继续读取上一页后的记录
+     * @param limit 分页条数，具体边界由当前接口校验
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 符合条件的记录页及后续分页游标
+     */
+    @GetMapping("/events") @Operation(operationId="listProjectWebhookEvents",summary="查询指定事件类型的受理与拒绝元数据", description = "查询指定事件类型的受理与拒绝元数据。")
+    public ResponseEntity<CursorPage<WebhookQueryRepository.EventView>> events(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "事件类型筛选值") @RequestParam String eventType,@io.swagger.v3.oas.annotations.Parameter(description = "受理结果筛选值") @RequestParam(required=false) String result,@io.swagger.v3.oas.annotations.Parameter(description = "可选分页游标，继续读取上一页后的记录") @RequestParam(required=false) String cursor,@io.swagger.v3.oas.annotations.Parameter(description = "分页条数，具体边界由当前接口校验") @RequestParam(defaultValue="20") int limit,HttpServletRequest http) {
         var actor=identity(projectId,http);return noStore(queries.events(actor.tenant(),projectId,actor.actor(),eventType,result,cursor,limit));
     }
+    /**
+     * 按原身份恢复当前修订死信，保留次数与原文。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param deliveryId 投递记录标识
+     * @param body 请求 JSON 字段，由当前接口校验并解析
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookRecoveryView>}
+     */
     @io.swagger.v3.oas.annotations.Parameter(name="Idempotency-Key",in=io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER,required=true,schema=@Schema(type="string",maxLength=128))
-    @PostMapping("/deliveries/{deliveryId}/recover") @Operation(operationId="recoverProjectWebhookDelivery",summary="按原身份恢复当前修订死信，保留次数与原文")
+    @PostMapping("/deliveries/{deliveryId}/recover") @Operation(operationId="recoverProjectWebhookDelivery",summary="按原身份恢复当前修订死信，保留次数与原文", description = "按原身份恢复当前修订死信，保留次数与原文。")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required=true,content=@Content(schema=@Schema(implementation=WebhookRecover.class)))
-    public ResponseEntity<WebhookRecoveryView> recover(@PathVariable UUID projectId,@PathVariable UUID deliveryId,@RequestBody JsonNode body,HttpServletRequest http) {
+    public ResponseEntity<WebhookRecoveryView> recover(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "投递记录标识") @PathVariable UUID deliveryId,@RequestBody JsonNode body,HttpServletRequest http) {
         var actor=identity(projectId,http);if(!body.path("expectedRound").isIntegralNumber())throw invalid();var input=parse(body,WebhookRecover.class,http);
         return noStore(WebhookRecoveryView.from(recovery.recover(actor.tenant(),projectId,actor.actor(),input.operationId(),deliveryId,input.expectedRound())));
     }
-    @GetMapping("/recovery-operations/{operationId}") @Operation(operationId="getProjectWebhookRecoveryOperation",summary="查询持久恢复收据，清理后当前明细可空")
-    public ResponseEntity<WebhookRecoveryView> recoveryOperation(@PathVariable UUID projectId,@PathVariable UUID operationId,HttpServletRequest http) {
+    /**
+     * 查询持久恢复收据，清理后当前明细可空。
+     *
+     * @param projectId 接口指定的项目标识
+     * @param operationId 管理操作标识，用于定位幂等回执
+     * @param http 原始 HTTP 请求，供头部、查询参数及身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<WebhookRecoveryView>}
+     */
+    @GetMapping("/recovery-operations/{operationId}") @Operation(operationId="getProjectWebhookRecoveryOperation",summary="查询持久恢复收据，清理后当前明细可空", description = "查询持久恢复收据，清理后当前明细可空。")
+    public ResponseEntity<WebhookRecoveryView> recoveryOperation(@io.swagger.v3.oas.annotations.Parameter(description = "接口指定的项目标识") @PathVariable UUID projectId,@io.swagger.v3.oas.annotations.Parameter(description = "管理操作标识，用于定位幂等回执") @PathVariable UUID operationId,HttpServletRequest http) {
         var actor=identity(projectId,http);return noStore(WebhookRecoveryView.from(recovery.operation(actor.tenant(),projectId,actor.actor(),operationId)));
     }
     private Identity identity(UUID project,HttpServletRequest request) {

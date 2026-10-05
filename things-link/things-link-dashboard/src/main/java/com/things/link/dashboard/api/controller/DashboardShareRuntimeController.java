@@ -78,26 +78,38 @@ public class DashboardShareRuntimeController {
         this.mapper = Objects.requireNonNull(mapper, "mapper");
     }
 
-    /** 读取有限候选和DB历史锚点，不返回内部项目身份或原凭据。 */
+    /**
+     * 读取有限候选和DB历史锚点，不返回内部项目身份或原凭据。
+     *
+     * @param shareId 只读分享标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @GetMapping(value = "/context", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "getDashboardShareContext", summary = "读取匿名分享上下文")
+    @Operation(operationId = "getDashboardShareContext", summary = "读取匿名分享上下文", description = "读取有限候选和DB历史锚点，不返回内部项目身份或原凭据。")
     @ApiResponse(responseCode = "200", description = "分享当前可运行，context不超过16KiB",
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string", allowableValues = "no-store")),
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = DashboardShareContextResponse.class)))
-    public ResponseEntity<byte[]> context(@PathVariable String shareId, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> context(@io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable String shareId, HttpServletRequest request) throws IOException {
         DashboardSharePrincipal principal = principal(shareId, request);
         return guardedResponse(() -> DashboardShareContextResponse.from(service.context(principal)), CONTEXT_LIMIT);
     }
 
-    /** 返回分享冻结的完整精确Schema，不跟随Dashboard当前指针切换版本。 */
+    /**
+     * 返回分享冻结的完整精确Schema，不跟随Dashboard当前指针切换版本。
+     *
+     * @param shareId 只读分享标识
+     * @param request 原始 HTTP 请求，供封闭输入、头部或身份校验使用
+     * @return 当前接口的操作结果，响应结构见 {@code ResponseEntity<byte[]>}
+     */
     @GetMapping(value = "/schema", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(operationId = "getDashboardShareSchema", summary = "读取匿名分享精确Schema")
+    @Operation(operationId = "getDashboardShareSchema", summary = "读取匿名分享精确Schema", description = "返回分享冻结的完整精确Schema，不跟随Dashboard当前指针切换版本。")
     @ApiResponse(responseCode = "200", description = "全部页面及派生清单，包装不超过768KiB",
             headers = @Header(name = "Cache-Control", schema = @Schema(type = "string", allowableValues = "no-store")),
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = DashboardShareSchemaResponse.class)))
-    public ResponseEntity<byte[]> schema(@PathVariable String shareId, HttpServletRequest request) throws IOException {
+    public ResponseEntity<byte[]> schema(@io.swagger.v3.oas.annotations.Parameter(description = "只读分享标识") @PathVariable String shareId, HttpServletRequest request) throws IOException {
         DashboardSharePrincipal principal = principal(shareId, request);
         return guardedResponse(() -> DashboardShareSchemaResponse.from(service.schema(principal)), SCHEMA_LIMIT);
     }

@@ -36,11 +36,11 @@ public class JdbcOtaTypeBaselineRepository implements OtaTypeBaselineRepository 
             """;
     /** 注入事务绑定连接。 */
     public JdbcOtaTypeBaselineRepository(JdbcTemplate jdbc) { this.jdbc=jdbc; }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public void lockRegistration(UUID tenant,UUID project,UUID type) {
         jdbc.queryForObject("SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(concat_ws(':','ota-baseline-v1',?::text,?::text,?::text),13022::bigint))",Integer.class,tenant,project,type);
     }
-    /** {@inheritDoc} */
+    /** 沿用接口定义的契约。{@inheritDoc} */
     @Override public Optional<OtaTypeBaselineState> find(UUID project,UUID type,boolean exclusive,boolean shared) {
         if(exclusive&&shared)throw new IllegalArgumentException("基线锁模式互斥");
         return jdbc.query(SELECT_CURRENT+(exclusive?" FOR UPDATE OF d":shared?" FOR SHARE OF d":""),JdbcOtaTypeBaselineRepository::map,project,type).stream().findFirst();

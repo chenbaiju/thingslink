@@ -50,7 +50,7 @@ class DeviceTopologyProjectionUpgradeTests {
             "classpath:db/migration/telemetry", "classpath:db/migration/alarm", "classpath:db/migration/task",
             "classpath:db/migration/rule", "classpath:db/migration/iam", "classpath:db/migration/enduser",
             // verify-11：完整升级必须包含授权外键的看板父表，并与生产迁移域保持一致。
-            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration"
+            "classpath:db/migration/export", "classpath:db/migration/dashboard", "classpath:db/migration/ota", "classpath:db/migration/integration", "classpath:db/migration/assistant"
     };
     /** 旧版投影函数仍可被TEMP遮蔽，已包含D111/D112守卫。 */
     private static final String LEGACY_TARGET = "20260903.0300";
