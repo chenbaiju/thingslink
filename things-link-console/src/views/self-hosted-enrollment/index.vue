@@ -1,72 +1,82 @@
 <template>
-  <ElCard v-if="allowed" shadow="never" class="self-hosted-enrollment">
-    <template #header><h3>自部署授权 · 待审申请</h3></template>
-    <ElAlert
-      type="info"
-      :closable="false"
-      title="这里只接收申请并查看待审队列。声明的租户尚未核验，登记不代表审核、签发或现场激活。"
+  <div class="console-page">
+    <ConsoleWorkspaceHeader
+      title="自部署授权 · 待审申请"
+      description="接收现场申请与查询待审队列；登记不会自动审核或签发。"
+      :links="[
+        { label: '商业运营', path: '/commercial-operations', permission: 'commercial:adjust' },
+        { label: '责任审核', path: '/self-hosted-review', permission: 'self_hosted:review' }
+      ]"
     />
-    <ElAlert v-if="error" class="spacing" type="warning" :closable="false" :title="error" />
-    <section class="spacing">
-      <h4>导入申请</h4>
-      <p>选择 jagonzn 现场导出的 .tcshreq 文件；不会上传部署私钥目录。</p>
-      <input
-        data-testid="enrollment-file"
-        type="file"
-        accept=".tcshreq"
-        :disabled="busy"
-        @change="selectFile"
+    <ElCard v-if="allowed" shadow="never" class="self-hosted-enrollment">
+      <ElAlert
+        type="info"
+        :closable="false"
+        title="这里只接收申请并查看待审队列。声明的租户尚未核验，登记不代表审核、签发或现场激活。"
       />
-      <ElSelect
-        v-model="channel"
-        data-testid="enrollment-channel"
-        placeholder="选择申请来源"
-        :disabled="busy"
-      >
-        <ElOption label="联网传递" value="ONLINE" />
-        <ElOption label="离线介质" value="OFFLINE" />
-      </ElSelect>
-      <ElButton type="primary" :disabled="busy || !file || !channel" @click="receive">
-        接收待审申请
-      </ElButton>
-      <p v-if="selectedFileName">已选择：{{ selectedFileName }}</p>
-      <div v-if="registration" data-testid="enrollment-result">
-        <strong>已登记或同封套重复提交 · 待审</strong>
-        <p>申请：{{ registration.requestId }}</p>
-        <p>部署：{{ registration.deploymentId }}</p>
-        <p>声明租户：{{ registration.tenantId }}（未核验）</p>
-        <p>首次来源：{{ channelLabel(registration.firstChannel) }}</p>
-      </div>
-    </section>
-    <section class="spacing">
-      <h4>待审队列</h4>
-      <ElButton :disabled="busy" @click="loadPage(0)">刷新第一页</ElButton>
-      <ElTable :data="rows" data-testid="pending-enrollment-table" class="spacing">
-        <ElTableColumn prop="requestId" label="申请 ID" min-width="280" />
-        <ElTableColumn prop="deploymentId" label="部署 ID" min-width="280" />
-        <ElTableColumn prop="claimedTenantId" label="声明租户 ID（未核验）" min-width="280" />
-        <ElTableColumn prop="firstChannel" label="首次来源" min-width="120" />
-        <ElTableColumn prop="receivedAt" label="接收时间 UTC" min-width="220" />
-      </ElTable>
-      <p v-if="!rows.length && !busy">当前页没有待审申请。</p>
-      <div class="spacing">
-        <ElButton :disabled="busy || pageIndex === 0" @click="loadPage(pageIndex - 1)"
-          >上一页</ElButton
+      <ElAlert v-if="error" class="spacing" type="warning" :closable="false" :title="error" />
+      <section class="spacing">
+        <h4>导入申请</h4>
+        <p>选择 jagonzn 现场导出的 .tcshreq 文件；不会上传部署私钥目录。</p>
+        <input
+          data-testid="enrollment-file"
+          type="file"
+          accept=".tcshreq"
+          :disabled="busy"
+          @change="selectFile"
+        />
+        <ElSelect
+          v-model="channel"
+          data-testid="enrollment-channel"
+          placeholder="选择申请来源"
+          :disabled="busy"
         >
-        <span>第 {{ pageIndex + 1 }} 页</span>
-        <ElButton :disabled="busy || rows.length < pageSize" @click="nextPage">下一页</ElButton>
-      </div>
-    </section>
-  </ElCard>
-  <ElResult
-    v-else
-    icon="warning"
-    title="需要受控运营身份"
-    sub-title="项目角色不授予待审申请接收资格。"
-  />
+          <ElOption label="联网传递" value="ONLINE" />
+          <ElOption label="离线介质" value="OFFLINE" />
+        </ElSelect>
+        <ElButton type="primary" :disabled="busy || !file || !channel" @click="receive">
+          接收待审申请
+        </ElButton>
+        <p v-if="selectedFileName">已选择：{{ selectedFileName }}</p>
+        <div v-if="registration" data-testid="enrollment-result">
+          <strong>已登记或同封套重复提交 · 待审</strong>
+          <p>申请：{{ registration.requestId }}</p>
+          <p>部署：{{ registration.deploymentId }}</p>
+          <p>声明租户：{{ registration.tenantId }}（未核验）</p>
+          <p>首次来源：{{ channelLabel(registration.firstChannel) }}</p>
+        </div>
+      </section>
+      <section class="spacing">
+        <h4>待审队列</h4>
+        <ElButton :disabled="busy" @click="loadPage(0)">刷新第一页</ElButton>
+        <ElTable :data="rows" data-testid="pending-enrollment-table" class="spacing">
+          <ElTableColumn prop="requestId" label="申请 ID" min-width="280" />
+          <ElTableColumn prop="deploymentId" label="部署 ID" min-width="280" />
+          <ElTableColumn prop="claimedTenantId" label="声明租户 ID（未核验）" min-width="280" />
+          <ElTableColumn prop="firstChannel" label="首次来源" min-width="120" />
+          <ElTableColumn prop="receivedAt" label="接收时间 UTC" min-width="220" />
+        </ElTable>
+        <p v-if="!rows.length && !busy">当前页没有待审申请。</p>
+        <div class="spacing">
+          <ElButton :disabled="busy || pageIndex === 0" @click="loadPage(pageIndex - 1)"
+            >上一页</ElButton
+          >
+          <span>第 {{ pageIndex + 1 }} 页</span>
+          <ElButton :disabled="busy || rows.length < pageSize" @click="nextPage">下一页</ElButton>
+        </div>
+      </section>
+    </ElCard>
+    <ElResult
+      v-else
+      icon="warning"
+      title="需要受控运营身份"
+      sub-title="项目角色不授予待审申请接收资格。"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { useUserStore } from '@/store/modules/user'
   import {

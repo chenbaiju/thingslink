@@ -5,7 +5,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture;
 import com.things.link.iam.application.*;
 import com.things.link.shared.id.Uuid7;
 import com.things.link.shared.tenant.*;
-import com.things.link.testing.AbstractIntegrationTest;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.*;
@@ -27,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
-class AnalysisRunApiTests extends AbstractIntegrationTest {
+class AnalysisRunApiTests extends AbstractAssistantIntegrationTest {
     static final String MASTER=ModelConfigurationApiTests.master();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r){
         r.add("things-link.assistant.credentials.active-key-id",()->"analysis-api");r.add("things-link.assistant.credentials.keys.analysis-api",()->MASTER);

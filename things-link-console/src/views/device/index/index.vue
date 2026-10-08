@@ -1,11 +1,21 @@
 <template>
   <div class="console-page device-list" :class="{ 'device-list--detail': detailVisible }">
     <div v-show="!detailVisible" class="device-list__content">
+      <ConsoleWorkspaceHeader
+        title="设备与接入"
+        description="创建设备、获取接入配置，查看真实上报并接续规则与看板开发。"
+        :links="[
+          { label: '设备类型与物模型', path: '/device/types', permission: 'device:read' },
+          { label: '消息调试', path: '/device/messages', permission: 'device:read' }
+        ]"
+      />
       <div class="device-list__header console-toolbar console-page-actions">
-        <ElButton v-if="hasAuth('device:create')" type="primary" :icon="Plus" @click="openCreate">
+        <ElButton v-if="hasAuth('device:create')" type="primary" :icon="Plus" @click="openCreate()">
           创建设备
         </ElButton>
       </div>
+      <ElAlert v-if="resourceError" :title="resourceError" type="warning" :closable="false" />
+      <ElAlert v-if="typeHandoffError" :title="typeHandoffError" type="warning" :closable="false" />
       <ElCard class="device-list__filter console-list-filter" shadow="never">
         <DeviceAdvancedFilter
           v-model="deviceFilter"
@@ -102,11 +112,17 @@
     >
       <ElForm ref="formRef" :model="form" :rules="rules" label-position="top">
         <ElFormItem label="设备名称" prop="name"
-          ><ElInput v-model.trim="form.name" maxlength="128"
+          ><ElInput
+            v-model.trim="form.name"
+            aria-label="设备名称"
+            aria-required="true"
+            maxlength="128"
         /></ElFormItem>
         <ElFormItem label="设备标识符" prop="deviceKey">
           <ElInput
             v-model.trim="form.deviceKey"
+            aria-label="设备标识符"
+            aria-required="true"
             maxlength="64"
             placeholder="例如 sensor_01"
             :disabled="!!editingId"
@@ -218,7 +234,7 @@
       <div v-if="detailDevice" class="device-detail__metadata">
         <span>ID：{{ detailTagDeviceId }}</span>
         <span>设备标识：{{ detailDeviceKey }}</span>
-        <span>设备类型：{{ detailTypeId ? typeName(detailTypeId) : '无' }}</span>
+        <span data-testid="device-detail-type-summary">设备类型：{{ detailTypeName }}</span>
         <span class="device-detail__status" :class="{ 'is-online': detailStatus === 'ONLINE' }">
           <ArtSvgIcon icon="ri:plug-line" />{{ detailConnectionLabel }}
         </span>
@@ -231,11 +247,44 @@
           {{ detailAlarmLabel }}
         </span>
       </div>
+      <div
+        v-if="detailDevice && detailTypeUnavailable"
+        data-testid="device-detail-type-unavailable"
+      >
+        <span>设备类型读取不可用，类型相关能力暂不可用；其他设备信息仍可查看。</span>
+        <ElButton
+          data-testid="device-detail-type-retry"
+          :loading="detailTypeLoading"
+          @click="loadDetailDeviceType"
+          >重试读取设备类型</ElButton
+        >
+      </div>
+      <nav
+        v-if="detailDevice"
+        class="device-detail__next console-actions"
+        aria-label="设备开发步骤"
+      >
+        <ElButton @click="detailTab = 'settings'">接入配置</ElButton>
+        <ElButton @click="detailTab = 'shadow'">查看上报</ElButton>
+        <ElButton @click="openDeviceWorkspace('/device/messages', 'device:read')"
+          >消息调试</ElButton
+        >
+        <ElButton
+          v-if="canNavigate('rule:read')"
+          @click="openDeviceWorkspace('/rule/automations', 'rule:read')"
+          >配置自动化</ElButton
+        >
+        <ElButton
+          v-if="canNavigate('dashboard_definition:read')"
+          @click="openDeviceWorkspace('/dashboard/designer', 'dashboard_definition:read')"
+          >看板设计</ElButton
+        >
+      </nav>
       <ElTabs v-if="detailDevice" v-model="detailTab" class="device-detail__tabs">
         <ElTabPane name="overview" label="概览" lazy>
           <ElDescriptions :column="2" border>
             <ElDescriptionsItem label="设备标识符">{{ detailDeviceKey }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="设备类型">{{ typeName(detailTypeId) }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="设备类型">{{ detailTypeName }}</ElDescriptionsItem>
             <ElDescriptionsItem label="状态">
               <span>{{ detailConnectionLabel }}</span>
             </ElDescriptionsItem>
@@ -457,6 +506,20 @@
           </div>
           <ElEmpty v-else description="当前角色没有设备控制权限" :image-size="56" />
         </ElTabPane>
+        <ElTabPane name="property-history" label="原始属性历史" lazy>
+          <DevicePropertyHistory
+            :project-id="projectId"
+            :device-id="detailDevice.id ?? ''"
+            :active="detailVisible && detailTab === 'property-history'"
+          />
+        </ElTabPane>
+        <ElTabPane name="event-history" label="事件历史" lazy>
+          <DeviceEventHistory
+            :project-id="projectId"
+            :device-id="detailDevice.id ?? ''"
+            :active="detailVisible && detailTab === 'event-history'"
+          />
+        </ElTabPane>
         <ElTabPane name="messages" label="消息日志" lazy>
           <ElTable v-loading="msgLoading" :data="messages" row-key="id" size="small">
             <ElTableColumn label="方向" width="70">
@@ -554,7 +617,7 @@
             :can-manage="hasAuth('rule:manage')"
           />
         </ElTabPane>
-        <ElTabPane name="settings" label="设置" lazy>
+        <ElTabPane name="settings" label="接入配置" lazy>
           <DeviceAccessConfiguration
             v-if="detailVisible"
             :project-id="projectId"
@@ -568,6 +631,8 @@
 
 <script setup lang="ts">
   import { ElMessageBox } from 'element-plus'
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
+  import { recordRecentResource } from '@/utils/workbench-recent'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'
@@ -578,7 +643,7 @@
   import {
     fetchSearchDevices,
     fetchDeviceDetail,
-    fetchDeviceTypePage,
+    fetchDeviceTypeDetail,
     fetchDeviceEventDefinitions,
     fetchCreateDevice,
     fetchUpdateDevice,
@@ -614,6 +679,7 @@
   import { RealtimeClient, type PropertyBatchMessage } from '@/utils/realtime'
   import { ReportedValues, type ReportedProjection } from '@/features/device/reported-values'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'
+  import { resolveTypeHandoff } from '@/features/device/type-handoff'
   import { IdempotentSubmission } from '@/utils/idempotent-submission'
   import { usePagedDeviceCatalog } from '@/composables/usePagedDeviceCatalog'
   import { fetchBindingMetadata, createDesignerReadScope } from '@/api/dashboard-binding'
@@ -627,6 +693,8 @@
   import DeviceAccessConfiguration from '../components/DeviceAccessConfiguration.vue'
   import DeviceLocationPoint from '../components/DeviceLocationPoint.vue'
   import DeviceCommandHistory from '../components/DeviceCommandHistory.vue'
+  import DeviceEventHistory from '../components/DeviceEventHistory.vue'
+  import DevicePropertyHistory from '../components/DevicePropertyHistory.vue'
   import DeviceAgentEvidence from '../components/DeviceAgentEvidence.vue'
   import DeviceEndUsers from '../components/DeviceEndUsers.vue'
   import DeviceTasks from '../components/DeviceTasks.vue'
@@ -660,8 +728,29 @@
     shadowLoading = ref(false)
   const detailLoading = ref(false)
   const detailTab = ref('overview')
+  const resourceError = ref('')
+  const canNavigate = (permission: string) => !!userStore.info.buttons?.includes(permission)
+  const openDeviceWorkspace = (path: string, permission: string) => {
+    if (!detailDevice.value?.id || !canNavigate('device:read') || !canNavigate(permission)) return
+    void router.push({
+      path,
+      query: { deviceId: detailDevice.value.id, contextProjectId: projectId.value }
+    })
+  }
   const detailDevice = ref<DeviceResponse>()
   const detailDeviceType = ref<DeviceTypeResponse>()
+  const detailTypeLoading = ref(false)
+  const detailTypeUnavailable = ref(false)
+  let detailTypeRead = 0
+  const detailTypeName = computed(() =>
+    !detailTypeId.value
+      ? '无'
+      : detailTypeLoading.value
+        ? '读取中…'
+        : detailTypeUnavailable.value
+          ? '不可用'
+          : (detailDeviceType.value?.name ?? '—')
+  )
   const capabilityTabs = computed(() => {
     const tabs: Array<{ key: DeviceCapability; label: string }> = []
     if (detailTypeId.value) tabs.push({ key: 'alarms', label: '告警' })
@@ -887,19 +976,42 @@
     }
     void loadDevices()
   }
-  const openCreate = () => {
+  let formGeneration = 0
+  let formIdentity = ''
+  let handoffRead = 0
+  const typeHandoffError = ref('')
+  const creationScope = () => ({
+    projectId: projectId.value,
+    userId: userStore.info.userId ?? '',
+    tenantId: userStore.info.tenantId ?? '',
+    identity: currentIdentityEpoch(),
+    canCreate: hasAuth('device:create') && !!userStore.info.buttons?.includes('device:create')
+  })
+  const formScope = () =>
+    JSON.stringify([
+      projectId.value,
+      userStore.info.userId,
+      userStore.info.tenantId,
+      currentIdentityEpoch()
+    ])
+  const openCreate = (type?: DeviceTypeResponse) => {
+    if (!creationScope().canCreate) return
+    formGeneration++
+    formIdentity = formScope()
     editingId.value = ''
     Object.assign(form, {
       name: '',
       deviceKey: '',
-      deviceTypeId: '',
+      deviceTypeId: type?.id ?? '',
       description: '',
       location: ''
     })
     formVisible.value = true
   }
   const openEdit = (row: DeviceResponse) => {
-    if (!row.id) return
+    if (!row.id || !hasAuth('device:update')) return
+    formGeneration++
+    formIdentity = formScope()
     editingId.value = row.id
     Object.assign(form, {
       name: row.name,
@@ -918,11 +1030,20 @@
   }
   const submit = async () => {
     if (!formRef.value || !projectId.value || submitting.value) return
+    const generation = formGeneration,
+      project = projectId.value,
+      editId = editingId.value
+    const currentForm = () =>
+      generation === formGeneration &&
+      formIdentity === formScope() &&
+      !!userStore.info.buttons?.includes(editId ? 'device:update' : 'device:create')
+    if (!currentForm()) return
     // 校验本身也是 await；必须在它之前置位并防重入，否则慢网前的快速双击会启动两条写链。
     submitting.value = true
     const scope = detailScope()
     try {
       await formRef.value.validate()
+      if (!currentForm()) return
       const body = {
         name: form.name,
         deviceTypeId: form.deviceTypeId || undefined,
@@ -930,19 +1051,20 @@
         location: form.location || undefined
       }
       if (editingId.value) {
-        const saved = await fetchUpdateDevice(projectId.value, editingId.value, body)
+        const saved = await fetchUpdateDevice(project, editId, body)
         if (currentDetail(scope) && scope.device === editingId.value && saved.id === scope.device)
           await loadDetail(saved)
       } else {
-        await fetchCreateDevice(projectId.value, { ...body, deviceKey: form.deviceKey })
+        await fetchCreateDevice(project, { ...body, deviceKey: form.deviceKey })
       }
-      ElMessage.success(editingId.value ? '设备修改成功' : '设备创建成功')
+      if (!currentForm()) return
+      ElMessage.success(editId ? '设备修改成功' : '设备创建成功')
       formVisible.value = false
       await load()
     } catch (error) {
       if (!(error instanceof HttpError)) console.error('保存设备失败:', error)
     } finally {
-      submitting.value = false
+      if (generation === formGeneration) submitting.value = false
     }
   }
   const remove = async (row: DeviceResponse) => {
@@ -1027,8 +1149,14 @@
     done()
   }
   const openDetail = (row: DeviceResponse) => {
-    if (row.id)
-      return router.push({ path: route.path, query: { ...route.query, deviceId: row.id } })
+    if (!row.id) return
+    const query: typeof route.query = {
+      ...route.query,
+      deviceId: row.id,
+      contextProjectId: projectId.value
+    }
+    delete query.resourceId
+    return router.push({ path: route.path, query })
   }
   const handleDeviceRowClick = (row: DeviceResponse, column: { columnKey?: string }) => {
     if (column.columnKey === 'actions') return
@@ -1037,6 +1165,8 @@
   const returnToList = () => {
     const query = { ...route.query }
     delete query.deviceId
+    delete query.resourceId
+    delete query.contextProjectId
     return router.replace({ path: route.path, query })
   }
   const eventLevelLabel = (value?: string) =>
@@ -1081,13 +1211,14 @@
     commandInput.value = '{}'
     lastCommand.value = undefined
     detailVisible.value = true
+    // 类型有独立读取状态，不让其等待阻挡其他设备事实或返回操作。
+    void loadDetailDeviceType()
     // 详情接口互不依赖；单个接口失败不清空其他已读取的详情事实。
     await Promise.allSettled([
       loadShadow(),
       loadHistoryProperties(),
       loadCommandDefinitions(),
       loadEventDefinitions(),
-      loadDetailDeviceType(),
       loadDetailAlarmStatus(),
       loadConnections(),
       loadMessages()
@@ -1126,24 +1257,36 @@
   }
   const loadDetailDeviceType = async () => {
     const scope = detailScope()
-    if (!projectId.value || !detailTypeId.value) return
-    const typeId = detailTypeId.value
-    let type = deviceTypes.value.find((item) => item.id === typeId)
-    let cursor: string | undefined
-    const cursors = new Set<string>()
-    // 当前合同只有类型目录分页读取；不能假设存在单条 GET，也不能只检查目录首页。
-    while (!type && currentDetail(scope)) {
-      const page = await fetchDeviceTypePage(scope.project, cursor)
-      if (!currentDetail(scope)) return
-      type = page.items?.find((item) => item.id === typeId)
-      if (type || !page.hasMore || !page.nextCursor) break
-      if (cursors.has(page.nextCursor)) throw new Error('设备类型目录游标重复')
-      cursor = page.nextCursor
-      cursors.add(cursor)
+    if (!currentDetail(scope)) return
+    const read = ++detailTypeRead
+    const current = () =>
+      currentDetail(scope) && scope.type === detailTypeId.value && read === detailTypeRead
+    clearDetailDeviceType()
+    if (!scope.project || !scope.type) return
+    detailTypeLoading.value = true
+    try {
+      // 每次读取单条当前事实，目录缓存不能决定网关与协议能力。
+      const type = await fetchDeviceTypeDetail(scope.project, scope.type)
+      if (!current()) return
+      if (type.id !== scope.type || type.projectId !== scope.project)
+        throw new Error('设备类型范围不匹配')
+      detailDeviceType.value = type
+      if (type.name) typeMap.value = { ...typeMap.value, [scope.type]: type.name }
+    } catch {
+      if (!current()) return
+      clearDetailDeviceType()
+      detailTypeUnavailable.value = true
+    } finally {
+      if (current()) detailTypeLoading.value = false
     }
-    if (!currentDetail(scope) || !type) return
-    detailDeviceType.value = type
-    if (type.id && type.name) typeMap.value = { ...typeMap.value, [type.id]: type.name }
+  }
+  const clearDetailDeviceType = () => {
+    detailDeviceType.value = undefined
+    detailTypeLoading.value = false
+    detailTypeUnavailable.value = false
+    const names = { ...typeMap.value }
+    delete names[detailTypeId.value]
+    typeMap.value = names
   }
   const loadEventDefinitions = async () => {
     const scope = detailScope()
@@ -1317,6 +1460,8 @@
   }
   const closeRealtime = () => {
     detailGeneration++
+    detailTypeRead++
+    clearDetailDeviceType()
     detailAlarmReadScope?.close()
     detailAlarmReadScope = undefined
     realtimeClient.close()
@@ -1427,12 +1572,78 @@
     }
   }
   watch(
-    [projectId, () => userStore.info.userId],
+    [
+      projectId,
+      () => userStore.info.userId,
+      () => userStore.info.tenantId,
+      currentIdentityEpoch,
+      () => userStore.info.buttons?.join(',')
+    ],
     () => {
+      formGeneration++
+      handoffRead++
+      formVisible.value = false
+      submitting.value = false
+      formIdentity = ''
+      Object.assign(form, {
+        name: '',
+        deviceKey: '',
+        deviceTypeId: '',
+        description: '',
+        location: ''
+      })
+      credVisible.value = false
+      pendingSecret.value = ''
+      credentials.value = []
+      typeHandoffError.value = ''
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    () => [route.query.createTypeId, route.query.contextProjectId] as const,
+    async ([typeId, contextProject]) => {
+      const read = ++handoffRead
+      typeHandoffError.value = ''
+      if (typeId === undefined) return
+      try {
+        const type = await resolveTypeHandoff(
+          { createTypeId: typeId, contextProjectId: contextProject },
+          creationScope,
+          fetchDeviceTypeDetail
+        )
+        if (read !== handoffRead) return
+        if (!type) {
+          typeHandoffError.value =
+            '无法使用此设备类型：请在当前项目选择已发布类型，并确认拥有创建设备权限。'
+          return
+        }
+        deviceTypes.value = [...deviceTypes.value.filter((item) => item.id !== type.id), type]
+        openCreate(type)
+        const query = { ...route.query }
+        delete query.createTypeId
+        delete query.contextProjectId
+        await router.replace({ path: route.path, query })
+      } catch {
+        if (read === handoffRead)
+          typeHandoffError.value = '设备类型读取失败，请返回设备类型工作区重试。'
+      }
+    },
+    { immediate: true }
+  )
+  watch(
+    [
+      projectId,
+      () => userStore.info.userId,
+      () => userStore.info.tenantId,
+      () => canNavigate('device:read')
+    ],
+    () => {
+      resourceError.value = ''
+      detailDevice.value = undefined
       detailNavigation += 1
       detailVisible.value = false
       closeRealtime()
-      if (route.query.deviceId) void returnToList()
+      if (route.query.deviceId || route.query.resourceId) void returnToList()
     },
     { flush: 'sync' }
   )
@@ -1443,20 +1654,34 @@
         detailNavigation += 1
         detailVisible.value = false
         closeRealtime()
-        if (route.query.deviceId) void returnToList()
+        if (route.query.deviceId || route.query.resourceId) void returnToList()
       }
     },
     { flush: 'sync' }
   )
   watch(
-    () => route.query.deviceId,
-    async (value) => {
+    () => [route.query.deviceId, route.query.resourceId, route.query.contextProjectId] as const,
+    async ([legacyId, resourceId, contextProjectId]) => {
+      const value = resourceId ?? legacyId
+      resourceError.value = ''
       const navigation = ++detailNavigation
       closeRealtime()
       detailDevice.value = undefined
       detailVisible.value = typeof value === 'string' && Boolean(value)
       detailLoading.value = false
       if (!detailVisible.value || typeof value !== 'string' || !projectId.value) return
+      if (
+        !canNavigate('device:read') ||
+        (contextProjectId !== undefined && contextProjectId !== projectId.value) ||
+        (resourceId !== undefined &&
+          (contextProjectId !== projectId.value ||
+            !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value) ||
+            (legacyId !== undefined && legacyId !== resourceId)))
+      ) {
+        detailVisible.value = false
+        resourceError.value = '无法读取来源设备，请确认当前项目和设备访问权限。'
+        return
+      }
       const identity = currentIdentityEpoch()
       const project = projectId.value
       detailLoading.value = true
@@ -1468,12 +1693,23 @@
           project !== projectId.value
         )
           return
+        if (device.id !== value) throw new Error('设备响应与请求对象不一致')
+        recordRecentResource(
+          {
+            userId: userStore.info.userId ?? '',
+            tenantId: userStore.info.tenantId ?? '',
+            projectId: project
+          },
+          { kind: 'device', id: value, label: device.name || device.deviceKey || value }
+        )
         await loadDetail(device)
       } catch (error) {
         if (navigation === detailNavigation && !(error instanceof HttpError))
           console.error('加载设备详情失败:', error)
-        if (navigation === detailNavigation && identity === currentIdentityEpoch())
-          void returnToList()
+        if (navigation === detailNavigation && identity === currentIdentityEpoch()) {
+          await returnToList()
+          resourceError.value = '设备读取失败，可能已删除或访问权限发生变化，请重新选择设备。'
+        }
       } finally {
         if (navigation === detailNavigation) detailLoading.value = false
       }
@@ -1488,6 +1724,11 @@
 </script>
 
 <style lang="scss" scoped>
+  .device-detail__next {
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+
   .device-list {
     display: flex;
     flex-direction: column;

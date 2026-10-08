@@ -13,6 +13,14 @@
 -->
 <template>
   <div class="console-page project-members console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="项目成员与邀请"
+      description="管理共同开发此项目的成员和邀请。应用终端用户使用独立账号与授权。"
+      :links="[
+        { label: '项目列表', path: '/project/list' },
+        { label: '终端用户', path: '/project/end-users', permission: 'enduser:read' }
+      ]"
+    />
     <div class="project-members__header console-toolbar console-page-actions">
       <div class="project-members__actions console-actions">
         <ElButton v-if="canLeave" type="danger" plain :loading="leaving" @click="confirmLeave">
@@ -175,6 +183,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
   import ProjectInvitations from '@/components/ProjectInvitations.vue'
   import { createProjectInvitation } from '@/api/project-invitations'

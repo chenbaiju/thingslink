@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Optional;
 
 /** ADR0075 项目一致快照导出任务的请求与状态查询用例。 */
 @Service
@@ -93,6 +94,18 @@ public class ProjectExportService {
                             "projectGeneration", scope.generation())));
         }
         return job;
+    }
+
+    /**
+     * 在当前OWNER与冻结窗口内找回本人在本代次申请的最新任务。
+     * @param projectId 删除项目ID
+     * @return 最新任务或空；不建立任务、不消费申请限流、不返回下载能力
+     */
+    @Transactional
+    public Optional<ProjectExportJob> latest(UUID projectId) {
+        UUID accountId = TenantContext.require().accountId();
+        ProjectExportSource.ProjectExportScope scope = projectSource.authorizeRequest(accountId, projectId);
+        return jobRepository.findLatest(scope.tenantId(), scope.projectId(), scope.generation(), accountId);
     }
 
     /**

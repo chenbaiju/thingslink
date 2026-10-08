@@ -15,6 +15,8 @@ import com.things.link.shared.tenant.TenantScope;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.nio.charset.StandardCharsets;
@@ -93,6 +95,19 @@ public class DeviceTypeService {
         requireMember(projectId);
         return thingModelVersionRepository.findLatest(projectId, deviceTypeId)
                 .orElseThrow(() -> new BusinessException(DeviceErrorCode.THING_MODEL_VERSION_NOT_FOUND));
+    }
+
+    /**
+     * 读取项目内单个设备类型的当前公开事实，供生成或轮换产品凭据前核对。
+     *
+     * @param projectId 当前项目标识
+     * @param id 类型标识
+     * @return 供内部使用的当前类型；HTTP层须以公开DTO投影，不存在、已删除或跨项目统一拒绝
+     */
+    @Transactional(readOnly = true)
+    public DeviceType detail(UUID projectId, UUID id) {
+        requireMember(projectId);
+        return requireType(projectId, id);
     }
 
     /**
@@ -175,7 +190,14 @@ public class DeviceTypeService {
             throw new BusinessException(DeviceErrorCode.DEVICE_TYPE_NOT_FOUND);
         }
         // B-X1a/B-X1b 要求发布即形成不可变 1.0.0；同事务失败必须回滚类型状态，不能留下 PUBLISHED 但不可摄入的半成品。
-        thingModelVersionRepository.createInitialFromDefinitions(current.tenantId(), projectId, id);
+        ThingModelVersion initial = thingModelVersionRepository.createInitialFromDefinitions(current.tenantId(), projectId, id);
+        // 存量草稿可能早于四标量约束；首次冻结也必须校验完整事件段，失败让整个发布事务回滚。
+        try {
+            var snapshot = new ObjectMapper().readTree(initial.modelSnapshot());
+            DeviceEventSchema.validateDefinitions(snapshot == null ? null : snapshot.get("events"));
+        } catch (JacksonException | IllegalArgumentException exception) {
+            throw new BusinessException(DeviceErrorCode.EVENT_REPORT_INVALID);
+        }
         return new DeviceType(current.id(), current.tenantId(), current.projectId(),
                 current.typeKey(), current.name(), current.deviceKind(), current.payloadProtocol(),
                 current.networkType(), current.version(), DeviceType.Status.PUBLISHED,
@@ -186,7 +208,7 @@ public class DeviceTypeService {
      * 为已发布设备类型生成或轮换一型一密凭据。
      *
      * <p>产品密钥明文仅随本次返回；再次调用立即覆盖旧摘要，旧批次随后不能继续注册。
-     * productKey 是 Topic 段而非秘密，首次生成后保持稳定，避免轮换密钥迫使固件改变 Topic。</p>
+     * productKey 是公开产品标识而非秘密，首次生成后保持稳定；当前动态注册通过HTTPS入口。</p>
      *
      * @param projectId 项目 ID
      * @param id 设备类型 ID
@@ -211,7 +233,7 @@ public class DeviceTypeService {
         return new ProductCredential(id, productKey, plainSecret);
     }
 
-    /** @param deviceTypeId 设备类型 ID @param productKey 注册 Topic 产品段 @param productSecret 一次可见密钥 */
+    /** @param deviceTypeId 设备类型 ID @param productKey 公开产品识别码 @param productSecret 一次可见密钥 */
     public record ProductCredential(UUID deviceTypeId, String productKey, String productSecret) {
     }
 

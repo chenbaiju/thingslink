@@ -90,6 +90,8 @@ export default [
       '.playwright-browsers/**',
       'test-results/**',
       'playwright-report/**',
+      // 本地验证日志中的浏览器报告/trace是生成证据，不参与源码静态检查。
+      'logs/**',
       // G2 按候选/场景隔离的原始证据，不属于源码或可被格式化的文件。
       '.e2e-evidence/**',
       'src/assets/**',

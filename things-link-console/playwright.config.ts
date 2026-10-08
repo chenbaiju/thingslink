@@ -15,6 +15,7 @@ const evidenceDirectory = process.env.E2E_RUN_DIR
  */
 export default defineConfig({
   testDir: './e2e',
+  ...(process.env.E2E_OWNED_RUNTIME ? { globalSetup: './e2e/owned-runtime-setup.ts' } : {}),
   timeout: 120_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
@@ -34,9 +35,9 @@ export default defineConfig({
     launchOptions: localChromiumExecutable
       ? { executablePath: localChromiumExecutable }
       : undefined,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    trace: process.env.E2E_OWNED_RUNTIME ? 'off' : 'retain-on-failure',
+    screenshot: process.env.E2E_OWNED_RUNTIME ? 'off' : 'only-on-failure',
+    video: process.env.E2E_OWNED_RUNTIME ? 'off' : 'retain-on-failure'
   },
   outputDir: evidenceDirectory ? path.join(evidenceDirectory, 'test-results') : 'test-results'
 })

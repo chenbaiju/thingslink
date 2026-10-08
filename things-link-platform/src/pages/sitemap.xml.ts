@@ -1,3 +1,5 @@
+import { getCollection } from 'astro:content'
+import { docsPath } from '@/config'
 
 export const prerender = true
 
@@ -7,7 +9,10 @@ function escapeXml(value: string) {
 
 export async function GET() {
   const site = import.meta.env.SITE
-  const paths = ['/']
+  const docs = (await getCollection('docs')).sort((a, b) =>
+    a.data.order - b.data.order || a.id.localeCompare(b.id, 'en')
+  )
+  const paths = ['/', ...docs.map((doc) => docsPath(doc.id))]
   const urls = site
     ? paths.map((path) => `  <url><loc>${escapeXml(new URL(path, site).toString())}</loc></url>`).join('\n')
     : ''

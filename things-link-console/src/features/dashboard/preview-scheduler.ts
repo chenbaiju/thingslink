@@ -82,11 +82,15 @@ export function createPreviewScheduler(ports: PreviewSchedulerPorts) {
     wakeTimer = undefined
   }
   function wakeAt(time: number | undefined) {
-    if (time === undefined || !Number.isFinite(time) || time <= now()) return
-    wakeTimer = setTimer(() => {
-      wakeTimer = undefined
-      pump()
-    }, time - now())
+    if (time === undefined || !Number.isFinite(time)) return
+    // 已知窗口可能在资格判断后到期；保留正延迟复核，不降为只能等通知的未知等待。
+    wakeTimer = setTimer(
+      () => {
+        wakeTimer = undefined
+        pump()
+      },
+      Math.max(1, Math.ceil(time - now()))
+    )
   }
   function cancelActive() {
     if (!active || active.cancelled) return
@@ -191,11 +195,8 @@ export function createPreviewScheduler(ports: PreviewSchedulerPorts) {
       }
       const eligibility = ports.eligible(fullPending ? 'FULL' : 'INTERACTION')
       if (!eligibility.eligible) {
-        // 无已知未来时点只订阅通知；不每秒试探、不用过去时间建立零延迟循环。
-        waitingUntil =
-          eligibility.nextAvailableAt !== null && eligibility.nextAvailableAt > now()
-            ? eligibility.nextAvailableAt
-            : null
+        // null仅表示未知在途释放；已知窗口边界即使刚到期也必须重新核对资格。
+        waitingUntil = eligibility.nextAvailableAt
         const next = waitingUntil === null ? undefined : waitingUntil
         wakeAt(
           !latched && calibrationAt !== undefined ? Math.min(next ?? Infinity, calibrationAt) : next

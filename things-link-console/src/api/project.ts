@@ -155,3 +155,16 @@ export function fetchLeaveProject(projectId: string) {
     url: `/api/v1/projects/${projectId}/members/me`
   })
 }
+
+/** 回收站资格由后端墙钟与当前有效OWNER共同裁决。 */
+export type ProjectRecycleBinResponse = components['schemas']['ProjectRecycleBinResponse']
+
+/** 未选择项目时也可查询本人持有的删除项目。 */
+export function fetchProjectRecycleBin() {
+  return request.get<ProjectRecycleBinResponse[]>({ url: '/api/v1/projects/recycle-bin' })
+}
+
+/** 恢复留存窗口内项目；不会使旧设备凭据或分享能力重新有效。 */
+export function fetchRestoreProject(projectId: string) {
+  return request.post<ProjectResponse>({ url: `/api/v1/projects/${projectId}/restore` })
+}

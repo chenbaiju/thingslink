@@ -15,6 +15,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,6 +28,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /** 事件定义服务测试，覆盖结构化参数归一化和设备类型发布冻结。 */
@@ -81,6 +84,60 @@ class DeviceEventDefinitionServiceTests {
                 DeviceEventDefinition.Level.WARNING, null, 0, List.of()))
                 .isInstanceOfSatisfying(BusinessException.class, exception -> assertThat(exception.errorCode())
                         .isEqualTo(DeviceErrorCode.DEVICE_TYPE_PUBLISHED_IMMUTABLE));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DevicePropertyDefinition.DataType.class, names = {"OBJECT", "LIST"})
+    void creationRejectsCompositeEventParametersBeforePersistence(DevicePropertyDefinition.DataType dataType) {
+        allow(DeviceType.Status.DRAFT);
+        assertThatThrownBy(() -> service.create(projectId, typeId, "fault", "故障",
+                DeviceEventDefinition.Level.ERROR, null, 0, List.of(new DeviceEventDefinition.ParameterDraft(
+                        "value", "值", dataType, true, null, 0))))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> assertThat(exception.errorCode())
+                        .isEqualTo(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID));
+        verifyNoInteractions(repository);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DevicePropertyDefinition.DataType.class, names = {"OBJECT", "LIST"})
+    void updateRejectsCompositeEventParametersBeforePersistence(DevicePropertyDefinition.DataType dataType) {
+        allow(DeviceType.Status.DRAFT);
+        UUID id = UUID.randomUUID();
+        when(repository.findById(projectId, typeId, id)).thenReturn(Optional.of(new DeviceEventDefinition(
+                id, TenantContext.current().orElseThrow().tenantId(), projectId, typeId, "fault", "故障",
+                DeviceEventDefinition.Level.ERROR, null, 0, List.of(), Instant.now())));
+        assertThatThrownBy(() -> service.update(projectId, typeId, id, "fault", "故障",
+                DeviceEventDefinition.Level.ERROR, null, 0, List.of(new DeviceEventDefinition.ParameterDraft(
+                        "value", "值", dataType, true, null, 0))))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> assertThat(exception.errorCode())
+                        .isEqualTo(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID));
+        verify(repository, org.mockito.Mockito.never()).update(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test void scalarDefinitionsPreserveRequiredAndOptionalParameters() {
+        allow(DeviceType.Status.DRAFT);
+        DeviceEventDefinition value = service.create(projectId, typeId, "fault", "故障",
+                DeviceEventDefinition.Level.ERROR, null, 0, List.of(
+                        new DeviceEventDefinition.ParameterDraft("number", "数值", DevicePropertyDefinition.DataType.NUMBER, true, null, 0),
+                        new DeviceEventDefinition.ParameterDraft("text", "文本", DevicePropertyDefinition.DataType.TEXT, false, null, 1),
+                        new DeviceEventDefinition.ParameterDraft("switch", "开关", DevicePropertyDefinition.DataType.SWITCH, true, null, 2),
+                        new DeviceEventDefinition.ParameterDraft("enum", "枚举", DevicePropertyDefinition.DataType.ENUM, false, List.of("one", "two"), 3)));
+        assertThat(value.parameters()).extracting(DeviceEventDefinition.Parameter::dataType)
+                .containsExactly(DevicePropertyDefinition.DataType.NUMBER, DevicePropertyDefinition.DataType.TEXT,
+                        DevicePropertyDefinition.DataType.SWITCH, DevicePropertyDefinition.DataType.ENUM);
+        assertThat(value.parameters()).extracting(DeviceEventDefinition.Parameter::required)
+                .containsExactly(true, false, true, false);
+        verify(repository).create(value);
+    }
+
+    @Test void rejectsUnstorableEnumOptionBeforeDefinitionPersistence() {
+        allow(DeviceType.Status.DRAFT);
+        assertThatThrownBy(() -> service.create(projectId, typeId, "fault", "故障", DeviceEventDefinition.Level.ERROR,
+                null, 0, List.of(new DeviceEventDefinition.ParameterDraft("value", "值",
+                        DevicePropertyDefinition.DataType.ENUM, true, List.of("synthetic-secret\0option"), 0))))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.errorCode()).isEqualTo(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID));
+        verifyNoInteractions(repository);
     }
 
     /** @param status 当前设备类型状态 */

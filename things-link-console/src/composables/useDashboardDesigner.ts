@@ -20,7 +20,8 @@ export interface DesignerPermissions {
 /** Console已有身份HTTP端口负责凭据；编辑状态只驻留本页，不创建另一套会话。 */
 export function useDashboardDesigner(
   projectId: Readonly<Ref<string>>,
-  permissions: () => DesignerPermissions
+  permissions: () => DesignerPermissions,
+  frozen: () => boolean = () => false
 ) {
   const state = shallowReactive<
     EditorSnapshot & {
@@ -57,8 +58,8 @@ export function useDashboardDesigner(
     | undefined
   const available = () => !disposed && navigator.onLine
   const editor = createDashboardEditor({
-    canEdit: () => permissions().read && permissions().update && !!projectId.value,
-    available,
+    canEdit: () => !frozen() && permissions().read && permissions().update && !!projectId.value,
+    available: () => available() && !frozen(),
     now: () => performance.now(),
     setTimer: (callback, delay) => window.setTimeout(callback, delay),
     clearTimer: (timer) => window.clearTimeout(timer as number),
@@ -85,13 +86,19 @@ export function useDashboardDesigner(
     createIntent = undefined
     Object.assign(state, { loading: false, creating: false, items: [], nextCursor: null })
   }
-  const stop = watch(() => [projectId.value, permissions().read, permissions().update], close, {
-    flush: 'sync'
-  })
+  const stop = watch(
+    () => [projectId.value, permissions().read, permissions().update, currentIdentityEpoch()],
+    close,
+    {
+      flush: 'sync'
+    }
+  )
   function offline() {
-    close()
+    if (!frozen()) close()
     state.offline = true
-    state.error = '已离线，未保存内容已丢弃，请联网后重新加载。'
+    state.error = frozen()
+      ? '已离线，删除原意图保留；联网后请显式恢复原请求。'
+      : '已离线，未保存内容已丢弃，请联网后重新加载。'
   }
   function online() {
     state.offline = false
@@ -99,7 +106,7 @@ export function useDashboardDesigner(
   window.addEventListener('offline', offline)
   window.addEventListener('online', online)
   async function list(cursor?: string) {
-    if (!available() || !projectId.value || !permissions().read || state.loading) return
+    if (frozen() || !available() || !projectId.value || !permissions().read || state.loading) return
     const generation = epoch
     const sequence = ++loadSequence
     const identity = currentIdentityEpoch()
@@ -130,6 +137,7 @@ export function useDashboardDesigner(
   async function open(id: string) {
     if (
       !available() ||
+      frozen() ||
       !projectId.value ||
       !permissions().read ||
       !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id)
@@ -162,6 +170,7 @@ export function useDashboardDesigner(
   async function create(managementName: string) {
     if (
       !available() ||
+      frozen() ||
       !projectId.value ||
       !permissions().create ||
       !permissions().read ||
@@ -226,13 +235,17 @@ export function useDashboardDesigner(
   onBeforeUnmount(dispose)
   return {
     state,
-    canUndo: computed(() => state.canUndo),
-    canRedo: computed(() => state.canRedo),
+    canUndo: computed(() => !frozen() && state.canUndo),
+    canRedo: computed(() => !frozen() && state.canRedo),
     list,
     open,
     create,
-    select: editor.select,
-    setPage: editor.setPage,
+    select: (id: string | null) => {
+      if (!frozen()) editor.select(id)
+    },
+    setPage: (id: string) => {
+      if (!frozen()) editor.setPage(id)
+    },
     add: editor.add,
     addDeviceComponent: editor.addDeviceComponent,
     upsertTimeRange: editor.upsertTimeRange,
@@ -259,9 +272,14 @@ export function useDashboardDesigner(
     removeSelected: editor.removeSelected,
     undo: editor.undo,
     redo: editor.redo,
-    retrySave: editor.retrySave,
+    retrySave: () => {
+      if (!frozen()) editor.retrySave()
+    },
     reloadRemote,
-    close,
+    close: () => {
+      if (!frozen()) close()
+    },
+    completeDeletion: close,
     dispose
   }
 }

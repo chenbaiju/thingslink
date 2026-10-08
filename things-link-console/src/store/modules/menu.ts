@@ -29,7 +29,8 @@
  * @author Things Link Team
  */
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { workspaceNavigation } from '@/utils/workspace-navigation'
 import { AppRouteRecord } from '@/types/router'
 import { getFirstMenuPath } from '@/utils'
 import { HOME_PAGE_PATH } from '@/router'
@@ -43,6 +44,7 @@ export const useMenuStore = defineStore('menuStore', () => {
   const homePath = ref(HOME_PAGE_PATH)
   /** 菜单列表 */
   const menuList = ref<AppRouteRecord[]>([])
+  const navigationMenu = computed(() => workspaceNavigation(menuList.value))
   /** 菜单宽度 */
   const menuWidth = ref('')
   /** 存储路由移除函数的数组 */
@@ -97,6 +99,7 @@ export const useMenuStore = defineStore('menuStore', () => {
 
   return {
     menuList,
+    navigationMenu,
     menuWidth,
     removeRouteFns,
     setMenuList,

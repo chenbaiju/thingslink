@@ -6,6 +6,12 @@
 -->
 <template>
   <div class="console-page system-status console-page--single-panel" v-loading="loading">
+    <ConsoleWorkspaceHeader
+      project-style
+      title="系统状态"
+      description="查看平台组件当前状态与观测时间，用于定位服务可用性问题。"
+      :links="[{ label: '项目列表', path: '/project/list' }]"
+    />
     <ElAlert
       type="info"
       show-icon
@@ -14,7 +20,7 @@
       class="system-status__notice"
     />
 
-    <ElCard shadow="never" class="system-status__summary console-page__main-panel">
+    <ElCard shadow="never" class="system-status__summary">
       <ElSkeleton :loading="loading && !snapshot" animated>
         <template #template>
           <ElSkeletonItem variant="text" class="system-status__summary-skeleton" />
@@ -36,7 +42,10 @@
       </ElSkeleton>
     </ElCard>
 
-    <h4 class="system-status__section-title">{{ $t('systemStatus.dependencies') }}</h4>
+    <header class="system-status__section-header">
+      <h2 class="system-status__section-title">{{ $t('systemStatus.dependencies') }}</h2>
+      <p class="console-description">查看数据库、存储和通知等运行依赖的健康状态，定位异常组件。</p>
+    </header>
     <ElEmpty
       v-if="!loading && !snapshot?.dependencies?.length"
       :description="$t('systemStatus.empty')"
@@ -63,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { formatTime } from '@/utils/time'
   import { useI18n } from 'vue-i18n'
   import {
@@ -155,8 +165,24 @@
       }
     }
 
+    &__section-header {
+      padding-bottom: 18px;
+      margin: 10px 0 14px;
+      border-bottom: 1px solid var(--console-line);
+
+      .console-description {
+        margin: 0;
+        font-size: 12px;
+        line-height: 20px;
+      }
+    }
+
     &__section-title {
-      margin: 10px 0;
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 40px;
+      color: var(--el-text-color-primary);
     }
 
     &__grid {

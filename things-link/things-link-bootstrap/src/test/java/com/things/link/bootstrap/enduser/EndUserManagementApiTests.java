@@ -136,6 +136,48 @@ class EndUserManagementApiTests extends AbstractIntegrationTest {
         assertThat(JSON.readTree(missing.getContentAsString()).get("code").asInt()).isEqualTo(50048);
     }
 
+    /** 精确找回无角色账号，仅管理者可读，响应不含口令或其他项目角色。 */
+    @Test
+    void lookupRecoversUnassignedIdentityAndOnlyCurrentProjectAssignment() throws Exception {
+        UUID id = provisionEndUser(ownerToken, "lookup-alice");
+        String path = "/api/v1/projects/" + projectId + "/end-users/lookup";
+        var found = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+                .param("username", "  LOOKUP-Alice ")).andReturn().getResponse();
+        assertThat(found.getStatus()).isEqualTo(200);
+        JsonNode body = JSON.readTree(found.getContentAsString());
+        assertThat(body.get("id").asString()).isEqualTo(id.toString());
+        assertThat(body.get("role").isNull()).isTrue();
+        assertThat(body.has("passwordHash")).isFalse();
+        assertThat(body.has("password")).isFalse();
+        assertThat(JSON.readTree(list(ownerToken, projectId).getResponse().getContentAsString()).get("items")).isEmpty();
+        UUID sibling = projectIdOf(createProject(ownerToken));
+        createdProjects.add(sibling);
+        assertThat(mockMvc.perform(post("/api/v1/projects/" + sibling + "/end-users/" + id + "/role")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"APP_ADMIN\"}"))
+                .andReturn().getResponse().getStatus()).isEqualTo(204);
+        var onlyCurrent = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+                .param("username", "lookup-alice")).andReturn().getResponse();
+        assertThat(JSON.readTree(onlyCurrent.getContentAsString()).get("role").isNull()).isTrue();
+        assign(ownerToken, id, "OBSERVER");
+        suspend(ownerToken, id);
+        var assigned = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+                .param("username", "lookup-alice")).andReturn().getResponse();
+        assertThat(JSON.readTree(assigned.getContentAsString()).get("roleStatus").asString()).isEqualTo("DISABLED");
+        var forbidden = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + operatorToken)
+                .param("username", "lookup-alice")).andReturn().getResponse();
+        assertThat(forbidden.getStatus()).isEqualTo(403);
+        assertThat(JSON.readTree(forbidden.getContentAsString()).get("code").asInt()).isEqualTo(60002);
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + outsiderToken)
+                .param("username", "lookup-alice")).andReturn().getResponse().getStatus()).isEqualTo(404);
+        var missing = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+                .param("username", "other-tenant-or-missing")).andReturn().getResponse();
+        assertThat(missing.getStatus()).isEqualTo(404);
+        assertThat(JSON.readTree(missing.getContentAsString()).get("code").asInt()).isEqualTo(60001);
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+                .param("username", " ")).andReturn().getResponse().getStatus()).isEqualTo(400);
+    }
+
     // ---------------------------------------------------------------- 预置
 
     @Test

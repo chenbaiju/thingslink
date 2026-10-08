@@ -6,6 +6,7 @@ vi.mock('@/utils/http', () => ({ default: { get: vi.fn() } }))
 import request from '@/utils/http'
 import {
   fetchGrantUsers,
+  fetchUserDashboardGrants,
   fetchDashboardGrant,
   writeDashboardGrantIntent
 } from '@/api/dashboard-grants'
@@ -135,5 +136,14 @@ describe('看板READ授权API', () => {
       outcomeUnknown: false
     })
     expect(fetch).not.toHaveBeenCalled()
+  })
+})
+
+it('用户授权目录使用20项不透明游标，编码用户/项目ID且只发送GET', async () => {
+  await fetchUserDashboardGrants('project/x', 'user/y', 'opaque')
+  expect(request.get).toHaveBeenLastCalledWith({
+    url: '/api/v1/projects/project%2Fx/end-users/user%2Fy/dashboard-grants',
+    params: { limit: 20, cursor: 'opaque' },
+    showErrorMessage: false
   })
 })

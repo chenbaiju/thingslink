@@ -5,6 +5,7 @@ import com.things.link.project.domain.DeletedProject;
 import com.things.link.project.domain.Project;
 import com.things.link.project.domain.ProjectMember;
 import com.things.link.project.domain.ProjectMembership;
+import com.things.link.project.domain.plan.PlanIdentity;
 import com.things.link.project.domain.ProjectRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -37,7 +38,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                             rs.getString("project_key"),
                             Project.Status.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toInstant(),
-                            rs.getLong("lifecycle_generation")),
+                            rs.getLong("lifecycle_generation"), rs.getString("description")),
                     ProjectRole.valueOf(rs.getString("member_role")));
 
     /** 成员列表的行映射。只查 project_member 一张表，因此不需要列前缀。 */
@@ -60,7 +61,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                             rs.getString("project_key"),
                             Project.Status.valueOf(rs.getString("status")),
                             rs.getTimestamp("created_at").toInstant(),
-                            rs.getLong("lifecycle_generation")),
+                            rs.getLong("lifecycle_generation"), rs.getString("description")),
                     rs.getTimestamp("deleted_at").toInstant(),
                     rs.getTimestamp("restore_deadline").toInstant(),
                     rs.getBoolean("restorable"));
@@ -75,13 +76,13 @@ public class JdbcProjectRepository implements ProjectRepository {
     public void create(Project project) {
         jdbcTemplate.update("""
                         INSERT INTO sys_project (
-                            id, tenant_id, name, region, timezone, project_key, status, lifecycle_generation
+                            id, tenant_id, name, region, timezone, project_key, status, lifecycle_generation, description
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                 project.id(), project.tenantId(), project.name(),
                 project.region(), project.timezone(), project.projectKey(), project.status().name(),
-                project.lifecycleGeneration());
+                project.lifecycleGeneration(), project.description());
     }
 
     @Override
@@ -122,17 +123,42 @@ public class JdbcProjectRepository implements ProjectRepository {
         // 少了 m.account_id = ? 这个条件，返回的就是全平台所有项目 ——
         // 而且不会有任何症状：接口 200、页面正常渲染，只是列出了别人的项目
         return jdbcTemplate.query("""
-                SELECT p.id, p.tenant_id, p.name, p.region, p.timezone, p.project_key, p.status, p.created_at,
+                SELECT p.id, p.tenant_id, p.name, p.description, p.region, p.timezone, p.project_key, p.status, p.created_at,
                        p.lifecycle_generation,
-                       m.role AS member_role
+                       m.role AS member_role,
+                       subscription.plan_code, subscription.plan_name,
+                       subscription.revision_code, subscription.revision_no
                   FROM sys_project p
                   JOIN sys_project_member m ON m.project_id = p.id
+                  LEFT JOIN LATERAL (
+                        SELECT plan.code AS plan_code, revision.name AS plan_name,
+                               revision.revision_code, revision.revision_no
+                          FROM sys_tenant_subscription s
+                          JOIN sys_plan_revision revision ON revision.id = s.plan_revision_id
+                          JOIN sys_plan plan ON plan.id = revision.plan_id
+                         WHERE s.tenant_id = p.tenant_id
+                           AND s.status IN ('ACTIVE', 'GRACE', 'RESTRICTED_FREE')
+                           AND EXISTS (
+                               SELECT 1 FROM sys_tenant_member caller
+                                WHERE caller.tenant_id = p.tenant_id
+                                  AND caller.account_id = m.account_id
+                                  AND caller.status = 'ACTIVE'
+                           )
+                         ORDER BY s.starts_at DESC, s.id DESC
+                         LIMIT 1
+                  ) subscription ON true
                  WHERE m.account_id = ?
                    AND m.status = 'ACTIVE'
                    AND p.deleted_at IS NULL
                    AND p.status IN ('ACTIVE', 'ARCHIVED')
                  ORDER BY p.created_at DESC
-                """, MEMBERSHIP_MAPPER, accountId);
+                """, (rs, rowNum) -> {
+            ProjectMembership membership = MEMBERSHIP_MAPPER.mapRow(rs, rowNum);
+            PlanIdentity subscribedPlan = rs.getString("plan_code") == null ? null : new PlanIdentity(
+                    rs.getString("plan_code"), rs.getString("plan_name"),
+                    rs.getString("revision_code"), rs.getInt("revision_no"));
+            return new ProjectMembership(membership.project(), membership.role(), subscribedPlan);
+        }, accountId);
     }
 
     /** 沿用接口定义的契约。{@inheritDoc} */
@@ -140,7 +166,7 @@ public class JdbcProjectRepository implements ProjectRepository {
     public Optional<ProjectMembership> findMembership(UUID projectId, UUID accountId) {
         // ADR0064决策5：与列表同样限定项目、账号及可读状态；保留成员行不等于保留删除项目资格。
         return jdbcTemplate.query("""
-                SELECT p.id, p.tenant_id, p.name, p.region, p.timezone, p.project_key, p.status, p.created_at,
+                SELECT p.id, p.tenant_id, p.name, p.description, p.region, p.timezone, p.project_key, p.status, p.created_at,
                        p.lifecycle_generation,
                        m.role AS member_role
                   FROM sys_project p
@@ -251,11 +277,12 @@ public class JdbcProjectRepository implements ProjectRepository {
     @Override
     public List<DeletedProject> findDeletedOwnedBy(UUID accountId) {
         // 两表均豁免RLS；accountId、ACTIVE成员和OWNER角色缺一都会泄露其他账号的回收站。
+        // 固定三十乘二十四小时，避免会话时区跨夏令时导致恢复、导出与清理窗口漂移。
         return jdbcTemplate.query("""
-                SELECT p.id, p.tenant_id, p.name, p.region, p.timezone, p.project_key,
+                SELECT p.id, p.tenant_id, p.name, p.description, p.region, p.timezone, p.project_key,
                        p.status, p.created_at, p.lifecycle_generation, p.deleted_at,
-                       p.deleted_at + interval '30 days' AS restore_deadline,
-                       clock_timestamp() < p.deleted_at + interval '30 days' AS restorable
+                       p.deleted_at + interval '720 hours' AS restore_deadline,
+                       clock_timestamp() < p.deleted_at + interval '720 hours' AS restorable
                   FROM public.sys_project p
                   JOIN public.sys_project_member m ON m.project_id = p.id
                  WHERE m.account_id = ? AND m.status = 'ACTIVE' AND m.role = 'OWNER'
@@ -291,10 +318,10 @@ public class JdbcProjectRepository implements ProjectRepository {
             throw new IllegalStateException("项目恢复排他锁要求READ COMMITTED或READ UNCOMMITTED事务");
         }
         return jdbcTemplate.query("""
-                SELECT p.id, p.tenant_id, p.name, p.region, p.timezone, p.project_key,
+                SELECT p.id, p.tenant_id, p.name, p.description, p.region, p.timezone, p.project_key,
                        p.status, p.created_at, p.lifecycle_generation, p.deleted_at,
-                       p.deleted_at + interval '30 days' AS restore_deadline,
-                       clock_timestamp() < p.deleted_at + interval '30 days' AS restorable
+                       p.deleted_at + interval '720 hours' AS restore_deadline,
+                       clock_timestamp() < p.deleted_at + interval '720 hours' AS restorable
                   FROM public.sys_project p
                  WHERE p.id = ? AND p.status = 'DELETING' AND p.deleted_at IS NOT NULL
                    FOR UPDATE OF p
@@ -311,7 +338,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                    SET status = 'ACTIVE', deleted_at = NULL, updated_at = recovery_clock.value
                   FROM recovery_clock
                  WHERE p.id = ? AND p.status = 'DELETING' AND p.deleted_at IS NOT NULL
-                   AND recovery_clock.value < p.deleted_at + interval '30 days'
+                   AND recovery_clock.value < p.deleted_at + interval '720 hours'
                 """, projectId);
     }
 
@@ -342,7 +369,7 @@ public class JdbcProjectRepository implements ProjectRepository {
     @Override
     public Optional<Project> findByProjectKey(String projectKey) {
         return jdbcTemplate.query("""
-                        SELECT id, tenant_id, name, region, timezone, project_key, status, created_at,
+                        SELECT id, tenant_id, name, description, region, timezone, project_key, status, created_at,
                                lifecycle_generation
                           FROM sys_project
                          WHERE project_key = ? AND deleted_at IS NULL AND status = 'ACTIVE'
@@ -350,7 +377,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                         rs.getObject("id", UUID.class), rs.getObject("tenant_id", UUID.class),
                         rs.getString("name"), rs.getString("region"), rs.getString("timezone"), rs.getString("project_key"),
                         Project.Status.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                        rs.getLong("lifecycle_generation")),
+                        rs.getLong("lifecycle_generation"), rs.getString("description")),
                 projectKey).stream().findFirst();
     }
 
@@ -358,7 +385,7 @@ public class JdbcProjectRepository implements ProjectRepository {
     @Override
     public Optional<Project> findById(UUID projectId) {
         return jdbcTemplate.query("""
-                        SELECT id, tenant_id, name, region, timezone, project_key, status, created_at,
+                        SELECT id, tenant_id, name, description, region, timezone, project_key, status, created_at,
                                lifecycle_generation
                           FROM sys_project
                          WHERE id = ? AND deleted_at IS NULL AND status = 'ACTIVE'
@@ -366,7 +393,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                         rs.getObject("id", UUID.class), rs.getObject("tenant_id", UUID.class),
                         rs.getString("name"), rs.getString("region"), rs.getString("timezone"), rs.getString("project_key"),
                         Project.Status.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                        rs.getLong("lifecycle_generation")),
+                        rs.getLong("lifecycle_generation"), rs.getString("description")),
                 projectId).stream().findFirst();
     }
 
@@ -375,7 +402,7 @@ public class JdbcProjectRepository implements ProjectRepository {
     public Optional<Project> findLiveByIdentity(UUID tenantId, UUID projectId) {
         // sys_project明文豁免RLS，二元组必须进入SQL；只过滤deleted_at以保留ARCHIVED只读语义。
         return jdbcTemplate.query("""
-                SELECT id, tenant_id, name, region, timezone, project_key, status, created_at,
+                SELECT id, tenant_id, name, description, region, timezone, project_key, status, created_at,
                        lifecycle_generation
                   FROM public.sys_project
                  WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL
@@ -383,7 +410,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 rs.getObject("id", UUID.class), rs.getObject("tenant_id", UUID.class), rs.getString("name"),
                 rs.getString("region"), rs.getString("timezone"), rs.getString("project_key"),
                 Project.Status.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getLong("lifecycle_generation")),
+                rs.getLong("lifecycle_generation"), rs.getString("description")),
                 tenantId, projectId).stream().findFirst();
     }
 
@@ -394,7 +421,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         if(!"read committed".equals(isolation))throw new IllegalStateException("后台项目许可要求READ COMMITTED");
         // sys_project明文豁免RLS，二元组必须进入SQL；只过滤deleted_at以保留ARCHIVED只读语义。
         return jdbcTemplate.query("""
-                SELECT id, tenant_id, name, region, timezone, project_key, status, created_at,
+                SELECT id, tenant_id, name, description, region, timezone, project_key, status, created_at,
                        lifecycle_generation
                   FROM public.sys_project
                  WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL AND status IN ('ACTIVE','ARCHIVED') FOR SHARE
@@ -402,7 +429,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 rs.getObject("id", UUID.class), rs.getObject("tenant_id", UUID.class), rs.getString("name"),
                 rs.getString("region"), rs.getString("timezone"), rs.getString("project_key"),
                 Project.Status.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getLong("lifecycle_generation")),
+                rs.getLong("lifecycle_generation"), rs.getString("description")),
                 tenantId, projectId).stream().findFirst();
     }
 
@@ -411,7 +438,7 @@ public class JdbcProjectRepository implements ProjectRepository {
     public Optional<Project> findForProjectToken(UUID accountId, UUID projectId) {
         // JWT中的pid已验签，但成员可能被移除；显式账号连接是本豁免RLS查询唯一的授权边界。
         return jdbcTemplate.query("""
-                SELECT p.id, p.tenant_id, p.name, p.region, p.timezone, p.project_key,
+                SELECT p.id, p.tenant_id, p.name, p.description, p.region, p.timezone, p.project_key,
                        CASE WHEN p.deleted_at IS NULL THEN p.status ELSE 'DELETING' END AS status, p.created_at,
                        p.lifecycle_generation
                   FROM public.sys_project p
@@ -421,7 +448,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 rs.getObject("id", UUID.class), rs.getObject("tenant_id", UUID.class), rs.getString("name"),
                 rs.getString("region"), rs.getString("timezone"), rs.getString("project_key"),
                 Project.Status.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getLong("lifecycle_generation")), projectId, accountId).stream().findFirst();
+                rs.getLong("lifecycle_generation"), rs.getString("description")), projectId, accountId).stream().findFirst();
     }
 
     /** 沿用接口定义的契约。{@inheritDoc} */
@@ -464,7 +491,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         // ADR0064决策2/5：跨租户协作先由成员预检确权，按项目身份直接加排他锁，禁止SHARE升级。
         // 等待后由数据库重验状态；ARCHIVED保留给已授权调用方分类为50017，删除不可见。
         return jdbcTemplate.query("""
-                SELECT p.id, p.tenant_id, p.name, p.region, p.timezone, p.project_key, p.status, p.created_at,
+                SELECT p.id, p.tenant_id, p.name, p.description, p.region, p.timezone, p.project_key, p.status, p.created_at,
                        p.lifecycle_generation
                   FROM public.sys_project p
                  WHERE p.id = ? AND p.deleted_at IS NULL AND p.status IN ('ACTIVE', 'ARCHIVED')
@@ -473,7 +500,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 rs.getObject("id", UUID.class), rs.getObject("tenant_id", UUID.class), rs.getString("name"),
                 rs.getString("region"), rs.getString("timezone"), rs.getString("project_key"),
                 Project.Status.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
-                rs.getLong("lifecycle_generation")),
+                rs.getLong("lifecycle_generation"), rs.getString("description")),
                 projectId).stream().findFirst();
     }
 

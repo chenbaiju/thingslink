@@ -174,6 +174,11 @@ public class PropertyIngestionService {
                 ON CONFLICT (message_id) DO NOTHING
                 """, message.messageId(), message.projectId());
         if (acquired == 0) {
+            var kinds = jdbc.queryForList("SELECT message_kind FROM sys_inbox_message WHERE message_id = ?",
+                    String.class, message.messageId());
+            if (kinds.isEmpty() || !"PROPERTY_REPORT".equals(kinds.getFirst())) {
+                throw new BusinessException(PropertyErrorCode.UPLINK_REPLAY_CONFLICT);
+            }
             return false;
         }
 
@@ -346,6 +351,7 @@ public class PropertyIngestionService {
         }
         Boolean identical = jdbc.queryForObject("""
                 SELECT project_id = ?
+                   AND message_kind = 'PROPERTY_REPORT'
                    AND thing_model_version_id = ?
                    AND payload_digest = encode(digest(convert_to(?::jsonb::text, 'UTF8'), 'sha256'), 'hex')
                   FROM sys_inbox_message

@@ -81,7 +81,7 @@
    * 渐变定义 — 单一来源。
    * 工具类与组件内联引用都指向这里，改一处即改全站。
    */
-  --gradient-brand: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600));
+  --gradient-brand: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-700));
   --gradient-brand-deep: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800));
   --gradient-brand-logo: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-700));
 }
@@ -99,11 +99,13 @@ body {
   background-color: var(--color-bg-primary);
 }
 
-/* 链接 */
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s ease;
+/* 链接默认值放入基础层，避免覆盖按钮及导航的工具类颜色。 */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
 }
 
 /* 选择文本颜色 */

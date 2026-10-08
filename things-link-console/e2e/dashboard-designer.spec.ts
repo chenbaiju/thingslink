@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
   acceptProjectInvitationFromInbox,
+  cleanupCreatedProject,
   enterProject,
   login,
   resetSession,
@@ -10,16 +11,25 @@ import {
   MEMBER_PASSWORD
 } from './helpers'
 
+let createdProjectName = ''
+test.afterEach(async ({ browser, baseURL }) => {
+  if (createdProjectName) await cleanupCreatedProject(browser, baseURL!, createdProjectName)
+  createdProjectName = ''
+})
+
 /** S12-4a：所有草稿均经过真实Console授权HTTP；第二编辑页制造真实CAS竞争，不mock保存结果。 */
 test('看板静态编辑：创建、拖拽调整、自动保存重开以及冲突保留本地', async ({ page, context }) => {
   test.setTimeout(240_000)
   await page.setViewportSize({ width: 1920, height: 1080 })
   const projectName = `设计器验收-${Date.now()}`
+  createdProjectName = projectName
   await login(page, OWNER_EMAIL, OWNER_PASSWORD)
   await page.goto('/#/project/list')
   await page.getByRole('button', { name: '创建项目' }).click()
-  await page.getByPlaceholder('例如：厂区环境监测').fill(projectName)
-  await page.getByRole('button', { name: '确定' }).click()
+  await expect(page).toHaveURL(/#\/project\/create$/)
+  await page.getByPlaceholder('请输入项目名称').fill(projectName)
+  await page.getByRole('button', { name: '创建项目', exact: true }).click()
+  await expect(page).toHaveURL(/#\/project\/list$/)
   await expect(page.getByText(projectName).first()).toBeVisible()
   await enterProject(page, projectName)
   // 后端菜单真实下发并注册；不临时注入前端路由绕过菜单资格。

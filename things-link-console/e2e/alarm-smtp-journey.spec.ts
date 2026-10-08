@@ -298,6 +298,12 @@ test(
       await expect(timeline).toContainText('告警激活')
       await expect(timeline).toContainText('人工确认')
       await expect(timeline).toContainText('告警清除')
+      const deliveriesPanel = timeline.locator('.alarm-notification-deliveries')
+      await expect(deliveriesPanel.locator('tbody tr')).toHaveCount(1)
+      await expect(deliveriesPanel).toContainText('SUCCEEDED')
+      await expect(deliveriesPanel).toContainText('***')
+      await expect(deliveriesPanel).not.toContainText(fixture.target)
+      await expect(deliveriesPanel.getByRole('button', { name: /重发/ })).toHaveCount(0)
       const finalFact = await readFact()
       expect(
         finalFact?.events.filter((event: { eventType?: string }) => event.eventType === 'ACTIVATED')

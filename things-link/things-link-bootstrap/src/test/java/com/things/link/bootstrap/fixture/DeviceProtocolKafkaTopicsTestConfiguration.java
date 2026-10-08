@@ -21,6 +21,13 @@ import static com.things.link.ingestion.infrastructure.TopologyReplyKafkaConsume
 @Configuration(proxyBeanMethods = false)
 public class DeviceProtocolKafkaTopicsTestConfiguration {
 
+    /** BE-001-B 独立事件摄取主题，保留生产十二分区和七天原始事实期限。 */
+    @Bean
+    NewTopic eventNormalizedTopic() {
+        return TopicBuilder.name(com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.EVENT_NORMALIZED_TOPIC)
+                .partitions(12).replicas(1).config("retention.ms", "604800000").build();
+    }
+
     /** S10-2a 拓扑消息主题。 */
     @Bean
     NewTopic topoTopic() {

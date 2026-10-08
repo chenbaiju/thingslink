@@ -81,7 +81,13 @@ export default ({ mode }: { mode: string }) => {
       tailwindcss(),
       // 自动按需导入 API
       AutoImport({
-        imports: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
+        imports: [
+          'vue',
+          'vue-router',
+          'pinia',
+          '@vueuse/core',
+          { 'element-plus': ['ElMessage', 'ElMessageBox'] }
+        ],
         dts: 'src/types/import/auto-imports.d.ts',
         resolvers: [ElementPlusResolver()],
         eslintrc: {
@@ -108,7 +114,8 @@ export default ({ mode }: { mode: string }) => {
         threshold: 10240, // 只有大小大于该值的资源会被处理 10240B = 10KB
         deleteOriginFile: false // 压缩后是否删除原文件
       }),
-      vueDevTools()
+      // 调试工具按需开启，避免悬浮控件遮挡开发工作台和窄屏操作。
+      env.VITE_DEVTOOLS === 'true' && vueDevTools()
       // 打包分析
       // visualizer({
       //   open: true,

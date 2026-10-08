@@ -1,5 +1,13 @@
 <template>
   <div class="console-page console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="商业运营"
+      description="面向受控运营身份的租户额度审批。项目角色不授予运营权限。"
+      :links="[
+        { label: '待审申请', path: '/self-hosted-enrollment', permission: 'commercial:adjust' },
+        { label: '责任审核', path: '/self-hosted-review', permission: 'self_hosted:review' }
+      ]"
+    />
     <ElCard v-if="allowed" class="commercial-operations console-page__main-panel" shadow="never">
       <ElAlert
         type="info"
@@ -137,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'

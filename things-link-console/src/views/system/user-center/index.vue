@@ -1,5 +1,11 @@
 <template>
   <div class="console-page user-center-page">
+    <ConsoleWorkspaceHeader
+      project-style
+      title="个人中心"
+      description="查看当前账号和会话资料；项目身份随当前选择的项目变化。"
+      :links="userInfo.currentProjectId ? [] : [{ label: '项目列表', path: '/project/list' }]"
+    />
     <ElCard shadow="never" class="user-center-page__profile">
       <div class="profile-identity">
         <img class="profile-identity__avatar" :src="avatarUrl" alt="avatar" />
@@ -58,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { storeToRefs } from 'pinia'
   import ProjectInvitations from '@/components/ProjectInvitations.vue'
   import defaultAvatar from '@imgs/user/avatar.webp'
@@ -74,7 +81,41 @@
 
 <style lang="scss" scoped>
   .user-center-page {
+    display: flex;
+    flex-direction: column;
+    height: var(--art-full-height);
     padding: 10px;
+
+    > :not(.project-invitations) {
+      flex-shrink: 0;
+    }
+
+    :deep(.project-invitations) {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 320px;
+
+      .el-card__header {
+        flex-shrink: 0;
+      }
+
+      .el-card__body {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .console-description,
+      .el-alert {
+        flex-shrink: 0;
+      }
+
+      .el-table__inner-wrapper::before {
+        display: none;
+      }
+    }
 
     &__header {
       margin-bottom: 10px;

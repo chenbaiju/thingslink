@@ -252,12 +252,19 @@ class MenuEndpointTests extends AbstractIntegrationTest {
                 .as("下发 i18n key 而非中文文案，否则切语言时菜单不会跟着变")
                 .isEqualTo("menus.dashboard.title");
 
-        JsonNode overview = dashboard.get("children").get(0);
+        JsonNode workbench = dashboard.get("children").get(0);
+        assertThat(workbench.get("name").asString()).isEqualTo("Workbench");
+        assertThat(workbench.get("path").asString()).isEqualTo("workbench");
+        assertThat(workbench.get("component").asString()).isEqualTo("/dashboard/workbench");
+        assertThat(workbench.get("meta").get("title").asString()).isEqualTo("menus.dashboard.workbench");
+        assertThat(workbench.get("meta").get("fixedTab").asBoolean()).isTrue();
+
+        JsonNode overview = findByName(tree, "Overview");
         assertThat(overview.get("path").asString())
                 .as("子级路径不带前导斜杠，前端会拼接父路径；带了会拼出 //dashboard/overview")
                 .isEqualTo("overview");
         assertThat(overview.get("component").asString()).isEqualTo("/dashboard/overview");
-        assertThat(overview.get("meta").get("fixedTab").asBoolean()).isTrue();
+        assertThat(overview.get("meta").get("fixedTab").asBoolean()).isFalse();
 
         JsonNode groups = findByName(tree, "DeviceGroups");
         assertThat(groups.get("path").asString()).isEqualTo("groups");

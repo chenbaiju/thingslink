@@ -16,8 +16,7 @@ export const SITE = {
   description: 'ThingsLink 物联网云平台 — 设备接入、数据采集、远程控制与规则告警',
   consoleUrl: CONSOLE_URL,
   /** 文档首页路径 */
-  docsUrl: '/docs',
-  docsEnabled: false
+  docsUrl: '/docs'
 } as const
 
 /**
@@ -33,7 +32,8 @@ export const HOME_NAV = [
 ] as const
 
 export const NAV = [
-  ...HOME_NAV
+  ...HOME_NAV,
+  { label: '文档', href: SITE.docsUrl }
 ] as const
 
 /** 归一化路径：去掉查询串、哈希与末尾斜杠，供当前项比较使用 */
@@ -64,6 +64,10 @@ interface FooterGroup {
 
 const footerGroups: readonly FooterGroup[] = [
   { title: '平台导览', links: HOME_NAV },
+  { title: '开发者资料', links: [
+    { label: '文档首页', href: SITE.docsUrl },
+    { label: '快速开始', href: docsPath('getting-started') }
+  ] },
   ...(CONSOLE_URL ? [{ title: '控制台', links: [
     { label: '进入控制台', href: SITE.consoleUrl, external: true }
   ] }] : [])

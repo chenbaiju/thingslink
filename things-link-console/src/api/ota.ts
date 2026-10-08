@@ -22,6 +22,7 @@ export type OtaUploadCreateRequest = components['schemas']['OtaUploadCreateReque
 export type OtaUploadCancelRequest = components['schemas']['OtaUploadCancelRequest']
 export type OtaPublicationCreateRequest = components['schemas']['OtaPublicationCreateRequest']
 export type OtaPublicationResponse = components['schemas']['OtaPublicationResponse']
+export type OtaReleaseResponse = components['schemas']['OtaReleaseResponse']
 export type OtaReleaseDownloadResponse = components['schemas']['OtaReleaseDownloadResponse']
 export type ThingModelVersionResponse = components['schemas']['ThingModelVersionResponse']
 export type OtaCampaignSummaryResponse = components['schemas']['OtaCampaignSummaryResponse']
@@ -206,6 +207,14 @@ export function fetchOtaPublicationHistory(
   })
 }
 
+/** 按需读取管理端公开发布证明；当前资格由服务端复核，不代表设备验签通过。 */
+export function fetchOtaRelease(projectId: string, firmwareId: string) {
+  return request.get<OtaReleaseResponse>({
+    url: `${firmware(projectId, firmwareId)}/release`,
+    showErrorMessage: false
+  })
+}
+
 /** 申领固定版本短时下载地址；只用于管理端核验，不作为设备下载入口。 */
 export function createOtaReleaseDownload(
   projectId: string,
@@ -214,7 +223,8 @@ export function createOtaReleaseDownload(
 ) {
   return request.post<OtaReleaseDownloadResponse>({
     url: `${firmware(projectId, firmwareId)}/release/downloads`,
-    headers: { 'Idempotency-Key': idempotencyKey }
+    headers: { 'Idempotency-Key': idempotencyKey },
+    showErrorMessage: false
   })
 }
 
@@ -236,10 +246,36 @@ export function fetchLatestThingModelVersion(projectId: string, deviceTypeId: st
  * （任意项目成员可读），因此响应面必须更窄；需要完整声明时走管理读取入口。
  */
 export type OtaTypeBaselineVersionResponse = components['schemas']['OtaTypeBaselineVersionResponse']
+export type OtaTypeBaselineResponse = components['schemas']['OtaTypeBaselineResponse']
+export type OtaTypeBaselineBody = components['schemas']['OtaTypeBaselineBody']
+export type OtaTypeBaselineRegistration = components['schemas']['OtaTypeBaselineRegistration']
 
 /** 类型基线地址前缀；父类型不存在或跨项目是404/70031。 */
 const otaDeviceTypeBaseline = (projectId: string, deviceTypeId: string) =>
   `/api/v1/projects/${encodeURIComponent(projectId)}/ota/device-types/${encodeURIComponent(deviceTypeId)}/baseline` as const
+
+/** 完整已登记声明，只读持久事实，不证明当前服务器配置或设备资格。 */
+export function fetchOtaTypeBaseline(projectId: string, deviceTypeId: string) {
+  return request.get<OtaTypeBaselineResponse>({
+    url: otaDeviceTypeBaseline(projectId, deviceTypeId),
+    showErrorMessage: false
+  })
+}
+
+/** 只提交冻结修订；服务器从精确类型的受控配置选择完整基线。 */
+export function registerOtaTypeBaseline(
+  projectId: string,
+  deviceTypeId: string,
+  body: OtaTypeBaselineRegistration,
+  key: string
+) {
+  return request.post<OtaTypeBaselineResponse>({
+    url: `${otaDeviceTypeBaseline(projectId, deviceTypeId)}/registrations`,
+    params: body,
+    headers: { 'Idempotency-Key': key },
+    showErrorMessage: false
+  })
+}
 
 /**
  * 游标分页读取类型基线的不可变版本历史（最新在前）。
@@ -271,12 +307,38 @@ export function fetchOtaBaselineVersions(
  * 响应永不含规范包字节、签名字节、`policyHash` 或租户/项目标识。
  */
 export type OtaTrustDomainSummaryResponse = components['schemas']['OtaTrustDomainSummaryResponse']
+export type OtaTrustResponse = components['schemas']['OtaTrustResponse']
+export type OtaTrustImportRequest = components['schemas']['OtaTrustImportRequest']
+export type OtaTrustBundleBody = components['schemas']['OtaTrustBundleBody']
+
+/** 当前域的公开登记摘要；70013表示尚未登记或当前项目不可见。 */
+export function fetchOtaTrustDomain(projectId: string, trustDomain: string) {
+  return request.get<OtaTrustResponse>({
+    url: otaTrustDomain(projectId, trustDomain),
+    showErrorMessage: false
+  })
+}
+
+/** 只提交已核对的离线公开签包，调用方冻结三字段正文和原幂等键。 */
+export function importOtaTrustBundle(
+  projectId: string,
+  trustDomain: string,
+  body: OtaTrustImportRequest,
+  key: string
+) {
+  return request.post<OtaTrustResponse>({
+    url: `${otaTrustDomain(projectId, trustDomain)}/bundles`,
+    params: body,
+    headers: { 'Idempotency-Key': key },
+    showErrorMessage: false
+  })
+}
 
 /**
  * 发布键公开元数据：只有 keyVersion、state、signatureProfile、fingerprint 与有效期窗口。
  *
- * 服务端刻意不返回 SPKI、规范字节或任何可改变键状态的字段；本片也没有 rotate/retire/import
- * 入口——密钥状态变更属于独立安全切片，控制台只读不写。
+ * 服务端刻意不返回 SPKI、规范字节或任何可改变键状态的字段；集合读取保持只读。
+ * 完整公开签包导入使用独立受控入口，不从这里提供单键编辑或在线根配置。
  * `notBefore`/`notAfter` 是UTC epoch秒（与 `tc-ota-trust-bundle/v1` 冻结语义一致）。
  */
 export type OtaTrustKeyResponse = components['schemas']['OtaTrustKeyResponse']
@@ -613,6 +675,8 @@ export function fetchOtaAudits(
 export type OtaDeviceJobSummaryResponse = components['schemas']['OtaDeviceJobSummaryResponse']
 /** 作业详情：摘要字段加真实转移时间线。 */
 export type OtaDeviceJobDetailResponse = components['schemas']['OtaDeviceJobDetailResponse']
+/** 已认证历史观察与当次重验分别投影，始终不授予回退执行权。 */
+export type OtaRollbackPreflightResponse = components['schemas']['OtaRollbackPreflightResponse']
 
 /** 游标分页读取活动下的设备作业；服务端按作业ID倒序。 */
 export function fetchOtaCampaignJobs(
@@ -632,6 +696,14 @@ export function fetchOtaCampaignJobs(
 export function fetchOtaCampaignJob(projectId: string, campaignId: string, jobId: string) {
   return request.get<OtaDeviceJobDetailResponse>({
     url: `${campaign(projectId, campaignId)}/jobs/${encodeURIComponent(jobId)}`,
+    showErrorMessage: false
+  })
+}
+
+/** 仅读取既有回退准备观察；读取不创建查询、不刷新窗口或触发回退。 */
+export function fetchOtaRollbackPreflight(projectId: string, campaignId: string, jobId: string) {
+  return request.get<OtaRollbackPreflightResponse>({
+    url: `${campaign(projectId, campaignId)}/jobs/${encodeURIComponent(jobId)}/rollback-preflight`,
     showErrorMessage: false
   })
 }

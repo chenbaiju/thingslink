@@ -4,6 +4,7 @@ import {
   emptyContent,
   parseContent,
   revision,
+  missingApplicationResource,
   title
 } from '@/features/application/editor-model'
 const id = '00000000-0000-0000-0000-000000000001'
@@ -47,6 +48,61 @@ function fixture() {
   }
 }
 describe('应用草稿封闭合同', () => {
+  it('整体应用404与60030不能混同单个版本60048、认证或项目不存在', () => {
+    expect(missingApplicationResource({ code: 60030, status: 404 })).toBe(true)
+    expect(missingApplicationResource({ status: 404 })).toBe(true)
+    for (const error of [
+      { code: 60048, status: 404 },
+      { code: 50001, status: 404 },
+      { code: 20001, status: 401 },
+      { code: 60030, status: 401 },
+      { code: 60030, status: 500 }
+    ])
+      expect(missingApplicationResource(error)).toBe(false)
+  })
+  it('清业务视图保ID而推进generation，迟到保存不能恢复已隐藏内容，终态reset清ID', async () => {
+    const f = fixture()
+    await f.editor.open(id)
+    f.editor.change((content) => {
+      content.displayName = '未保存'
+    })
+    let resolve!: (value: unknown) => void
+    f.save.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
+    const saving = f.editor.save()
+    f.readonly()
+    f.editor.suspendView()
+    expect(f.editor.snapshot()).toMatchObject({
+      id,
+      content: null,
+      revision: '',
+      busy: false,
+      dirty: false,
+      blocked: true
+    })
+    resolve({ applicationId: id, revision: '1', content: { ...f.content, displayName: '未保存' } })
+    await saving
+    expect(f.editor.snapshot()).toMatchObject({ id, content: null, revision: '' })
+    f.editor.reset()
+    expect(f.editor.snapshot().id).toBeNull()
+  })
+  it('终态reset阻止先前草稿读取回填ID', async () => {
+    const f = fixture()
+    let resolve!: (value: unknown) => void
+    f.draft.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
+    const reading = f.editor.open(id)
+    f.editor.reset()
+    resolve({ applicationId: id, revision: '0', content: f.content })
+    await reading
+    expect(f.editor.snapshot()).toMatchObject({ id: null, content: null, busy: false })
+  })
   it('保留精确版本、有序引用、指定入口及Long字符串', () => {
     const value = emptyContent('测试')
     value.dashboardRefs = [

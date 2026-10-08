@@ -6,11 +6,15 @@
         <ElButton :loading="loading" @click="load()">刷新</ElButton>
       </div>
     </template>
-    <p class="console-description"
-      >邀请不会立即添加成员。收件人完成邮箱验证并明确接受后才会加入项目。</p
-    >
+    <ElAlert
+      class="project-invitations__notice"
+      type="info"
+      show-icon
+      :closable="false"
+      title="邀请不会立即添加成员。收件人完成邮箱验证并明确接受后才会加入项目。"
+    />
     <ElAlert v-if="failed" type="error" :closable="false" title="邀请读取失败，请刷新重试" />
-    <ElTable v-loading="loading" :data="rows" row-key="id">
+    <ElTable v-loading="loading" :data="rows" row-key="id" :height="projectId ? undefined : '100%'">
       <ElTableColumn prop="projectName" label="项目" min-width="150" />
       <ElTableColumn prop="targetEmail" label="收件邮箱" min-width="210" />
       <ElTableColumn prop="role" label="角色" width="110" />
@@ -50,7 +54,7 @@
         />
       </template>
     </ElTable>
-    <div class="console-page-actions">
+    <div v-if="projectId" class="console-page-actions">
       <ElButton :disabled="loading || !nextCursor" @click="load(nextCursor)">下一页</ElButton>
       <ElButton :disabled="loading || !onLaterPage" @click="load()">回到第一页</ElButton>
     </div>
@@ -104,13 +108,29 @@
     loading.value = true
     onLaterPage.value = !!cursor
     try {
-      const page = props.projectId
-        ? await fetchProjectInvitations(props.projectId, cursor, controller.signal)
-        : await fetchMyProjectInvitations(cursor, controller.signal)
-      if (run !== epoch) return
-      if (!Array.isArray(page.items)) throw new Error('不完整的邀请响应')
-      rows.value = page.items
-      nextCursor.value = page.nextCursor ?? undefined
+      if (props.projectId) {
+        const page = await fetchProjectInvitations(props.projectId, cursor, controller.signal)
+        if (run !== epoch) return
+        if (!Array.isArray(page.items)) throw new Error('不完整的邀请响应')
+        rows.value = page.items
+        nextCursor.value = page.nextCursor ?? undefined
+      } else {
+        const invitations = new Map<string, ProjectInvitation>()
+        const seenCursors = new Set<string>()
+        let inboxCursor: string | undefined
+        do {
+          const page = await fetchMyProjectInvitations(inboxCursor, controller.signal)
+          if (run !== epoch) return
+          if (!Array.isArray(page.items)) throw new Error('不完整的邀请响应')
+          for (const invitation of page.items) invitations.set(invitation.id, invitation)
+          inboxCursor = page.nextCursor || undefined
+          if (inboxCursor) {
+            if (seenCursors.has(inboxCursor)) throw new Error('邀请分页游标重复')
+            seenCursors.add(inboxCursor)
+          }
+        } while (inboxCursor)
+        rows.value = [...invitations.values()]
+      }
     } catch {
       if (run === epoch) failed.value = true
     } finally {
@@ -161,3 +181,9 @@
   })
   defineExpose({ refresh: () => load() })
 </script>
+
+<style scoped lang="scss">
+  .project-invitations__notice {
+    margin-bottom: 10px;
+  }
+</style>

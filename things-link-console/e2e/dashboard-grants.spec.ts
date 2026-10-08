@@ -23,7 +23,7 @@ test('用户READ授权：真实App可见性、CAS竞争、原键恢复与停用�
   test.setTimeout(180_000)
   await page.setViewportSize({ width: 1920, height: 1080 })
   await login(page, OWNER_EMAIL, OWNER_PASSWORD)
-  await enterProject(page, 'E2E项目')
+  await enterProject(page, process.env.E2E_END_USER_PROJECT_NAME || 'E2E项目')
   await page.goto('/#/dashboard/designer')
   await page.getByTestId('dashboard-create').click()
   await page.getByTestId('dashboard-name').fill('用户读取授权验收')

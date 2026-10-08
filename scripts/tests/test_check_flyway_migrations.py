@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import shutil
+import re
+import runpy
 import subprocess
 import sys
 import tempfile
@@ -99,6 +101,24 @@ class FlywayMigrationGuardTests(unittest.TestCase):
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("Git增量审计通过", result.stdout)
+
+    def test_accepts_registered_assistant_migration(self) -> None:
+        """Agent已在生产配置登记，合法递增迁移不能被静态白名单误拒。"""
+
+        base, _ = self.create_baseline()
+        self.write(self.migration_path("assistant", "V20260906_0110__assistant_schema.sql"))
+        self.commit_all("add assistant migration")
+        result = self.guard("--base-ref", base, "--head-ref", "HEAD")
+        self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_domain_allowlist_matches_bootstrap_locations(self) -> None:
+        """真实生产迁移配置与守卫清单保持双向一致，防止新域登记漂移。"""
+
+        root = SCRIPT.parent.parent
+        configuration = (root / "things-link/things-link-bootstrap/src/main/resources/application.yml").read_text(encoding="utf-8")
+        locations = set(re.findall(r"^\s*-\s*classpath:db/migration/([a-z]+)\s*$", configuration, re.MULTILINE))
+        self.assertTrue(locations)
+        self.assertEqual(locations, set(runpy.run_path(str(SCRIPT))["ALLOWED_MIGRATION_DOMAINS"]))
 
     def test_rejects_new_migration_not_above_base_maximum(self) -> None:
         """新增迁移即使当前树唯一，也不能回填到基线最大版本之前。"""

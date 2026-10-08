@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
     info: { currentProjectId: string; userId: string; tenantId: string; buttons: string[] }
   },
   confirm: vi.fn(),
+  route: { query: {} as Record<string, string> },
+  recent: vi.fn(),
+  renameRecent: vi.fn(),
   leave: undefined as undefined | (() => Promise<boolean>),
   list: vi.fn(),
   draft: vi.fn(),
@@ -15,7 +18,14 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => mocks.user }))
 vi.mock('@/utils/http/identity-scope', () => ({ currentIdentityEpoch: () => 1 }))
+vi.mock('@/utils/workbench-recent', () => ({
+  recordRecentResource: mocks.recent,
+  renameRecentResource: mocks.renameRecent
+}))
 vi.mock('vue-router', () => ({
+  useRoute: () => mocks.route,
+  useRouter: () => ({ push: vi.fn() }),
+  onBeforeRouteUpdate: vi.fn(),
   onBeforeRouteLeave: (guard: () => Promise<boolean>) => {
     mocks.leave = guard
   }
@@ -32,6 +42,7 @@ vi.mock('@/api/dashboard-publication', () => ({ fetchDashboardPublicationHistory
 vi.mock('@/views/dashboard/applications/components/ApplicationPublication.vue', () => ({
   default: { name: 'ApplicationPublication', template: '<div />' }
 }))
+import ManagementRenameDialog from '@/components/business/ManagementRenameDialog.vue'
 import Manager from '@/views/dashboard/applications/index.vue'
 const id = '11111111-1111-4111-8111-111111111111'
 const other = '22222222-2222-4222-8222-222222222222'
@@ -82,6 +93,7 @@ async function loaded() {
 }
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.route = reactive({ query: {} })
   mocks.user = reactive({
     info: {
       currentProjectId: 'project',
@@ -196,4 +208,69 @@ describe('应用管理身份与发布恢复接线', () => {
     expect(await mocks.leave!()).toBe(false)
     expect(wrapper!.findComponent(Publication).vm.$.uid).toBe(instance)
   })
+})
+
+it('本机最近访问通过当前项目单读打开，读取成功才登记引用', async () => {
+  mocks.route.query = { resourceId: id, contextProjectId: 'project' }
+  wrapper = mount(Manager, {
+    global: { stubs: { ConsoleWorkspaceHeader: true, ElAlert: true, ElButton: true } }
+  })
+  await flushPromises()
+  expect(mocks.draft).toHaveBeenCalledWith('project', id)
+  expect(mocks.recent).toHaveBeenCalledWith(
+    { userId: 'user', tenantId: 'tenant', projectId: 'project' },
+    { kind: 'application', id, label: '原稿' },
+    true
+  )
+  expect(mocks.create).not.toHaveBeenCalled()
+})
+it.each(['project', 'permission', 'invalid'])(
+  '最近访问 %s 不满足时不请求应用草稿',
+  async (reason) => {
+    mocks.route.query = {
+      resourceId: id,
+      contextProjectId: reason === 'project' ? 'other' : 'project'
+    }
+    if (reason === 'permission') mocks.user.info.buttons = []
+    if (reason === 'invalid') mocks.route.query.resourceId = 'invalid-id'
+    wrapper = mount(Manager, {
+      global: { stubs: { ConsoleWorkspaceHeader: true, ElAlert: true, ElButton: true } }
+    })
+    await flushPromises()
+    expect(mocks.draft).not.toHaveBeenCalled()
+    expect(mocks.recent).not.toHaveBeenCalled()
+  }
+)
+it('最近访问单读失败不登记引用，并保持可恢复的页面错误', async () => {
+  mocks.route.query = { resourceId: id, contextProjectId: 'project' }
+  mocks.draft.mockRejectedValueOnce(new Error('deleted'))
+  wrapper = mount(Manager, {
+    global: { stubs: { ConsoleWorkspaceHeader: true, ElAlert: true, ElButton: true } }
+  })
+  await flushPromises()
+  expect(mocks.recent).not.toHaveBeenCalled()
+  expect(wrapper.find('[data-testid="application-error"]').exists()).toBe(true)
+})
+
+it('重命名只改目录及当前管理名称，不更换草稿或发布组件', async () => {
+  const publication = await loaded()
+  const instance = publication.vm.$.uid
+  await wrapper!.get('[aria-label="公开展示名"]').setValue('未保存展示名称')
+  wrapper!
+    .findComponent(ManagementRenameDialog)
+    .vm.$emit('renamed', { id, managementName: '新管理名称' })
+  await nextTick()
+  expect(wrapper!.get('[data-testid="application-management-name"]').text()).toContain('新管理名称')
+  expect(wrapper!.get('[aria-label="应用目录"]').text()).toContain('新管理名称')
+  expect((wrapper!.get('[aria-label="公开展示名"]').element as HTMLInputElement).value).toBe(
+    '未保存展示名称'
+  )
+  expect(wrapper!.get('[aria-label="应用草稿"]').text()).toContain('未保存')
+  expect(wrapper!.findComponent(Publication).vm.$.uid).toBe(instance)
+  expect(mocks.renameRecent).toHaveBeenCalledWith(
+    { userId: 'user', tenantId: 'tenant', projectId: 'project' },
+    'application',
+    id,
+    '新管理名称'
+  )
 })

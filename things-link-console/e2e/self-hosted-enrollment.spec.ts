@@ -1,6 +1,6 @@
 import { generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto'
 import { expect, test } from '@playwright/test'
-import { login, resetSession } from './helpers'
+import { expandWorkspace, login, resetSession } from './helpers'
 
 test.use({ video: 'off' })
 
@@ -47,6 +47,7 @@ test('发行方待审申请页面：权限、上传、去重、冲突与键集�
   const original = requestFixture(tenantId, deploymentId)
   const conflict = requestFixture(tenantId, deploymentId)
   await login(page, email, password)
+  await expandWorkspace(page, '账号与平台工具')
   await expect(
     page.locator('#app-sidebar').getByText('自部署授权申请', { exact: true })
   ).toBeVisible()
@@ -140,6 +141,7 @@ test('发行方待审申请页面：权限、上传、去重、冲突与键集�
 
   await resetSession(page)
   await login(page, noPermissionEmail, password)
+  await expandWorkspace(page, '账号与平台工具')
   await expect(
     page.locator('#app-sidebar').getByText('自部署授权申请', { exact: true })
   ).toHaveCount(0)

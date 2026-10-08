@@ -1,5 +1,13 @@
 <template>
   <div class="console-page">
+    <ConsoleWorkspaceHeader
+      title="消息规则"
+      description="处理上行数据并配置动作。先保存草稿与调试，再明确启用版本。"
+      :links="[
+        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
+        { label: '执行记录', path: '/rule/executions?source=rule', permission: 'rule:read' }
+      ]"
+    />
     <ElCard v-if="!allowed" shadow="never"
       ><ElAlert title="需要 OWNER 或 ADMIN 的规则管理权限" type="warning" :closable="false"
     /></ElCard>
@@ -154,6 +162,7 @@
   </div>
 </template>
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import { Plus } from '@element-plus/icons-vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'

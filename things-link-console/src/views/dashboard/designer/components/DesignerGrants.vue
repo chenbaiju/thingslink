@@ -25,32 +25,39 @@
     >
     <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" />
     <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" />
-    <el-button data-testid="grants-refresh-users" :disabled="!usable || busy" @click="grants.open()"
-      >刷新用户目录</el-button
-    >
-    <p class="console-description" v-if="state.listLoaded && !state.users.length"
-      >当前页没有项目用户。</p
-    >
-    <ul
-      ><li v-for="user in state.users" :key="user.id">
-        {{ user.displayName }}（{{ user.username }}）·
-        {{ user.status === 'ACTIVE' ? '账号有效' : '账号不可写' }} /
-        {{ user.roleStatus === 'ACTIVE' ? '项目角色有效' : '项目角色不可写' }}
-        <el-button
-          :disabled="
-            !usable || busy || (!!state.pending && state.pending.intent.appUserId !== user.id)
-          "
-          @click="grants.selectUser(user.id)"
-          >选择用户 {{ user.username }}</el-button
-        >
-      </li></ul
-    >
-    <el-button v-if="state.nextCursor" :disabled="!usable || busy" @click="grants.loadMore()"
-      >下一页用户</el-button
-    >
+    <template v-if="!fixedUser">
+      <el-button
+        data-testid="grants-refresh-users"
+        :disabled="!usable || busy"
+        @click="grants.open()"
+        >刷新用户目录</el-button
+      >
+      <p class="console-description" v-if="state.listLoaded && !state.users.length"
+        >当前页没有项目用户。</p
+      >
+      <ul
+        ><li v-for="user in state.users" :key="user.id">
+          {{ user.displayName || user.username }}（{{ user.username }}）·
+          {{ user.status === 'ACTIVE' ? '账号有效' : '账号不可写' }} /
+          {{ user.roleStatus === 'ACTIVE' ? '项目角色有效' : '项目角色不可写' }}
+          <el-button
+            :disabled="
+              !usable || busy || (!!state.pending && state.pending.intent.appUserId !== user.id)
+            "
+            @click="grants.selectUser(user.id)"
+            >选择用户 {{ user.username }}</el-button
+          >
+        </li></ul
+      >
+      <el-button v-if="state.nextCursor" :disabled="!usable || busy" @click="grants.loadMore()"
+        >下一页用户</el-button
+      >
+    </template>
     <section v-if="state.selectedUser">
       <h4 class="console-heading"
-        >目标用户：{{ state.selectedUser.displayName }}（{{ state.selectedUser.username }}）</h4
+        >目标用户：{{ state.selectedUser.displayName || state.selectedUser.username }}（{{
+          state.selectedUser.username
+        }}）</h4
       >
       <p class="console-description" v-if="!activeUser"
         >用户或项目角色非有效状态，仅查看历史，不允许授予或撤销。</p
@@ -99,8 +106,8 @@
         <el-button
           v-if="state.pending.status === 'UNKNOWN'"
           data-testid="grants-retry"
-          :disabled="!usable || busy || state.retryBlocked"
-          @click="grants.retry()"
+          :disabled="!usable || busy || state.retryBlocked || writable === false"
+          @click="retryOriginal"
           >重试原授权操作</el-button
         >
         <el-button
@@ -119,33 +126,56 @@
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'
-  import { createDashboardGrants } from '@/features/dashboard/grant-model'
+  import { createDashboardGrants, type GrantUser } from '@/features/dashboard/grant-model'
   import {
     fetchGrantUsers,
     fetchDashboardGrant,
     writeDashboardGrantIntent
   } from '@/api/dashboard-grants'
-  const props = defineProps<{
-    projectId: string
-    dashboardId: string
-    available: boolean
-    canManage: boolean
-  }>()
+  const props = withDefaults(
+    defineProps<{
+      projectId: string
+      dashboardId: string
+      available: boolean
+      canManage: boolean
+      fixedUser?: GrantUser
+      writable?: boolean
+    }>(),
+    { writable: true }
+  )
+  const emit = defineEmits<{ changed: [] }>()
   const user = useUserStore(),
     opened = ref(false),
     visible = ref(!document.hidden),
     confirming = ref(false)
   let epoch = 0
   const usable = computed(() => opened.value && visible.value && props.available && props.canManage)
-  const context = () => ({ ...props, available: usable.value, identity: currentIdentityEpoch() })
+  const context = () => ({
+    projectId: props.projectId,
+    dashboardId: props.dashboardId,
+    canManage: props.canManage,
+    available: usable.value,
+    identity: currentIdentityEpoch()
+  })
   const grants = createDashboardGrants({
     context,
-    users: fetchGrantUsers,
+    users: (projectId, cursor) =>
+      props.fixedUser
+        ? Promise.resolve({ items: [props.fixedUser], hasMore: false, nextCursor: null })
+        : fetchGrantUsers(projectId, cursor),
     detail: fetchDashboardGrant,
     write: writeDashboardGrantIntent,
     newKey: () => crypto.randomUUID(),
     changed: (snapshot) => {
+      const previous = state.value?.grant
       state.value = snapshot
+      if (
+        snapshot.grant &&
+        (!previous ||
+          previous.status !== snapshot.grant.status ||
+          previous.revision !== snapshot.grant.revision)
+      )
+        emit('changed')
     }
   })
   const state = shallowRef(grants.getSnapshot())
@@ -160,16 +190,31 @@
       !!state.value.selectedUser.role
   )
   const canWrite = computed(
-    () => usable.value && !busy.value && !state.value.pending && activeUser.value
+    () =>
+      usable.value &&
+      props.writable !== false &&
+      !busy.value &&
+      !state.value.pending &&
+      activeUser.value
   )
   const canGrant = computed(
     () => canWrite.value && (state.value.grant?.status === 'REVOKED' || state.value.missingEligible)
   )
   const canRevoke = computed(() => canWrite.value && state.value.grant?.status === 'ACTIVE')
+  async function openTarget() {
+    const generation = epoch
+    await grants.open()
+    if (generation === epoch && usable.value && props.fixedUser && !state.value.pending) {
+      await grants.selectUser(props.fixedUser.id)
+    }
+  }
+  function retryOriginal() {
+    if (usable.value && !busy.value && props.writable !== false) void grants.retry()
+  }
   function openDialog() {
     if (!props.available || !props.canManage) return
     opened.value = true
-    void grants.open()
+    void openTarget()
   }
   function closeDialog() {
     opened.value = false
@@ -177,11 +222,18 @@
     grants.suspend()
   }
   watch(
-    () => [props.projectId, props.dashboardId, user.info.userId],
+    [
+      () => props.projectId,
+      () => props.dashboardId,
+      () => user.info.userId,
+      () => user.info.tenantId,
+      currentIdentityEpoch,
+      () => props.fixedUser?.id
+    ],
     () => {
       epoch++
       grants.reset()
-      if (usable.value) void grants.open()
+      if (usable.value) void openTarget()
     },
     { flush: 'sync' }
   )
@@ -190,7 +242,21 @@
     () => {
       epoch++
       grants.suspend()
-      if (usable.value) void grants.open()
+      if (usable.value) void openTarget()
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    () => [
+      props.fixedUser?.status,
+      props.fixedUser?.role,
+      props.fixedUser?.roleStatus,
+      props.fixedUser?.displayName
+    ],
+    () => {
+      epoch++
+      grants.suspend()
+      if (usable.value) void openTarget()
     },
     { flush: 'sync' }
   )
@@ -227,6 +293,7 @@
       if (
         generation !== epoch ||
         !usable.value ||
+        props.writable === false ||
         before !==
           JSON.stringify({
             context: context(),

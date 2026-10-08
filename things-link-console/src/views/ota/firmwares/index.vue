@@ -7,13 +7,41 @@
   fail-closed（70016/503）显示成环境边界而不是可重试的业务错误（ADR0119）。
 
   历史发布尝试与历史上传会话都从服务端只读集合端点按游标分页读取（S13-4e-5），
-  不再用本次会话的本地记录冒充权威历史；信任域密钥清单仍缺读取端点，缺端点的范围
-  登记在实施债务里。
+  不再用本次会话的本地记录冒充权威历史。信任域、发布键公开元数据与类型基线历史
+  从各自的只读集合读取，不把展示信息当作当前设备升级资格。
 -->
 <template>
   <div class="console-page ota-firmwares console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="固件与发布"
+      description="维护固件草稿、受控签名发布及信任基线。"
+      :links="[
+        { label: '固件', path: '/ota/firmwares', permission: 'ota:read' },
+        { label: '升级活动', path: '/ota/campaigns', permission: 'ota:read' },
+        { label: '设备作业', path: '/ota/jobs', permission: 'ota:read' },
+        { label: '审计', path: '/ota/audits', permission: 'ota:read' }
+      ]"
+    />
     <div class="ota-firmwares__header console-toolbar console-page-actions">
       <div class="ota-firmwares__header-actions console-actions">
+        <ElButton
+          v-if="hasAuth('ota:deploy')"
+          data-testid="ota-baseline-registration-open"
+          @click="baselineRegistrationVisible = true"
+          >登记受控类型基线</ElButton
+        >
+        <ElButton
+          v-if="hasAuth('ota:deploy')"
+          data-testid="ota-trust-import-open"
+          @click="trustImportVisible = true"
+          >导入受控信任包</ElButton
+        >
+        <ElButton
+          v-if="hasAuth('ota:read')"
+          data-testid="ota-metadata-open"
+          @click="metadataVisible = true"
+          >信任与基线</ElButton
+        >
         <ElButton v-if="hasAuth('ota:deploy')" type="primary" :icon="Plus" @click="openCreate">
           创建固件草稿
         </ElButton>
@@ -72,6 +100,22 @@
               @click="openDetail(row)"
               label="详情"
               icon="ri:eye-line"
+            />
+            <ConsoleTableAction
+              v-if="canReadRelease && row.status === 'READY'"
+              data-testid="ota-release-proof-open"
+              type="primary"
+              @click="openReleaseProof(row)"
+              label="发布证明"
+              icon="ri:file-shield-2-line"
+            />
+            <ConsoleTableAction
+              v-if="hasAuth('ota:deploy') && row.status === 'READY'"
+              data-testid="ota-release-download-open"
+              type="primary"
+              @click="openDownload(row)"
+              label="下载发布物"
+              icon="ri:download-line"
             />
             <ConsoleTableAction
               v-if="hasAuth('ota:deploy') && actionsOf(row).canUpload"
@@ -454,11 +498,44 @@
         >
       </div>
     </ElDrawer>
+    <OtaMetadataDrawer
+      v-model="metadataVisible"
+      :project-id="projectId"
+      :authorized="hasAuth('ota:read')"
+    />
+    <OtaReleaseProofDialog
+      v-model="releaseProofVisible"
+      :project-id="projectId"
+      :firmware-id="releaseProofFirmwareId"
+      :authorized="canReadRelease"
+    />
+    <OtaReleaseDownloadDialog
+      v-model="downloadVisible"
+      :project-id="projectId"
+      :firmware-id="downloadFirmwareId"
+      :authorized="hasAuth('ota:deploy')"
+    />
+    <OtaTrustImportDialog
+      v-model="trustImportVisible"
+      :project-id="projectId"
+      :authorized="hasAuth('ota:deploy')"
+    />
+    <OtaTypeBaselineRegistrationDialog
+      v-model="baselineRegistrationVisible"
+      :project-id="projectId"
+      :authorized="hasAuth('ota:deploy')"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
+  import OtaMetadataDrawer from './OtaMetadataDrawer.vue'
+  import OtaReleaseProofDialog from './OtaReleaseProofDialog.vue'
+  import OtaReleaseDownloadDialog from './OtaReleaseDownloadDialog.vue'
+  import OtaTrustImportDialog from './OtaTrustImportDialog.vue'
+  import OtaTypeBaselineRegistrationDialog from './OtaTypeBaselineRegistrationDialog.vue'
 
   import { formatTime } from '@/utils/time'
   import { Plus } from '@element-plus/icons-vue'
@@ -511,6 +588,28 @@
   const userStore = useUserStore()
   const { hasAuth } = useAuth()
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
+  const metadataVisible = ref(false)
+  const trustImportVisible = ref(false)
+  const baselineRegistrationVisible = ref(false)
+  const canReadRelease = computed(
+    () =>
+      hasAuth('ota:deploy') &&
+      !!userStore.info.roles?.some((role) => role === 'OWNER' || role === 'ADMIN')
+  )
+  const releaseProofVisible = ref(false)
+  const releaseProofFirmwareId = ref('')
+  function openReleaseProof(row: OtaFirmwareResponse) {
+    if (!row.id || row.status !== 'READY' || !canReadRelease.value) return
+    releaseProofFirmwareId.value = row.id
+    releaseProofVisible.value = true
+  }
+  const downloadVisible = ref(false)
+  const downloadFirmwareId = ref('')
+  function openDownload(row: OtaFirmwareResponse) {
+    if (!row.id || row.status !== 'READY' || !hasAuth('ota:deploy')) return
+    downloadFirmwareId.value = row.id
+    downloadVisible.value = true
+  }
 
   const loading = ref(false)
   const submitting = ref(false)

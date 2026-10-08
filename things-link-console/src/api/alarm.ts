@@ -91,6 +91,13 @@ export function fetchAlarmInstances(projectId: string, cursor?: string, limit = 
   })
 }
 
+/** 读取单个告警实例的当前摘要；不以列表缓存代替详情。 */
+export function fetchAlarmInstance(projectId: string, instanceId: string) {
+  return request.get<AlarmInstanceResponse>({
+    url: `/api/v1/projects/${projectId}/alarms/${instanceId}`
+  })
+}
+
 /** 分页读取单个实例的不可变事件时间线。 */
 export function fetchAlarmEvents(
   projectId: string,
@@ -297,5 +304,22 @@ export function fetchDeleteAlarmNotificationBinding(
   return request.del<void>({
     url: `/api/v1/projects/${projectId}/alarm-notification-bindings/${bindingId}`,
     params: { version }
+  })
+}
+
+/** 项目投递意图只读查询；状态不等于外部渠道实际送达。 */
+export type AlarmNotificationDeliveryResponse =
+  components['schemas']['AlarmNotificationDeliveryResponse']
+export function fetchAlarmNotificationDeliveries(
+  projectId: string,
+  instanceId: string,
+  cursor?: string,
+  signal?: AbortSignal
+) {
+  return request.get<components['schemas']['CursorPageAlarmNotificationDeliveryResponse']>({
+    url: `/api/v1/projects/${encodeURIComponent(projectId)}/alarm-notification-deliveries`,
+    params: { instanceId, cursor, limit: 20 },
+    signal,
+    showErrorMessage: false
   })
 }

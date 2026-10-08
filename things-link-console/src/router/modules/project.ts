@@ -55,6 +55,18 @@ export const projectRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'create',
+      name: 'ProjectCreate',
+      component: '/project/create',
+      meta: { title: 'menus.project.add', icon: 'ri:add-box-line', keepAlive: false }
+    },
+    {
+      path: 'recycle-bin',
+      name: 'ProjectRecycleBin',
+      component: '/project/recycle-bin',
+      meta: { title: 'menus.project.recycleBin', icon: 'ri:delete-bin-line', keepAlive: false }
+    },
+    {
       path: 'members',
       name: 'ProjectMembers',
       component: '/project/members',
@@ -69,6 +81,17 @@ export const projectRoutes: AppRouteRecord = {
          * 那时没有任何权限点来源，写死一份反而会造出「本地能点、连上后端就消失」
          * 的假象。真实的按钮控制永远走 backend 模式。
          */
+        roles: ['OWNER', 'ADMIN', 'OPERATOR', 'VIEWER']
+      }
+    },
+    {
+      path: 'end-users',
+      name: 'ProjectEndUsers',
+      component: '/project/end-users',
+      meta: {
+        title: 'menus.project.endUsers',
+        icon: 'ri:user-settings-line',
+        keepAlive: false,
         roles: ['OWNER', 'ADMIN', 'OPERATOR', 'VIEWER']
       }
     },

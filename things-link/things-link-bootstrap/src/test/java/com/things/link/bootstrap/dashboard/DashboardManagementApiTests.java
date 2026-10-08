@@ -923,6 +923,53 @@ class DashboardManagementApiTests extends AbstractIntegrationTest {
         assertThat(deletionAuditCount(foreignDashboard)).isZero();
     }
 
+    /** 独立非空日额度且没有此前HTTP缓存，归档拒绝不能被日计量误分类为429。 */
+    @Test
+    void softDeleteArchivedWithFreshDailyQuotaRejectsWithoutFacts() throws Exception {
+        Fixture fixture = seed(ProjectRole.OWNER);
+        UUID dashboardId = insertDashboard(fixture, "独立日额度归档删除", 0, 0,
+                Instant.now(), draftContent("归档删除"), false);
+        UUID policyId = Uuid7.generate();
+        String originalBearer = token(fixture);
+        try (Connection connection = fixtureOwnerConnection()) {
+            execute(connection, "INSERT INTO sys_quota_policy(id,code,rest_api_call_daily_limit) VALUES (?,?,25)",
+                    policyId, "DA17" + policyId.toString().replace("-", "").substring(0, 24));
+            execute(connection, "UPDATE sys_tenant SET quota_policy_id=? WHERE id=?", policyId, fixture.tenantId());
+            execute(connection, "UPDATE sys_project SET status='ARCHIVED' WHERE id=?", fixture.projectId());
+        }
+        error(mvc.perform(post(softDeletePath(fixture.projectId(), dashboardId))
+                .header(HttpHeaders.AUTHORIZATION, originalBearer)
+                .header("Idempotency-Key", "archived-daily-" + dashboardId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(publicationRevisionEnvelope("0"))).andReturn(), 403, 50017);
+        assertThat(isDashboardDeleted(dashboardId)).isFalse();
+        assertThat(publicationState(dashboardId)).isEqualTo("0:null:0");
+        assertThat(deletionAuditCount(dashboardId)).isZero();
+        assertThat(restDailyFacts(fixture)).isZero();
+    }
+
+    /** 原Bearer在移除当前ADMIN成员后失效，不允许写入删除、发布状态、审计或日计量。 */
+    @Test
+    void softDeleteRejectsRemovedMemberOriginalBearerWithoutFacts() throws Exception {
+        Fixture fixture = seed(ProjectRole.ADMIN);
+        UUID dashboardId = insertDashboard(fixture, "撤员旧凭据删除", 0, 0,
+                Instant.now(), draftContent("撤员删除"), false);
+        String originalBearer = token(fixture);
+        try (Connection connection = fixtureOwnerConnection()) {
+            execute(connection, "DELETE FROM sys_project_member WHERE project_id=? AND account_id=?",
+                    fixture.projectId(), fixture.accountId());
+        }
+        error(mvc.perform(post(softDeletePath(fixture.projectId(), dashboardId))
+                .header(HttpHeaders.AUTHORIZATION, originalBearer)
+                .header("Idempotency-Key", "removed-member-" + dashboardId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(publicationRevisionEnvelope("0"))).andReturn(), 401, 20020);
+        assertThat(isDashboardDeleted(dashboardId)).isFalse();
+        assertThat(publicationState(dashboardId)).isEqualTo("0:null:0");
+        assertThat(deletionAuditCount(dashboardId)).isZero();
+        assertThat(restDailyFacts(fixture)).isZero();
+    }
+
     /** 软删HTTP必须复用严格单revision解析器，未知字段不能被DTO绑定静默丢弃。 */
     @Test
     @DisplayName("看板软删HTTP拒绝严格信封外字段")
@@ -1442,6 +1489,20 @@ class DashboardManagementApiTests extends AbstractIntegrationTest {
         java.util.LinkedHashSet<String> result = new java.util.LinkedHashSet<>();
         node.propertyNames().forEach(result::add);
         return result;
+    }
+
+    /** 未进入管理写链的拒绝不能增加持久日REST调用事实。 */
+    private long restDailyFacts(Fixture fixture) throws SQLException {
+        try (Connection connection = fixtureOwnerConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT count(*) FROM sys_usage_counter_daily WHERE tenant_id=? AND project_id=? AND metric='REST_API_CALL'")) {
+            statement.setObject(1, fixture.tenantId());
+            statement.setObject(2, fixture.projectId());
+            try (var result = statement.executeQuery()) {
+                result.next();
+                return result.getLong(1);
+            }
+        }
     }
 
     /** 真实JWT携带当前项目，HTTP过滤器仍会回库复核成员关系。 */

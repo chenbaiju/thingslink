@@ -23,6 +23,17 @@ export const dashboardRoutes: AppRouteRecord = {
   },
   children: [
     {
+      path: 'workbench',
+      name: 'Workbench',
+      component: '/dashboard/workbench',
+      meta: {
+        title: 'menus.dashboard.workbench',
+        icon: 'ri:home-smile-2-line',
+        keepAlive: false,
+        fixedTab: true
+      }
+    },
+    {
       path: 'applications',
       name: 'ApplicationManager',
       component: '/dashboard/applications',
@@ -52,7 +63,7 @@ export const dashboardRoutes: AppRouteRecord = {
         icon: 'ri:home-smile-2-line',
         keepAlive: false,
         // 固定标签页：作为登录后的落点，不允许关闭
-        fixedTab: true
+        fixedTab: false
       }
     }
   ]

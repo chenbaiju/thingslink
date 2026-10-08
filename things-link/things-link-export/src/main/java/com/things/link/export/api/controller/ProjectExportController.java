@@ -5,6 +5,10 @@ import com.things.link.export.api.dto.ProjectExportDownloadUrlResponse;
 import com.things.link.export.application.ProjectExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +41,21 @@ public class ProjectExportController {
     @PostMapping
     public ResponseEntity<ProjectExportResponse> request(@io.swagger.v3.oas.annotations.Parameter(description = "删除项目 ID") @PathVariable UUID projectId) {
         return ResponseEntity.accepted().body(ProjectExportResponse.from(exportService.request(projectId)));
+    }
+
+    /**
+     * 找回当前有效OWNER本人在本删除代次申请的最新导出任务。
+     * @param projectId 删除项目ID
+     * @return 有任务时200及无对象键的状态，未申请时204；不隐式新建任务
+     */
+    @Operation(operationId = "latestProjectExport", summary = "找回最新项目导出任务", description = "复核当前OWNER与冻结窗口，返回本人在本代次请求的最新一条任务（含终态），无任务返回204。读取不创建任务、不消耗申请限流、不返回下载地址或对象键。")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "找到最新任务",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectExportResponse.class))),
+            @ApiResponse(responseCode = "204", description = "本代次本人尚未申请任务", content = @Content)})
+    @GetMapping("/latest")
+    public ResponseEntity<ProjectExportResponse> latest(@io.swagger.v3.oas.annotations.Parameter(description = "删除项目ID") @PathVariable UUID projectId) {
+        return exportService.latest(projectId).map(ProjectExportResponse::from)
+                .map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     /**

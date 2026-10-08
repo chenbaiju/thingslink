@@ -84,15 +84,26 @@ public class DeviceEventDefinitionService {
     private static List<DeviceEventDefinition.Parameter> normalizeParameters(
             List<DeviceEventDefinition.ParameterDraft> parameters) {
         if (parameters == null) return List.of();
+        if (parameters.size() > 100) throw new BusinessException(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID);
         HashSet<String> keys = new HashSet<>();
         return parameters.stream().map(parameter -> {
+            if (parameter == null || parameter.parameterKey() == null || parameter.dataType() == null
+                    || !java.util.Set.of(DevicePropertyDefinition.DataType.NUMBER, DevicePropertyDefinition.DataType.TEXT,
+                    DevicePropertyDefinition.DataType.SWITCH, DevicePropertyDefinition.DataType.ENUM).contains(parameter.dataType())) {
+                throw new BusinessException(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID);
+            }
             String key = parameter.parameterKey().strip();
-            if (!keys.add(key)) throw new BusinessException(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID);
+            if (!key.matches("[A-Za-z0-9_-]{1,64}") || !keys.add(key))
+                throw new BusinessException(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID);
             List<String> options = null;
             if (parameter.dataType() == DevicePropertyDefinition.DataType.ENUM) {
+                if (parameter.enumOptions() != null && (parameter.enumOptions().size() > 100
+                        || parameter.enumOptions().stream().anyMatch(java.util.Objects::isNull)))
+                    throw new BusinessException(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID);
                 options = parameter.enumOptions() == null ? List.of() : parameter.enumOptions().stream()
                         .map(String::strip).filter(value -> !value.isEmpty()).distinct().toList();
-                if (options.isEmpty()) throw new BusinessException(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID);
+                if (options.isEmpty() || options.stream().anyMatch(option -> !DeviceEventSchema.validText(option, 64)))
+                    throw new BusinessException(DeviceErrorCode.EVENT_DEFINITION_PARAMETER_INVALID);
             }
             return new DeviceEventDefinition.Parameter(Uuid7.generate(), key, parameter.name().strip(),
                     parameter.dataType(), parameter.required(), options, parameter.sortOrder());

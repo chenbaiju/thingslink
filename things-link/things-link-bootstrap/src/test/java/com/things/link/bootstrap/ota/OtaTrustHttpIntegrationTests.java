@@ -50,6 +50,8 @@ class OtaTrustHttpIntegrationTests extends AbstractIntegrationTest {
     private static final OtaCanonicalJson CANONICAL = new OtaCanonicalJson();
     /** 只读取真实HTTP响应。 */
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    /** 固定配置主体跨例复用，所有HTTP按真实单调时钟控制为每秒最多八次。 */
+    private static long lastHttpRequestAt;
     /** 本例所有者图。 */ private final List<Fixture> fixtures = new ArrayList<>();
     /** 完整安全链及公共幂等。 */ @Autowired private MockMvc mvc;
     /** 令牌经过真实验签而非模拟认证上下文。 */ @Autowired private TokenIssuer tokens;
@@ -80,6 +82,7 @@ class OtaTrustHttpIntegrationTests extends AbstractIntegrationTest {
     @Test
     void importsSignedBundlesReadsSafeProjectionAndAdvancesMonotonically() throws Exception {
         Fixture f = seed(ProjectRole.ADMIN);
+        long auditBefore = importAuditCount(f);
         String key = UUID.randomUUID().toString();
         byte[] first = envelope("0", 1, false);
         assertThat(write(f, key, first).getResponse().getStatus()).isEqualTo(200);
@@ -97,17 +100,18 @@ class OtaTrustHttpIntegrationTests extends AbstractIntegrationTest {
         assertThat(second.path("bundleVersion").asText()).isEqualTo("2");
         assertThat(Long.parseLong(second.path("revision").asText())).isGreaterThan(Long.parseLong(previous));
         assertThat(ok(read(f, path(f)))).isEqualTo(second);
-        assertThat(write(f, UUID.randomUUID().toString(), envelope(previous, 3, true)).getResponse().getStatus()).isEqualTo(409);
+        error(write(f, UUID.randomUUID().toString(), envelope(previous, 3, true)), 409, 70012);
         assertThat(ok(read(f, path(f)))).isEqualTo(second);
         assertThat(owner().queryForObject("SELECT count(*) FROM ota_trust_bundle WHERE project_id=?", Long.class, f.projectId())).isEqualTo(2);
+        assertThat(importAuditCount(f)).isEqualTo(auditBefore + 2);
     }
     /** 当前角色和真实项目约束不能被根签名或历史授权替代。 */
     @Test
     void enforcesAuthenticationMembershipScopeAndMandatoryKey() throws Exception {
         Fixture f = seed(ProjectRole.ADMIN);
         byte[] first = envelope("0", 1, false);
-        assertThat(mvc.perform(post(path(f) + "/bundles").contentType("application/json").content(first))
-                .andReturn().getResponse().getStatus()).isEqualTo(401);
+        assertThat(perform(post(path(f) + "/bundles").contentType("application/json").content(first))
+                .getResponse().getStatus()).isEqualTo(401);
         assertThat(write(f, null, first).getResponse().getStatus()).isEqualTo(400);
         ok(write(f, UUID.randomUUID().toString(), first));
         Fixture other = seedOther(ProjectRole.OWNER);
@@ -122,15 +126,84 @@ class OtaTrustHttpIntegrationTests extends AbstractIntegrationTest {
     @Test
     void rejectsInvalidSignatureAndDuplicateNestedFieldsWithoutSideEffects() throws Exception {
         Fixture f = seed(ProjectRole.ADMIN);
+        long auditBefore = importAuditCount(f);
         byte[] valid = envelope("0", 1, false);
         Map<String,Object> parsed = new java.util.LinkedHashMap<>(CANONICAL.parseObject(valid));
         parsed.put("signature", b64(new byte[64]));
-        assertThat(write(f, UUID.randomUUID().toString(), CANONICAL.writeObject(parsed)).getResponse().getStatus()).isBetween(400, 499);
+        error(write(f, UUID.randomUUID().toString(), CANONICAL.writeObject(parsed)), 422, 70011);
         byte[] duplicate = new String(valid, StandardCharsets.UTF_8).replace("\"bundleVersion\":1", "\"bundleVersion\":1,\"bundleVersion\":1")
                 .getBytes(StandardCharsets.UTF_8);
         error(write(f, UUID.randomUUID().toString(), duplicate), 400, 10002);
         assertThat(owner().queryForObject("SELECT count(*) FROM ota_trust_domain WHERE project_id=?", Long.class, f.projectId())).isZero();
         assertThat(owner().queryForObject("SELECT count(*) FROM ota_trust_bundle WHERE project_id=?", Long.class, f.projectId())).isZero();
+        assertThat(importAuditCount(f)).isEqualTo(auditBefore);
+    }
+    /** 完成后只读恢复真实摘要；公共层先比原文摘要，异体不能借完成墓碑复用原键。 */
+    @Test
+    void recoversCompletedImportByReadWithoutReplayingResponseOrDuplicatingAudit() throws Exception {
+        Fixture f = seed(ProjectRole.ADMIN);
+        long auditBefore = importAuditCount(f);
+        String key = UUID.randomUUID().toString();
+        byte[] first = envelope("0", 1, false);
+        // 首次正文不作为恢复依据，不将本例描述成真实网络丢包试验。
+        assertThat(write(f, key, first).getResponse().getStatus()).isEqualTo(200);
+        MvcResult completed = write(f, key, first);
+        error(completed, 409, 10014);
+        assertThat(completed.getResponse().getHeader("Idempotency-Replayed")).isNull();
+        assertThat(completed.getResponse().getContentAsString()).doesNotContain("bundleSha256", "rootFingerprint");
+        var parsed = new com.things.link.ota.api.OtaTrustRequestParser().parse(first);
+        JsonNode recovered = ok(read(f, path(f)));
+        assertThat(recovered.path("trustDomain").asText()).isEqualTo(DOMAIN);
+        assertThat(recovered.path("revision").asText()).isEqualTo("1");
+        assertThat(recovered.path("bundleVersion").asText()).isEqualTo("1");
+        assertThat(recovered.path("policyRevision").asText()).isEqualTo("1");
+        assertThat(recovered.path("rootProfile").asText()).isEqualTo("TC_OTA_ED25519_V1");
+        assertThat(recovered.path("rootFingerprint").asText()).isEqualTo(sha(ROOT.getPublic().getEncoded()));
+        assertThat(recovered.path("bundleSha256").asText()).isEqualTo(sha(parsed.bundle()));
+        assertThat(recovered.path("createdAt").asText()).isNotBlank();
+        assertThat(recovered.path("updatedAt").asText()).isEqualTo(recovered.path("createdAt").asText());
+        error(write(f, key, envelope("1", 2, true)), 409, 10009);
+        assertThat(ok(read(f, path(f)))).isEqualTo(recovered);
+        assertThat(owner().queryForObject("SELECT count(*) FROM ota_trust_bundle WHERE project_id=?", Long.class, f.projectId())).isEqualTo(1);
+        assertThat(importAuditCount(f)).isEqualTo(auditBefore + 1);
+    }
+    /** 用同一个真实配置根签署另一域，不能把域不匹配误测成缺根或坏签名。 */
+    @Test
+    void rejectsValidRootSignatureForDifferentBundleDomainWithoutSideEffects() throws Exception {
+        Fixture f = seed(ProjectRole.ADMIN);
+        long auditBefore = importAuditCount(f);
+        byte[] crossDomain = customEnvelope("other-" + UUID.randomUUID(), "0", 1,
+                List.of(key(FIRST, "first", "ACTIVE")));
+        var parsed = new com.things.link.ota.api.OtaTrustRequestParser().parse(crossDomain);
+        Signature verifier = Signature.getInstance("Ed25519");
+        verifier.initVerify(ROOT.getPublic());
+        verifier.update("thingslink-ota-trust-bundle-v1\0".getBytes(StandardCharsets.UTF_8));
+        verifier.update(parsed.bundle());
+        assertThat(verifier.verify(parsed.signature())).as("拒绝前先证明根签名本身真实有效").isTrue();
+        error(write(f, UUID.randomUUID().toString(), crossDomain), 422, 70011);
+        assertThat(owner().queryForObject("SELECT count(*) FROM ota_trust_domain WHERE project_id=?", Long.class, f.projectId())).isZero();
+        assertThat(owner().queryForObject("SELECT count(*) FROM ota_trust_bundle WHERE project_id=?", Long.class, f.projectId())).isZero();
+        assertThat(importAuditCount(f)).isEqualTo(auditBefore);
+    }
+    /** 在已登记后撤销当前资格；真实安全链和写许可均不能被新根签名绕过。 */
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"archived", "removed"})
+    void rejectsImportAfterProjectArchiveOrMembershipRemovalWithoutIncrement(String change) throws Exception {
+        Fixture f = seed(ProjectRole.ADMIN);
+        JsonNode first = ok(write(f, UUID.randomUUID().toString(), envelope("0", 1, false)));
+        long auditBefore = importAuditCount(f);
+        String bearer = tokens.issue(new AuthenticatedPrincipal(f.accountId(), f.tenantId(), f.projectId())).value();
+        if ("archived".equals(change)) owner().update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?", f.projectId());
+        else owner().update("DELETE FROM sys_project_member WHERE project_id=? AND account_id=?", f.projectId(), f.accountId());
+        MvcResult rejected = perform(post(path(f) + "/bundles").contentType("application/json")
+                .header("Authorization", "Bearer " + bearer).header("Idempotency-Key", UUID.randomUUID().toString())
+                .content(envelope(first.path("revision").asText(), 2, true)));
+        // 成员已移除时，原项目Bearer先在TenantScopeFilter代次/成员边界失效。
+        error(rejected, "archived".equals(change) ? 403 : 401, "archived".equals(change) ? 50017 : 20020);
+        Fixture currentOwner = new Fixture(f.tenantId(), f.projectId(), f.ownerId(), f.ownerId(), f.typeId(), f.modelId());
+        assertThat(ok(read(currentOwner, path(f)))).isEqualTo(first);
+        assertThat(owner().queryForObject("SELECT count(*) FROM ota_trust_bundle WHERE project_id=?", Long.class, f.projectId())).isEqualTo(1);
+        assertThat(importAuditCount(f)).isEqualTo(auditBefore);
     }
     /** 资格绑定真实项目/类型/精确版本，不能对任意类型返回同一个全局成功键。 */
     @Test
@@ -350,7 +423,11 @@ class OtaTrustHttpIntegrationTests extends AbstractIntegrationTest {
     }
     /** 根签名始终对应完整自定义包，用于合法签名但非法状态转移反例。 */
     private static byte[] customEnvelope(String revision, long version, List<Map<String,Object>> keys) throws Exception {
-        Map<String,Object> bundle = Map.of("contractVersion", "tc-ota-trust-bundle/v1", "trustDomain", DOMAIN,
+        return customEnvelope(DOMAIN, revision, version, keys);
+    }
+    /** 域字段也是离线根签名输入，反例不通过修改已签正文制造坏签名。 */
+    private static byte[] customEnvelope(String domain, String revision, long version, List<Map<String,Object>> keys) throws Exception {
+        Map<String,Object> bundle = Map.of("contractVersion", "tc-ota-trust-bundle/v1", "trustDomain", domain,
                 "bundleVersion", version, "keys", keys);
         Signature signer = Signature.getInstance("Ed25519");
         signer.initSign(ROOT.getPrivate());
@@ -388,8 +465,20 @@ class OtaTrustHttpIntegrationTests extends AbstractIntegrationTest {
     /** 当前域完整路径。 */ private static String path(Fixture f) { return "/api/v1/projects/" + f.projectId() + "/ota/trust-domains/" + DOMAIN; }
     /** JWT完整Console链。 */
     private MvcResult request(Fixture f, MockHttpServletRequestBuilder builder) throws Exception {
-        return mvc.perform(builder.header("Authorization", "Bearer " + tokens.issue(new AuthenticatedPrincipal(
-                f.accountId(), f.tenantId(), f.projectId())).value())).andReturn();
+        return perform(builder.header("Authorization", "Bearer " + tokens.issue(new AuthenticatedPrincipal(
+                f.accountId(), f.tenantId(), f.projectId())).value()));
+    }
+    /** 匿名、当前JWT及预先冻结JWT共用节奏，不放宽真实REST限流或重试吞掉429。 */
+    private MvcResult perform(MockHttpServletRequestBuilder builder) throws Exception {
+        paceHttpRequests();
+        return mvc.perform(builder).andReturn();
+    }
+    /** 单次只等待至125毫秒间隔，跨参数例保持共享主体的自然令牌补充窗口。 */
+    private static synchronized void paceHttpRequests() throws InterruptedException {
+        long now = System.nanoTime();
+        long remaining = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(125) - (now - lastHttpRequestAt);
+        if (lastHttpRequestAt != 0 && remaining > 0) java.util.concurrent.TimeUnit.NANOSECONDS.sleep(remaining);
+        lastHttpRequestAt = System.nanoTime();
     }
     /** 写入保留精确原文。 */
     private MvcResult write(Fixture f, String key, byte[] body) throws Exception {
@@ -407,6 +496,11 @@ class OtaTrustHttpIntegrationTests extends AbstractIntegrationTest {
     private static void error(MvcResult response, int status, int code) throws Exception {
         assertThat(response.getResponse().getStatus()).as(response.getResponse().getContentAsString()).isEqualTo(status);
         assertThat(JSON.readTree(response.getResponse().getContentAsString()).path("code").asInt()).isEqualTo(code);
+    }
+    /** 审计不可删除；固定配置项目跨例重建，比较本例增量而不是假设历史为空。 */
+    private static long importAuditCount(Fixture f) {
+        return owner().queryForObject("SELECT count(*) FROM sys_audit_log WHERE project_id=? AND action='ota.trust.bundle.imported'",
+                Long.class, f.projectId());
     }
     /** 新OTA引用必须先清理，再删除本例模型与项目；不修改触发器或禁用外键。 */
     @AfterEach

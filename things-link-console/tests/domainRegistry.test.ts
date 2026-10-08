@@ -88,12 +88,13 @@ describe('控制台领域注册表', () => {
     ])
   })
 
-  it('保留既有菜单译文并登记看板设计器、应用管理与OTA固件', () => {
+  it('登记工作台与项目概况并保留既有业务菜单译文', () => {
     expect(consoleDomainRegistry.zhCNMessages).toEqual({
       menus: {
         dashboard: {
-          title: '概要',
-          overview: '概要',
+          title: '工作台',
+          workbench: '首页',
+          overview: '项目概况',
           designer: '看板设计器',
           applications: '应用管理'
         },
@@ -131,7 +132,10 @@ describe('控制台领域注册表', () => {
         project: {
           title: '项目',
           list: '项目列表',
+          add: '添加项目',
+          recycleBin: '项目回收站',
           members: '项目成员',
+          endUsers: '终端用户',
           settings: '项目设置',
           apiKeys: 'API Key',
           webhooks: 'Webhook'
@@ -152,7 +156,7 @@ describe('控制台领域注册表', () => {
       userCenter: {
         title: '个人中心',
         description: '查看当前控制台账号与会话信息。',
-        readOnly: '以下信息来自当前登录账号资料，仅供查看。',
+        readOnly: '以下为当前登录账号的资料。',
         accountSection: '账号信息',
         accountId: '账号 ID',
         email: '注册邮箱',

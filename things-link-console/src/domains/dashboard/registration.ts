@@ -9,8 +9,9 @@ const dashboardDomain = {
   zhCNMessages: {
     menus: {
       dashboard: {
-        title: '概要',
-        overview: '概要',
+        title: '工作台',
+        workbench: '首页',
+        overview: '项目概况',
         designer: '看板设计器',
         applications: '应用管理'
       }

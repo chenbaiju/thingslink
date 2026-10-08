@@ -220,7 +220,7 @@ test('个人集合报告：四角色本人来源、实际下载与失效隔离',
           { project: fixture.a, account: fixture.member, role }
         )
       await member.reload()
-      await expect(member.getByRole('menuitem', { name: '设备', exact: true })).toBeVisible()
+      await expect(member.getByRole('menuitem', { name: '设备开发', exact: true })).toBeVisible()
       await member.goto('/#/project/settings')
       await panel(member).getByRole('button', { name: '刷新本人项目记录', exact: true }).click()
       await expect(panel(member).getByRole('checkbox')).toHaveCount(1)

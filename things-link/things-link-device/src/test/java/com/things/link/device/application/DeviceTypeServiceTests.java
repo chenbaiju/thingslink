@@ -4,6 +4,7 @@ import com.things.link.device.domain.DeviceErrorCode;
 import com.things.link.device.domain.DeviceType;
 import com.things.link.device.domain.DeviceTypeRepository;
 import com.things.link.device.domain.ThingModelVersionRepository;
+import com.things.link.device.domain.ThingModelVersion;
 import com.things.link.project.application.ProjectService;
 import com.things.link.shared.authz.ProjectRole;
 import com.things.link.shared.error.BusinessException;
@@ -155,12 +156,35 @@ class DeviceTypeServiceTests {
         when(projectService.roleInProject(projectId)).thenReturn(Optional.of(ProjectRole.OWNER));
         when(repository.findByIdForUpdate(projectId, id)).thenReturn(Optional.of(type(id, DeviceType.Status.DRAFT)));
         when(repository.publish(projectId, id)).thenReturn(true);
+        when(thingModelVersionRepository.createInitialFromDefinitions(TenantContext.current().orElseThrow().tenantId(), projectId, id))
+                .thenReturn(initialVersion(id, "{\"properties\":{},\"events\":{},\"commands\":{}}"));
         DeviceType published = service.publish(projectId, id);
         assertThat(published.status()).isEqualTo(DeviceType.Status.PUBLISHED);
         assertThat(published.version()).isEqualTo(1);
         verify(repository).publish(projectId, id);
         verify(thingModelVersionRepository).createInitialFromDefinitions(
                 published.tenantId(), projectId, id);
+    }
+
+    @Test void firstPublishRejectsLegacyCompositeEventSnapshot() {
+        UUID id = UUID.randomUUID();
+        when(projectService.roleInProject(projectId)).thenReturn(Optional.of(ProjectRole.OWNER));
+        when(repository.findByIdForUpdate(projectId, id)).thenReturn(Optional.of(type(id, DeviceType.Status.DRAFT)));
+        when(repository.publish(projectId, id)).thenReturn(true);
+        when(thingModelVersionRepository.createInitialFromDefinitions(TenantContext.current().orElseThrow().tenantId(), projectId, id))
+                .thenReturn(initialVersion(id, """
+                        {"properties":{},"events":{"fault":{"level":"ERROR","parameters":{
+                          "value":{"dataType":"OBJECT","required":true}}}},"commands":{}}
+                        """));
+        assertThatThrownBy(() -> service.publish(projectId, id)).isInstanceOfSatisfying(BusinessException.class,
+                exception -> assertThat(exception.errorCode()).isEqualTo(DeviceErrorCode.EVENT_REPORT_INVALID));
+        // 这里只证明应用层拒绝，事务回滚由组合测试证明。
+    }
+
+    private ThingModelVersion initialVersion(UUID typeId, String snapshot) {
+        return new ThingModelVersion(UUID.randomUUID(), TenantContext.current().orElseThrow().tenantId(), projectId,
+                typeId, "1.0.0", ThingModelVersion.ChangeLevel.MAJOR, snapshot, "a".repeat(64),
+                "PG_JSONB_TEXT_V1_SHA256", Instant.now());
     }
 
     /** 已发布类型不可重复发布。 */

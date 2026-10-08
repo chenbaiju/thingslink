@@ -3,9 +3,12 @@ package com.things.link.ingestion.infrastructure;
 import com.things.link.device.application.DeviceAccessScopeService;
 import com.things.link.shared.id.Uuid7;
 import com.things.link.shared.message.RawUplinkMessage;
+import com.things.link.shared.message.EventUplinkMessage;
 import com.things.link.shared.message.StandardUplinkMessage;
 import com.things.link.testing.AbstractKafkaIntegrationTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.common.config.ConfigResource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -17,11 +20,16 @@ import org.springframework.kafka.core.KafkaTemplate;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Map;
+import java.util.List;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.NORMALIZED_UPLINK_TOPIC;
+import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.EVENT_NORMALIZED_TOPIC;
 import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.RAW_UPLINK_TOPIC;
 import static com.things.link.ingestion.infrastructure.UplinkKafkaConfiguration.DEAD_LETTER_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,9 +108,9 @@ class RawUplinkKafkaConsumerTests extends AbstractKafkaIntegrationTest {
         assertThat(deadLetter.value().deviceId()).isEqualTo(deviceId);
     }
 
-    /** 通配规则送入的未支持类型必须保留原始信封，并在 DLQ 头中给出稳定的类型诊断。 */
+    /** 事件已独立支持，非法闭集正文仍保留原始信封并只输出固定诊断。 */
     @Test
-    void routesUnsupportedMessageTypeToDeadLetterWithTypeDiagnostic() throws Exception {
+    void routesInvalidEventBodyToDeadLetterWithFixedDiagnostic() throws Exception {
         UUID deviceId = Uuid7.generate();
         RawUplinkMessage raw = new RawUplinkMessage(
                 Uuid7.generate(), Uuid7.generate(), deviceId,
@@ -118,8 +126,43 @@ class RawUplinkKafkaConsumerTests extends AbstractKafkaIntegrationTest {
         assertThat(deadLetter.headers()).anySatisfy(header -> {
             assertThat(header.key()).containsIgnoringCase("exception-message");
             assertThat(new String(header.value(), StandardCharsets.UTF_8))
-                    .contains("暂不支持的消息类型: event/alarm");
+                    .contains("EVENT_PAYLOAD_INVALID");
         });
+    }
+
+    /** 真实Kafka验证事件独立分流、原始精度与可信时刻，不进入属性链。 */
+    @Test
+    void routesEventOnlyToDedicatedTwelvePartitionSevenDayTopic() throws Exception {
+        UUID deviceId = Uuid7.generate(), messageId = Uuid7.generate();
+        byte[] bytes = ("{\"messageId\":\"" + messageId + "\",\"modelVersion\":\"1.0.0\","
+                + "\"occurredAt\":\"2026-10-06T00:00:00Z\",\"params\":{\"decimal\":9007199254740993.123456789,"
+                + "\"integer\":9007199254740993123456789,\"scale\":1.0}}").getBytes(StandardCharsets.UTF_8);
+        RawUplinkMessage raw = new RawUplinkMessage(Uuid7.generate(), Uuid7.generate(), deviceId,
+                "tc/v1/project/device/up/event/alarm", bytes, 1, false, "device-client",
+                Instant.parse("2026-10-06T00:00:01Z"), "0123456789abcdef0123456789abcdef");
+        kafkaTemplate.send(RAW_UPLINK_TOPIC, deviceId.toString(), raw).get(10, TimeUnit.SECONDS);
+        var result = resultProbe.pollEvent(deviceId.toString(), 10, TimeUnit.SECONDS);
+        assertThat(result).isNotNull();
+        assertThat(result.key()).isEqualTo(deviceId.toString());
+        assertThat(result.value().messageId()).isEqualTo(messageId);
+        assertThat(result.value().tenantId()).isEqualTo(raw.tenantId());
+        assertThat(result.value().projectId()).isEqualTo(raw.projectId());
+        assertThat(result.value().deviceId()).isEqualTo(deviceId);
+        assertThat(result.value().eventKey()).isEqualTo("alarm");
+        assertThat(result.value().receivedAt()).isEqualTo(raw.receivedAt());
+        assertThat(result.value().traceId()).isEqualTo(raw.traceId());
+        assertThat(result.value().rawBytes()).isEqualTo(bytes.length);
+        assertThat(result.value().params()).containsEntry("decimal", new BigDecimal("9007199254740993.123456789"))
+                .containsEntry("integer", new BigInteger("9007199254740993123456789"))
+                .containsEntry("scale", new BigDecimal("1.0"));
+        assertThat(resultProbe.pollNormalized(deviceId.toString(), 250, TimeUnit.MILLISECONDS)).isNull();
+        try (var admin = AdminClient.create(Map.of("bootstrap.servers", KAFKA.getBootstrapServers()))) {
+            var topic = admin.describeTopics(List.of(EVENT_NORMALIZED_TOPIC)).allTopicNames().get(10, TimeUnit.SECONDS);
+            assertThat(topic.get(EVENT_NORMALIZED_TOPIC).partitions()).hasSize(12);
+            var resource = new ConfigResource(ConfigResource.Type.TOPIC, EVENT_NORMALIZED_TOPIC);
+            var config = admin.describeConfigs(List.of(resource)).all().get(10, TimeUnit.SECONDS);
+            assertThat(config.get(resource).get("retention.ms").value()).isEqualTo("604800000");
+        }
     }
 
     /**
@@ -163,6 +206,10 @@ class RawUplinkKafkaConsumerTests extends AbstractKafkaIntegrationTest {
                 LinkedBlockingQueue<ConsumerRecord<String, StandardUplinkMessage>>> normalized =
                 new ConcurrentHashMap<>();
 
+        /** 事件主题独立邮箱，禁止以属性探针代替实际事件分流。 */
+        private final ConcurrentHashMap<String,
+                LinkedBlockingQueue<ConsumerRecord<String, EventUplinkMessage>>> events = new ConcurrentHashMap<>();
+
         /** DLQ 同样按 key 隔离，避免完整 reactor 中其他消费者测试残留记录制造顺序相关失败。 */
         private final ConcurrentHashMap<String,
                 LinkedBlockingQueue<ConsumerRecord<String, RawUplinkMessage>>> deadLetters =
@@ -181,6 +228,16 @@ class RawUplinkKafkaConsumerTests extends AbstractKafkaIntegrationTest {
                 String key, long timeout, TimeUnit unit) throws InterruptedException {
             return normalized.computeIfAbsent(key, ignored -> new LinkedBlockingQueue<>())
                     .poll(timeout, unit);
+        }
+
+        ConsumerRecord<String, EventUplinkMessage> pollEvent(String key, long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return events.computeIfAbsent(key, ignored -> new LinkedBlockingQueue<>()).poll(timeout, unit);
+        }
+
+        @KafkaListener(topics = EVENT_NORMALIZED_TOPIC, groupId = "ingestion-event-test-probe")
+        void receiveEvent(ConsumerRecord<String, EventUplinkMessage> record) {
+            events.computeIfAbsent(record.key(), ignored -> new LinkedBlockingQueue<>()).add(record);
         }
 
         /**

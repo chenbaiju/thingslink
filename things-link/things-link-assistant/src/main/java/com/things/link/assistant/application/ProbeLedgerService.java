@@ -55,7 +55,8 @@ public class ProbeLedgerService {
         var attempt=new Attempt(Uuid7.generate(),batch.id(),tenant,project,TenantContext.require().accountId(),sampleIndex,
             Status.CLAIMED,now,now.plusSeconds(60),null);
         if(!ledger.claim(attempt)) throw conflict();
-        return attempt;
+        // PostgreSQL 将时间持久化为微秒精度；返回真实记录，保留派发阶段的逐字段身份校验。
+        return ledger.find(tenant,project,attempt.createdBy(),attempt.id()).orElseThrow(ProbeLedgerService::conflict);
     }
     /**
      * 查询当前调用者的探针机会；已过期的认领记录收敛为未知终态。

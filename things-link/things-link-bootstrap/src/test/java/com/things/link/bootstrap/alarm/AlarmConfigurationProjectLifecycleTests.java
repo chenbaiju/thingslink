@@ -66,9 +66,14 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mockingDetails;
 
 /** S12-P0-5e5b：真实APP RLS下统一验收告警规则和通知配置的项目冻结边界。 */
+@org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 @Import(AlarmConfigurationProjectLifecycleTests.IsolatedDatabaseConfiguration.class)
 @OwnedTestContainers({"ALARM_POSTGRES"})
 class AlarmConfigurationProjectLifecycleTests extends AbstractIntegrationTest {
+    @Autowired private org.springframework.test.web.servlet.MockMvc mvc;
+    @Autowired private com.things.link.iam.application.TokenIssuer tokens;
+    @Autowired private com.things.link.alarm.application.AlarmEvaluationService evaluation;
+    private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();
 
     /** 告警通知后台是全表领取，必须用物理专库隔离而非只换projectId。 */
     private static final String DATABASE_NAME = "alarm_config_lifecycle_"
@@ -435,6 +440,76 @@ class AlarmConfigurationProjectLifecycleTests extends AbstractIntegrationTest {
             softly.assertThat(afterStale).isEqualTo(afterRecovery);
             softly.assertThat(afterRecovery).hasSize(before.size() + 1);
         });
+    }
+
+    /** 四角色真实HTTP读取生产评估生成的脱敏记录；跨租户成员读取仍按项目权限与RLS。 */
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"OWNER", "ADMIN", "OPERATOR", "VIEWER"})
+    void deliveryDirectoryReadsMaskedTerminalFactsAndPages(String role) throws Exception {
+        Fixture f = seed();
+        TenantContext.set(new TenantScope(f.ownerTenantId(), f.projectId(), f.ownerId()));
+        try {
+            notifications.updateTemplate(f.projectId(), f.templateId(), "可展开失败模板", NotificationChannel.EMAIL,
+                    "${alarm.type}".repeat(18), "不能外发的受控夹具", true, 0);
+            for (int i = 0; i < 20; i++) notifications.createRecipient(f.projectId(), f.groupId(),
+                    NotificationChannel.EMAIL, "synthetic-" + i + "@example.invalid", true);
+            evaluation.evaluate(new com.things.link.alarm.application.AlarmEvaluationInput(Uuid7.generate(),
+                    f.ownerTenantId(), f.projectId(), f.deviceId(), "temperature", 31,
+                    java.time.Instant.now().minusMillis(10), java.time.Instant.now(), "delivery-query-test"));
+        } finally { TenantContext.clear(); RlsScopeContext.clear(); }
+        UUID instance;
+        try (Connection c = owner()) {
+            try (PreparedStatement q = c.prepareStatement("SELECT id FROM alarm_instance WHERE project_id=?")) {
+                q.setObject(1, f.projectId()); try (ResultSet r = q.executeQuery()) { r.next(); instance = r.getObject(1, UUID.class); }
+            }
+            if (!role.equals("OWNER")) execute(c, "UPDATE sys_project_member SET role=? WHERE project_id=? AND account_id=?", role,
+                    f.projectId(), f.collaboratorId());
+        }
+        String bearer = tokens.issue(new com.things.link.iam.application.AuthenticatedPrincipal(
+                role.equals("OWNER") ? f.ownerId() : f.collaboratorId(),
+                role.equals("OWNER") ? f.ownerTenantId() : f.collaboratorTenantId(), f.projectId())).value();
+        var first = deliveryGet(f.projectId(), bearer, instance, null);
+        assertThat(first.path("items").size()).isEqualTo(20);
+        assertThat(first.path("hasMore").asBoolean()).isTrue();
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (var row : first.path("items")) {
+            var fields = new java.util.HashSet<String>(); row.properties().forEach(e -> fields.add(e.getKey()));
+            assertThat(fields).containsExactlyInAnyOrder("id", "instanceId", "alarmEventId", "channel", "target",
+                    "status", "attemptCount", "nextAttemptAt", "createdAt", "updatedAt");
+            assertThat(row.path("target").asText()).isEqualTo("***");
+            assertThat(row.path("status").asText()).isEqualTo("TEMPLATE_INVALID");
+            assertThat(row.path("nextAttemptAt").isNull()).isTrue();
+            ids.add(row.path("id").asText());
+        }
+        var second = deliveryGet(f.projectId(), bearer, instance, first.path("nextCursor").asText());
+        assertThat(second.path("items").size()).isEqualTo(1);
+        assertThat(ids).doesNotContain(second.path("items").get(0).path("id").asText());
+        assertThat(second.path("hasMore").asBoolean()).isFalse();
+        assertThat(deliveryGet(f.projectId(), bearer, Uuid7.generate(), null).path("items").size()).isZero();
+        archive(f);
+        assertThat(deliveryGet(f.projectId(), bearer, instance, null).path("items").size()).isEqualTo(20);
+        var foreign = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                "/api/v1/projects/" + Uuid7.generate() + "/alarm-notification-deliveries")
+                .header("Authorization", "Bearer " + bearer)).andReturn();
+        assertThat(foreign.getResponse().getStatus()).isIn(403, 404);
+        var anonymous = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                "/api/v1/projects/" + f.projectId() + "/alarm-notification-deliveries")).andReturn();
+        assertThat(anonymous.getResponse().getStatus()).isEqualTo(401);
+        try (Connection c = owner(); PreparedStatement q = c.prepareStatement(
+                "SELECT count(*) FROM alarm_notification_delivery WHERE project_id=? AND last_outbox_event_id IS NOT NULL")) {
+            q.setObject(1, f.projectId()); try (ResultSet r = q.executeQuery()) { r.next(); assertThat(r.getInt(1)).isZero(); }
+        }
+    }
+
+    /** 完整过滤链读取固定20项，使用服务端游标而非客户端偏移。 */
+    private tools.jackson.databind.JsonNode deliveryGet(UUID project, String bearer, UUID instance, String cursor) throws Exception {
+        var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                "/api/v1/projects/" + project + "/alarm-notification-deliveries")
+                .header("Authorization", "Bearer " + bearer).param("instanceId", instance.toString()).param("limit", "20");
+        if (cursor != null) request.param("cursor", cursor);
+        var response = mvc.perform(request).andReturn().getResponse();
+        assertThat(response.getStatus()).isEqualTo(200);
+        return JSON.readTree(response.getContentAsString());
     }
 
     /** 每例建立真实跨租户ADMIN、数值上报属性、规则及两套可绑定通知配置。 */

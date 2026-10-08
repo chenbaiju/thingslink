@@ -30,7 +30,7 @@ const userCenterDomain = {
     userCenter: {
       title: '个人中心',
       description: '查看当前控制台账号与会话信息。',
-      readOnly: '以下信息来自当前登录账号资料，仅供查看。',
+      readOnly: '以下为当前登录账号的资料。',
       accountSection: '账号信息',
       accountId: '账号 ID',
       email: '注册邮箱',

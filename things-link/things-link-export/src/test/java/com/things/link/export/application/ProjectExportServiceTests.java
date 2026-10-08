@@ -99,6 +99,21 @@ class ProjectExportServiceTests {
         verifyNoInteractions(dependencies.audits());
     }
 
+    /** 最新任务读取只沿权威项目归属、代次和当前账号查询，不能触发申请限流或写入。 */
+    @Test
+    void latestUsesAuthorizedGenerationAndRequesterWithoutRequestSideEffects() {
+        Dependencies dependencies = dependencies();
+        UUID accountId = UUID.randomUUID(), tenantId = UUID.randomUUID(), projectId = UUID.randomUUID();
+        TenantContext.set(new TenantScope(UUID.randomUUID(), null, accountId));
+        when(dependencies.projectSource().authorizeRequest(accountId, projectId)).thenReturn(
+                new ProjectExportSource.ProjectExportScope(tenantId, projectId, 7,
+                        Instant.now().minusSeconds(5), false));
+        when(dependencies.jobs().findLatest(tenantId, projectId, 7, accountId)).thenReturn(Optional.empty());
+        assertThat(dependencies.service().latest(projectId)).isEmpty();
+        verify(dependencies.jobs()).findLatest(tenantId, projectId, 7, accountId);
+        verifyNoInteractions(dependencies.rateLimiter(), dependencies.audits());
+    }
+
     /** 构造隔离的用例依赖。 */
     private static Dependencies dependencies() {
         ProjectExportSource projectSource = mock(ProjectExportSource.class);

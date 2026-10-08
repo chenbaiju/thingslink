@@ -1,8 +1,6 @@
-import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { readFileSync, existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { OWNER_EMAIL, MEMBER_EMAIL } from './helpers'
+import { executeDatabaseFixture } from './database-fixture'
+import { alarmInboxConfiguration } from './alarm-inbox-configuration'
 
 interface ProjectIdentity {
   accountId: string
@@ -22,47 +20,15 @@ interface ProjectFacts {
   events: EventIdentity[]
 }
 
-/** 仅解析两个非密钥白名单值，不执行.env或读取密码。 */
-function databaseSettings() {
-  const settings: Record<string, string> = {
-    POSTGRES_USER: 'thingslink',
-    POSTGRES_DB: 'thingslink'
-  }
-  const envPath = fileURLToPath(new URL('../../deploy/.env', import.meta.url))
-  const input = existsSync(envPath) ? readFileSync(envPath, 'utf8') : ''
-  for (const line of input.split(/\r?\n/)) {
-    const match = /^(POSTGRES_USER|POSTGRES_DB)=(.*)$/.exec(line.trim())
-    if (match) settings[match[1]] = match[2].trim().replace(/^(['"])(.*)\1$/, '$2')
-  }
-  return settings
-}
-
 /** SQL通过stdin传递；所有动态值使用psql引用变量，不拼接shell或SQL字面量。 */
 function sql(statement: string, variables: Record<string, string> = {}) {
-  const config = databaseSettings()
-  const args = [
-    'exec',
-    '-i',
-    'tc-postgres',
-    'psql',
-    '--no-psqlrc',
-    '-q',
-    '-t',
-    '-A',
-    '-v',
-    'ON_ERROR_STOP=1',
-    '-U',
-    config.POSTGRES_USER,
-    '-d',
-    config.POSTGRES_DB
-  ]
-  for (const [key, value] of Object.entries(variables)) args.push('-v', `${key}=${value}`)
-  return execFileSync('docker', args, {
-    input: `SET statement_timeout='10s';\nSET lock_timeout='5s';\n${statement}`,
-    encoding: 'utf8',
+  return executeDatabaseFixture({
+    legacy: 'deploy',
+    variables,
+    statement: `SET statement_timeout='10s';\nSET lock_timeout='5s';\n${statement}`,
     timeout: 20_000,
     maxBuffer: 8 * 1024 * 1024
-  }).trim()
+  })
 }
 
 /** 精确选本轮邮箱的OWNER项目；歧义或不满足runner约定时拒绝种子写入。 */
@@ -80,8 +46,17 @@ function identity(email: string, expectedName: string, projectKey = ''): Project
 
 /** 每次只拥有明确ID；不删除预置账号、项目、历史成员或审计。 */
 export class AlarmInboxFixture {
-  readonly owner = identity(OWNER_EMAIL, 'E2E项目', process.env.E2E_PROJECT_KEY ?? '')
-  readonly member = identity(MEMBER_EMAIL, '成员项目')
+  readonly configuration = alarmInboxConfiguration()
+  readonly owner = identity(
+    this.configuration.owner.email,
+    this.configuration.owner.projectName,
+    this.configuration.owner.projectKey
+  )
+  readonly member = identity(
+    this.configuration.member.email,
+    this.configuration.member.projectName,
+    this.configuration.member.projectKey
+  )
   private archived = false
   private readonly memberships = [randomUUID(), randomUUID()]
   private readonly facts: ProjectFacts[] = [
@@ -111,6 +86,14 @@ export class AlarmInboxFixture {
       )
     )
     if (existing !== 0) throw new Error('通知E2E存在历史交叉成员，拒绝覆盖或复用')
+    if (
+      this.configuration.owned &&
+      sql(
+        "SELECT count(*) FROM alarm_event WHERE project_id IN (:'ownerProject'::uuid,:'memberProject'::uuid);",
+        this.identities()
+      ) !== '0'
+    )
+      throw new Error('专用通知项目已有告警事实，拒绝混用')
     const variables: Record<string, string> = {
       ...this.identities(),
       memberOne: this.memberships[0],

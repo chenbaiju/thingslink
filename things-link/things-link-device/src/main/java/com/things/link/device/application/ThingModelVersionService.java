@@ -78,6 +78,7 @@ public class ThingModelVersionService {
                 throw new BusinessException(DeviceErrorCode.THING_MODEL_VERSION_LINE_INVALID);
         }
         snapshot.get("properties").properties().forEach(entry -> validateProperty(entry.getValue()));
+        DeviceEventSchema.validateDefinitions(snapshot.get("events"));
         return canonicalize(snapshot).toString();
     }
 

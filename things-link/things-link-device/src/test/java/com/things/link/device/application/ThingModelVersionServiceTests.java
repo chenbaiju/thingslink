@@ -10,6 +10,8 @@ import com.things.link.shared.error.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.JsonNode;
@@ -18,11 +20,15 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 /** 版本发布线路测试：完整快照、严格复合 Profile 和保守变化级别必须同时成立。 */
 @ExtendWith(MockitoExtension.class)
@@ -79,6 +85,65 @@ class ThingModelVersionServiceTests {
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).errorCode())
                 .isEqualTo(DeviceErrorCode.PROPERTY_DEFINITION_SCHEMA_INVALID);
+    }
+
+    @Test void publishesCompleteScalarEventSnapshotWithoutCurrentDefinitionLookup() {
+        JsonNode snapshot = objectMapper.readTree("""
+                {"properties":{},"events":{"fault":{"level":"ERROR","parameters":{
+                 "n":{"dataType":"NUMBER","required":true},
+                 "t":{"dataType":"TEXT","required":false},
+                 "s":{"dataType":"SWITCH","required":false},
+                 "e":{"dataType":"ENUM","required":true,"enum":["😀","two"]}}},
+                 "empty":{"level":"INFO","parameters":{}}},"commands":{}}
+                """);
+        when(repository.findLatest(projectId, typeId)).thenReturn(Optional.empty());
+        when(repository.create(any(), eq(tenantId), eq(projectId), eq(typeId), eq("1.0.0"),
+                eq(ThingModelVersion.ChangeLevel.MAJOR), any(), any())).thenReturn(version("1.0.0", snapshot));
+        var actual = service.publish(projectId, typeId, "1.0.0", ThingModelVersion.ChangeLevel.MAJOR, snapshot);
+        assertThat(actual.modelSnapshot()).isEqualTo(snapshot.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidEvents")
+    void rejectsInvalidCompleteEventContractBeforeVersionPersistence(String events) {
+        JsonNode snapshot = objectMapper.readTree("{\"properties\":{},\"events\":" + events + ",\"commands\":{}}");
+        assertThatThrownBy(() -> service.publish(projectId, typeId, "1.0.0", ThingModelVersion.ChangeLevel.MAJOR, snapshot))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.errorCode()).isEqualTo(DeviceErrorCode.EVENT_REPORT_INVALID));
+        verify(repository, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    static Stream<String> invalidEvents() {
+        return Stream.of(
+                "{\"fault\":{\"level\":\"FATAL\",\"parameters\":{}}}",
+                "{\"fault\":{\"level\":\"INFO\"}}",
+                "{\"fault\":{\"level\":\"INFO\",\"parameters\":{},\"description\":\"synthetic\"}}",
+                "{\"bad/key\":{\"level\":\"INFO\",\"parameters\":{}}}",
+                "{\"bad\\u0000key\":{\"level\":\"INFO\",\"parameters\":{}}}",
+                eventParameter("{\"dataType\":\"OBJECT\",\"required\":false}"),
+                eventParameter("{\"dataType\":\"LIST\",\"required\":false}"),
+                eventParameter("{\"dataType\":\"NUMBER\"}"),
+                eventParameter("{\"dataType\":\"NUMBER\",\"required\":\"true\"}"),
+                eventParameter("{\"dataType\":\"NUMBER\",\"required\":false,\"minimum\":0}"),
+                eventParameter("{\"dataType\":\"TEXT\",\"required\":false,\"enum\":null}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":[]}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":[\"one\",\"one\"]}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":[null]}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":[\"\"]}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":[\"" + "😀".repeat(65) + "\"]}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":[\"\\uD800\"]}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":[\"synthetic\\u0000option\"]}"),
+                eventParameter("{\"dataType\":\"ENUM\",\"required\":false,\"enum\":" +
+                        java.util.stream.IntStream.range(0, 101).mapToObj(index -> "\"v" + index + "\"")
+                                .collect(java.util.stream.Collectors.joining(",", "[", "]")) + "}"),
+                "{\"fault\":{\"level\":\"INFO\",\"parameters\":{" +
+                        java.util.stream.IntStream.range(0, 101).mapToObj(index -> "\"p" + index + "\":{\"dataType\":\"TEXT\",\"required\":false}")
+                                .collect(java.util.stream.Collectors.joining(",")) + "}}}");
+    }
+
+    private static String eventParameter(String parameter) {
+        return "{\"fault\":{\"level\":\"INFO\",\"parameters\":{\"value\":" + parameter + "}}}";
     }
 
     /** 组装固定三段快照。 */

@@ -1,9 +1,7 @@
-import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { existsSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import type { Page } from '@playwright/test'
 import { enterProject, login, OWNER_EMAIL, OWNER_PASSWORD } from './helpers'
+import { executeDatabaseFixture } from './database-fixture'
 
 export interface AlarmSummaryProject {
   id: string
@@ -12,17 +10,6 @@ export interface AlarmSummaryProject {
 
 /** 隔离栈的事实读取测试：只播种自建项目，不声称验证 MQTT 告警触发链。 */
 function seedAlarmFacts(project: AlarmSummaryProject) {
-  const config: Record<string, string> = {
-    POSTGRES_USER: 'thingslink',
-    POSTGRES_DB: 'thingslink'
-  }
-  const envPath = fileURLToPath(new URL('../../deploy/.env', import.meta.url))
-  if (existsSync(envPath)) {
-    for (const line of readFileSync(envPath, 'utf8').split(/\r?\n/)) {
-      const match = /^(POSTGRES_USER|POSTGRES_DB)=(.*)$/.exec(line.trim())
-      if (match) config[match[1]] = match[2].trim().replace(/^(['"])(.*)\1$/, '$2')
-    }
-  }
   const facts = [
     { device: 0, severity: 'CRITICAL', state: 'PENDING' },
     { device: 0, severity: 'MAJOR', state: 'CLEARED' },
@@ -65,32 +52,13 @@ CASE WHEN r.ack THEN clock_timestamp() END,CASE WHEN r.ack THEN p.account_id END
 FROM fixture_owner p CROSS JOIN fixture_alarm r;
 SELECT count(*) FROM alarm_instance WHERE project_id=:'project'::uuid;
 COMMIT;`
-  const count = execFileSync(
-    'docker',
-    [
-      'exec',
-      '-i',
-      'tc-postgres',
-      'psql',
-      '--no-psqlrc',
-      '-q',
-      '-t',
-      '-A',
-      '-v',
-      'ON_ERROR_STOP=1',
-      '-U',
-      config.POSTGRES_USER!,
-      '-d',
-      config.POSTGRES_DB!,
-      '-v',
-      `project=${project.id}`,
-      '-v',
-      `email=${OWNER_EMAIL}`,
-      '-v',
-      `facts=${JSON.stringify(facts)}`
-    ],
-    { input, encoding: 'utf8', timeout: 20_000, maxBuffer: 1024 * 1024 }
-  ).trim()
+  const count = executeDatabaseFixture({
+    legacy: 'deploy',
+    statement: input,
+    variables: { project: project.id, email: OWNER_EMAIL, facts: JSON.stringify(facts) },
+    timeout: 20_000,
+    maxBuffer: 1024 * 1024
+  })
   if (count !== '9') throw new Error(`自有告警摘要夹具需要九条事实，实际 ${count}`)
 }
 

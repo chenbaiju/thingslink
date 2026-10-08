@@ -10,6 +10,16 @@
 -->
 <template>
   <div class="console-page ota-campaigns console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="升级活动"
+      description="从已发布固件组织灰度升级，按冻结目标查看执行。"
+      :links="[
+        { label: '固件', path: '/ota/firmwares', permission: 'ota:read' },
+        { label: '升级活动', path: '/ota/campaigns', permission: 'ota:read' },
+        { label: '设备作业', path: '/ota/jobs', permission: 'ota:read' },
+        { label: '审计', path: '/ota/audits', permission: 'ota:read' }
+      ]"
+    />
     <div class="ota-campaigns__header console-toolbar console-page-actions">
       <div class="ota-campaigns__header-actions console-actions">
         <ElButton v-if="hasAuth('ota:deploy')" type="primary" :icon="Plus" @click="openCreate">
@@ -402,6 +412,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'

@@ -135,7 +135,6 @@
 </template>
 
 <script setup lang="ts">
-  import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
@@ -164,7 +163,6 @@
   const isPassing = ref(false)
   const isClickPass = ref(false)
 
-  const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
 
   const formData = reactive({
@@ -227,10 +225,9 @@
       userStore.setToken(accessToken)
       userStore.setLoginStatus(true)
 
-      // 登录成功处理
-      showLoginSuccessNotice()
-
-      router.push(resolveRedirect(route.query.redirect))
+      // 路由守卫取得当前账号资料后，再用真实名称显示欢迎提示。
+      await router.push(resolveRedirect(route.query.redirect))
+      showLoginSuccessNotice(userStore.info.userName?.trim())
     } catch (error) {
       // 处理 HttpError
       if (error instanceof HttpError) {
@@ -342,14 +339,16 @@
   }
 
   // 登录成功提示
-  const showLoginSuccessNotice = () => {
+  const showLoginSuccessNotice = (userName?: string) => {
     setTimeout(() => {
       ElNotification({
         title: t('login.success.title'),
         type: 'success',
         duration: 2500,
         zIndex: 10000,
-        message: `${t('login.success.message')}, ${systemName}!`
+        message: userName
+          ? `${t('login.success.message')}, ${userName}!`
+          : `${t('login.success.message')}!`
       })
     }, 1000)
   }

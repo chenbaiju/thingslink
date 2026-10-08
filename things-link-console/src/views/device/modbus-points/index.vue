@@ -1,5 +1,10 @@
 <template>
   <div class="console-page modbus-points console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="Modbus 点位"
+      description="选择网关，维护寄存器点位并发布配置。"
+      :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
+    />
     <div class="modbus-points__header console-toolbar console-page-actions">
       <div class="modbus-points__actions console-actions">
         <ElButton v-if="hasAuth('device:update')" type="primary" @click="openCreate" :icon="Plus"
@@ -183,6 +188,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 

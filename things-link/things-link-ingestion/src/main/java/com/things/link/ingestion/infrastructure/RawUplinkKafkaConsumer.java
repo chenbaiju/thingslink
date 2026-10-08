@@ -5,6 +5,8 @@ import com.things.link.ingestion.application.GatewayBatchMessageNormalizer;
 import com.things.link.ingestion.application.InvalidUplinkMessageException;
 import com.things.link.ingestion.application.ModbusResponseUplinkNormalizer;
 import com.things.link.ingestion.application.RawUplinkMessageNormalizer;
+import com.things.link.ingestion.application.EventUplinkMessageNormalizer;
+import com.things.link.shared.message.EventUplinkMessage;
 import com.things.link.ingestion.application.TopologyUplinkMessageNormalizer;
 import com.things.link.shared.message.DeviceConfigReply;
 import com.things.link.shared.message.DeviceTopologyMessage;
@@ -48,6 +50,9 @@ public class RawUplinkKafkaConsumer {
     /** 标准上行主题，继续以 deviceId 为 key 保证同设备有序。 */
     public static final String NORMALIZED_UPLINK_TOPIC = "tc.device.uplink.normalized";
 
+    /** 独立事件事实主题，不进入属性规则或processed链。 */
+    public static final String EVENT_NORMALIZED_TOPIC = "tc.device.event.normalized";
+
     /** 拓扑消息主题，以网关 ID 为 key 保证同网关拓扑/在线态消息有序。 */
     public static final String TOPO_TOPIC = "tc.device.topo";
 
@@ -65,6 +70,9 @@ public class RawUplinkKafkaConsumer {
 
     /** 设备报文解析与信封转换器。 */
     private final RawUplinkMessageNormalizer normalizer;
+
+    /** 生产装配的严格MQTT事件标准化器，禁止缺省旁路。 */
+    private final EventUplinkMessageNormalizer eventNormalizer;
 
     /** 拓扑报文解析器；非拓扑类型返回空。 */
     private final TopologyUplinkMessageNormalizer topologyNormalizer;
@@ -104,6 +112,7 @@ public class RawUplinkKafkaConsumer {
      * 创建原始上行消费者。
      *
      * @param normalizer 原始消息标准化器
+     * @param eventNormalizer 独立事件标准化器
      * @param topologyNormalizer 拓扑消息标准化器
      * @param batchNormalizer 批量上报标准化器
      * @param configReplyNormalizer 配置回执标准化器
@@ -112,6 +121,7 @@ public class RawUplinkKafkaConsumer {
      */
     public RawUplinkKafkaConsumer(
             RawUplinkMessageNormalizer normalizer,
+            EventUplinkMessageNormalizer eventNormalizer,
             TopologyUplinkMessageNormalizer topologyNormalizer,
             GatewayBatchMessageNormalizer batchNormalizer,
             ConfigReplyUplinkNormalizer configReplyNormalizer,
@@ -130,6 +140,7 @@ public class RawUplinkKafkaConsumer {
         this.otaDownloads = java.util.Objects.requireNonNull(otaDownloads, "otaDownloads");
         this.otaReports = java.util.Objects.requireNonNull(otaReports, "otaReports");
         this.normalizer = normalizer;
+        this.eventNormalizer = java.util.Objects.requireNonNull(eventNormalizer, "eventNormalizer");
         this.topologyNormalizer = topologyNormalizer;
         this.batchNormalizer = batchNormalizer;
         this.configReplyNormalizer = configReplyNormalizer;
@@ -167,6 +178,12 @@ public class RawUplinkKafkaConsumer {
         if (otaPreflight.tryAccept(rawUplinkMessage)) return;
         if (otaRollback.tryAccept(rawUplinkMessage)) return;
         if (otaInstallStop.tryAccept(rawUplinkMessage)) return;
+
+        Optional<EventUplinkMessage> event = eventNormalizer.tryNormalize(rawUplinkMessage);
+        if (event.isPresent()) {
+            publish(EVENT_NORMALIZED_TOPIC, expectedKey, event.orElseThrow());
+            return;
+        }
 
         // 拓扑消息在 raw 层分流到独立主题，避免污染 telemetry 的 normalized 管道。
         Optional<DeviceTopologyMessage> topology = topologyNormalizer.tryNormalize(rawUplinkMessage);

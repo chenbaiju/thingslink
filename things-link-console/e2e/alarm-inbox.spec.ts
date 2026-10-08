@@ -1,13 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { AlarmInboxFixture } from './alarm-inbox-fixture'
-import {
-  enterProject,
-  login,
-  OWNER_EMAIL,
-  OWNER_PASSWORD,
-  MEMBER_EMAIL,
-  MEMBER_PASSWORD
-} from './helpers'
+import { enterProject, login } from './helpers'
 
 /** 真实通知面板；不拦截或伪造核心API响应。 */
 async function openInbox(page: Page, count: number) {
@@ -30,7 +23,7 @@ test(
     try {
       fixture.create()
       const before = fixture.snapshot()
-      await login(page, OWNER_EMAIL, OWNER_PASSWORD)
+      await login(page, fixture.configuration.owner.email, fixture.configuration.owner.password)
       await enterProject(page, fixture.owner.name)
       let panel = await openInbox(page, 22)
       await expect(panel.getByTestId('alarm-inbox-item')).toHaveCount(20)
@@ -70,7 +63,11 @@ test(
       // 第二个真实会话是跨租户VIEWER，同一批事件仍全部未读。
       memberContext = await browser.newContext({ baseURL: testInfo.project.use.baseURL })
       const memberPage = await memberContext.newPage()
-      await login(memberPage, MEMBER_EMAIL, MEMBER_PASSWORD)
+      await login(
+        memberPage,
+        fixture.configuration.member.email,
+        fixture.configuration.member.password
+      )
       await enterProject(memberPage, fixture.owner.name)
       const memberPanel = await openInbox(memberPage, 22)
       await expect(memberPanel.getByTestId('alarm-inbox-item')).toHaveCount(20)

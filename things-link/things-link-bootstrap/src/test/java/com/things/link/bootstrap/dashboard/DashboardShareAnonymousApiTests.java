@@ -4,6 +4,10 @@ import com.things.link.testing.OwnedTestContainers;
 
 import com.things.link.bootstrap.fixture.WebAppRuntimeFixture;
 import com.things.link.bootstrap.fixture.WebAppRuntimeFixture.Fixture;
+import com.things.link.enduser.application.AppAuthenticatedPrincipal;
+import com.things.link.enduser.application.AppTokenIssuer;
+import com.things.link.iam.application.AuthenticatedPrincipal;
+import com.things.link.iam.application.TokenIssuer;
 import com.things.link.testing.PausedSchedulerShutdownTestConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +17,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.mock.web.MockHttpSession;
@@ -35,6 +40,7 @@ import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 /** S12-2c2：完整匿名Security链、真实PG/RLS/Redis与封存凭据事实；不mock授权或伪造Console主体。 */
 @SpringBootTest
@@ -64,6 +71,9 @@ class DashboardShareAnonymousApiTests {
     private static final ObjectMapper JSON = new ObjectMapper();
     /** 含最外层日志、独立Security链和生产Controller。 */
     @Autowired private MockMvc mvc;
+    /** 删除走真实Console管理身份，已有运行观察走独立App签名身份。 */
+    @Autowired private TokenIssuer consoleTokens;
+    @Autowired private AppTokenIssuer appTokens;
     /** 普通应用角色，不以owner执行匿名业务。 */
     @Autowired private JdbcTemplate application;
     /** 检查真实Redis键，未知capability不能派生身份键。 */
@@ -117,6 +127,202 @@ class DashboardShareAnonymousApiTests {
         assertThat(contextResponse.getResponse().getHeader("Set-Cookie")).isNull();
         assertThat(contextResponse.getResponse().getHeader("Access-Control-Allow-Origin")).isNull();
         assertThat(session.getAttribute("untrustedAccount")).isNotNull();
+    }
+
+    /**
+     * 真实管理POST删除可被应用引用的已发布看板，旧分享与App精确Schema立即失效。
+     * 前置沿用既有封存版本和分享夹具，不认领生产发布或签发宿主资格；删除本身不插deleted_at。
+     */
+    @Test void managementSoftDeleteClosesExistingShareAndExactAppSchemaButPreservesHistoricalFacts() throws Exception {
+        owner.update("UPDATE sys_account SET email_verified_at=clock_timestamp() WHERE id=?", fixture.actorId());
+        owner.update("INSERT INTO sys_tenant_member(id,tenant_id,account_id) VALUES (?,?,?)",
+                UUID.randomUUID(), fixture.tenantId(), fixture.actorId());
+        owner.update("INSERT INTO sys_project_member(id,project_id,account_id,role) VALUES (?,?,?,'OWNER')",
+                UUID.randomUUID(), fixture.projectId(), fixture.actorId());
+        owner.update("""
+                INSERT INTO dash_dashboard_draft(dashboard_id,tenant_id,project_id,content,revision,updated_by)
+                SELECT dashboard_id,tenant_id,project_id,schema,0,published_by_account_id
+                  FROM dash_dashboard_version WHERE id=?
+                """, fixture.authorized().dashboardVersionId());
+        WebAppRuntimeFixture.grant(owner, fixture, fixture.entry());
+        String consoleBearer = "Bearer " + consoleTokens.issue(new AuthenticatedPrincipal(
+                fixture.actorId(), fixture.tenantId(), fixture.projectId())).value();
+        String appBearer = "Bearer " + appTokens.issue(new AppAuthenticatedPrincipal(
+                fixture.tenantId(), fixture.projectId(), fixture.appUserId(), 0)).value();
+        String schemaPath = "/api/v1/app/applications/" + fixture.appKey() + "/versions/"
+                + fixture.applicationVersionId() + "/dashboards/" + fixture.authorized().dashboardVersionId() + "/schema";
+        String grantPath = "/api/v1/projects/" + fixture.projectId() + "/end-users/" + fixture.appUserId()
+                + "/dashboard-grants/" + fixture.authorized().dashboardId();
+        String deletePath = "/api/v1/projects/" + fixture.projectId() + "/dashboards/"
+                + fixture.authorized().dashboardId() + "/soft-delete";
+        json(request(get(route("context"))), 200);
+        json(request(get(route("schema"))), 200);
+        json(raw(get(schemaPath).queryParam("expectedPublicationRevision", "1")
+                .header(HttpHeaders.AUTHORIZATION, appBearer)), 200);
+        JsonNode originalGrant = json(raw(get(grantPath).header(HttpHeaders.AUTHORIZATION, consoleBearer)), 200);
+        assertThat(originalGrant.path("status").asString()).isEqualTo("ACTIVE");
+        assertThat(owner.queryForObject("SELECT revoked_at IS NULL AND expires_at>clock_timestamp() FROM dash_share_token WHERE id=?",
+                Boolean.class, shareId)).isTrue();
+        Map<String, Object> retained = retainedDashboardFacts();
+        assertThat((List<?>) retained.get("versions")).hasSize(1);
+        assertThat((List<?>) retained.get("draft")).hasSize(1);
+        assertThat((List<?>) retained.get("references")).hasSize(2);
+        assertThat((List<?>) retained.get("share")).hasSize(1);
+        assertThat((List<?>) retained.get("grant")).hasSize(2);
+        String body = "{\"expectedPublicationRevision\":\"1\"}";
+        String key = "propagation-delete-" + fixture.authorized().dashboardId();
+        MvcResult deleted = raw(post(deletePath).header(HttpHeaders.AUTHORIZATION, consoleBearer)
+                .header("Idempotency-Key", key).content(body));
+        assertThat(deleted.getResponse().getStatus()).as(deleted.getResponse().getContentAsString()).isEqualTo(204);
+        assertThat(deleted.getResponse().getContentAsByteArray()).isEmpty();
+        assertThat(deleted.getResponse().getHeader("Location")).isNull();
+        assertThat(deleted.getResponse().getHeader("Cache-Control")).contains("no-store");
+        assertThat(owner.queryForObject("SELECT publication_revision FROM dash_dashboard WHERE id=?", Long.class,
+                fixture.authorized().dashboardId())).isEqualTo(2);
+        assertThat(owner.queryForObject("SELECT current_version_id IS NULL AND deleted_at IS NOT NULL FROM dash_dashboard WHERE id=?",
+                Boolean.class, fixture.authorized().dashboardId())).isTrue();
+        error(request(get(route("context"))), 404, 60053);
+        error(request(get(route("schema"))), 404, 60053);
+        error(raw(get(schemaPath).queryParam("expectedPublicationRevision", "1")
+                .header(HttpHeaders.AUTHORIZATION, appBearer)), 404, 60023);
+        JsonNode current = json(raw(get("/api/v1/app/applications/" + fixture.appKey() + "/current")
+                .header(HttpHeaders.AUTHORIZATION, appBearer)), 200);
+        assertThat(current.path("dashboards")).hasSize(1);
+        assertThat(current.path("dashboards").get(0).path("dashboardVersionId").asString())
+                .isEqualTo(fixture.entry().dashboardVersionId().toString());
+        assertThat(json(raw(get(grantPath).header(HttpHeaders.AUTHORIZATION, consoleBearer)), 200)).isEqualTo(originalGrant);
+        error(raw(put(grantPath).header(HttpHeaders.AUTHORIZATION, consoleBearer)
+                .content("{\"expectedRevision\":\"1\",\"status\":\"REVOKED\"}")), 404, 60025);
+        error(raw(post(deletePath).header(HttpHeaders.AUTHORIZATION, consoleBearer)
+                .header("Idempotency-Key", key).content(body)), 409, 10014);
+        error(raw(post(deletePath).header(HttpHeaders.AUTHORIZATION, consoleBearer)
+                .header("Idempotency-Key", key).content("{\"expectedPublicationRevision\":\"2\"}")), 409, 10009);
+        assertThat(retainedDashboardFacts()).isEqualTo(retained);
+        assertThat(owner.queryForObject("""
+                SELECT count(*) FROM sys_audit_log
+                 WHERE target_type='dashboard' AND target_id=? AND action='dashboard.deleted'
+                """, Long.class, fixture.authorized().dashboardId())).isOne();
+    }
+
+    /**
+     * 真实管理POST软删应用后，原App运行入口全部停读，引用看板和独立分享继续可读。
+     * 预置版本、引用和分享沿用封存夹具，不认领真实发布或签发宿主资格；删除不插deleted_at。
+     */
+    @Test void managementApplicationSoftDeleteClosesAppRuntimeButKeepsDashboardShareAndHistoricalFacts() throws Exception {
+        owner.update("UPDATE sys_account SET email_verified_at=clock_timestamp() WHERE id=?", fixture.actorId());
+        owner.update("INSERT INTO sys_tenant_member(id,tenant_id,account_id) VALUES (?,?,?)",
+                UUID.randomUUID(), fixture.tenantId(), fixture.actorId());
+        owner.update("INSERT INTO sys_project_member(id,project_id,account_id,role) VALUES (?,?,?,'OWNER')",
+                UUID.randomUUID(), fixture.projectId(), fixture.actorId());
+        owner.update("""
+                INSERT INTO dash_dashboard_draft(dashboard_id,tenant_id,project_id,content,revision,updated_by)
+                SELECT dashboard_id,tenant_id,project_id,schema,0,published_by_account_id
+                  FROM dash_dashboard_version WHERE id=?
+                """, fixture.authorized().dashboardVersionId());
+        var draft = JSON.createObjectNode();
+        draft.put("formatVersion", "tc.application/v1");
+        draft.put("displayName", "保留历史应用草稿");
+        draft.putObject("hostCompatibility").put("minInclusive", "1.0.0").put("maxExclusive", "2.0.0");
+        var references = draft.putArray("dashboardRefs");
+        for (var board : List.of(fixture.entry(), fixture.authorized())) {
+            references.addObject().put("dashboardId", board.dashboardId().toString())
+                    .put("dashboardVersionId", board.dashboardVersionId().toString()).put("title", board.title());
+        }
+        draft.put("entryDashboardId", fixture.entry().dashboardId().toString());
+        owner.update("""
+                INSERT INTO app_application_draft(application_id,tenant_id,project_id,content,revision,updated_by)
+                VALUES (?,?,?,?::jsonb,0,?)
+                """, fixture.applicationId(), fixture.tenantId(), fixture.projectId(), draft.toString(), fixture.actorId());
+        String consoleBearer = "Bearer " + consoleTokens.issue(new AuthenticatedPrincipal(
+                fixture.actorId(), fixture.tenantId(), fixture.projectId())).value();
+        String appBearer = "Bearer " + appTokens.issue(new AppAuthenticatedPrincipal(
+                fixture.tenantId(), fixture.projectId(), fixture.appUserId(), 0)).value();
+        String applicationPath = "/api/v1/app/applications/" + fixture.appKey();
+        String schemaPath = applicationPath + "/versions/" + fixture.applicationVersionId()
+                + "/dashboards/" + fixture.authorized().dashboardVersionId() + "/schema";
+        String dashboardPath = "/api/v1/projects/" + fixture.projectId() + "/dashboards/"
+                + fixture.authorized().dashboardId();
+        String grantPath = "/api/v1/projects/" + fixture.projectId() + "/end-users/" + fixture.appUserId()
+                + "/dashboard-grants/" + fixture.authorized().dashboardId();
+        String deletePath = "/api/v1/projects/" + fixture.projectId() + "/applications/"
+                + fixture.applicationId() + "/soft-delete";
+        json(raw(get(applicationPath + "/resolve").header(HttpHeaders.AUTHORIZATION, appBearer)), 200);
+        json(raw(get(applicationPath + "/current").header(HttpHeaders.AUTHORIZATION, appBearer)), 200);
+        json(raw(get(schemaPath).queryParam("expectedPublicationRevision", "1")
+                .header(HttpHeaders.AUTHORIZATION, appBearer)), 200);
+        JsonNode originalDashboard = json(raw(get(dashboardPath).header(HttpHeaders.AUTHORIZATION, consoleBearer)), 200);
+        JsonNode originalGrant = json(raw(get(grantPath).header(HttpHeaders.AUTHORIZATION, consoleBearer)), 200);
+        assertThat(originalGrant.path("status").asString()).isEqualTo("ACTIVE");
+        JsonNode originalContext = json(request(get(route("context"))), 200);
+        JsonNode originalSchema = json(request(get(route("schema"))), 200);
+        Map<String, Object> retained = retainedApplicationFacts();
+        assertThat((List<?>) retained.get("versions")).hasSize(1);
+        assertThat((List<?>) retained.get("draft")).hasSize(1);
+        assertThat((List<?>) retained.get("references")).hasSize(2);
+        assertThat((List<?>) retained.get("grant")).hasSize(1);
+        assertThat((List<?>) retained.get("share")).hasSize(1);
+        String body = "{\"expectedPublicationRevision\":\"1\"}";
+        String key = "application-existing-runtime-soft-delete-" + fixture.applicationId();
+        MvcResult deleted = raw(post(deletePath).header(HttpHeaders.AUTHORIZATION, consoleBearer)
+                .header("Idempotency-Key", key).content(body));
+        assertThat(deleted.getResponse().getStatus()).as(deleted.getResponse().getContentAsString()).isEqualTo(204);
+        assertThat(deleted.getResponse().getContentAsByteArray()).isEmpty();
+        assertThat(deleted.getResponse().getHeader("Location")).isNull();
+        assertThat(deleted.getResponse().getHeader("Cache-Control")).contains("no-store");
+        assertThat(owner.queryForObject("SELECT publication_revision FROM app_application WHERE id=?", Long.class,
+                fixture.applicationId())).isEqualTo(2);
+        assertThat(owner.queryForObject("SELECT current_version_id IS NULL AND deleted_at IS NOT NULL FROM app_application WHERE id=?",
+                Boolean.class, fixture.applicationId())).isTrue();
+        error(raw(get(applicationPath + "/resolve").header(HttpHeaders.AUTHORIZATION, appBearer)), 404, 60023);
+        error(raw(get(applicationPath + "/current").header(HttpHeaders.AUTHORIZATION, appBearer)), 404, 60023);
+        error(raw(get(schemaPath).queryParam("expectedPublicationRevision", "1")
+                .header(HttpHeaders.AUTHORIZATION, appBearer)), 404, 60023);
+        assertThat(json(raw(get(dashboardPath).header(HttpHeaders.AUTHORIZATION, consoleBearer)), 200)).isEqualTo(originalDashboard);
+        assertThat(json(raw(get(grantPath).header(HttpHeaders.AUTHORIZATION, consoleBearer)), 200)).isEqualTo(originalGrant);
+        JsonNode retainedContext = json(request(get(route("context"))), 200);
+        assertThat(retainedContext.size()).isEqualTo(originalContext.size());
+        originalContext.propertyNames().forEach(name -> {
+            // 每次读取的数据库历史锚点允许前进，其他冻结分享身份和授权投影不能变化。
+            if (!"historyAnchorAt".equals(name)) {
+                assertThat(retainedContext.path(name)).as(name).isEqualTo(originalContext.path(name));
+            }
+        });
+        assertThat(retainedContext.path("historyAnchorAt").isString()).isTrue();
+        assertThat(json(request(get(route("schema"))), 200)).isEqualTo(originalSchema);
+        error(raw(post(deletePath).header(HttpHeaders.AUTHORIZATION, consoleBearer)
+                .header("Idempotency-Key", key).content(body)), 409, 10014);
+        error(raw(post(deletePath).header(HttpHeaders.AUTHORIZATION, consoleBearer)
+                .header("Idempotency-Key", key).content("{\"expectedPublicationRevision\":\"2\"}")), 409, 10009);
+        assertThat(retainedApplicationFacts()).isEqualTo(retained);
+        assertThat(owner.queryForObject("""
+                SELECT count(*) FROM sys_audit_log
+                 WHERE target_type='application' AND target_id=? AND action='application.deleted'
+                """, Long.class, fixture.applicationId())).isOne();
+    }
+
+    /** 应用软删保留全部历史、精确引用、看板状态、独立分享和READ授权，只推进应用目录指针与revision。 */
+    private Map<String, Object> retainedApplicationFacts() {
+        return Map.of(
+                "versions", owner.queryForList("SELECT * FROM app_application_version WHERE application_id=? ORDER BY id", fixture.applicationId()),
+                "draft", owner.queryForList("SELECT * FROM app_application_draft WHERE application_id=?", fixture.applicationId()),
+                "references", owner.queryForList("SELECT * FROM app_application_version_dashboard_ref WHERE application_version_id=? ORDER BY dashboard_id", fixture.applicationVersionId()),
+                "dashboards", owner.queryForList("SELECT * FROM dash_dashboard WHERE project_id=? ORDER BY id", fixture.projectId()),
+                "dashboardVersions", owner.queryForList("SELECT * FROM dash_dashboard_version WHERE project_id=? ORDER BY id", fixture.projectId()),
+                "dashboardDraft", owner.queryForList("SELECT * FROM dash_dashboard_draft WHERE dashboard_id=?", fixture.authorized().dashboardId()),
+                "share", owner.queryForList("SELECT id,tenant_id,project_id,dashboard_id,dashboard_version_id,project_generation,host_compatibility::text,referer_policy,created_at,expires_at,creator_account_id,revoked_at,revoked_by,(secret_hash=?) AS original_hash_unchanged FROM dash_share_token WHERE id=?", hash, shareId),
+                "shareCreation", owner.queryForList("SELECT * FROM dash_share_creation_result WHERE share_id=?", shareId),
+                "grant", owner.queryForList("SELECT * FROM app_user_dashboard WHERE project_id=? ORDER BY dashboard_id", fixture.projectId()));
+    }
+
+    /** 删除仅改目录，不清理版本、草稿、应用精确引用、旧ACTIVE分享或历史授权。 */
+    private Map<String, Object> retainedDashboardFacts() {
+        return Map.of(
+                "versions", owner.queryForList("SELECT id,schema::text,schema_digest,required_components::text,required_resources::text FROM dash_dashboard_version WHERE dashboard_id=? ORDER BY id", fixture.authorized().dashboardId()),
+                "draft", owner.queryForList("SELECT content::text,revision,updated_by,updated_at FROM dash_dashboard_draft WHERE dashboard_id=?", fixture.authorized().dashboardId()),
+                "references", owner.queryForList("SELECT * FROM app_application_version_dashboard_ref WHERE project_id=? ORDER BY dashboard_id", fixture.projectId()),
+                "share", owner.queryForList("SELECT id,dashboard_version_id,revoked_at,revoked_by,expires_at FROM dash_share_token WHERE id=?", shareId),
+                "grant", owner.queryForList("SELECT id,dashboard_id,status,revision,revoked_at,revoked_by FROM app_user_dashboard WHERE project_id=? ORDER BY dashboard_id", fixture.projectId()),
+                "application", owner.queryForList("SELECT current_version_id,publication_revision FROM app_application WHERE id=?", fixture.applicationId()));
     }
 
     /** 有效头格式仍必须匹配精确shareId/hash；未封存凭据不能越过定位函数成为capability。 */

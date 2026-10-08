@@ -246,3 +246,17 @@ describe('用户READ授权事实与恢复', () => {
     expect(ports.write).not.toHaveBeenCalled()
   })
 })
+
+it('合法未设置显示名不会使既有看板用户目录整体失败', async () => {
+  const { grants, ports } = fixture()
+  ports.users.mockResolvedValueOnce({
+    items: [{ ...user, displayName: null }],
+    hasMore: false,
+    nextCursor: null
+  })
+  await grants.open()
+  await grants.selectUser(appUserId)
+  expect(grants.getSnapshot().error).toBe('')
+  expect(grants.getSnapshot().selectedUser?.displayName).toBeNull()
+  expect(grants.getSnapshot().grant).toEqual(fact)
+})

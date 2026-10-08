@@ -129,7 +129,9 @@ public enum DeviceErrorCode implements ErrorCode {
     /** ADR0193：设备类型或载荷协议不支持选择的接入平面。 */
     ACCESS_PROTOCOL_UNSUPPORTED(30066, "接入协议不适配设备", 409),
     /** ADR0193：版本达到bigint上界，禁止溢出或重置。 */
-    ACCESS_CONFIG_EXHAUSTED(30067, "接入配置版本耗尽", 409);
+    ACCESS_CONFIG_EXHAUSTED(30067, "接入配置版本耗尽", 409),
+    /** 事件信封、实际参数或原模型事件段无法按已接受合同解释；与遥测同码同义，登记守卫仅允许这两个定义。 */
+    EVENT_REPORT_INVALID(30070, "设备事件上报不符合已发布定义", 400);
 
     /** 业务码。 */ private final int code;
     /** 对外中文消息。 */ private final String defaultMessage;

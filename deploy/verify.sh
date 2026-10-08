@@ -126,7 +126,7 @@ else
 fi
 
 topics=$($RPK topic list 2>/dev/null)
-for t in tc.device.uplink.raw tc.device.uplink.normalized tc.device.uplink.processed tc.device.topo tc.device.batch tc.device.topo.reply tc.device.config tc.device.config.reply tc.device.modbus.request tc.device.modbus.response tc.device.downlink tc.device.command.terminal tc.device.realtime tc.domain.event tc.notification tc.rule.automation.property.accepted tc.integration.webhook.source tc.rule.retry.1m tc.rule.retry.5m tc.rule.dlq tc.dlq; do
+for t in tc.device.uplink.raw tc.device.uplink.normalized tc.device.uplink.processed tc.device.event.normalized tc.device.topo tc.device.batch tc.device.topo.reply tc.device.config tc.device.config.reply tc.device.modbus.request tc.device.modbus.response tc.device.downlink tc.device.command.terminal tc.device.realtime tc.domain.event tc.notification tc.rule.automation.property.accepted tc.integration.webhook.source tc.rule.retry.1m tc.rule.retry.5m tc.rule.dlq tc.dlq; do
   if echo "$topics" | grep -q "^$t "; then
     ok "主题 $t 已创建"
   else
@@ -148,6 +148,14 @@ if [ "$processed_parts" = "12" ]; then
   ok "tc.device.uplink.processed 分区数为 12"
 else
   bad "tc.device.uplink.processed 分区数为 ${processed_parts:-?}，应为 12" "规则续接必须保持设备内顺序"
+fi
+
+# ADR0235独立事件固定12分区，不允许自动扩分区破坏同设备顺序。
+event_parts=$(echo "$topics" | awk '$1=="tc.device.event.normalized"{print $2}')
+if [ "$event_parts" = "12" ]; then
+  ok "tc.device.event.normalized 分区数为 12"
+else
+  bad "tc.device.event.normalized 分区数为 ${event_parts:-?}，应为 12" "事件事实必须保持设备内顺序"
 fi
 
 # S4-4 的实时增量同样按 deviceId 分区。把部署声明纳入运行态门禁，避免旧环境继续以

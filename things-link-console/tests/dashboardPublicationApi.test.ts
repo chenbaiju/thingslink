@@ -14,6 +14,60 @@ const intent: PublicationIntent = {
   status: 'UNKNOWN'
 }
 describe('发布API无隐式写重放', () => {
+  it('软删除精确单字段long字符串和204，401不重放，200不能当删除成功', async () => {
+    const deletion: PublicationIntent = {
+      ...intent,
+      kind: 'SOFT_DELETE',
+      body: { expectedPublicationRevision: '9223372036854775807' }
+    }
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 204 }))
+    await expect(writeDashboardPublicationIntent(deletion)).resolves.toBeUndefined()
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/projects/project/dashboards/dashboard/soft-delete',
+      expect.objectContaining({
+        body: '{"expectedPublicationRevision":"9223372036854775807"}',
+        headers: expect.objectContaining({ 'Idempotency-Key': 'unique' })
+      })
+    )
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{"code":20001}', { status: 401 }))
+    await expect(writeDashboardPublicationIntent(deletion)).rejects.toMatchObject({
+      status: 401,
+      outcomeUnknown: false
+    })
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{}', { status: 200 }))
+    await expect(writeDashboardPublicationIntent(deletion)).rejects.toMatchObject({
+      status: 200,
+      outcomeUnknown: true
+    })
+    expect(fetch).toHaveBeenCalledTimes(3)
+  })
+  it.each(['01', '-1', '9223372036854775808', '1.0', 3 as unknown as string])(
+    '删除非法revision%s拒绝发请求',
+    async (value) => {
+      await expect(
+        writeDashboardPublicationIntent({
+          ...intent,
+          kind: 'SOFT_DELETE',
+          body: { expectedPublicationRevision: value }
+        })
+      ).rejects.toMatchObject({ outcomeUnknown: false })
+      expect(fetch).not.toHaveBeenCalled()
+    }
+  )
+  it('软删除不能夹带草稿revision或目标版本', async () => {
+    await expect(
+      writeDashboardPublicationIntent({ ...intent, kind: 'SOFT_DELETE' })
+    ).rejects.toMatchObject({ outcomeUnknown: false })
+    await expect(
+      writeDashboardPublicationIntent({
+        ...intent,
+        kind: 'SOFT_DELETE',
+        targetVersionId: 'version',
+        body: { expectedPublicationRevision: '3' }
+      })
+    ).rejects.toMatchObject({ outcomeUnknown: false })
+    expect(fetch).not.toHaveBeenCalled()
+  })
   beforeEach(() => {
     vi.stubEnv('VITE_API_URL', '/')
     vi.stubGlobal('fetch', vi.fn())

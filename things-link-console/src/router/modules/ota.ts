@@ -30,6 +30,7 @@ export const otaRoutes: AppRouteRecord = {
         keepAlive: false,
         roles: ['OWNER', 'ADMIN'],
         authList: [
+          { title: '查看信任与类型基线', authMark: 'ota:read' },
           { title: '创建固件草稿', authMark: 'ota:deploy' },
           { title: '上传固件对象', authMark: 'ota:deploy' },
           { title: '提交固件发布', authMark: 'ota:deploy' },

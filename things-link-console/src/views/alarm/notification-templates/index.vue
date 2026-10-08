@@ -1,5 +1,14 @@
 <template>
   <div class="console-page notification-page console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="通知模板"
+      description="按渠道维护通知内容，关联告警规则后通过告警历史检查投递结果。"
+      :links="[
+        { label: '通知组', path: '/alarm/notification-groups', permission: 'alarm:read' },
+        { label: '告警规则', path: '/alarm/rules', permission: 'alarm:read' },
+        { label: '告警历史', path: '/alarm/history', permission: 'alarm:read' }
+      ]"
+    />
     <div class="notification-page__header console-toolbar console-page-actions">
       <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreate">
         创建通知模板
@@ -118,6 +127,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'

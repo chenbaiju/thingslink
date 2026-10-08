@@ -8,7 +8,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture.DataFixture;
 import com.things.link.shared.error.BusinessException;
 import com.things.link.shared.tenant.TenantContext;
 import com.things.link.shared.tenant.TenantScope;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.*;
 
 /** 无JVM计数桩，真实APP连接及持久槽；只使用假凭据，不启动外部调用。 */
-class AnalysisExecutionSlotTests extends AbstractIntegrationTest {
+class AnalysisExecutionSlotTests extends AbstractAssistantIntegrationTest {
     static final String MASTER=ModelConfigurationApiTests.master();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r) {
         r.add("things-link.assistant.credentials.active-key-id",()->"slot-test");

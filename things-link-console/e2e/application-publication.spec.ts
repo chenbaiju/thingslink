@@ -64,7 +64,7 @@ test('应用发布：精确历史、回滚保留草稿、撤回、CAS及原键�
   const application = page
     .getByRole('region', { name: '应用目录' })
     .getByRole('listitem')
-    .filter({ hasText: '发布验收应用' })
+    .filter({ has: page.getByTestId(`application-open-${applicationId}`) })
   await page.getByRole('button', { name: '读取应用目录', exact: true }).click()
   await application.getByRole('button', { name: '编辑', exact: true }).click()
   const panel = page.getByRole('region', { name: '应用发布与历史恢复' })

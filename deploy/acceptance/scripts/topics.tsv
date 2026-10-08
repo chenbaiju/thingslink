@@ -1,5 +1,6 @@
 tc.device.uplink.raw	12	604800000
 tc.device.uplink.normalized	12	604800000
+tc.device.event.normalized	12	604800000
 tc.device.uplink.processed	12	604800000
 tc.device.topo	12	604800000
 tc.device.batch	12	604800000

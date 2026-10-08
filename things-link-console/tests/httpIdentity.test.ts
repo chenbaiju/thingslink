@@ -508,3 +508,260 @@ describe('分析提交单次发送', () => {
     expect(user.accessToken).toBe('next-login')
   })
 })
+
+describe('产品凭据生成单次发送', () => {
+  const url =
+    '/api/v1/projects/11111111-2222-4333-8444-555555555555/device-types/66666666-7777-4888-8999-aaaaaaaaaaaa/product-credential' as const
+  it.each([401, 403, 429, 500, 503, 'network', 'timeout'])(
+    '%s不重发产品生成，不记录错误正文且保留身份',
+    async (kind) => {
+      const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+      axios.defaults.adapter = refresh
+      const adapter = vi.fn<AxiosAdapter>(async (config) => {
+        if (typeof kind !== 'number')
+          throw new AxiosError(
+            'PRIVATE_SECRET',
+            kind === 'timeout' ? 'ECONNABORTED' : 'ERR_NETWORK',
+            config
+          )
+        throw new AxiosError('PRIVATE_SECRET', 'ERR_BAD_RESPONSE', config, undefined, {
+          status: kind,
+          statusText: 'Failed',
+          headers: {},
+          config,
+          data: { code: kind, message: 'PRIVATE_SECRET', details: ['PRIVATE_SECRET'] }
+        })
+      })
+      const logout = vi.spyOn(user, 'logOut')
+      const result = await outcome(http.post({ url, adapter, showErrorMessage: false }))
+      expect(result).toBeInstanceOf(HttpError)
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(refresh).not.toHaveBeenCalled()
+      expect(logout).not.toHaveBeenCalled()
+      expect(user.accessToken).toBe('initial-token')
+      expect(JSON.stringify(result)).not.toContain('PRIVATE_SECRET')
+      expect(vi.mocked(showError).mock.calls.every(([, display]) => display === false)).toBe(true)
+      expect(JSON.stringify(vi.mocked(showError).mock.calls)).not.toContain('PRIVATE_SECRET')
+    }
+  )
+})
+
+describe('OTA下载申领单次发送与私密错误', () => {
+  const url =
+    '/api/v1/projects/11111111-2222-4333-8444-555555555555/ota/firmwares/66666666-7777-4888-8999-aaaaaaaaaaaa/release/downloads' as const
+  it.each([401, 403, 429, 500, 503, 'network', 'timeout', 10010, 10014])(
+    '%s不重放或传播票据，并保留真实未知结果标记',
+    async (kind) => {
+      const marker = 'https://storage.invalid/object?X-Amz-Signature=PRIVATE_TICKET'
+      const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+      axios.defaults.adapter = refresh
+      const adapter = vi.fn<AxiosAdapter>(async (config) => {
+        if (typeof kind !== 'number')
+          throw new AxiosError(marker, kind === 'timeout' ? 'ECONNABORTED' : 'ERR_NETWORK', config)
+        throw new AxiosError(marker, 'ERR_BAD_RESPONSE', config, undefined, {
+          status: kind >= 10000 ? 409 : kind,
+          statusText: 'Failed',
+          headers: {},
+          config,
+          data: { code: kind, message: marker, details: [marker], traceId: marker }
+        })
+      })
+      const logout = vi.spyOn(user, 'logOut')
+      const result = await outcome(
+        http.post({
+          url,
+          adapter,
+          showErrorMessage: false,
+          headers: { 'Idempotency-Key': 'original' }
+        })
+      )
+      expect(result).toBeInstanceOf(HttpError)
+      const failure = result as HttpError
+      expect(failure.outcomeUnknown).toBe(typeof kind !== 'number' || (kind >= 500 && kind < 600))
+      if (typeof kind === 'number') expect(failure.code).toBe(kind)
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(refresh).not.toHaveBeenCalled()
+      expect(logout).not.toHaveBeenCalled()
+      expect(user.accessToken).toBe('initial-token')
+      expect(JSON.stringify(failure.toLogData()).includes(marker)).toBe(false)
+      expect(JSON.stringify(vi.mocked(showError).mock.calls).includes(marker)).toBe(false)
+      expect(vi.mocked(showError).mock.calls.every(([, display]) => display === false)).toBe(true)
+    }
+  )
+})
+
+describe('受控签包导入单次发送与原意图恢复', () => {
+  const url =
+    '/api/v1/projects/11111111-2222-4333-8444-555555555555/ota/trust-domains/controlled.example/bundles' as const
+  it.each([401, 403, 429, 500, 503, 'network', 'timeout', 10010, 10014, 70010])(
+    '%s精确POST不重放、不捕获错误原文且保留未知标记',
+    async (kind) => {
+      const marker = 'PRIVATE_UNTRUSTED_SIGNING_MATERIAL'
+      const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+      axios.defaults.adapter = refresh
+      const adapter = vi.fn<AxiosAdapter>(async (config) => {
+        if (typeof kind !== 'number')
+          throw new AxiosError(marker, kind === 'timeout' ? 'ECONNABORTED' : 'ERR_NETWORK', config)
+        throw new AxiosError(marker, 'ERR_BAD_RESPONSE', config, undefined, {
+          status: kind === 70010 ? 503 : kind >= 10000 ? 409 : kind,
+          statusText: 'Failed',
+          headers: {},
+          config,
+          data: { code: kind, message: marker, traceId: marker, details: [marker] }
+        })
+      })
+      const logout = vi.spyOn(user, 'logOut')
+      const result = (await outcome(
+        http.post({
+          url,
+          data: { expectedRevision: '0' },
+          headers: { 'Idempotency-Key': 'original-key' },
+          adapter,
+          showErrorMessage: false
+        })
+      )) as HttpError
+      expect(result).toBeInstanceOf(HttpError)
+      expect(result.outcomeUnknown).toBe(
+        typeof kind !== 'number' || [500, 503, 70010].includes(kind)
+      )
+      if (typeof kind === 'number') expect(result.code).toBe(kind)
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(refresh).not.toHaveBeenCalled()
+      expect(logout).not.toHaveBeenCalled()
+      expect(user.accessToken).toBe('initial-token')
+      expect(JSON.stringify(result.toLogData())).not.toContain(marker)
+      expect(JSON.stringify(vi.mocked(showError).mock.calls)).not.toContain(marker)
+    }
+  )
+  it('域登记只读GET仍沿既有刷新合同，精确POST不加入并发认证刷新', async () => {
+    const started = deferred<InternalAxiosRequestConfig>(),
+      response = deferred<ReturnType<typeof success>>()
+    axios.defaults.adapter = (config) => {
+      started.resolve(config)
+      return response.promise
+    }
+    const reader: AxiosAdapter = async (config) => {
+      if (config.headers.get('Authorization') !== 'Bearer refreshed') throw unauthorized(config)
+      return success(config)
+    }
+    const reading = http.get({
+      url: '/api/v1/projects/project-a/ota/trust-domains/controlled.example',
+      adapter: reader
+    })
+    const refreshConfig = await started.promise
+    const importAdapter = vi.fn<AxiosAdapter>(async (config) => {
+      throw unauthorized(config)
+    })
+    const result = await outcome(http.post({ url, adapter: importAdapter }))
+    expect(result).toMatchObject({ code: 401 })
+    response.resolve(success(refreshConfig, { accessToken: 'refreshed' }))
+    expect(await reading).toEqual({ value: 'result' })
+    expect(importAdapter).toHaveBeenCalledOnce()
+  })
+  it('在途身份变化取消旧响应，不影响新身份或自动重发', async () => {
+    const entered = deferred<InternalAxiosRequestConfig>(),
+      response = deferred<ReturnType<typeof success>>()
+    const adapter = vi.fn<AxiosAdapter>((config) => {
+      entered.resolve(config)
+      return response.promise
+    })
+    const result = outcome(http.post({ url, adapter }))
+    const config = await entered.promise
+    user.setToken('next-login')
+    response.reject(unauthorized(config))
+    expect(axios.isCancel(await result)).toBe(true)
+    expect(adapter).toHaveBeenCalledOnce()
+    expect(showError).not.toHaveBeenCalled()
+    expect(user.accessToken).toBe('next-login')
+  })
+})
+
+describe('受控类型基线登记单次发送与原意图恢复', () => {
+  const url =
+    '/api/v1/projects/11111111-2222-4333-8444-555555555555/ota/device-types/66666666-7777-4888-8999-aaaaaaaaaaaa/baseline/registrations' as const
+  it.each([401, 403, 429, 500, 503, 'network', 'timeout', 10010, 10014, 70028])(
+    '%s精确POST不重放、不捕获错误原文且保留未知标记',
+    async (kind) => {
+      const marker = 'PRIVATE_UNTRUSTED_BASELINE_MATERIAL'
+      const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+      axios.defaults.adapter = refresh
+      const adapter = vi.fn<AxiosAdapter>(async (config) => {
+        if (typeof kind !== 'number')
+          throw new AxiosError(marker, kind === 'timeout' ? 'ECONNABORTED' : 'ERR_NETWORK', config)
+        throw new AxiosError(marker, 'ERR_BAD_RESPONSE', config, undefined, {
+          status: kind === 70028 ? 503 : kind >= 10000 ? 409 : kind,
+          statusText: 'Failed',
+          headers: {},
+          config,
+          data: { code: kind, message: marker, traceId: marker, details: [marker] }
+        })
+      })
+      const logout = vi.spyOn(user, 'logOut')
+      const result = (await outcome(
+        http.post({
+          url,
+          data: { expectedRevision: '0' },
+          headers: { 'Idempotency-Key': 'original-key' },
+          adapter,
+          showErrorMessage: false
+        })
+      )) as HttpError
+      expect(result).toBeInstanceOf(HttpError)
+      expect(result.outcomeUnknown).toBe(
+        typeof kind !== 'number' || [500, 503, 70028].includes(kind)
+      )
+      if (typeof kind === 'number') expect(result.code).toBe(kind)
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(refresh).not.toHaveBeenCalled()
+      expect(logout).not.toHaveBeenCalled()
+      expect(user.accessToken).toBe('initial-token')
+      expect(JSON.stringify(result.toLogData())).not.toContain(marker)
+      expect(JSON.stringify(vi.mocked(showError).mock.calls)).not.toContain(marker)
+    }
+  )
+  it('基线登记只读GET仍沿既有刷新合同，精确POST不加入并发认证刷新', async () => {
+    const started = deferred<InternalAxiosRequestConfig>(),
+      response = deferred<ReturnType<typeof success>>()
+    axios.defaults.adapter = (config) => {
+      started.resolve(config)
+      return response.promise
+    }
+    const reader: AxiosAdapter = async (config) => {
+      if (config.headers.get('Authorization') !== 'Bearer refreshed') throw unauthorized(config)
+      return success(config)
+    }
+    const reading = http.get({
+      url: '/api/v1/projects/project-a/ota/device-types/66666666-7777-4888-8999-aaaaaaaaaaaa/baseline',
+      adapter: reader
+    })
+    const refreshConfig = await started.promise
+    const importAdapter = vi.fn<AxiosAdapter>(async (config) => {
+      throw unauthorized(config)
+    })
+    const result = await outcome(http.post({ url, adapter: importAdapter }))
+    expect(result).toMatchObject({ code: 401 })
+    response.resolve(success(refreshConfig, { accessToken: 'refreshed' }))
+    expect(await reading).toEqual({ value: 'result' })
+    expect(importAdapter).toHaveBeenCalledOnce()
+  })
+  it('在途身份变化取消旧响应，不影响新身份或自动重发', async () => {
+    const entered = deferred<InternalAxiosRequestConfig>(),
+      response = deferred<ReturnType<typeof success>>()
+    const adapter = vi.fn<AxiosAdapter>((config) => {
+      entered.resolve(config)
+      return response.promise
+    })
+    const result = outcome(http.post({ url, adapter }))
+    const config = await entered.promise
+    user.setToken('next-login')
+    response.reject(unauthorized(config))
+    expect(axios.isCancel(await result)).toBe(true)
+    expect(adapter).toHaveBeenCalledOnce()
+    expect(showError).not.toHaveBeenCalled()
+    expect(user.accessToken).toBe('next-login')
+  })
+})

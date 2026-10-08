@@ -47,6 +47,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @DisplayName("OpenAPI 契约（BACKEND_ARCHITECTURE.md 11.1）")
 class OpenApiSpecTests extends AbstractIntegrationTest {
 
+    /** 可选项目描述与响应保持同名，生成类型沿用1000字符输入上限。 */
+    @Test
+    void projectDescriptionContractIsOptionalAndBounded() throws Exception {
+        JsonNode schemas = PRETTY.readTree(fetchSpec()).path("components").path("schemas");
+        JsonNode request = schemas.path("CreateProjectRequest");
+        assertThat(request.path("properties").path("description").path("type").asString()).isEqualTo("string");
+        assertThat(request.path("properties").path("description").path("maxLength").asInt()).isEqualTo(1000);
+        assertThat(request.path("required").toString()).doesNotContain("description");
+        assertThat(schemas.path("ProjectResponse").path("properties").path("description").path("type").asString()).isEqualTo("string");
+    }
+
     @Autowired
     private org.springframework.boot.webmvc.actuate.endpoint.web.WebMvcEndpointHandlerMapping managementMapping;
 
@@ -1491,6 +1502,18 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
         assertThat(noContent.path("headers").has("Location")).isFalse();
     }
 
+    /** 最新导出任务是有界只读入口，200含任务投影，204无正文，不声明分页或下载能力。 */
+    @Test
+    void projectExportLatestReadHasTaskOrNoContentContract() throws Exception {
+        var spec = PRETTY.readTree(fetchSpec());
+        var operation = spec.path("paths").path("/api/v1/projects/{projectId}/exports/latest").path("get");
+        assertThat(operation.path("operationId").asString()).isEqualTo("latestProjectExport");
+        assertThat(operation.path("responses").path("200").path("content").path("application/json")
+                .path("schema").path("$ref").asString()).isEqualTo("#/components/schemas/ProjectExportResponse");
+        assertThat(operation.path("responses").path("204").path("content").isMissingNode()).isTrue();
+        assertThat(operation.path("parameters").size()).isEqualTo(1);
+    }
+
     /** 应用软删复用单字符串revision、可选公共幂等键和无正文无Location的204。 */
     @Test
     @DisplayName("应用软删OpenAPI合同精确")
@@ -2176,6 +2199,36 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
         }
     }
 
+    /** 单类型核对仅返回公开投影，产品识别码真实空值进入生成合同。 */
+    @Test
+    void deviceTypeDetailContractKeepsNullablePublicProductKey() throws Exception {
+        JsonNode spec = PRETTY.readTree(fetchSpec());
+        assertThat(spec.path("paths").path("/api/v1/projects/{projectId}/device-types/{id}").path("get").isMissingNode()).isFalse();
+        JsonNode schema = spec.path("components").path("schemas").path("DeviceTypeResponse");
+        assertThat(schema.path("properties").path("productKey").path("type").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("string", "null");
+        assertThat(schema.path("properties").has("productSecret")).isFalse();
+        assertThat(schema.path("properties").has("productSecretHash")).isFalse();
+    }
+
+    /** 通知初态及终态均允许没有下次计划，不能把空值生成为不可空字符串。 */
+    @Test
+    void alarmDeliveryContractKeepsNullableNextAttempt() throws Exception {
+        JsonNode schema = PRETTY.readTree(fetchSpec()).path("components").path("schemas").path("AlarmNotificationDeliveryResponse");
+        assertThat(schema.path("properties").path("nextAttemptAt").path("type").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("string", "null");
+    }
+
+    /** 未设置显示名或未分配角色时的实际空值必须进入双端生成合同。 */
+    @Test
+    void endUserContractKeepsNullableIdentityAndAssignmentFields() throws Exception {
+        JsonNode schema = PRETTY.readTree(fetchSpec()).path("components").path("schemas").path("EndUserResponse");
+        for (String field : List.of("displayName", "role", "roleStatus", "assignedAt")) {
+            assertThat(schema.path("properties").path(field).path("type").valueStream().map(JsonNode::asString).toList())
+                    .as(field).containsExactlyInAnyOrder("string", "null");
+        }
+    }
+
     /** S12-2a4b：App current只暴露授权交集、字符串Long和必填可空入口，所有分支声明no-store。 */
     @Test
     void webAppCurrentContractKeepsClosedProjectionAndAppBearer() throws Exception {
@@ -2766,6 +2819,92 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
                         .path("schema").path("enum").valueStream().map(JsonNode::asString).toList()).containsExactly("no-store");
             }
         }
+    }
+
+    /** 原始属性历史的成功分页不能被显式套餐错误声明覆盖。 */
+    @Test void rawPropertyHistoryDeclaresTypedSuccessAlongsideQuotaFailure() throws Exception {
+        JsonNode spec = PRETTY.readTree(fetchSpec());
+        JsonNode operation = spec.path("paths")
+                .path("/api/v1/projects/{projectId}/devices/{deviceId}/telemetry/property").path("get");
+        JsonNode schemas = spec.path("components").path("schemas");
+        assertThat(operation.path("responses").propertyNames()).contains("200", "503");
+        JsonNode page = referencedSchema(schemas, successSchema(operation));
+        assertThat(page.path("properties").propertyNames()).containsExactlyInAnyOrder("items", "nextCursor", "hasMore");
+        JsonNode point = referencedSchema(schemas, page.path("properties").path("items").path("items"));
+        assertThat(point.path("properties").propertyNames()).containsExactlyInAnyOrder(
+                "deviceId", "propertyKey", "ts", "value", "dataType", "thingModelVersionId", "modelVersion", "quality");
+        assertThat(point.path("properties").path("value").path("type").asString()).isNotEqualTo("string");
+        assertThat(parameter(operation, "from", "query").path("schema").path("format").asString()).isEqualTo("date-time");
+        assertThat(parameter(operation, "to", "query").path("schema").path("format").asString()).isEqualTo("date-time");
+        assertThat(parameter(operation, "limit", "query").path("schema").path("maximum").asInt()).isEqualTo(500);
+    }
+
+    /** BE-001-C：事件历史精确读取、原事实投影及所有状态缓存控制随真实生成合同冻结。 */
+    @Test void consoleDeviceEventsKeepClosedQueriesExactHistoryProjectionAndNoStore() throws Exception {
+        JsonNode spec = PRETTY.readTree(fetchSpec());
+        JsonNode paths = spec.path("paths"), schemas = spec.path("components").path("schemas");
+        String collection = "/api/v1/projects/{projectId}/devices/{deviceId}/events";
+        String detailPath = collection + "/{messageId}";
+        JsonNode list = runtimeDataOperation(spec, new String[]{collection, "get", "listConsoleDeviceEvents"});
+        JsonNode detail = runtimeDataOperation(spec, new String[]{detailPath, "get", "getConsoleDeviceEvent"});
+        assertThat(paths.path(collection).propertyNames()).containsExactly("get");
+        assertThat(paths.path(detailPath).propertyNames()).containsExactly("get");
+        for (JsonNode operation : List.of(list, detail)) {
+            assertThat(operation.path("security")).hasSize(1);
+            assertThat(operation.path("security").get(0).propertyNames()).containsExactly("consoleAccessBearer");
+            assertUuidPathParameter(operation, "projectId");
+            assertUuidPathParameter(operation, "deviceId");
+            assertThat(operation.has("requestBody")).isFalse();
+            assertThat(operation.path("parameters").valueStream().filter(value -> "header".equals(value.path("in").asString()))
+                    .map(value -> value.path("name").asString()).toList()).doesNotContain("Idempotency-Key", "X-Application-Key");
+            assertThat(operation.path("responses").propertyNames()).contains("200", "400", "401", "403", "404", "429", "500", "503");
+            operation.path("responses").propertyNames().forEach(status -> {
+                JsonNode response = operation.path("responses").path(status);
+                assertThat(response.path("headers").path("Cache-Control").path("schema").path("enum")
+                        .valueStream().map(JsonNode::asString).toList()).as("事件历史%s应禁止缓存", status).containsExactly("no-store");
+                if (!"200".equals(status)) assertThat(response.path("content").path("application/json").path("schema").path("$ref").asString())
+                        .isEqualTo("#/components/schemas/ApiError");
+            });
+        }
+        assertUuidPathParameter(detail, "messageId");
+        assertThat(list.path("parameters").valueStream().filter(value -> "query".equals(value.path("in").asString()))
+                .map(value -> value.path("name").asString()).toList())
+                .containsExactlyInAnyOrder("eventKey", "level", "thingModelVersionId", "from", "to", "cursor", "limit");
+        assertThat(detail.path("parameters").valueStream().filter(value -> "query".equals(value.path("in").asString())).toList()).isEmpty();
+        for (String name : List.of("eventKey", "level", "thingModelVersionId", "from", "to", "cursor", "limit"))
+            assertThat(parameter(list, name, "query").path("required").asBoolean()).isFalse();
+        JsonNode limit = parameter(list, "limit", "query").path("schema");
+        assertThat(limit.path("type").asString()).isEqualTo("integer");
+        assertThat(limit.path("default").asInt()).isEqualTo(20);
+        assertThat(limit.path("minimum").asInt()).isEqualTo(1);
+        assertThat(limit.path("maximum").asInt()).isEqualTo(100);
+        JsonNode page = referencedSchema(schemas, successSchema(list));
+        assertExactRequiredSchema(page, "items", "nextCursor", "windowFrom", "windowTo", "retentionDays");
+        assertRuntimeNullable(page.path("properties").path("nextCursor"), "string");
+        assertThat(page.path("properties").path("items").path("maxItems").asInt()).isEqualTo(100);
+        JsonNode retention = page.path("properties").path("retentionDays");
+        assertThat(retention.path("type").asString()).isEqualTo("integer");
+        assertThat(retention.path("enum").valueStream().toList()).allMatch(JsonNode::isIntegralNumber);
+        assertThat(retention.path("enum").valueStream().map(JsonNode::asInt).toList()).containsExactly(90);
+        assertThat(retention.path("enum").valueStream().map(JsonNode::asString).toList()).containsExactly("90");
+        assertThat(retention.path("minimum").asInt()).isEqualTo(90);
+        assertThat(retention.path("maximum").asInt()).isEqualTo(90);
+        for (String field : List.of("windowFrom", "windowTo")) {
+            assertThat(page.path("properties").path(field).path("type").asString()).isEqualTo("string");
+            assertThat(page.path("properties").path(field).path("format").asString()).isEqualTo("date-time");
+        }
+        JsonNode item = referencedSchema(schemas, page.path("properties").path("items").path("items"));
+        assertExactRequiredSchema(item, "messageId", "deviceId", "deviceTypeId", "eventKey", "level", "thingModelVersionId",
+                "modelVersion", "eligibility", "occurredAt", "receivedAt", "acceptedAt", "params", "paramsRedacted");
+        assertThat(referencedSchema(schemas, successSchema(detail))).isEqualTo(item);
+        for (String field : List.of("messageId", "deviceId", "deviceTypeId", "thingModelVersionId"))
+            assertThat(item.path("properties").path(field).path("format").asString()).isEqualTo("uuid");
+        for (String field : List.of("occurredAt", "receivedAt", "acceptedAt"))
+            assertThat(item.path("properties").path(field).path("format").asString()).isEqualTo("date-time");
+        assertThat(item.path("properties").path("level").path("enum").valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("INFO", "WARNING", "ERROR");
+        assertThat(item.path("properties").path("eligibility").path("enum").valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("CURRENT", "HISTORY_ONLY");
+        assertThat(item.path("properties").path("params").path("type").asString()).isEqualTo("object");
+        assertThat(item.path("properties").path("paramsRedacted").path("type").asString()).isEqualTo("boolean");
     }
 
     /** 历史为有权限的低敏摘要分页，不将单条命令载荷复制进列表。 */

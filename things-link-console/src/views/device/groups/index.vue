@@ -1,5 +1,10 @@
 <template>
   <div class="console-page device-groups console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="设备组"
+      description="按静态成员或动态规则组织设备，接续管理设备与接入。"
+      :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
+    />
     <div class="device-groups__header console-toolbar console-page-actions">
       <ElButton v-if="hasAuth('device:create')" type="primary" :icon="Plus" @click="openCreate">
         创建设备组
@@ -204,6 +209,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'

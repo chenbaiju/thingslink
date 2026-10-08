@@ -37,6 +37,13 @@
           @click="confirmAction('WITHDRAW')"
           >撤回当前发布</el-button
         >
+        <el-button
+          data-testid="publication-soft-delete"
+          type="danger"
+          :disabled="!publishable"
+          @click="confirmAction('SOFT_DELETE')"
+          >软删除看板</el-button
+        >
       </template>
     </div>
     <template v-if="canManage">
@@ -52,6 +59,7 @@
         >上次操作已有完成回执，请读取当前发布事实；当前状态可能包含后续变更。</p
       >
       <el-button
+        data-testid="publication-retry"
         v-if="state.pending.status === 'UNKNOWN' && canManage"
         :disabled="!available || state.loading || state.writing || confirming"
         @click="publication.retry()"
@@ -111,6 +119,7 @@
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'
   import { createDashboardPublication } from '@/features/dashboard/publication-model'
+  import type { PublicationSnapshot } from '@/features/dashboard/publication-model'
   import {
     fetchDashboardPublicationCatalog,
     fetchDashboardPublicationHistory,
@@ -129,6 +138,11 @@
     canManage: boolean
   }>()
   const user = useUserStore()
+  const emit = defineEmits<{
+    deleteLock: [locked: boolean]
+    deleted: [result: NonNullable<PublicationSnapshot['deleted']>]
+  }>()
+  let emittedDeletion = false
   const confirming = ref(false)
   const context = () => ({ ...props, identity: currentIdentityEpoch() })
   const publication = createDashboardPublication({
@@ -140,6 +154,11 @@
     newKey: () => crypto.randomUUID(),
     changed: (snapshot) => {
       state.value = snapshot
+      emit('deleteLock', snapshot.pending?.kind === 'SOFT_DELETE' || !!snapshot.deleted)
+      if (snapshot.deleted && !emittedDeletion) {
+        emittedDeletion = true
+        emit('deleted', snapshot.deleted)
+      }
     }
   })
   const state = shallowRef(publication.getSnapshot())
@@ -167,27 +186,52 @@
     () => [
       props.projectId,
       props.dashboardId,
-      props.available,
       props.canRead,
       props.canManage,
-      user.info.userId
+      user.info.userId,
+      user.info.tenantId,
+      JSON.stringify(user.info.roles),
+      JSON.stringify(user.info.buttons),
+      currentIdentityEpoch()
     ],
     () => {
+      emittedDeletion = false
       publication.reset()
       if (props.available && props.canRead && props.projectId && props.dashboardId)
         void publication.open()
     },
     { immediate: true, flush: 'sync' }
   )
+  watch(
+    () => props.available,
+    () => {
+      // 暂时离线保留同身份删除原意图；权限或资源变化仍立即销毁。
+      if (state.value.pending?.kind === 'SOFT_DELETE' || state.value.deleted) return
+      publication.reset()
+      if (props.available && props.canRead && props.projectId && props.dashboardId)
+        void publication.open()
+    },
+    { flush: 'sync' }
+  )
   onBeforeUnmount(() => publication.reset())
   function refresh() {
     return state.value.pending ? publication.recover() : publication.open()
   }
-  async function confirmAction(kind: 'PUBLISH' | 'ROLLBACK' | 'WITHDRAW', versionId?: string) {
-    if (!writable.value || (kind === 'PUBLISH' && !publishable.value)) return
+  async function confirmAction(
+    kind: 'PUBLISH' | 'ROLLBACK' | 'WITHDRAW' | 'SOFT_DELETE',
+    versionId?: string
+  ) {
+    if (!writable.value || ((kind === 'PUBLISH' || kind === 'SOFT_DELETE') && !publishable.value))
+      return
     const confirmationContext = () =>
       JSON.stringify({
         context: context(),
+        user: {
+          userId: user.info.userId,
+          tenantId: user.info.tenantId,
+          roles: user.info.roles,
+          buttons: user.info.buttons
+        },
         publicationRevision: state.value.catalog?.publicationRevision
       })
     const before = confirmationContext()
@@ -198,6 +242,11 @@
         '撤回后当前运行入口及依赖此看板的分享将不可用。历史版本和草稿会保留。',
         '确认撤回',
         '撤回'
+      ],
+      SOFT_DELETE: [
+        '软删除不可恢复。看板运行入口及依赖它的分享将失效，应用将无法运行此看板；历史版本、应用历史引用和用户历史授权保留，不会自动解绑。请确认已保存本地修改。',
+        '确认软删除看板',
+        '软删除'
       ]
     } as const
     confirming.value = true
@@ -212,6 +261,7 @@
       if (kind === 'PUBLISH') await publication.publish()
       else if (kind === 'ROLLBACK' && versionId) await publication.rollback(versionId)
       else if (kind === 'WITHDRAW') await publication.withdraw()
+      else if (kind === 'SOFT_DELETE') await publication.softDelete()
     } catch {
       /* 取消确认不发写请求。领域错误由发布状态模型提供安全提示。 */
     } finally {

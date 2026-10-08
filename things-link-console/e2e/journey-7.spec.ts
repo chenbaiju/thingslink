@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import { simulatorRuntime } from './mqtt-runtime'
 import {
   enterProject,
   openDeviceList,
@@ -230,7 +231,7 @@ async function bindings(
 
 /** 旅程失败或完成后都停止模拟器，避免污染后续共享栈用例。 */
 test.afterEach(async ({ request }) => {
-  await request.post('http://localhost:8090/simulations/stop').catch(() => undefined)
+  await request.post(`${simulatorRuntime().baseURL}/simulations/stop`).catch(() => undefined)
 })
 
 /**
@@ -247,7 +248,7 @@ test(
       projectKey,
       'E2E_PROJECT_KEY 未注入：请用 run-e2e-tests.sh --with-simulator 运行'
     ).toBeTruthy()
-    await request.post('http://localhost:8090/simulations/stop')
+    await request.post(`${simulatorRuntime().baseURL}/simulations/stop`)
 
     const suffix = Date.now()
     const typeName = `E2E终端类型-${suffix}`
@@ -264,18 +265,21 @@ test(
     const deviceAccessToken = await generateDeviceAccessToken(device)
     const ownerSession = await ownerProjectSession(request, device.projectId)
 
-    const simulatorResponse = await request.post('http://localhost:8090/simulations/start', {
-      data: {
-        brokerUri: 'tcp://localhost:1883',
-        projectKey,
-        devices: [{ deviceKey, accessToken: deviceAccessToken, gateway: false }],
-        intervalSeconds: 2,
-        autoReplyCommands: true,
-        runId: `e2e-journey-7-${suffix}`,
-        shardId: 'shard-000',
-        propertiesPerReport: 1
+    const simulatorResponse = await request.post(
+      `${simulatorRuntime().baseURL}/simulations/start`,
+      {
+        data: {
+          brokerUri: simulatorRuntime().brokerUri,
+          projectKey,
+          devices: [{ deviceKey, accessToken: deviceAccessToken, gateway: false }],
+          intervalSeconds: 2,
+          autoReplyCommands: true,
+          runId: `e2e-journey-7-${suffix}`,
+          shardId: 'shard-000',
+          propertiesPerReport: 1
+        }
       }
-    })
+    )
     expect(simulatorResponse.ok(), await simulatorResponse.text()).toBeTruthy()
     // 等一个真实上报周期后只刷新一次；反复 reload 会持续打断动态路由恢复，制造“设备行不存在”的假阴性。
     await page.waitForTimeout(5_000)

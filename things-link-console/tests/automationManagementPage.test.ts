@@ -4,7 +4,15 @@ import { reactive, nextTick } from 'vue'
 import Page from '@/views/rule/automations/index.vue'
 import * as api from '@/api/automation-management'
 import { fetchProjects } from '@/api/project'
-const mocks = vi.hoisted(() => ({ user: {} as any }))
+import { fetchDeviceDetail } from '@/api/device'
+const mocks = vi.hoisted(() => ({
+  user: {} as any,
+  route: { query: {} as Record<string, string> }
+}))
+vi.mock('vue-router', async () => ({
+  ...(await vi.importActual<typeof import('vue-router')>('vue-router')),
+  useRoute: () => mocks.route
+}))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => mocks.user }))
 vi.mock('@/api/automation-management', () => ({
   ruleCatalog: vi.fn(),
@@ -14,7 +22,7 @@ vi.mock('@/api/automation-management', () => ({
   saveAutomation: vi.fn()
 }))
 vi.mock('@/api/project', () => ({ fetchProjects: vi.fn() }))
-vi.mock('@/api/device', () => ({ fetchSearchDevices: vi.fn() }))
+vi.mock('@/api/device', () => ({ fetchSearchDevices: vi.fn(), fetchDeviceDetail: vi.fn() }))
 vi.mock('element-plus', () => ({ ElMessageBox: { confirm: vi.fn() } }))
 function deferred() {
   let resolve!: (value: any) => void
@@ -25,6 +33,7 @@ function deferred() {
 }
 beforeEach(() => {
   vi.resetAllMocks()
+  mocks.route = reactive({ query: {} })
   mocks.user = reactive({
     isLogin: true,
     info: { currentProjectId: 'a', userId: 'u', buttons: ['rule:manage'] }
@@ -140,5 +149,40 @@ it('管理接口403清除已加载配置且迟到响应不能恢复', async () =
   expect(state.payload).toBe('{}')
   expect(state.timezone).toBe('')
   expect(state.runAt).toBe('')
+  page.unmount()
+})
+
+it('设备来源仅在用户点击创建时预选，撤权后立即清除', async () => {
+  const id = '11111111-1111-4111-8111-111111111111'
+  mocks.user.info.buttons.push('device:read')
+  mocks.route.query = { deviceId: id, contextProjectId: 'a' }
+  vi.mocked(fetchDeviceDetail).mockResolvedValue({ id, name: '样板设备' })
+  vi.mocked(api.listAutomations).mockResolvedValue({ items: [] })
+  const page = shallowMount(Page, {
+    global: {
+      stubs: {
+        ElCard: true,
+        ElDialog: true,
+        ElTable: true,
+        ElTableColumn: true,
+        ElAlert: true,
+        ElForm: true,
+        ElFormItem: true
+      },
+      directives: { loading: () => {} }
+    }
+  })
+  await flushPromises()
+  const state = (page.vm as any).$.setupState
+  expect(state.visible).toBe(false)
+  expect(state.deviceId).toBe('')
+  expect(api.saveAutomation).not.toHaveBeenCalled()
+  state.create()
+  expect(state.visible).toBe(true)
+  expect(state.deviceId).toBe(id)
+  expect(state.devices).toEqual([{ id, name: '样板设备' }])
+  mocks.user.info.buttons = ['rule:manage']
+  await nextTick()
+  expect(state.deviceId).toBe('')
   page.unmount()
 })

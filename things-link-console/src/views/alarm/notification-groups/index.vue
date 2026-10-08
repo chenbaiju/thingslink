@@ -1,5 +1,14 @@
 <template>
   <div class="console-page notification-page console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="通知组"
+      description="管理告警通知的接收对象，再在告警规则中关联通知路由。"
+      :links="[
+        { label: '通知模板', path: '/alarm/notification-templates', permission: 'alarm:read' },
+        { label: '告警规则', path: '/alarm/rules', permission: 'alarm:read' },
+        { label: '告警历史', path: '/alarm/history', permission: 'alarm:read' }
+      ]"
+    />
     <div class="notification-page__header console-toolbar console-page-actions">
       <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreateGroup">
         创建通知组
@@ -201,6 +210,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'

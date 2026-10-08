@@ -8,7 +8,6 @@ import com.things.link.shared.tenant.TenantContext;
 import com.things.link.shared.tenant.TenantScope;
 import com.things.link.telemetry.application.ConsoleHistoryEvidence;
 import com.things.link.telemetry.application.ConsoleHistoryEvidenceService;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
-class HistoryEvidenceIntegrationTests extends AbstractIntegrationTest {
+class HistoryEvidenceIntegrationTests extends AbstractAssistantIntegrationTest {
     @Autowired ConsoleHistoryEvidenceService service;
     @Autowired JdbcTemplate application;
     JdbcTemplate owner;

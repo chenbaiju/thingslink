@@ -73,11 +73,19 @@ test(
       payload: currentValueMessage(JSON.stringify({ temperature: 26 }), modelVersion)
     })
 
-    // 1) 进入消息调试页：只读视图必须能打开，并提示只保留脱敏摘要。
-    await page.locator('#app-sidebar').getByText('设备', { exact: true }).click()
-    await page.locator('#app-sidebar').getByText('消息日志', { exact: true }).click()
+    // 1) 本机最近访问深链重新单读设备，再通过接入工作区进入该设备的消息调试。
+    await page.goto(
+      `/#/device/list?resourceId=${fixture.deviceId}&contextProjectId=${fixture.projectId}`
+    )
+    const deviceDetail = page.locator('.device-detail')
+    await expect(deviceDetail).toBeVisible()
+    await deviceDetail.getByRole('tab', { name: '接入配置', exact: true }).click()
+    await expect(page.getByTestId('access-current')).toContainText('MQTT')
+    await deviceDetail.getByRole('button', { name: '消息调试', exact: true }).click()
     await expect(page).toHaveURL(/\/device\/messages/)
     await expect(page.getByText('日志仅保留报文摘要')).toBeVisible()
+    await expect(page.getByText(/^来源设备：调试设备/)).toBeVisible()
+    await expect(page).toHaveURL(new RegExp(`deviceId=${fixture.deviceId}`))
 
     // 2) 按消息类型筛选：类型列必须随筛选结果出现（契约新增字段在真实页面上可见）。
     await page.getByText('展开', { exact: true }).click()
@@ -129,7 +137,7 @@ test(
     )
     const messageMenu = page.locator('#app-sidebar').getByText('消息日志', { exact: true })
     if (!(await messageMenu.isVisible())) {
-      await page.locator('#app-sidebar').getByText('设备', { exact: true }).click()
+      await page.locator('#app-sidebar').getByText('设备开发', { exact: true }).click()
     }
     await messageMenu.click()
     await loaded

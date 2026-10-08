@@ -10,6 +10,16 @@
 -->
 <template>
   <div class="console-page ota-jobs console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="设备升级作业"
+      description="查看真实升级阶段、失败原因与转移记录。"
+      :links="[
+        { label: '固件', path: '/ota/firmwares', permission: 'ota:read' },
+        { label: '升级活动', path: '/ota/campaigns', permission: 'ota:read' },
+        { label: '设备作业', path: '/ota/jobs', permission: 'ota:read' },
+        { label: '审计', path: '/ota/audits', permission: 'ota:read' }
+      ]"
+    />
     <ElCard class="console-list-filter" shadow="never">
       <ConsoleFilterBar
         :items="[{ key: 'field0', label: '所属活动' }]"
@@ -23,6 +33,7 @@
             filterable
             clearable
             placeholder="选择活动"
+            aria-label="所属活动"
             class="ota-jobs__filter"
             @change="load()"
           >
@@ -74,6 +85,7 @@
         >
           <template #default="{ row }">
             <ConsoleTableAction
+              data-testid="ota-job-detail-open"
               type="primary"
               @click="openDetail(row)"
               label="详情"
@@ -90,7 +102,7 @@
       </div>
     </ElCard>
 
-    <ElDrawer v-model="detailVisible" title="作业详情" size="760px" destroy-on-close>
+    <ElDrawer v-model="detailOpen" title="作业详情" size="760px" destroy-on-close>
       <ElDescriptions :column="2" border>
         <ElDescriptionsItem label="状态">
           <ElTag :type="jobStatusTag(detail?.status)">{{ jobStatusLabel(detail?.status) }}</ElTag>
@@ -140,13 +152,22 @@
           <ElEmpty description="没有转移记录" />
         </template>
       </ElTable>
+      <OtaRollbackPreflightPanel
+        v-if="detailVisible"
+        :active="detailVisible"
+        :project-id="projectId"
+        :campaign-id="selectedCampaignId"
+        :job-id="selectedJobId"
+      />
     </ElDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
+  import OtaRollbackPreflightPanel from './OtaRollbackPreflightPanel.vue'
 
   import { formatTime } from '@/utils/time'
 
@@ -168,11 +189,22 @@
   } from '@/features/ota/job-model'
   import { useUserStore } from '@/store/modules/user'
   import { HttpError } from '@/utils/http/error'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
 
   defineOptions({ name: 'OtaJobs' })
 
   const userStore = useUserStore()
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
+  const identityScope = computed(() =>
+    JSON.stringify([
+      projectId.value,
+      userStore.info.userId,
+      userStore.info.tenantId,
+      userStore.info.roles,
+      userStore.info.buttons,
+      currentIdentityEpoch()
+    ])
+  )
 
   const loading = ref(false)
   const campaigns = ref<OtaCampaignSummaryResponse[]>([])
@@ -182,6 +214,25 @@
 
   const detailVisible = ref(false)
   const detail = ref<OtaDeviceJobDetailResponse>()
+  const selectedCampaignId = ref('')
+  const selectedJobId = ref('')
+  let detailSequence = 0,
+    campaignSequence = 0,
+    jobsSequence = 0
+  function clearDetail() {
+    detailSequence++
+    detail.value = undefined
+    detailVisible.value = false
+    selectedCampaignId.value = ''
+    selectedJobId.value = ''
+  }
+  const detailOpen = computed({
+    get: () => detailVisible.value,
+    set: (open: boolean) => {
+      if (!open) clearDetail()
+      else detailVisible.value = true
+    }
+  })
 
   function report(error: unknown, fallback: string): string {
     if (error instanceof HttpError) return error.message
@@ -191,41 +242,96 @@
 
   async function loadCampaigns() {
     if (projectId.value === '') return
+    const identity = identityScope.value,
+      request = ++campaignSequence
     try {
       const page = await fetchOtaCampaigns(projectId.value, undefined, 100)
+      if (identityScope.value !== identity || request !== campaignSequence) return
       campaigns.value = page.items ?? []
     } catch (error) {
+      if (identityScope.value !== identity || request !== campaignSequence) return
       ElMessage.error(report(error, '读取活动列表失败。'))
     }
   }
 
   async function load(next?: string) {
     if (projectId.value === '' || campaignId.value === '') return
+    const identity = identityScope.value,
+      campaign = campaignId.value,
+      request = ++jobsSequence
+    const current = () =>
+      identityScope.value === identity && campaignId.value === campaign && request === jobsSequence
     loading.value = true
     try {
       const page = await fetchOtaCampaignJobs(projectId.value, campaignId.value, { cursor: next })
+      if (!current()) return
       jobs.value = next ? [...jobs.value, ...(page.items ?? [])] : (page.items ?? [])
       cursor.value = page.hasMore ? (page.nextCursor ?? '') : ''
     } catch (error) {
+      if (!current()) return
       ElMessage.error(report(error, '读取设备作业失败。'))
     } finally {
-      loading.value = false
+      if (current()) loading.value = false
     }
   }
 
   async function openDetail(row: OtaDeviceJobSummaryResponse) {
     if (!row.id || campaignId.value === '') return
+    const identity = identityScope.value,
+      campaign = campaignId.value,
+      job = row.id,
+      request = ++detailSequence
+    const current = () =>
+      identityScope.value === identity &&
+      campaignId.value === campaign &&
+      detailVisible.value &&
+      selectedJobId.value === job &&
+      request === detailSequence
     detail.value = undefined
+    selectedCampaignId.value = campaign
+    selectedJobId.value = job
     detailVisible.value = true
     try {
-      detail.value = await fetchOtaCampaignJob(projectId.value, campaignId.value, row.id)
+      const result = await fetchOtaCampaignJob(projectId.value, campaign, job)
+      if (!current()) return
+      if (result.id !== job) throw new Error('作业身份不匹配')
+      detail.value = result
     } catch (error) {
+      if (!current()) return
       ElMessage.error(report(error, '读取作业详情失败。'))
     }
   }
 
-  onMounted(async () => {
-    await loadCampaigns()
+  watch(
+    identityScope,
+    () => {
+      clearDetail()
+      campaignSequence++
+      jobsSequence++
+      campaigns.value = []
+      campaignId.value = ''
+      jobs.value = []
+      cursor.value = ''
+      loading.value = false
+      void loadCampaigns()
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  watch(
+    campaignId,
+    () => {
+      clearDetail()
+      jobsSequence++
+      jobs.value = []
+      cursor.value = ''
+      loading.value = false
+    },
+    { flush: 'sync' }
+  )
+  onBeforeUnmount(() => {
+    clearDetail()
+    campaignSequence++
+    jobsSequence++
   })
 </script>
 

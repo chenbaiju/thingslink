@@ -269,7 +269,7 @@ test('非空历史告警：四角色零值、未知来源与手动替换分页',
       await expect(tools.getByTestId('history-evidence-result')).toHaveCount(0)
       const count = reads.length
       await target.reload()
-      await expect(target.getByRole('menuitem', { name: '设备', exact: true })).toBeVisible()
+      await expect(target.getByRole('menuitem', { name: '设备开发', exact: true })).toBeVisible()
       await expect(target.getByTestId('history-evidence-result')).toHaveCount(0)
       await expect(target.getByTestId('history-evidence-overview')).toHaveCount(0)
       await expect(target.getByTestId('alarm-evidence-result')).toHaveCount(0)
@@ -292,7 +292,7 @@ test('非空历史告警：四角色零值、未知来源与手动替换分页',
           { project: project.id, account: memberId, role }
         )
       await member.reload()
-      await expect(member.getByRole('menuitem', { name: '设备', exact: true })).toBeVisible()
+      await expect(member.getByRole('menuitem', { name: '设备开发', exact: true })).toBeVisible()
       await exercise(member)
     }
     expect(reads).toHaveLength(12)

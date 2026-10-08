@@ -23,6 +23,7 @@ function deferred<T>() {
 }
 const wrappers: ReturnType<typeof mount>[] = []
 function fixture() {
+  const frozen = ref(false)
   const project = ref('project-a')
   const permissions = reactive({ read: true, create: true, update: true })
   let designer!: ReturnType<typeof useDashboardDesigner>
@@ -30,13 +31,17 @@ function fixture() {
     mount(
       defineComponent({
         setup() {
-          designer = useDashboardDesigner(project, () => permissions)
+          designer = useDashboardDesigner(
+            project,
+            () => permissions,
+            () => frozen.value
+          )
           return () => h('div')
         }
       })
     )
   )
-  return { designer, project, permissions }
+  return { designer, project, permissions, frozen }
 }
 beforeEach(() => {
   vi.resetAllMocks()
@@ -52,6 +57,65 @@ afterEach(() => {
   vi.useRealTimers()
 })
 describe('设计器会话边界', () => {
+  it('删除冻结不改变权限或卸载草稿，拒编辑/自动保存/资源切换/创建/返回', async () => {
+    vi.useFakeTimers()
+    const f = fixture()
+    await f.designer.open(id)
+    const original = JSON.stringify(f.designer.state.schema)
+    f.frozen.value = true
+    f.designer.add('TEXT')
+    f.designer.setTheme('DARK')
+    f.designer.addPage('新页')
+    f.designer.retrySave()
+    f.designer.close()
+    await f.designer.open('00000000-0000-0000-0000-000000000002')
+    await f.designer.create('其他')
+    await f.designer.list()
+    await vi.advanceTimersByTimeAsync(12000)
+    expect(JSON.stringify(f.designer.state.schema)).toBe(original)
+    expect(f.designer.state.dashboardId).toBe(id)
+    expect(f.permissions.update).toBe(true)
+    expect(api.fetchDashboardDraft).toHaveBeenCalledTimes(1)
+    expect(api.createDashboard).not.toHaveBeenCalled()
+    expect(api.saveDashboardDraft).not.toHaveBeenCalled()
+    expect(api.fetchDashboards).not.toHaveBeenCalled()
+  })
+  it('冻结中的离线保留宿主原意图，身份项目变化仍清理', async () => {
+    const f = fixture()
+    await f.designer.open(id)
+    f.frozen.value = true
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: false })
+    window.dispatchEvent(new Event('offline'))
+    expect(f.designer.state.dashboardId).toBe(id)
+    expect(f.designer.state.schema).not.toBeNull()
+    expect(f.designer.state.error).toContain('原意图保留')
+    f.project.value = 'project-b'
+    expect(f.designer.state.schema).toBeNull()
+  })
+  it('确认删除终态强制清理，先前保存和草稿读迟到都不能复活', async () => {
+    vi.useFakeTimers()
+    const f = fixture()
+    await f.designer.open(id)
+    const saving = deferred<unknown>()
+    api.saveDashboardDraft.mockReturnValueOnce(saving.promise)
+    f.designer.add('TEXT')
+    await vi.advanceTimersByTimeAsync(1500)
+    const content = structuredClone(f.designer.state.schema)
+    f.frozen.value = true
+    f.designer.completeDeletion()
+    saving.resolve({ dashboardId: id, revision: '1', content })
+    await vi.advanceTimersByTimeAsync(12000)
+    expect(f.designer.state).toMatchObject({ dashboardId: null, schema: null, saving: false })
+    f.frozen.value = false
+    const reading = deferred<unknown>()
+    api.fetchDashboardDraft.mockReturnValueOnce(reading.promise)
+    const open = f.designer.open(id)
+    f.frozen.value = true
+    f.designer.completeDeletion()
+    reading.resolve({ dashboardId: id, revision: '0', content: emptyDashboard() })
+    await open
+    expect(f.designer.state.schema).toBeNull()
+  })
   it.each([
     [60059, '套餐上限'],
     [50048, '套餐配置']

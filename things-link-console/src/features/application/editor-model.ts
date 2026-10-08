@@ -19,6 +19,18 @@ export function deniedApplicationAccess(error: unknown) {
     (code !== undefined && code >= 20000 && code < 30000)
   )
 }
+/** 整体应用不可见，不把单个历史版本60048或认证拒绝解释为删除事实。 */
+export function missingApplicationResource(error: unknown) {
+  const failure = error as { code?: number; status?: number; response?: { status?: number } } | null
+  const status = failure?.status ?? failure?.response?.status
+  return (
+    !!failure &&
+    (status === undefined || status === 404) &&
+    (failure.code === 60030 ||
+      failure.code === 404 ||
+      (failure.code === undefined && status === 404))
+  )
+}
 export function title(value: unknown): value is string {
   if (typeof value !== 'string' || !value.trim() || [...value].length > 80) return false
   return [...value].every((c) => {
@@ -144,6 +156,13 @@ export function createApplicationEditor(ports: Ports) {
     generation++
     creation = undefined
     state = initial()
+    emit()
+  }
+  function suspendView() {
+    const id = state.id
+    generation++
+    creation = undefined
+    state = { ...initial(), id, blocked: true }
     emit()
   }
   function capture() {
@@ -309,5 +328,5 @@ export function createApplicationEditor(ports: Ports) {
       }
     }
   }
-  return { reset, open, change, create, save, snapshot: () => structuredClone(state) }
+  return { reset, suspendView, open, change, create, save, snapshot: () => structuredClone(state) }
 }

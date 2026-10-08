@@ -2,7 +2,6 @@ package com.things.link.bootstrap.assistant;
 import com.things.link.assistant.application.AssistantProjectCleanupContributor;
 import com.things.link.project.application.ProjectCleanupClaim;
 import com.things.link.project.application.ProjectCleanupStage;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -14,9 +13,10 @@ import java.util.UUID;
 import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 /** 最新迁移实际APP角色清理，仅修改本测试独立项目。 */
-class ModelConfigurationCleanupTests extends AbstractIntegrationTest {
+class ModelConfigurationCleanupTests extends AbstractAssistantIntegrationTest {
     @Autowired AssistantProjectCleanupContributor cleanup;
     @Autowired TransactionTemplate tx;
+    @Autowired JdbcTemplate app;
     JdbcTemplate owner;
     @BeforeEach void setup() { owner=new JdbcTemplate(new DriverManagerDataSource(POSTGRES.getJdbcUrl(),POSTGRES.getUsername(),POSTGRES.getPassword())); }
     record Fixture(UUID tenant,UUID project,UUID token) {}
@@ -135,6 +135,27 @@ class ModelConfigurationCleanupTests extends AbstractIntegrationTest {
         var second=tx.execute(s->cleanup.clean(claim(a)));
         assertThat(second.deletedRows()).isEqualTo(2);assertThat(second.complete()).isTrue();
         assertThat(tx.execute(s->cleanup.clean(claim(a))).deletedRows()).isZero();
+    }
+    @RepeatedTest(8) void personalEvidenceCleanupIsBoundedWithRescanningQueryPlans(RepetitionInfo repetition) {
+        var a=seed();var b=seed();
+        for(var f:List.of(a,b)) owner.update("""
+            INSERT INTO assistant_evidence_record(id,tenant_id,project_id,created_by,device_id,model_version_id,content_sha256,content)
+            SELECT gen_random_uuid(),?,?,gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),repeat('0',64),'{}'
+              FROM generate_series(1,501)
+            """,f.tenant(),f.project());
+        var first=tx.execute(s->{
+            // 合法的循环扫描计划也必须遵守同一批次上限，参数只作用于本事务。
+            int mode=repetition.getCurrentRepetition()-1;
+            app.execute("SET LOCAL enable_hashjoin="+((mode&1)==0?"on":"off"));
+            app.execute("SET LOCAL enable_mergejoin="+((mode&2)==0?"on":"off"));
+            app.execute("SET LOCAL enable_material=off");
+            app.execute("SET LOCAL plan_cache_mode="+((mode&4)==0?"force_custom_plan":"force_generic_plan"));
+            return cleanup.clean(claim(a));
+        });
+        assertThat(first.deletedRows()).isEqualTo(500);assertThat(first.complete()).isFalse();
+        assertThat(owner.queryForObject("SELECT count(*) FROM assistant_evidence_record WHERE project_id=?",Integer.class,a.project())).isEqualTo(2);
+        assertThat(owner.queryForObject("SELECT count(*) FROM assistant_evidence_record WHERE project_id=?",Integer.class,b.project())).isEqualTo(501);
+        assertThat(tx.execute(s->cleanup.clean(claim(a))).deletedRows()).isEqualTo(2);
     }
     @Test void controlledKnowledgeSharesLeaseBudgetAndDoesNotTouchNeighbor() {
         var a=seed(); var b=seed();

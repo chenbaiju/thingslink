@@ -9,6 +9,8 @@ import com.things.link.dashboard.domain.DashboardModelReference;
 import com.things.link.dashboard.infrastructure.persistence.JdbcDashboardSchemaCanonicalizer;
 import com.things.link.dashboard.infrastructure.schema.JacksonDashboardSchemaParser;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -27,6 +29,13 @@ public final class WebAppDataRuntimeFixture {
 
     /** 建立一个包含五种读取声明、一个模型及两台绑定设备的当前版本。 */
     public static DataFixture seed(JdbcTemplate owner) {
+        // 包含基础夹具的整个造数阶段只取得一个连接，保留调用方事务与连接关闭职责。
+        return owner.execute((ConnectionCallback<DataFixture>) connection -> seedOnConnection(
+                new JdbcTemplate(new SingleConnectionDataSource(connection, true))));
+    }
+
+    /** 与基础夹具嵌套复用同一真实连接，不修改生产数据源。 */
+    private static DataFixture seedOnConnection(JdbcTemplate owner) {
         Fixture base = WebAppRuntimeFixture.seed(owner);
         UUID type = UUID.randomUUID();
         UUID model = UUID.randomUUID();

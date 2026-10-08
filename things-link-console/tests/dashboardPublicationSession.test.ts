@@ -25,7 +25,13 @@ function snapshot() {
     loading: false,
     writing: false,
     detailLoading: false,
-    pending: null as null | { status: string },
+    pending: null as null | { status: string; kind?: string },
+    deleted: null as null | {
+      projectId: string
+      dashboardId: string
+      identity: number
+      receipt: 'NO_CONTENT' | 'COMPLETION_MARKER'
+    },
     error: '',
     notice: '',
     selectedVersion: null as null | Record<string, unknown>
@@ -42,6 +48,7 @@ function fixture(patch: Record<string, unknown> = {}) {
     publish: vi.fn(),
     rollback: vi.fn(),
     withdraw: vi.fn(),
+    softDelete: vi.fn(),
     retry: vi.fn(),
     recover: vi.fn(),
     reset: vi.fn()
@@ -86,6 +93,101 @@ beforeEach(() => {
   mocks.confirm.mockResolvedValue(undefined)
 })
 describe('看板发布产品会话', () => {
+  it('软删除确认期间发布CAS或identityEpoch变化都拒绝旧确认', async () => {
+    for (const change of ['revision', 'identity']) {
+      const f = fixture()
+      let resolve!: () => void
+      mocks.confirm.mockImplementationOnce(
+        () =>
+          new Promise<void>((done) => {
+            resolve = done
+          })
+      )
+      await f.wrapper.get('[data-testid="publication-soft-delete"]').trigger('click')
+      if (change === 'revision')
+        f.update({ catalog: { ...f.initial.catalog, publicationRevision: '3' } })
+      else mocks.identity++
+      resolve()
+      await flushPromises()
+      expect(f.model.softDelete).not.toHaveBeenCalled()
+      f.wrapper.unmount()
+    }
+  })
+  it('软删除固定后果确认，未发布也可删除，不添加资源恢复', async () => {
+    const f = fixture()
+    f.update({ catalog: { ...f.initial.catalog, currentVersionId: null as unknown as string } })
+    await flushPromises()
+    await f.wrapper.get('[data-testid="publication-soft-delete"]').trigger('click')
+    await flushPromises()
+    expect(mocks.confirm).toHaveBeenCalledWith(
+      expect.stringContaining('软删除不可恢复'),
+      '确认软删除看板',
+      expect.objectContaining({ confirmButtonText: '软删除' })
+    )
+    expect(mocks.confirm.mock.calls[0]![0]).toContain('用户历史授权保留')
+    expect(f.model.softDelete).toHaveBeenCalledTimes(1)
+    expect(f.wrapper.text()).not.toContain('恢复已删除看板')
+    f.wrapper.unmount()
+  })
+  it.each([{ dirty: true }, { saving: true }, { conflict: true }, { canManage: false }])(
+    '删除不静默丢本地或绕权限%s',
+    async (patch) => {
+      const f = fixture(patch)
+      const button = f.wrapper.find('[data-testid="publication-soft-delete"]')
+      if (button.exists()) {
+        expect(button.attributes('disabled')).toBeDefined()
+        await button.trigger('click')
+      }
+      expect(f.model.softDelete).not.toHaveBeenCalled()
+      expect(mocks.confirm).not.toHaveBeenCalled()
+      f.wrapper.unmount()
+    }
+  )
+  it.each([
+    { saving: true },
+    { dirty: true },
+    { draftRevision: '4' },
+    { projectId: 'other' },
+    { canManage: false }
+  ])('确认过程中%s发生变化不发旧删除', async (patch) => {
+    const f = fixture()
+    let resolve!: () => void
+    mocks.confirm.mockImplementationOnce(
+      () =>
+        new Promise<void>((done) => {
+          resolve = done
+        })
+    )
+    await f.wrapper.get('[data-testid="publication-soft-delete"]').trigger('click')
+    await f.wrapper.setProps(patch)
+    resolve()
+    await flushPromises()
+    expect(f.model.softDelete).not.toHaveBeenCalled()
+    f.wrapper.unmount()
+  })
+  it('未知删除emit冻结、离线往返保意图，终态只emit一次且10014不冒称204', async () => {
+    const f = fixture()
+    f.update({ pending: { status: 'UNKNOWN', kind: 'SOFT_DELETE' } })
+    await flushPromises()
+    expect(f.wrapper.emitted('deleteLock')?.at(-1)).toEqual([true])
+    await f.wrapper.setProps({ available: false })
+    await f.wrapper.setProps({ available: true })
+    expect(f.model.reset).toHaveBeenCalledTimes(1)
+    await f.wrapper.get('[data-testid="publication-refresh"]').trigger('click')
+    expect(f.model.recover).toHaveBeenCalledTimes(1)
+    const deleted = {
+      projectId: 'project',
+      dashboardId: 'dashboard',
+      identity: 1,
+      receipt: 'COMPLETION_MARKER' as const
+    }
+    f.update({ pending: null, deleted, notice: '原软删除请求已完成；完成标记不重放原204回执。' })
+    f.update({ pending: null, deleted })
+    expect(f.wrapper.emitted('deleted')).toEqual([[deleted]])
+    await f.wrapper.setProps({ canRead: false })
+    expect(f.model.reset).toHaveBeenCalledTimes(2)
+    f.wrapper.unmount()
+  })
   it('读取当前版本、分页和详情不会改写草稿，管理按钮统一确认', async () => {
     const { wrapper, model, update } = fixture()
     expect(model.open).toHaveBeenCalledTimes(1)

@@ -12,3 +12,7 @@ playwright-report
 src/components/Layout/MenuLeft/index.vue
 src/assets
 stats.html
+
+# 本地运行日志与浏览器报告不属于源码
+logs
+.e2e-evidence

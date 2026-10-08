@@ -129,8 +129,11 @@ public class QuotaRestRateLimitFilter extends OncePerRequestFilter {
         RestQuotaRateLimitMetrics.RequestKind kind = DashboardDataRequestPaths.isConsolePostRead(request.getMethod(),
                 request.getRequestURI().substring(request.getContextPath().length()))
                 ? RestQuotaRateLimitMetrics.RequestKind.READ : requestKind(request.getMethod());
-        // 仅冻结的规则/场景管理写入口：归档不能先被日计量的ACTIVE查询伪装为429。
-        if (managementLifecycle != null && isRuleManagementWrite(request, tenantScope.projectId())) {
+        // 仅冻结的规则/场景、产品凭据、信任包导入和类型基线登记写入口：归档不能先被日计量的ACTIVE查询伪装为429。
+        if (managementLifecycle != null && (isRuleManagementWrite(request, tenantScope.projectId())
+                || isProductCredentialWrite(request, tenantScope.projectId())
+                || isOtaTrustImportWrite(request, tenantScope.projectId())
+                || isOtaTypeBaselineRegistrationWrite(request, tenantScope.projectId()))) {
             try { managementLifecycle.requireWritableAccountSnapshot(tenantScope.accountId(), tenantScope.projectId()); }
             catch (com.things.link.shared.error.BusinessException failure) {
                 response.setStatus(failure.errorCode().httpStatus());
@@ -160,6 +163,35 @@ public class QuotaRestRateLimitFilter extends OncePerRequestFilter {
                 || tail.matches(base + "/" + id + "/versions/" + id + "/activate")
                 || tail.matches("message-rules/" + id + "/versions/" + id + "/debug")
                 || tail.matches("scenes/" + id + "/executions");
+    }
+
+    /** 产品凭据只认当前项目的精确POST路径，不能把类型读取、恢复或其他写操作纳入。 */
+    static boolean isProductCredentialWrite(HttpServletRequest request, UUID projectId) {
+        if (!"POST".equals(request.getMethod())) return false;
+        String prefix = "/api/v1/projects/" + projectId + "/device-types/";
+        String path = applicationPath(request);
+        if (!path.startsWith(prefix)) return false;
+        return path.substring(prefix.length()).matches(
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/product-credential");
+    }
+
+    /** 信任包导入只认选中项目、合法域及精确POST路径，其他OTA入口仍沿原配额链处理。 */
+    static boolean isOtaTrustImportWrite(HttpServletRequest request, UUID projectId) {
+        if (!"POST".equals(request.getMethod())) return false;
+        String prefix = "/api/v1/projects/" + projectId + "/ota/trust-domains/";
+        String path = applicationPath(request);
+        if (!path.startsWith(prefix)) return false;
+        return path.substring(prefix.length()).matches("[A-Za-z0-9][A-Za-z0-9._-]{0,63}/bundles");
+    }
+
+    /** 类型基线登记只认选中项目及精确类型UUID的POST路径，管理读取与版本历史保持原配额语义。 */
+    static boolean isOtaTypeBaselineRegistrationWrite(HttpServletRequest request, UUID projectId) {
+        if (!"POST".equals(request.getMethod())) return false;
+        String prefix = "/api/v1/projects/" + projectId + "/ota/device-types/";
+        String path = applicationPath(request);
+        if (!path.startsWith(prefix)) return false;
+        return path.substring(prefix.length()).matches(
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/baseline/registrations");
     }
 
     /**

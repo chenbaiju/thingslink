@@ -1,5 +1,13 @@
 <template>
   <div class="console-page api-keys-page console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="API Key"
+      description="为系统集成签发、轮换和撤销密钥。明文仅在签发时展示，请及时保存。"
+      :links="[
+        { label: 'Webhook', path: '/project/webhooks', permission: 'integration:manage' },
+        { label: '用量与项目设置', path: '/project/settings', permission: 'quota:read' }
+      ]"
+    />
     <div v-if="allowed" class="console-toolbar console-page-actions">
       <ElButton type="primary" :icon="Plus" :disabled="busy || !!pending" @click="openForm()">
         签发 Key
@@ -130,6 +138,7 @@
   </div>
 </template>
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
   import { Plus } from '@element-plus/icons-vue'
 

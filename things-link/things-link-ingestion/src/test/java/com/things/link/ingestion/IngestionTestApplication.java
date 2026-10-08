@@ -26,6 +26,7 @@ import com.things.link.project.application.QuotaRuntimeMetrics;
 import com.things.link.support.kafka.KafkaTraceConfiguration;
 import com.things.link.support.observability.DataPlaneMetrics;
 import com.things.link.telemetry.application.PropertyIngestionService;
+import com.things.link.telemetry.application.EventIngestionService;
 import com.things.link.telemetry.application.DeviceCommandService;
 import com.things.link.rule.application.queue.PublishedRuleCatalog;
 import com.things.link.rule.application.queue.RuleExecutionCoordinator;
@@ -40,6 +41,7 @@ import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 
 import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.BATCH_TOPIC;
+import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.EVENT_NORMALIZED_TOPIC;
 import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.CONFIG_REPLY_TOPIC;
 import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.MODBUS_RESPONSE_TOPIC;
 import static com.things.link.ingestion.infrastructure.RawUplinkKafkaConsumer.NORMALIZED_UPLINK_TOPIC;
@@ -62,6 +64,12 @@ import static org.mockito.Mockito.mock;
 @SpringBootApplication
 @Import({KafkaTraceConfiguration.class, DataPlaneMetrics.class, QuotaRuntimeMetrics.class})
 public class IngestionTestApplication {
+
+    /** 只隔离事件事务依赖；真实事件持久化、额度与幂等由bootstrap验收。 */
+    @Bean
+    EventIngestionService testEventIngestionService() {
+        return mock(EventIngestionService.class);
+    }
 
     /** 独立模块不扫描device生产适配器；默认无路由，不冒充真实MQTT下行资格。 */
     @Bean
@@ -138,6 +146,13 @@ public class IngestionTestApplication {
     @Bean
     NewTopic normalizedUplinkTopic() {
         return TopicBuilder.name(NORMALIZED_UPLINK_TOPIC).partitions(3).replicas(1).build();
+    }
+
+    /** 独立事件主题沿生产基线固定十二分区与七天保留，不依赖自动建主题。 */
+    @Bean
+    NewTopic eventNormalizedTopic() {
+        return TopicBuilder.name(EVENT_NORMALIZED_TOPIC).partitions(12).replicas(1)
+                .config("retention.ms", "604800000").build();
     }
 
     /**

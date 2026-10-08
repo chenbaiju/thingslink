@@ -1,6 +1,6 @@
 ---
 import Button from '@/components/ui/Button.astro'
-import { SITE, docsPath } from '@/config'
+import { docsPath } from '@/config'
 
 const steps = [
   { title: '准备项目与设备', detail: '创建或选择项目，再创建设备实例；按需求配置设备类型与物模型。' },
@@ -28,7 +28,7 @@ const steps = [
     </ol>
     <p class="mt-6 text-sm leading-relaxed text-text-secondary">连接地址、可用区域与权限以实际部署为准。连接前请取得对应部署的接入参数与协议说明。</p>
     <div class="mt-6">
-      {SITE.docsEnabled && (<Button href={docsPath('getting-started')} variant="secondary">阅读快速开始</Button>)}
+      <Button href={docsPath('getting-started')} variant="secondary">阅读快速开始</Button>
     </div>
   </div>
 </section>

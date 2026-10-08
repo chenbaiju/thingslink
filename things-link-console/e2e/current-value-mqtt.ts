@@ -1,6 +1,35 @@
 import { createConnection } from 'node:net'
 import { randomBytes } from 'node:crypto'
 import { connect as tlsConnect } from 'node:tls'
+import { currentValueMqttRuntime } from './mqtt-runtime'
+
+const socketCodes = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'EPIPE',
+  'ETIMEDOUT',
+  'ENETUNREACH',
+  'EHOSTUNREACH',
+  'CERT_HAS_EXPIRED',
+  'CERT_NOT_YET_VALID',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'ERR_SSL_WRONG_VERSION_NUMBER'
+])
+/** 仅映射固定分类，不读取原始异常消息或保留异常链。 */
+function socketReason(error: unknown): string {
+  try {
+    const code = (error as { code?: unknown } | null)?.code
+    return typeof code === 'string' && socketCodes.has(code) ? `SOCKET_${code}` : 'SOCKET_OTHER'
+  } catch {
+    return 'SOCKET_OTHER'
+  }
+}
+function mqttFailure(stage: string, reason: string) {
+  return new Error(`MQTT真实上报未取得确认或未完成关闭 [stage=${stage};reason=${reason}]`)
+}
 
 /** 单次本机MQTT 3.1.1 QoS1夹具；凭据仅进内存，不写日志/命令行。PUBACK不冒充落库成功。 */
 export function publishCurrentValues(input: {
@@ -11,7 +40,13 @@ export function publishCurrentValues(input: {
   port?: number
   tls?: { ca: Buffer; servername: string }
 }): Promise<void> {
-  const port = input.port ?? 1883
+  let connection: ReturnType<typeof currentValueMqttRuntime>
+  try {
+    connection = currentValueMqttRuntime(input.port, input.tls)
+  } catch {
+    return Promise.reject(new Error('OWNED_MQTT_RUNTIME_REJECTED'))
+  }
+  const { port, tls } = connection
   if (!Number.isInteger(port) || port < 1025 || port > 65535)
     return Promise.reject(new Error('MQTT夹具端口无效'))
   const field = (value: string) => {
@@ -51,46 +86,73 @@ export function publishCurrentValues(input: {
     ])
   )
   return new Promise((resolve, reject) => {
-    const socket = input.tls
-      ? tlsConnect({
-          host: '127.0.0.1',
-          port,
-          ca: input.tls.ca,
-          servername: input.tls.servername,
-          rejectUnauthorized: true,
-          minVersion: 'TLSv1.2'
-        })
-      : createConnection({ host: '127.0.0.1', port })
+    let socket: ReturnType<typeof createConnection>
+    try {
+      socket = tls
+        ? tlsConnect({
+            host: '127.0.0.1',
+            port,
+            ca: tls.ca,
+            servername: tls.servername,
+            rejectUnauthorized: true,
+            minVersion: 'TLSv1.2'
+          })
+        : createConnection({ host: '127.0.0.1', port })
+    } catch (error) {
+      reject(mqttFailure(tls ? 'TLS_HANDSHAKE' : 'CONNECT', socketReason(error)))
+      return
+    }
     let buffer = Buffer.alloc(0),
       phase = 0,
-      failed = false
-    const fail = () => {
-      failed = true
+      connected = false
+    let failure: { stage: string; reason: string } | undefined
+    const stage = () =>
+      phase === 2
+        ? 'CLOSE'
+        : phase === 1
+          ? 'PUBACK'
+          : connected
+            ? 'CONNACK'
+            : tls
+              ? 'TLS_HANDSHAKE'
+              : 'CONNECT'
+    const fail = (reason: string) => {
+      failure ??= { stage: stage(), reason }
       socket.destroy()
     }
-    const timer = setTimeout(fail, 15_000)
-    socket.on(input.tls ? 'secureConnect' : 'connect', () => socket.write(connect))
-    socket.on('error', fail)
+    const timer = setTimeout(() => fail('TIMEOUT'), 15_000)
+    socket.on(tls ? 'secureConnect' : 'connect', () => {
+      connected = true
+      socket.write(connect)
+    })
+    socket.on('error', (error) => fail(socketReason(error)))
     socket.on('close', () => {
       clearTimeout(timer)
-      if (phase === 2 && !failed) resolve()
-      else reject(new Error('MQTT真实上报未取得确认或未完成关闭'))
+      if (phase === 2 && !failure) resolve()
+      else reject(mqttFailure(failure?.stage ?? stage(), failure?.reason ?? 'EARLY_CLOSE'))
     })
     socket.on('data', (chunk) => {
       buffer = Buffer.concat([buffer, chunk])
-      if (buffer.length > 1024) return fail()
+      if (buffer.length > 1024) return fail('FRAME_BUDGET')
       while (buffer.length >= 4) {
         // 夹具只接受固定两字节CONNACK/PUBACK；不订阅，无任意响应分配。
-        if (buffer[1] !== 2) return fail()
-        if (phase === 0 && buffer[0] === 0x20 && buffer[2] === 0 && buffer[3] === 0) {
+        if (buffer[1] !== 2) return fail('FRAME_LENGTH')
+        if (phase === 0) {
+          if (buffer[0] !== 0x20) return fail('FRAME_TYPE')
+          if (buffer[2] !== 0) return fail('CONNACK_FLAGS')
+          const code = buffer[3]!
+          if (code !== 0)
+            return fail(code >= 1 && code <= 5 ? `CONNACK_RC_${code}` : 'CONNACK_RC_INVALID')
           phase = 1
           buffer = buffer.subarray(4)
           socket.write(report)
-        } else if (phase === 1 && buffer[0] === 0x40 && buffer[2] === 0 && buffer[3] === 1) {
+        } else if (phase === 1) {
+          if (buffer[0] !== 0x40) return fail('FRAME_TYPE')
+          if (buffer[2] !== 0 || buffer[3] !== 1) return fail('PUBACK_PACKET_ID')
           phase = 2
           socket.end(Buffer.from([0xe0, 0]))
           return
-        } else return fail()
+        } else return fail('FRAME_STATE')
       }
     })
   })

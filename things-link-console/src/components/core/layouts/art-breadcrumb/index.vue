@@ -4,7 +4,7 @@
     <ul class="flex-c h-full">
       <li
         v-for="(item, index) in breadcrumbItems"
-        :key="item.path"
+        :key="`${item.path}-${index}`"
         class="box-border flex-c h-7 text-sm leading-7"
       >
         <div
@@ -34,6 +34,8 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { useMenuStore } from '@/store/modules/menu'
+  import { activeWorkspace } from '@/utils/workspace-navigation'
   import { useRouter, useRoute } from 'vue-router'
   import type { RouteLocationMatched, RouteRecordRaw } from 'vue-router'
   import { formatMenuTitle } from '@/utils/router'
@@ -50,6 +52,19 @@
 
   // 使用computed替代watch，提高性能
   const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+    const group = activeWorkspace(
+      useMenuStore().navigationMenu,
+      String(route.meta.activePath || route.path)
+    )
+    if (group) {
+      const leaf = group.children!.find(
+        (item) => item.path === String(route.meta.activePath || route.path)
+      )!
+      return [
+        { path: group.children![0].path, meta: group.meta },
+        { path: leaf.path, meta: leaf.meta }
+      ]
+    }
     const { matched } = route
     const matchedLength = matched.length
 

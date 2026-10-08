@@ -75,6 +75,24 @@ class ProjectServiceManagementTests {
         TenantContext.clear();
     }
 
+    /** 列表以已认证账号读取；非商业部署不得把历史订阅投影为正在使用的套餐。 */
+    @Test
+    void listMineKeepsSubscriptionOnlyInCommercialMode() {
+        var plan = new com.things.link.project.domain.plan.PlanIdentity("STANDARD", "标准版", "r1", 1);
+        var membership = new ProjectMembership(renamed.project(), ProjectRole.OWNER, plan);
+        when(repository.findMembershipsByAccount(accountId)).thenReturn(java.util.List.of(membership));
+        assertThat(service.listMine()).singleElement().satisfies(item -> assertThat(item.subscribedPlan()).isEqualTo(plan));
+        var mode = mock(DeploymentEntitlementPolicy.class);
+        when(mode.nonCommercial()).thenReturn(true);
+        var nonCommercial = new ProjectService(repository, regions, guard, quotaPolicyProvider,
+                mock(SubscriptionExpansionGuard.class), mode);
+        assertThat(nonCommercial.listMine()).singleElement().satisfies(item -> {
+            assertThat(item.project()).isEqualTo(renamed.project());
+            assertThat(item.role()).isEqualTo(ProjectRole.OWNER);
+            assertThat(item.subscribedPlan()).isNull();
+        });
+    }
+
     /** 归档拒绝必须早于改名SQL、删除计数与写入，不能用合法旧OWNER继续。 */
     @ParameterizedTest
     @EnumSource(Operation.class)

@@ -51,6 +51,13 @@ public class JdbcProjectExportJobRepository implements ProjectExportJobRepositor
 
     /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
+    public Optional<ProjectExportJob> findLatest(UUID tenantId, UUID projectId, long generation, UUID requesterAccountId) {
+        return jdbcTemplate.query("SELECT * FROM find_latest_project_export_job(?, ?, ?, ?)",
+                this::mapJob, tenantId, projectId, generation, requesterAccountId).stream().findFirst();
+    }
+
+    /** 沿用接口定义的契约。{@inheritDoc} */
+    @Override
     public Optional<ProjectExportJob> findByIdentity(UUID tenantId, UUID projectId, UUID exportId) {
         return jdbcTemplate.query("SELECT * FROM find_project_export_job(?, ?, ?)",
                 this::mapJob, tenantId, projectId, exportId).stream().findFirst();

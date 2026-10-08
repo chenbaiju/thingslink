@@ -208,5 +208,7 @@ test('OTA固件：草稿、上传复验、发布边界与取消终态', async ({
   await resetSession(page)
   await login(page, MEMBER_EMAIL, MEMBER_PASSWORD)
   await enterProject(page, 'E2E项目')
-  await expect(page.getByRole('menuitem', { name: 'OTA升级', exact: true })).toHaveCount(0)
+  for (const name of ['固件管理', '灰度活动', '设备作业', '审计时间线']) {
+    await expect(page.getByRole('menuitem', { name, exact: true })).toHaveCount(0)
+  }
 })

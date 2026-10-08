@@ -13,6 +13,16 @@ public interface ProjectExportJobRepository {
     /** @return 同项目代次唯一非终态任务 */
     Optional<ProjectExportJob> findActive(UUID tenantId, UUID projectId, long generation);
 
+    /**
+     * 查询当前项目代次由指定账号申请的最新一条任务，包含终态。
+     * @param tenantId 当前权威租户
+     * @param projectId 已确权删除项目
+     * @param generation 当前删除代次
+     * @param requesterAccountId 当前请求账号
+     * @return 最新任务或空，不创建任务
+     */
+    Optional<ProjectExportJob> findLatest(UUID tenantId, UUID projectId, long generation, UUID requesterAccountId);
+
     /** @return 完整持久身份匹配的任务 */
     Optional<ProjectExportJob> findByIdentity(UUID tenantId, UUID projectId, UUID exportId);
 

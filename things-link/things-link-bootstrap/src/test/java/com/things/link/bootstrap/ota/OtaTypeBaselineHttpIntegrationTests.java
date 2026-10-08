@@ -45,6 +45,8 @@ class OtaTypeBaselineHttpIntegrationTests extends AbstractIntegrationTest {
     /** 受限规范JSON仅用于构建公开测试配置。 */
     private static final OtaCanonicalJson CANONICAL = new OtaCanonicalJson();
     /** 真实响应解码器。 */ private static final JsonMapper JSON = JsonMapper.builder().build();
+    /** 固定配置主体跨例复用，所有HTTP使用自然125毫秒间隔补充真实限流额度。 */
+    private static long lastHttpRequestAt;
     /** 每例独占身份图。 */ private final List<Fixture> fixtures = new ArrayList<>();
     /** 完整HTTP安全过滤器链。 */ @Autowired private MockMvc mvc;
     /** 真正签发并由安全链验签。 */ @Autowired private TokenIssuer tokens;
@@ -69,6 +71,7 @@ class OtaTypeBaselineHttpIntegrationTests extends AbstractIntegrationTest {
     @Test
     void registersConfiguredBaselineAndRejectsBodyCapabilitiesAndRepeatedVersions() throws Exception {
         Fixture f = seed(ProjectRole.ADMIN);
+        long auditBefore = registrationAuditCount(f);
         error(read(f, path(f)), 404, 70031);
         byte[] injected = CANONICAL.writeObject(Map.of("expectedRevision", "0", "supportsAbSlots", true));
         error(write(f, key(), injected), 400, 10002);
@@ -81,21 +84,32 @@ class OtaTypeBaselineHttpIntegrationTests extends AbstractIntegrationTest {
         assertThat(registered.path("baseline").path("supportsAbSlots").asBoolean()).isFalse();
         assertThat(registered.path("baseline").path("protectedSecurityCounterBits").asInt()).isZero();
         assertThat(registered.path("baseline").path("deviceTypeId").asText()).isEqualTo(f.typeId().toString());
+        assertThat(registered.path("baseline")).isEqualTo(JSON.readTree(CANONICAL.writeObject(baseline(f, 1, 1024))));
         assertThat(registered.path("baselineHash").asText()).isEqualTo(HexFormat.of().formatHex(
                 MessageDigest.getInstance("SHA-256").digest(CANONICAL.writeObject(baseline(f, 1, 1024)))));
         assertThat(ok(read(f, path(f)))).isEqualTo(registered);
-        error(write(f, once, revision("0")), 409, 10014);
+        MvcResult completed = write(f, once, revision("0"));
+        error(completed, 409, 10014);
+        assertThat(completed.getResponse().getHeader("Idempotency-Replayed")).isNull();
+        assertThat(completed.getResponse().getContentAsString()).doesNotContain("baselineHash", "registeredAt", "availableRamBytes");
+        // 首次正文不可重放，只读完整当前事实辅助恢复，不声称实际网络丢包已测试。
+        MvcResult recovered = read(f, path(f));
+        assertThat(recovered.getResponse().getHeader("Cache-Control")).isEqualTo("no-store");
+        assertThat(ok(recovered)).isEqualTo(registered);
+        error(write(f, once, revision("1")), 409, 10009);
         error(write(f, key(), revision("0")), 409, 70030);
         error(write(f, key(), revision("1")), 409, 70030);
         assertThat(owner().queryForObject("SELECT count(*) FROM ota_type_baseline_version WHERE project_id=?", Long.class, f.projectId())).isEqualTo(1);
+        assertThat(ok(read(f, path(f)))).isEqualTo(registered);
+        assertThat(registrationAuditCount(f)).isEqualTo(auditBefore + 1);
     }
 
     /** 配置不能替代真实当前成员、类型及产品映射，无配置范围明确拒绝登记。 */
     @Test
     void enforcesAuthenticationRoleScopeAndAuthoritativeProductMapping() throws Exception {
         Fixture f = seed(ProjectRole.ADMIN);
-        assertThat(mvc.perform(post(path(f) + "/registrations").contentType("application/json").content(revision("0")))
-                .andReturn().getResponse().getStatus()).isEqualTo(401);
+        assertThat(perform(post(path(f) + "/registrations").contentType("application/json").content(revision("0")))
+                .getResponse().getStatus()).isEqualTo(401);
         assertThat(write(f, null, revision("0")).getResponse().getStatus()).isEqualTo(400);
         Fixture other = seedOther(ProjectRole.OWNER);
         error(write(other, key(), revision("0")), 503, 70028);
@@ -107,6 +121,43 @@ class OtaTypeBaselineHttpIntegrationTests extends AbstractIntegrationTest {
         owner().update("UPDATE dev_type SET product_key=? WHERE id=?", "different_product", f.typeId());
         error(write(f, key(), revision("0")), 422, 70029);
         assertThat(owner().queryForObject("SELECT count(*) FROM ota_type_baseline WHERE project_id=?", Long.class, f.projectId())).isZero();
+    }
+
+    /** 管理GET和登记均受ACTIVE许可限制，旧项目JWT不能跨越成员移除继续消费事实。 */
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"archived", "removed"})
+    void rejectsArchivedOrRemovedManagementAccessWithoutIncrement(String change) throws Exception {
+        Fixture f = seed(ProjectRole.ADMIN);
+        JsonNode registered = ok(write(f, key(), revision("0")));
+        long auditBefore = registrationAuditCount(f);
+        Map<String,Object> before = baselineHead(f);
+        String bearer = tokens.issue(new AuthenticatedPrincipal(f.accountId(), f.tenantId(), f.projectId())).value();
+        if ("archived".equals(change)) owner().update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?", f.projectId());
+        else owner().update("DELETE FROM sys_project_member WHERE project_id=? AND account_id=?", f.projectId(), f.accountId());
+        int status = "archived".equals(change) ? 403 : 401;
+        int code = "archived".equals(change) ? 50017 : 20020;
+        // 先验证管理GET的实际分类，不能用公开历史读取口径替代该完整受控声明。
+        error(perform(get(path(f)).header("Authorization", "Bearer " + bearer)), status, code);
+        error(perform(post(path(f) + "/registrations").contentType("application/json")
+                .header("Authorization", "Bearer " + bearer).header("Idempotency-Key", key())
+                .content(revision(registered.path("revision").asText()))), status, code);
+        assertThat(baselineHead(f)).isEqualTo(before);
+        assertThat(owner().queryForObject("SELECT count(*) FROM ota_type_baseline_version WHERE project_id=?", Long.class, f.projectId())).isEqualTo(1);
+        assertThat(registrationAuditCount(f)).isEqualTo(auditBefore);
+    }
+
+    /** 精确来源配置不能替代当前已发布且未删除的真实类型，拒绝不留下头、历史或审计。 */
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"draft", "deleted"})
+    void rejectsConfiguredTypeWithoutCurrentPublishedIdentity(String change) throws Exception {
+        Fixture f = seed(ProjectRole.ADMIN);
+        long auditBefore = registrationAuditCount(f);
+        if ("draft".equals(change)) owner().update("UPDATE dev_type SET status='DRAFT' WHERE id=?", f.typeId());
+        else owner().update("UPDATE dev_type SET deleted_at=now() WHERE id=?", f.typeId());
+        error(write(f, key(), revision("0")), 422, 70029);
+        assertThat(owner().queryForObject("SELECT count(*) FROM ota_type_baseline WHERE project_id=?", Long.class, f.projectId())).isZero();
+        assertThat(owner().queryForObject("SELECT count(*) FROM ota_type_baseline_version WHERE project_id=?", Long.class, f.projectId())).isZero();
+        assertThat(registrationAuditCount(f)).isEqualTo(auditBefore);
     }
 
     /** device端口以真实普通RLS三轴查询，只返回已发布身份且不要求管理角色。 */
@@ -230,8 +281,20 @@ class OtaTypeBaselineHttpIntegrationTests extends AbstractIntegrationTest {
     /** 请求键每次唯一。 */ private static String key() { return UUID.randomUUID().toString(); }
     /** 完整认证请求，不替代安全过滤器。 */
     private MvcResult request(Fixture f, MockHttpServletRequestBuilder builder) throws Exception {
-        return mvc.perform(builder.header("Authorization", "Bearer " + tokens.issue(new AuthenticatedPrincipal(
-                f.accountId(), f.tenantId(), f.projectId())).value())).andReturn();
+        return perform(builder.header("Authorization", "Bearer " + tokens.issue(new AuthenticatedPrincipal(
+                f.accountId(), f.tenantId(), f.projectId())).value()));
+    }
+    /** 匿名、当前JWT及冻结旧JWT共用自然节奏，不忽略429或放宽生产配额。 */
+    private MvcResult perform(MockHttpServletRequestBuilder builder) throws Exception {
+        paceHttpRequests();
+        return mvc.perform(builder).andReturn();
+    }
+    /** 单次等待至125毫秒发送间隔，固定配置主体在参数例之间仍保留实际令牌补充。 */
+    private static synchronized void paceHttpRequests() throws InterruptedException {
+        long now = System.nanoTime();
+        long remaining = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(125) - (now - lastHttpRequestAt);
+        if (lastHttpRequestAt != 0 && remaining > 0) java.util.concurrent.TimeUnit.NANOSECONDS.sleep(remaining);
+        lastHttpRequestAt = System.nanoTime();
     }
     /** 写入保留精确原文。 */
     private MvcResult write(Fixture f, String key, byte[] body) throws Exception {
@@ -249,6 +312,16 @@ class OtaTypeBaselineHttpIntegrationTests extends AbstractIntegrationTest {
     private static void error(MvcResult response, int status, int code) throws Exception {
         assertThat(response.getResponse().getStatus()).as(response.getResponse().getContentAsString()).isEqualTo(status);
         assertThat(JSON.readTree(response.getResponse().getContentAsString()).path("code").asInt()).isEqualTo(code);
+    }
+    /** 固定项目跨例重建而审计不可删，只比较本例实际新增量。 */
+    private static long registrationAuditCount(Fixture f) {
+        return owner().queryForObject("SELECT count(*) FROM sys_audit_log WHERE project_id=? AND action='ota.type.baseline.registered'",
+                Long.class, f.projectId());
+    }
+    /** 归档或失权后不能使用管理GET，owner仅观察已存在头的完整公开指针及原始时刻。 */
+    private static Map<String,Object> baselineHead(Fixture f) {
+        return owner().queryForMap("SELECT revision,baseline_version,baseline_hash,created_at,updated_at FROM ota_type_baseline WHERE project_id=? AND device_type_id=?",
+                f.projectId(), f.typeId());
     }
     /** 新OTA引用必须先清理，再删除本例模型与项目；不修改触发器或禁用外键。 */
     @AfterEach

@@ -1,9 +1,12 @@
 <!-- 顶部栏 -->
 <template>
   <div
-    class="w-full bg-[var(--default-bg-color)]"
+    class="w-full console-titlebar"
     :class="[
-      tabStyle === 'tab-card' || tabStyle === 'tab-google' ? 'mb-5 max-sm:mb-3 !bg-box' : ''
+      !hideNavigation && (tabStyle === 'tab-card' || tabStyle === 'tab-google')
+        ? 'mb-5 max-sm:mb-3 !bg-box'
+        : '',
+      { 'project-titlebar': hideNavigation }
     ]"
   >
     <div
@@ -14,9 +17,9 @@
           : ''
       ]"
     >
-      <div class="flex-c flex-1 min-w-0 leading-15" style="display: flex">
+      <div class="flex-c flex-1 min-w-0 overflow-hidden leading-15" style="display: flex">
         <!-- 系统信息  -->
-        <div class="flex-c c-p" @click="toHome" v-if="isTopMenu">
+        <div class="flex-c shrink-0 c-p" @click="toHome" v-if="isTopMenu">
           <ArtLogo class="pl-4.5" />
           <p v-if="width >= 1400" class="my-0 mx-2 ml-2 text-lg">{{ AppConfig.systemInfo.name }}</p>
         </div>
@@ -36,7 +39,7 @@
 
         <!-- 刷新按钮 -->
         <ArtIconButton
-          v-if="shouldShowRefreshButton"
+          v-if="!hideNavigation && shouldShowRefreshButton"
           icon="ri:refresh-line"
           class="!ml-3 refresh-btn max-sm:!hidden"
           :style="{ marginLeft: !isLeftMenu ? '10px' : '0' }"
@@ -49,19 +52,18 @@
         </ArtFastEnter>
 
         <!-- 面包屑 -->
-        <ArtBreadcrumb
-          v-if="(shouldShowBreadcrumb && isLeftMenu) || (shouldShowBreadcrumb && isDualMenu)"
-        />
+        <ArtProjectListNavigation v-if="hideNavigation" />
+        <ArtBreadcrumb v-else-if="shouldShowBreadcrumb && (isLeftMenu || isDualMenu)" />
 
         <!-- 顶部菜单 -->
-        <ArtHorizontalMenu v-if="isTopMenu" :list="menuList" />
+        <ArtHorizontalMenu v-if="!hideNavigation && isTopMenu" :list="menuList" />
 
         <!-- 混合菜单-顶部 -->
-        <ArtMixedMenu v-if="isTopLeftMenu" :list="menuList" />
+        <ArtMixedMenu v-if="!hideNavigation && isTopLeftMenu" :list="menuList" />
       </div>
 
       <div class="flex-c gap-2.5">
-        <ArtProjectSwitcher class="max-md:!hidden" />
+        <ArtProjectSwitcher v-if="!hideNavigation" class="max-md:!hidden" />
 
         <!-- 搜索 -->
         <div
@@ -144,21 +146,9 @@
 
         <!-- 设置按钮 -->
         <div v-if="shouldShowSettings">
-          <ElPopover :visible="showSettingGuide" placement="bottom-start" :width="190" :offset="0">
-            <template #reference>
-              <div class="flex-cc">
-                <ArtIconButton icon="ri:settings-line" class="setting-btn" @click="openSetting" />
-              </div>
-            </template>
-            <template #default>
-              <p
-                >{{ $t('topBar.guide.title')
-                }}<span :style="{ color: systemThemeColor }"> {{ $t('topBar.guide.theme') }} </span
-                >、 <span :style="{ color: systemThemeColor }"> {{ $t('topBar.guide.menu') }} </span
-                >{{ $t('topBar.guide.description') }}
-              </p>
-            </template>
-          </ElPopover>
+          <ElTooltip content="界面设置" placement="bottom">
+            <ArtIconButton icon="ri:settings-line" class="setting-btn" @click="openSetting" />
+          </ElTooltip>
         </div>
 
         <!-- 主题切换按钮 -->
@@ -173,8 +163,8 @@
       </div>
     </div>
 
-    <!-- 标签页 -->
-    <ArtWorkTab />
+    <!-- 标签页暂时隐藏，保留组件与状态逻辑以便恢复。 -->
+    <ArtWorkTab v-if="!hideNavigation" v-show="false" />
 
     <!-- 单一请求状态同时驱动角标与面板，避免两个实例互相覆盖阅读状态。 -->
     <ArtNotification
@@ -208,8 +198,11 @@
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
   import ArtProjectSwitcher from './widget/ArtProjectSwitcher.vue'
+  import ArtProjectListNavigation from './widget/ArtProjectListNavigation.vue'
 
   defineOptions({ name: 'ArtHeaderBar' })
+
+  defineProps<{ hideNavigation?: boolean }>()
 
   // 检测操作系统类型
   const isWindows = navigator.userAgent.includes('Windows')
@@ -238,11 +231,10 @@
     fastEnterMinWidth: headerBarFastEnterMinWidth
   } = useHeaderBar()
 
-  const { menuOpen, systemThemeColor, showSettingGuide, menuType, isDark, tabStyle } =
-    storeToRefs(settingStore)
+  const { menuOpen, showSettingGuide, menuType, isDark, tabStyle } = storeToRefs(settingStore)
 
   const { language } = storeToRefs(userStore)
-  const { menuList } = storeToRefs(menuStore)
+  const { navigationMenu: menuList } = storeToRefs(menuStore)
 
   const showNotice = ref(false)
   // S6/S9的D-021在ADR0093落为显式回执；缓存info不能单独触发未认证请求。
@@ -447,6 +439,16 @@
 </script>
 
 <style lang="scss" scoped>
+  .console-titlebar {
+    background: var(--default-box-color);
+    box-shadow: 0 5px 14px -5px rgb(15 23 42 / 16%);
+  }
+
+  .project-titlebar {
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--art-card-border);
+  }
+
   .inbox-count {
     position: absolute;
     top: -6px;

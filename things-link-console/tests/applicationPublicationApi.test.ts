@@ -20,6 +20,99 @@ const intent: PublicationIntent = {
   status: 'UNKNOWN'
 }
 describe('发布API无隐式写重放', () => {
+  it('软删除只发送一次规范Long字符串CAS，接受无正文无Location的204', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 204 }))
+    await expect(
+      writeApplicationPublicationIntent({
+        ...intent,
+        kind: 'SOFT_DELETE',
+        body: { expectedPublicationRevision: '9223372036854775807' }
+      })
+    ).resolves.toBeUndefined()
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/projects/project/applications/application/soft-delete',
+      expect.objectContaining({
+        method: 'POST',
+        body: '{"expectedPublicationRevision":"9223372036854775807"}',
+        headers: expect.objectContaining({ 'Idempotency-Key': intent.key }),
+        credentials: 'omit',
+        redirect: 'error'
+      })
+    )
+    expect(fetch).toHaveBeenCalledOnce()
+  })
+  it.each(['01', '-1', '1.0', '9223372036854775808', 3 as unknown as string])(
+    '非法删除revision%s不发HTTP',
+    async (revision) => {
+      await expect(
+        writeApplicationPublicationIntent({
+          ...intent,
+          kind: 'SOFT_DELETE',
+          body: { expectedPublicationRevision: revision }
+        })
+      ).rejects.toMatchObject({ outcomeUnknown: false })
+      expect(fetch).not.toHaveBeenCalled()
+    }
+  )
+  it('不夹带draftRevision或targetVersion，204Location/200正文不能假装删除完成', async () => {
+    await expect(
+      writeApplicationPublicationIntent({ ...intent, kind: 'SOFT_DELETE' })
+    ).rejects.toMatchObject({ outcomeUnknown: false })
+    await expect(
+      writeApplicationPublicationIntent({
+        ...intent,
+        kind: 'SOFT_DELETE',
+        targetVersionId: 'version',
+        body: { expectedPublicationRevision: '3' }
+      })
+    ).rejects.toMatchObject({ outcomeUnknown: false })
+    expect(fetch).not.toHaveBeenCalled()
+    const deletion: PublicationIntent = {
+      ...intent,
+      kind: 'SOFT_DELETE',
+      body: { expectedPublicationRevision: '3' }
+    }
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(null, { status: 204, headers: { Location: '/deleted' } }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+    await expect(writeApplicationPublicationIntent(deletion)).rejects.toMatchObject({
+      outcomeUnknown: true,
+      status: 204
+    })
+    await expect(writeApplicationPublicationIntent(deletion)).rejects.toMatchObject({
+      outcomeUnknown: true,
+      status: 200
+    })
+  })
+  it('删除401不刷新重放，10014仍业务错误，丢响应显式恢复完全同body/key', async () => {
+    const deletion: PublicationIntent = {
+      ...intent,
+      kind: 'SOFT_DELETE',
+      body: { expectedPublicationRevision: '3' }
+    }
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response('{"code":20001}', { status: 401 }))
+      .mockRejectedValueOnce(new Error('lost'))
+      .mockResolvedValueOnce(new Response('{"code":10014}', { status: 409 }))
+    await expect(writeApplicationPublicationIntent(deletion)).rejects.toMatchObject({
+      outcomeUnknown: false,
+      code: 20001,
+      status: 401
+    })
+    await expect(writeApplicationPublicationIntent(deletion)).rejects.toMatchObject({
+      outcomeUnknown: true
+    })
+    await expect(writeApplicationPublicationIntent(deletion)).rejects.toMatchObject({
+      outcomeUnknown: false,
+      code: 10014,
+      status: 409
+    })
+    expect(fetch).toHaveBeenCalledTimes(3)
+    expect(vi.mocked(fetch).mock.calls[1]![1]!.body).toBe(vi.mocked(fetch).mock.calls[2]![1]!.body)
+    expect(vi.mocked(fetch).mock.calls[1]![1]!.headers).toEqual(
+      vi.mocked(fetch).mock.calls[2]![1]!.headers
+    )
+  })
   beforeEach(() => {
     vi.stubEnv('VITE_API_URL', '/')
     vi.stubGlobal('fetch', vi.fn())

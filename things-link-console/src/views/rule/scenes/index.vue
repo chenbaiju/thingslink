@@ -1,5 +1,13 @@
 <template>
   <div class="console-page">
+    <ConsoleWorkspaceHeader
+      title="手动场景"
+      description="管理可复用的动作组合，手动执行前确认目标设备。"
+      :links="[
+        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
+        { label: '执行记录', path: '/rule/executions?source=scene', permission: 'rule:read' }
+      ]"
+    />
     <ElCard v-if="!allowed" shadow="never"
       ><ElAlert title="需要 OWNER 或 ADMIN 的规则管理权限" type="warning" :closable="false"
     /></ElCard>
@@ -193,6 +201,7 @@
   </div>
 </template>
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import { Plus } from '@element-plus/icons-vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'

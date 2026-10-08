@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   acceptProjectInvitationFromInbox,
+  cleanupCreatedProject,
   enterProject,
   login,
   resetSession,
@@ -9,6 +10,12 @@ import {
   OWNER_EMAIL,
   OWNER_PASSWORD
 } from './helpers'
+
+let createdProjectName = ''
+test.afterEach(async ({ browser, baseURL }) => {
+  if (createdProjectName) await cleanupCreatedProject(browser, baseURL!, createdProjectName)
+  createdProjectName = ''
+})
 
 /**
  * 旅程 1：登录/创建项目/邀请成员/切换项目/权限集合刷新。
@@ -19,17 +26,26 @@ import {
 test('旅程1：OWNER 建项目并邀请成员，VIEWER 成员看不到写入口', async ({ page }) => {
   const suffix = Date.now()
   const projectName = `E2E项目-${suffix}`
+  createdProjectName = projectName
 
   // 1. OWNER 登录并创建项目
   await login(page, OWNER_EMAIL, OWNER_PASSWORD)
   await page.goto('/#/project/list')
   await page.getByRole('button', { name: '创建项目' }).click()
-  await page.getByPlaceholder('例如：厂区环境监测').fill(projectName)
-  await page.getByRole('button', { name: '确定' }).click()
+  await expect(page).toHaveURL(/#\/project\/create$/)
+  await page.getByPlaceholder('请输入项目名称').fill(projectName)
+  await page
+    .getByRole('textbox', { name: '项目描述', exact: true })
+    .fill('E2E 项目描述与列表接线验证')
+  await page.getByRole('button', { name: '创建项目', exact: true }).click()
+  await expect(page).toHaveURL(/#\/project\/list$/)
   await expect(page.getByText(projectName).first()).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('tr').filter({ hasText: projectName })).toContainText(
+    'E2E 项目描述与列表接线验证'
+  )
 
   // 2. 进入刚建的项目，再邀请成员（VIEWER）
-  await enterProject(page, projectName)
+  await enterProject(page, projectName, true)
   await page.goto('/#/project/members')
   await page.getByRole('button', { name: '邀请成员' }).click()
   await page.getByPlaceholder('接收邀请的邮箱').fill(MEMBER_EMAIL)

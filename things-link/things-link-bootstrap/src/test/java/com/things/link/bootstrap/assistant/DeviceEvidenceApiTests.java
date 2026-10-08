@@ -7,7 +7,6 @@ import com.things.link.iam.application.AuthenticatedPrincipal;
 import com.things.link.iam.application.TokenIssuer;
 import com.things.link.enduser.application.AppAuthenticatedPrincipal;
 import com.things.link.enduser.application.AppTokenIssuer;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 /** AG-1a：真实Console签名、APP数据库角色及各域新事务，不用模型桩替代权限。 */
 @AutoConfigureMockMvc
-class DeviceEvidenceApiTests extends AbstractIntegrationTest {
+class DeviceEvidenceApiTests extends AbstractAssistantIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired TokenIssuer tokens;
     @Autowired AppTokenIssuer appTokens;

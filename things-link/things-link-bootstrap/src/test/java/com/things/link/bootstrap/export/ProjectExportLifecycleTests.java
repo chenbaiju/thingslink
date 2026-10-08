@@ -474,6 +474,33 @@ class ProjectExportLifecycleTests extends AbstractIntegrationTest {
                 activeNewGeneration.projectId())).isZero();
     }
 
+    /** 只读最新任务可跨刷新找回终态，保持原请求者与当前代次过滤，不创建或计数。 */
+    @Test
+    void latestHttpFindsTerminalJobWithoutCreationAndHidesOtherRequesterOrGeneration() throws Exception {
+        Fixture fixture = fixture("DELETING", Instant.now().minusSeconds(60), 3, true);
+        String token = token(fixture, null, 0);
+        String path = "/api/v1/projects/" + fixture.projectId() + "/exports/latest";
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andReturn().getResponse().getStatus()).isEqualTo(204);
+        ProjectExportJob job = request(fixture);
+        executeOwner("UPDATE sys_project_export_job SET status='FAILED',failure_code='TEST' WHERE id=?", job.id());
+        MvcResult found = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + token)).andReturn();
+        assertThat(found.getResponse().getStatus()).isEqualTo(200);
+        JsonNode body = json.readTree(found.getResponse().getContentAsString());
+        assertThat(body.get("id").asString()).isEqualTo(job.id().toString());
+        assertThat(body.get("status").asString()).isEqualTo("FAILED");
+        assertThat(body.has("objectKey")).isFalse();
+        assertThat(body.has("url")).isFalse();
+        // 同一项目也不能找回另一请求者或历史代次的任务。
+        executeOwner("UPDATE sys_project_export_job SET requester_account_id=? WHERE id=?", fixture("DELETING", Instant.now().minusSeconds(60), 3, true).accountId(), job.id());
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andReturn().getResponse().getStatus()).isEqualTo(204);
+        executeOwner("UPDATE sys_project_export_job SET requester_account_id=?,project_generation=2 WHERE id=?", fixture.accountId(), job.id());
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andReturn().getResponse().getStatus()).isEqualTo(204);
+        assertThat(number("SELECT count(*) FROM sys_project_export_job WHERE project_id=?", fixture.projectId())).isEqualTo(1);
+    }
+
     /** 请求审计在真实INSERT之后失败时，新任务与审计必须随同一事务全部回滚。 */
     @Test
     void requestAuditFailureRollsBackCreatedJob() throws Exception {

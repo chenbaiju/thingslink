@@ -3,7 +3,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture;
 import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture.DataFixture;
 import com.things.link.iam.application.AuthenticatedPrincipal;
 import com.things.link.iam.application.TokenIssuer;
-import com.things.link.testing.AbstractIntegrationTest;
 import com.things.link.support.audit.AuditLogService;
 import com.things.link.support.audit.AuditLogEntry;
 import com.things.link.shared.tenant.TenantContext;
@@ -35,7 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 /** 真实Console/JWT、APP角色与数据库；仅使用测试假Key，不访问供应商。 */
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
-class ModelConfigurationApiTests extends AbstractIntegrationTest {
+class ModelConfigurationApiTests extends AbstractAssistantIntegrationTest {
     static final String MASTER=master();
     static String master() { byte[] k=new byte[32];new SecureRandom().nextBytes(k);return Base64.getEncoder().encodeToString(k); }
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r) {

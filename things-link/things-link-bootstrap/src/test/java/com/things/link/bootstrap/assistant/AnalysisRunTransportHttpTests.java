@@ -6,7 +6,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture;
 import com.things.link.iam.application.*;
 import com.things.link.shared.id.Uuid7;
 import com.things.link.shared.tenant.*;
-import com.things.link.testing.AbstractIntegrationTest;
 import java.net.*;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.*;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.test.annotation.DirtiesContext;
@@ -31,10 +31,12 @@ import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.*;
 
 /** 真实平台HTTP、数据库与生产网络装配；内部对端只是本地合成拒绝端，不运行供应商或Python。 */
+// 本类单独声明真实服务器上下文，显式导入专库配置并由基类逐例校验实际落点。
+@Import(AbstractAssistantIntegrationTest.AssistantDatabaseConfiguration.class)
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode=DirtiesContext.ClassMode.AFTER_CLASS)
 @ExtendWith(OutputCaptureExtension.class)
-class AnalysisRunTransportHttpTests extends AbstractIntegrationTest {
+class AnalysisRunTransportHttpTests extends AbstractAssistantIntegrationTest {
     static final String MASTER=ModelConfigurationApiTests.master(), SECRET="synthetic-joined-analysis-only";
     static Peer peer;
     static final JsonMapper JSON=JsonMapper.builder().build();

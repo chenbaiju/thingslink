@@ -2,7 +2,7 @@
 /**
  * 功能亮点卡片网格。
  *
- * 4 个卡片，图标 + 标题 + 描述，hover 微动效。
+ * 5 个卡片，图标 + 标题 + 描述，hover 微动效。
  */
 
 import Card from '@/components/ui/Card.astro'
@@ -17,6 +17,7 @@ interface Feature {
   description: string
   href: string
   linkLabel: string
+  note?: string
 }
 
 const features: Feature[] = [
@@ -51,6 +52,15 @@ const features: Feature[] = [
     description: '配置消息规则与脚本处理，命中后触发告警、通知、Webhook 或设备动作。',
     href: SITE.docsUrl,
     linkLabel: '浏览文档'
+  },
+  {
+    icon: 'book',
+    title: 'Agent 运维助手',
+    benefit: '集中查看排查证据，手动生成事实报告。',
+    description: '按项目权限查看设备状态、历史数据与告警，检索项目知识并保存个人排查记录，支持手动生成和下载事实报告。',
+    note: '当前提供只读能力，大模型辅助诊断待开放。',
+    href: docsPath('agent'),
+    linkLabel: '了解运维助手'
   }
 ]
 ---
@@ -63,15 +73,15 @@ const features: Feature[] = [
         核心能力
       </h2>
       <p class="mt-3 text-text-secondary max-w-xl mx-auto">
-        从设备接入、数据采集到远程控制与规则告警
+        连接设备、管理数据与告警，用 Agent 运维助手整理排查证据
       </p>
     </div>
 
     <!-- 卡片网格 -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 xl:gap-6">
       {
         features.map((feature) => (
-          <Card hoverable class="group relative flex flex-col p-6">
+          <Card hoverable class="group relative flex flex-col p-5 xl:p-6">
             <!-- 图标 -->
             <div class="w-12 h-12 flex items-center justify-center text-brand-600 rounded-lg bg-brand-50 group-hover:bg-brand-100 transition-colors">
               <Icon name={feature.icon} size="lg" />
@@ -87,12 +97,13 @@ const features: Feature[] = [
             <p class="mt-2 text-sm text-text-secondary leading-relaxed">
               {feature.description}
             </p>
+            {feature.note && <p class="mt-3 text-sm text-text-muted">{feature.note}</p>}
             <div class="mt-auto pt-6">
-              {SITE.docsEnabled && (<a href={feature.href} class="inline-flex items-center gap-2 rounded text-sm font-medium text-brand-600 hover:underline focus-visible:underline">
+              <a href={feature.href} class="inline-flex items-center gap-2 rounded text-sm font-medium text-brand-600 hover:underline focus-visible:underline">
                 {feature.linkLabel}
                 <span class="sr-only">：{feature.title}</span>
                 <Icon name="arrow-right" size="sm" />
-              </a>)}
+              </a>
             </div>
           </Card>
         ))

@@ -230,7 +230,7 @@ test('设备证据与默认关闭模型：真实手动读取、四角色与跨�
         )
       checkpoint = `member-${role}-reload`
       await member.reload()
-      await expect(member.getByRole('menuitem', { name: '设备', exact: true })).toBeVisible()
+      await expect(member.getByRole('menuitem', { name: '设备开发', exact: true })).toBeVisible()
       await expect(member.getByRole('button', { name: /未进入项目/ })).toHaveCount(0)
       checkpoint = `member-${role}-open`
       await open(member)

@@ -4,7 +4,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture.DataFixture;
 import com.things.link.iam.application.AuthenticatedPrincipal;
 import com.things.link.iam.application.TokenIssuer;
 import com.things.link.telemetry.application.ConsoleHistoryEvidenceService;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +24,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 @AutoConfigureMockMvc
-class HistoryEvidenceApiTests extends AbstractIntegrationTest {
+class HistoryEvidenceApiTests extends AbstractAssistantIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired TokenIssuer tokens;
     @Autowired JdbcTemplate application;

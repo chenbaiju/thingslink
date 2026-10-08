@@ -1,5 +1,5 @@
 <!--
-  项目设置首屏：管理员可配置项目模型 Key；配额区只读展示当前 UTC 日的配额与用量，以及同租户成员可见的「我的套餐」摘要。
+  项目设置首屏优先呈现用量与额度，再展示项目 Agent、知识资料及个人事实集合。
 
   套餐归属与限额按租户共享，项目只是事实拆分维度。普通协作者只能经此项目接口读取
   当前项目的贡献以及共享池余量，不能借助页面反推出同租户其他项目或账单聚合；套餐摘要
@@ -7,86 +7,105 @@
 -->
 <template>
   <div class="console-page project-settings" v-loading="loading">
+    <ConsoleWorkspaceHeader
+      title="用量与项目设置"
+      description="先查看当前项目用量与租户共享额度，再按需要配置项目 Agent 与知识资料。"
+      :links="[
+        { label: '项目列表', path: '/project/list' },
+        { label: '成员与邀请', path: '/project/members', permission: 'member:read' },
+        { label: '套餐目录', path: '/plan-catalog' }
+      ]"
+    />
     <ElEmpty v-if="!projectId && !loading" :description="$t('quota.noProject')" />
 
     <template v-else>
-      <AgentModelPanel />
-      <ProjectKnowledgePanel :project-id="projectId" />
-      <PersonalFactCollectionPanel :project-id="projectId" />
-      <ElAlert
-        type="info"
-        show-icon
-        :closable="false"
-        :title="$t('quota.sharedPoolNotice')"
-        class="project-settings__notice"
-      />
+      <section aria-label="用量与额度">
+        <h2 class="console-heading">用量与额度</h2>
+        <ElAlert
+          type="info"
+          show-icon
+          :closable="false"
+          :title="$t('quota.sharedPoolNotice')"
+          class="project-settings__notice"
+        />
 
-      <PlanSummaryPanel :summary="overview?.planSummary" />
+        <PlanSummaryPanel :summary="overview?.planSummary" />
 
-      <ElCard shadow="never" class="project-settings__meta">
-        <ElSkeleton animated :loading="loading">
-          <template #template>
-            <div class="quota-meta__skeleton">
-              <ElSkeletonItem v-for="item in 5" :key="item" variant="text" />
-            </div>
-          </template>
-          <template #default>
-            <div class="quota-meta__content">
-              <div class="quota-meta__item">
-                <span>{{ $t('quota.planCode') }}</span>
-                <strong>{{ overview?.policyCode || '—' }}</strong>
+        <ElCard shadow="never" class="project-settings__meta">
+          <ElSkeleton animated :loading="loading">
+            <template #template>
+              <div class="quota-meta__skeleton">
+                <ElSkeletonItem v-for="item in 5" :key="item" variant="text" />
               </div>
-              <div class="quota-meta__item">
-                <span>{{ $t('quota.window') }}</span>
-                <strong>{{ windowText }}</strong>
+            </template>
+            <template #default>
+              <div class="quota-meta__content">
+                <div class="quota-meta__item">
+                  <span>{{ $t('quota.planCode') }}</span>
+                  <strong>{{ overview?.policyCode || '—' }}</strong>
+                </div>
+                <div class="quota-meta__item">
+                  <span>{{ $t('quota.window') }}</span>
+                  <strong>{{ windowText }}</strong>
+                </div>
+                <div class="quota-meta__item">
+                  <span>{{ $t('quota.policyVersion') }}</span>
+                  <strong>{{ formatNumber(overview?.policyVersion) }}</strong>
+                </div>
+                <div class="quota-meta__item">
+                  <span>{{ $t('quota.memberCount') }}</span>
+                  <strong>{{ formatNumber(overview?.memberCount) }}</strong>
+                </div>
+                <div class="quota-meta__item">
+                  <span>项目时区</span>
+                  <strong>{{ projectTimezone || '—' }}</strong>
+                </div>
               </div>
-              <div class="quota-meta__item">
-                <span>{{ $t('quota.policyVersion') }}</span>
-                <strong>{{ formatNumber(overview?.policyVersion) }}</strong>
-              </div>
-              <div class="quota-meta__item">
-                <span>{{ $t('quota.memberCount') }}</span>
-                <strong>{{ formatNumber(overview?.memberCount) }}</strong>
-              </div>
-              <div class="quota-meta__item">
-                <span>项目时区</span>
-                <strong>{{ projectTimezone || '—' }}</strong>
-              </div>
-            </div>
-          </template>
-        </ElSkeleton>
-      </ElCard>
-
-      <section class="project-settings__sections" aria-label="配额与日用量">
-        <ElCard shadow="never">
-          <template #header>
-            <div class="quota-section__header console-page-header">
-              <div>
-                <h4>{{ $t('quota.projectUsageTitle') }}</h4>
-                <p class="console-description">{{ $t('quota.projectUsageHint') }}</p>
-              </div>
-            </div>
-          </template>
-          <QuotaUsageTable :scope="overview?.project" />
+            </template>
+          </ElSkeleton>
         </ElCard>
 
-        <ElCard shadow="never">
-          <template #header>
-            <div class="quota-section__header console-page-header">
-              <div>
-                <h4>{{ $t('quota.tenantPoolTitle') }}</h4>
-                <p class="console-description">{{ $t('quota.tenantPoolHint') }}</p>
+        <section class="project-settings__sections" aria-label="配额与日用量">
+          <ElCard shadow="never">
+            <template #header>
+              <div class="quota-section__header console-page-header">
+                <div>
+                  <h4>{{ $t('quota.projectUsageTitle') }}</h4>
+                  <p class="console-description">{{ $t('quota.projectUsageHint') }}</p>
+                </div>
               </div>
-            </div>
-          </template>
-          <QuotaUsageTable :scope="overview?.tenantSharedPool" />
-        </ElCard>
+            </template>
+            <QuotaUsageTable :scope="overview?.project" />
+          </ElCard>
+
+          <ElCard shadow="never">
+            <template #header>
+              <div class="quota-section__header console-page-header">
+                <div>
+                  <h4>{{ $t('quota.tenantPoolTitle') }}</h4>
+                  <p class="console-description">{{ $t('quota.tenantPoolHint') }}</p>
+                </div>
+              </div>
+            </template>
+            <QuotaUsageTable :scope="overview?.tenantSharedPool" />
+          </ElCard>
+        </section>
+      </section>
+      <section class="console-editor-section" aria-label="Agent 与知识配置">
+        <h2 class="console-heading">Agent 与知识配置</h2>
+        <p class="console-description"
+          >按需配置项目模型接入、知识资料与个人事实集合。具体操作遵循当前账号权限。</p
+        >
+        <AgentModelPanel />
+        <ProjectKnowledgePanel :project-id="projectId" />
+        <PersonalFactCollectionPanel :project-id="projectId" />
       </section>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import AgentModelPanel from './AgentModelPanel.vue'
   import ProjectKnowledgePanel from '@/components/agent/ProjectKnowledgePanel.vue'
   import PersonalFactCollectionPanel from '@/components/agent/PersonalFactCollectionPanel.vue'

@@ -5,7 +5,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture;
 import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture.DataFixture;
 import com.things.link.iam.application.AuthenticatedPrincipal;
 import com.things.link.iam.application.TokenIssuer;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +26,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @AutoConfigureMockMvc
-class AlarmEvidenceApiTests extends AbstractIntegrationTest {
+class AlarmEvidenceApiTests extends AbstractAssistantIntegrationTest {
     @Autowired MockMvc mvc; @Autowired TokenIssuer tokens; @Autowired JdbcTemplate application;
     @MockitoSpyBean ConsoleAlarmDeviceQueryService alarms;
     JdbcTemplate owner; DataFixture data; String token;

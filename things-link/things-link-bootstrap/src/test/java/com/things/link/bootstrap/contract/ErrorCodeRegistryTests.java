@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 当前 30030 被 device 与 telemetry 各定义一次且**双方都在注释里写明了理由**：device 在可信路由解析时
  * 自己做输入 Schema 校验，telemetry 把 30028–30031 作为一组命令事实/控制权限码。这类重复因此被显式豁免，
  * 但**豁免不等于放任**：本用例对**所有**重复码断言消息与 HTTP 状态逐字一致，任一侧改动都会立刻变红。
+ * 30070由设备快照与遥测信封分别裁决；仅允许这两个定义，同义与所有者均受守卫约束。
  * 豁免名单只用于放宽「不得重复」这一条，若将来收敛成单一定义，豁免可以（并且应当）清空——用例不会因此失败。
  */
 @DisplayName("错误码登记册守卫（docs/ERROR_CODES.md）")
@@ -45,7 +46,7 @@ class ErrorCodeRegistryTests {
      *
      * <p>清空它不会让用例失败——收敛成单一定义后请顺手删除本常量与上面的说明。
      */
-    private static final Set<Integer> KNOWN_DUPLICATE_CODES = Set.of(30_030);
+    private static final Set<Integer> KNOWN_DUPLICATE_CODES = Set.of(30_030, 30_070);
 
     /** 源码里的包声明。 */
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+([\\w.]+)\\s*;");
@@ -103,6 +104,11 @@ class ErrorCodeRegistryTests {
         byCode.forEach((code, owners) -> {
             if (owners.size() <= 1) {
                 return;
+            }
+            // 设备快照与遥测信封独立裁决；只允许此二者共享ADR0235的固定拒绝码。
+            if (code == 30_070) {
+                assertThat(owners.stream().map(names::get).toList()).containsExactlyInAnyOrder(
+                        "DeviceErrorCode.EVENT_REPORT_INVALID(30070)", "EventErrorCode.EVENT_INVALID(30070)");
             }
             assertThat(owners.stream().map(ErrorCode::defaultMessage).distinct().toList())
                     .as("重复码 %s 的消息必须逐字一致（%s）", code,

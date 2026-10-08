@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * 从 telemetry 自有幂等事实重算消息、字节、命令与时序点 UTC 日用量。
  *
- * <p>上行条数使用消费 inbox，避免消息日志保留策略或重复投递改变计数；原始字节使用同事务消息日志；
+ * <p>上行条数使用消费 inbox；事件字节使用可信接收时刻发生事实，其余上行沿原消息日志；
  * 下行使用同项目幂等命令事实而不是网络重试 attempt；时序点直接对应成功写入的点事实。</p>
  */
 @Component
@@ -46,7 +46,11 @@ public class TelemetryDailyUsageContributor implements DailyUsageContributor {
                     (SELECT coalesce(sum(log.raw_bytes), 0)
                        FROM ts_device_message_log log
                       WHERE log.project_id = ? AND log.direction = 'UP'
-                        AND log.received_at >= ? AND log.received_at < ?) AS uplink_bytes,
+                        AND log.message_type IS DISTINCT FROM 'EVENT'
+                        AND log.received_at >= ? AND log.received_at < ?)
+                    + (SELECT coalesce(sum(event_fact.raw_bytes),0) FROM ts_device_event event_fact
+                        WHERE event_fact.project_id = ? AND event_fact.received_at >= ?
+                          AND event_fact.received_at < ?) AS uplink_bytes,
                     (SELECT count(*)
                        FROM ts_device_command command_fact
                       WHERE command_fact.project_id = ?
@@ -60,6 +64,7 @@ public class TelemetryDailyUsageContributor implements DailyUsageContributor {
                         resultSet.getLong("uplink_bytes"),
                         resultSet.getLong("downlink_messages"),
                         resultSet.getLong("time_series_points")),
+                scope.projectId(), Timestamp.from(from), Timestamp.from(to),
                 scope.projectId(), Timestamp.from(from), Timestamp.from(to),
                 scope.projectId(), Timestamp.from(from), Timestamp.from(to),
                 scope.projectId(), Timestamp.from(from), Timestamp.from(to),

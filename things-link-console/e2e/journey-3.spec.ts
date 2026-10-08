@@ -1,4 +1,5 @@
 import { expect, test, type WebSocketRoute } from '@playwright/test'
+import { simulatorRuntime } from './mqtt-runtime'
 import {
   enterProject,
   openDeviceList,
@@ -119,9 +120,9 @@ test(
     await credDialog.locator('.el-dialog__headerbtn').click()
 
     // 7. 启动模拟器：真实 MQTT 连接 EMQX，username={projectKey}/{deviceKey}，password=明文密钥
-    const startResp = await request.post('http://localhost:8090/simulations/start', {
+    const startResp = await request.post(`${simulatorRuntime().baseURL}/simulations/start`, {
       data: {
-        brokerUri: 'tcp://localhost:1883',
+        brokerUri: simulatorRuntime().brokerUri,
         projectKey,
         devices: [{ deviceKey, accessToken, gateway: false }],
         intervalSeconds: 2,

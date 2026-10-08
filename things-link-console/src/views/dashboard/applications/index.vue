@@ -1,6 +1,11 @@
 <script setup lang="ts">
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
-  import { onBeforeRouteLeave } from 'vue-router'
+  import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from 'vue-router'
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
+  import ManagementRenameDialog from '@/components/business/ManagementRenameDialog.vue'
+  import type { ManagementCatalog } from '@/api/management-rename'
+  import { recordRecentResource, renameRecentResource } from '@/utils/workbench-recent'
+  import type { PublicationSnapshot } from '@/features/application/publication-model'
   import ApplicationPublication from './components/ApplicationPublication.vue'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
@@ -24,6 +29,7 @@
 
   defineOptions({ name: 'ApplicationManager' })
   const user = useUserStore()
+  const route = useRoute()
   const project = computed(() => user.info.currentProjectId ?? '')
   const canRead = computed(
     () => !!project.value && !!user.info.buttons?.includes('application:read')
@@ -34,16 +40,19 @@
   const canChoose = computed(() => !!user.info.buttons?.includes('dashboard_definition:read'))
   const publicationPending = ref(false),
     publicationWorking = ref(false)
+  const deleteLocked = ref(false),
+    deleteResult = ref('')
   const online = ref(navigator.onLine)
   let disposed = false,
     epoch = 0,
-    choiceEpoch = 0
+    choiceEpoch = 0,
+    directorySequence = 0
   const context = () =>
     `${project.value}:${user.info.userId}:${currentIdentityEpoch()}:${canRead.value}:${canManage.value}:${online.value}:${epoch}`
   const editor = createApplicationEditor({
     context,
     readable: () => canRead.value && online.value && !disposed,
-    writable: () => canManage.value && online.value && !disposed,
+    writable: () => !deleteLocked.value && canManage.value && online.value && !disposed,
     draft: (id) => fetchApplicationDraft(project.value, id),
     create: (name, content, key) => createApplication(project.value, name, content, key),
     save: (id, revision, content, key) =>
@@ -65,6 +74,37 @@
     versionCursor = ref<string>(),
     versionId = ref(''),
     navTitle = ref('')
+  const renameTarget = ref<{ id: string; managementName: string } | null>(null)
+  const openedManagementName = ref('')
+  const renameAllowed = computed(
+    () =>
+      canManage.value &&
+      online.value &&
+      !deleteLocked.value &&
+      !state.busy &&
+      !state.creatingUnknown &&
+      !publicationWorking.value &&
+      !loading.value
+  )
+  function renamed(result: ManagementCatalog) {
+    directorySequence++
+    items.value = items.value.map((item) =>
+      item.id === result.id
+        ? { ...item, managementName: result.managementName, updatedAt: result.updatedAt }
+        : item
+    )
+    if (state.id === result.id) openedManagementName.value = result.managementName ?? ''
+    renameRecentResource(
+      {
+        userId: String(user.info.userId ?? ''),
+        tenantId: String(user.info.tenantId ?? ''),
+        projectId: project.value
+      },
+      'application',
+      result.id!,
+      result.managementName!
+    )
+  }
   const choosing = ref(false)
   let comparison = 0
   watch(
@@ -72,16 +112,27 @@
     () => {
       comparison++
       remote.value = ''
+      openedManagementName.value =
+        items.value.find((item) => item.id === state.id)?.managementName ?? ''
     },
     { flush: 'sync' }
   )
   const versionsFor = ref('')
-  const disabled = computed(() => !canManage.value || !online.value || state.busy || state.blocked)
+  const disabled = computed(
+    () => deleteLocked.value || !canManage.value || !online.value || state.busy || state.blocked
+  )
   const text = (event: Event) => (event.target as HTMLInputElement).value
   function invalidate() {
     epoch++
+    renameTarget.value = null
+    openedManagementName.value = ''
+    directorySequence++
     comparison++
     editor.reset()
+    deleteLocked.value = false
+    publicationPending.value = false
+    publicationWorking.value = false
+    deleteResult.value = ''
     items.value = []
     cursor.value = undefined
     loading.value = false
@@ -96,8 +147,63 @@
     name.value = ''
     pageError.value = ''
   }
+  function clearCandidates() {
+    choiceEpoch++
+    dashboards.value = []
+    versions.value = []
+    dashboardId.value = ''
+    versionId.value = ''
+    dashboardCursor.value = undefined
+    versionCursor.value = undefined
+    versionsFor.value = ''
+    navTitle.value = ''
+    choosing.value = false
+  }
+  function setDeleteLock(locked: boolean) {
+    deleteLocked.value = locked
+    if (locked) {
+      renameTarget.value = null
+      directorySequence++
+      items.value = []
+      cursor.value = undefined
+      loading.value = false
+      comparison++
+      remote.value = ''
+      clearCandidates()
+    }
+  }
+  function deleteResourceUnavailable() {
+    if (!deleteLocked.value) return
+    comparison++
+    remote.value = ''
+    clearCandidates()
+    editor.suspendView()
+    pageError.value = '应用当前不可见，旧业务内容已清理；删除原请求仍待确认，请只恢复原操作。'
+  }
+  async function deleted(result: NonNullable<PublicationSnapshot['deleted']>) {
+    if (
+      result.projectId !== project.value ||
+      result.applicationId !== state.id ||
+      result.identity !== currentIdentityEpoch()
+    )
+      return
+    invalidate()
+    deleteResult.value =
+      result.receipt === 'NO_CONTENT'
+        ? '应用已软删除（收到204无正文回执）。'
+        : '原软删除请求已完成；完成标记不重放原204回执。'
+    await list()
+  }
   function offline() {
     online.value = false
+    if (deleteLocked.value) {
+      comparison++
+      remote.value = ''
+      clearCandidates()
+      editor.suspendView()
+      pageError.value = '已离线，删除原意图保留；联网后请显式恢复原请求。'
+      return
+    }
     invalidate()
     pageError.value = '已离线，编辑内容已清理；联网后请重新读取。'
   }
@@ -112,7 +218,9 @@
       () => user.info.userId,
       () => user.info.tenantId,
       () => canRead.value,
-      () => canManage.value
+      () => canManage.value,
+      () => JSON.stringify([...(user.info.roles ?? [])].sort()),
+      () => currentIdentityEpoch()
     ],
     invalidate,
     { flush: 'sync' }
@@ -133,9 +241,14 @@
     },
     { flush: 'sync' }
   )
-  function accessDenied() {
+  function accessDenied(code?: number) {
     invalidate()
-    pageError.value = '应用或读取权限已失效，编辑及发布内容已清理。'
+    pageError.value =
+      code === 50017
+        ? '项目已归档，应用写操作不可用；编辑及删除恢复信息已清理。'
+        : code === 60031
+          ? '应用管理权限已失效；编辑及删除恢复信息已清理。'
+          : '应用或读取权限已失效，编辑及发布内容已清理。'
   }
   onBeforeUnmount(() => {
     disposed = true
@@ -144,19 +257,28 @@
     window.removeEventListener('online', connected)
   })
   async function discard() {
-    if (publicationWorking.value) return false
+    if (deleteLocked.value || publicationWorking.value) return false
     if (!state.dirty && !state.creatingUnknown && !publicationPending.value) return true
     try {
       await ElMessageBox.confirm(
         '离开将丢弃本地编辑及尚未确认的创建或发布恢复信息；离开不会撤销已提交的请求。是否继续？',
         '离开应用编辑'
       )
-      return true
+      return !deleteLocked.value && !publicationWorking.value
     } catch {
       return false
     }
   }
   onBeforeRouteLeave(discard)
+  onBeforeRouteUpdate(() => !deleteLocked.value)
+  function beforeUnload(event: BeforeUnloadEvent) {
+    if (deleteLocked.value) {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+  }
+  window.addEventListener('beforeunload', beforeUnload)
+  onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
   function page<T>(value: { items?: T[]; hasMore?: boolean; nextCursor?: string | null }) {
     if (
       !Array.isArray(value.items) ||
@@ -168,53 +290,92 @@
     return { items: value.items, cursor: value.hasMore ? value.nextCursor! : undefined }
   }
   async function list(next = false) {
-    if (!canRead.value || !online.value || loading.value || state.busy || state.creatingUnknown)
+    if (
+      deleteLocked.value ||
+      !!renameTarget.value ||
+      !canRead.value ||
+      !online.value ||
+      loading.value ||
+      state.busy ||
+      state.creatingUnknown
+    )
       return
     const identity = context()
+    const sequence = ++directorySequence
     loading.value = true
     pageError.value = ''
     items.value = []
     try {
       const result = page(await fetchApplications(project.value, next ? cursor.value : undefined))
-      if (identity !== context() || disposed) return
+      if (identity !== context() || disposed || sequence !== directorySequence) return
       if (result.items.some((item) => !uuid(item.id) || !item.managementName))
         throw Error('应用目录身份无效')
       items.value = result.items
       cursor.value = result.cursor
     } catch {
-      if (identity === context()) {
+      if (identity === context() && sequence === directorySequence) {
         cursor.value = undefined
         pageError.value = '应用目录读取失败，请重试。'
       }
     } finally {
-      if (identity === context()) loading.value = false
+      if (identity === context() && sequence === directorySequence) loading.value = false
     }
   }
   async function open(id: string) {
-    if (state.busy || state.creatingUnknown || !(await discard())) return
+    const identity = context()
+    if (
+      deleteLocked.value ||
+      state.busy ||
+      state.creatingUnknown ||
+      !(await discard()) ||
+      deleteLocked.value ||
+      identity !== context()
+    )
+      return
     epoch++
+    renameTarget.value = null
+    openedManagementName.value = items.value.find((item) => item.id === id)?.managementName ?? ''
     versions.value = []
     versionsFor.value = ''
     choosing.value = false
     editor.reset()
     remote.value = ''
+    const openedContext = context()
     await editor.open(id)
+    if (openedContext === context() && state.id === id && state.content && !state.error) {
+      recordRecentResource(
+        {
+          userId: String(user.info.userId ?? ''),
+          tenantId: String(user.info.tenantId ?? ''),
+          projectId: project.value
+        },
+        {
+          kind: 'application',
+          id,
+          label:
+            items.value.find((item) => item.id === id)?.managementName ||
+            state.content.displayName ||
+            '应用'
+        },
+        !openedManagementName.value
+      )
+    }
   }
   async function reload() {
     const id = state.id,
       identity = context()
-    if (!id || state.busy) return
+    if (deleteLocked.value || !id || state.busy) return
     try {
       await ElMessageBox.confirm('将丢弃本地内容并读取最新远端草稿，发布版本不变。', '重载远端')
     } catch {
       return
     }
-    if (identity !== context()) return
+    if (deleteLocked.value || identity !== context()) return
     remote.value = ''
     await editor.open(id)
   }
   async function compare() {
-    if (!state.id || state.busy || !canRead.value || !online.value) return
+    if (deleteLocked.value || !state.id || state.busy || !canRead.value || !online.value) return
     const identity = context(),
       id = state.id,
       request = ++comparison
@@ -312,6 +473,7 @@
   }
   function add() {
     if (
+      deleteLocked.value ||
       !canChoose.value ||
       versionsFor.value !== dashboardId.value ||
       !versions.value.some((v) => v.id === versionId.value)
@@ -337,6 +499,7 @@
     }
   }
   function move(index: number, delta: number) {
+    if (deleteLocked.value) return
     editor.change((c) => {
       const target = index + delta
       if (target >= 0 && target < c.dashboardRefs.length)
@@ -347,6 +510,7 @@
     })
   }
   function remove(index: number) {
+    if (deleteLocked.value) return
     editor.change((c) => {
       if (c.dashboardRefs[index].dashboardId === c.entryDashboardId && c.dashboardRefs.length > 1) {
         pageError.value = '请先选择其他入口，再移除此看板。'
@@ -358,16 +522,75 @@
   }
   async function create() {
     if (
+      deleteLocked.value ||
       publicationWorking.value ||
       ((state.dirty || publicationPending.value) && !(await discard()))
     )
       return
+    if (deleteLocked.value) return
     await editor.create(name.value)
   }
+  watch(
+    () => [
+      route?.query.resourceId,
+      route?.query.contextProjectId,
+      project.value,
+      user.info.userId,
+      canRead.value,
+      currentIdentityEpoch()
+    ],
+    () => {
+      const id = route?.query.resourceId
+      if (!id) return
+      if (!canRead.value || !uuid(id) || route?.query.contextProjectId !== project.value) {
+        pageError.value = '最近访问引用与当前项目或权限不匹配，请从当前项目的应用目录重新选择。'
+        return
+      }
+      if (state.id !== id) void open(id as string)
+    },
+    { immediate: true }
+  )
 </script>
 
 <template>
   <main class="console-page application-manager">
+    <ManagementRenameDialog
+      :target="renameTarget"
+      kind="applications"
+      :project-id="project"
+      :identity="context()"
+      :allowed="renameAllowed"
+      @close="renameTarget = null"
+      @renamed="renamed"
+    />
+    <ConsoleWorkspaceHeader
+      title="应用管理"
+      description="组合已发布的看板版本，编辑应用草稿，再明确发布供终端用户使用。"
+      :links="[
+        { label: '看板开发', path: '/dashboard/designer', permission: 'dashboard_definition:read' },
+        { label: '终端用户与授权', path: '/project/end-users', permission: 'enduser:read' }
+      ]"
+    />
+    <section class="console-editor-section" aria-label="应用开发流程">
+      <p class="console-description"
+        >开发步骤：创建看板并绑定设备 → 发布看板版本 → 加入应用草稿 →
+        发布应用。草稿保存与发布是两个独立操作。</p
+      >
+    </section>
+    <el-alert
+      v-if="deleteLocked"
+      data-testid="application-delete-lock"
+      title="删除结果待确认；编辑、保存和导航已暂停，请显式恢复原操作。"
+      type="warning"
+      :closable="false"
+    />
+    <el-alert
+      v-if="deleteResult"
+      data-testid="application-delete-result"
+      :title="deleteResult"
+      type="info"
+      :closable="false"
+    />
     <el-alert
       v-if="!canRead"
       title="请先选择项目并取得应用读取权限。"
@@ -376,6 +599,7 @@
     />
     <el-alert
       v-if="pageError || state.error"
+      data-testid="application-error"
       :title="pageError || state.error"
       type="error"
       :closable="false"
@@ -386,29 +610,54 @@
         <h3 class="console-heading">应用目录</h3>
         <div class="console-actions">
           <el-button
-            :disabled="loading || state.busy || !online || state.creatingUnknown"
+            data-testid="application-directory-refresh"
+            :disabled="
+              !!renameTarget ||
+              deleteLocked ||
+              loading ||
+              state.busy ||
+              !online ||
+              state.creatingUnknown
+            "
             @click="list()"
             >读取应用目录</el-button
           >
           <el-button
-            :disabled="loading || state.busy || !online || !cursor || state.creatingUnknown"
+            :disabled="
+              !!renameTarget ||
+              deleteLocked ||
+              loading ||
+              state.busy ||
+              !online ||
+              !cursor ||
+              state.creatingUnknown
+            "
             @click="list(true)"
             >下一页应用</el-button
           >
         </div>
-        <ul
-          ><li v-for="item in items" :key="item.id"
+        <ul class="application-directory"
+          ><li v-for="item in items" :key="item.id" class="console-editor-section"
             ><span>{{ item.managementName }}</span>
+            <small v-if="item.id === state.id">当前打开</small>
             <el-button
-              :disabled="state.busy || state.creatingUnknown || !online"
+              :data-testid="`application-open-${item.id}`"
+              :disabled="deleteLocked || state.busy || state.creatingUnknown || !online"
               @click="open(item.id!)"
               >{{ canManage ? '编辑' : '查看' }}</el-button
+            >
+            <el-button
+              v-if="canManage"
+              :data-testid="`application-rename-${item.id}`"
+              :disabled="!renameAllowed || !!renameTarget"
+              @click="renameTarget = { id: item.id!, managementName: item.managementName! }"
+              >重命名</el-button
             ></li
           ></ul
         >
         <ElEmpty
           v-if="!loading && !items.length"
-          description="当前未显示应用，请读取目录或创建应用。"
+          description="当前目录为空或尚未读取。点击读取应用目录；有管理权限时也可创建应用。"
           :image-size="88"
         />
       </section>
@@ -419,11 +668,15 @@
           <input
             v-model="name"
             aria-label="管理名称"
-            :disabled="state.busy || state.creatingUnknown || !online"
+            :disabled="deleteLocked || state.busy || state.creatingUnknown || !online"
         /></label>
-        <el-button type="primary" :disabled="state.busy || !online" @click="create">{{
-          state.creatingUnknown ? '重试原创建请求' : '创建应用'
-        }}</el-button>
+        <el-button
+          data-testid="application-create"
+          type="primary"
+          :disabled="deleteLocked || state.busy || !online"
+          @click="create"
+          >{{ state.creatingUnknown ? '重试原创建请求' : '创建应用' }}</el-button
+        >
       </section>
       <ApplicationPublication
         v-if="state.id"
@@ -440,20 +693,32 @@
         @pending="publicationPending = $event"
         @working="publicationWorking = $event"
         @access-denied="accessDenied"
+        @delete-lock="setDeleteLock"
+        @delete-resource-unavailable="deleteResourceUnavailable"
+        @deleted="deleted"
       />
       <section
-        v-if="state.id"
+        v-if="state.id && state.content"
         class="application-panel"
         aria-label="应用草稿"
         :data-application-id="state.id"
       >
-        <h3 class="console-heading">组合编辑</h3>
+        <p
+          v-if="openedManagementName"
+          data-testid="application-management-name"
+          class="console-description"
+          >管理名称：{{ openedManagementName }}</p
+        >
+        <h3 class="console-heading">应用草稿 · {{ state.content.displayName || '未命名应用' }}</h3>
+        <p class="console-description">选择固定的已发布看板版本，不会随看板草稿变化自动升级。</p>
         <p class="console-description"
           >草稿修订 {{ state.revision }} · {{ state.dirty ? '未保存' : '已读取/保存' }}</p
         >
         <div class="console-actions">
-          <el-button :disabled="state.busy || !online" @click="compare">读取远端比较</el-button>
-          <el-button :disabled="state.busy || !online" @click="reload"
+          <el-button :disabled="deleteLocked || state.busy || !online" @click="compare"
+            >读取远端比较</el-button
+          >
+          <el-button :disabled="deleteLocked || state.busy || !online" @click="reload"
             >丢弃本地并重载远端</el-button
           >
         </div>
@@ -592,6 +857,7 @@
           <el-button
             v-if="canManage"
             type="primary"
+            data-testid="application-save"
             :disabled="disabled || !state.dirty"
             @click="editor.save()"
             >保存应用草稿</el-button
@@ -672,6 +938,34 @@
       overflow: auto;
       overflow-wrap: anywhere;
       white-space: pre-wrap;
+    }
+  }
+</style>
+
+<style scoped lang="scss">
+  .application-directory {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 12px;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-block: 0;
+    }
+
+    span {
+      flex: 1;
+      min-width: 100px;
+      overflow-wrap: anywhere;
+    }
+
+    small {
+      color: var(--el-color-primary);
     }
   }
 </style>

@@ -1,5 +1,24 @@
 <template>
   <div class="console-page message-logs console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="消息调试"
+      description="按设备与时间定位上报摘要，继续检查接入状态。"
+      :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
+    >
+      <template #actions
+        ><ElButton v-if="canRead()" @click="ticketVisible = true">短期订阅票据</ElButton></template
+      >
+    </ConsoleWorkspaceHeader>
+    <RealtimeTicketDialog v-if="ticketVisible && canRead()" @close="ticketVisible = false" />
+    <ElAlert v-if="sourceError" :title="sourceError" type="warning" :closable="false">
+      <ElButton text @click="reloadSource">重试读取来源设备</ElButton>
+    </ElAlert>
+    <ElAlert
+      v-else-if="sourceDevice"
+      :title="`来源设备：${sourceDevice.name || sourceDevice.deviceKey}`"
+      type="info"
+      :closable="false"
+    />
     <ElAlert class="message-logs__notice" type="info" :closable="false" show-icon>
       <template #title>日志仅保留报文摘要</template>
       原始报文不会提供给浏览器；摘要最多保留 256 个字符，详细长度以“字节数”为准。
@@ -163,6 +182,10 @@
 </template>
 
 <script setup lang="ts">
+  import RealtimeTicketDialog from './components/RealtimeTicketDialog.vue'
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
+  import { useWorkspaceDeviceContext } from '@/composables/useWorkspaceDeviceContext'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'
@@ -184,6 +207,27 @@
 
   const userStore = useUserStore()
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
+  const {
+    device: sourceDevice,
+    error: sourceError,
+    requested: sourceRequested,
+    reload: reloadSource
+  } = useWorkspaceDeviceContext('device:read')
+  let listGeneration = 0,
+    detailGeneration = 0,
+    diagnosticsGeneration = 0
+  const scopeKey = () =>
+    JSON.stringify([
+      projectId.value,
+      userStore.isLogin,
+      userStore.info.userId,
+      userStore.info.tenantId,
+      currentIdentityEpoch(),
+      userStore.info.buttons?.includes('device:read')
+    ])
+  const canRead = () =>
+    userStore.isLogin && !!projectId.value && !!userStore.info.buttons?.includes('device:read')
+  const ticketVisible = ref(false)
   const loading = ref(false)
   const items = ref<MessageLogResponse[]>([])
   const {
@@ -245,21 +289,24 @@
     limit: 50
   })
   const loadMessages = async (append = false) => {
-    if (!projectId.value) return
+    if (!canRead()) return
+    const generation = ++listGeneration,
+      scope = scopeKey(),
+      project = projectId.value
+    const current = () => generation === listGeneration && scope === scopeKey()
     loading.value = true
     try {
-      const page = await fetchProjectMessages(
-        projectId.value,
-        query(append ? nextCursor.value : undefined)
-      )
+      const page = await fetchProjectMessages(project, query(append ? nextCursor.value : undefined))
+      if (!current()) return
       items.value = append ? [...items.value, ...(page.items ?? [])] : (page.items ?? [])
       await ensureDevices((page.items ?? []).map((item) => item.deviceId))
+      if (!current()) return
       nextCursor.value = page.nextCursor ?? undefined
       hasMore.value = page.hasMore ?? false
     } catch (error) {
       if (!(error instanceof HttpError)) console.error('加载消息日志失败:', error)
     } finally {
-      loading.value = false
+      if (current()) loading.value = false
     }
   }
   const search = () => {
@@ -277,14 +324,19 @@
   }
   const loadMore = () => void loadMessages(true)
   const loadDetail = async () => {
-    if (!projectId.value || !selectedDeviceId.value || !selectedLogId.value) return
+    if (!canRead() || !selectedDeviceId.value || !selectedLogId.value) return
+    const generation = ++detailGeneration,
+      scope = scopeKey()
+    detail.value = undefined
     try {
-      detail.value = await fetchMessageLogDetail(
+      const result = await fetchMessageLogDetail(
         projectId.value,
         selectedDeviceId.value,
         selectedLogId.value,
         detailFormat.value
       )
+      if (generation === detailGeneration && scope === scopeKey() && detailVisible.value)
+        detail.value = result
     } catch (error) {
       if (!(error instanceof HttpError)) console.error('加载消息详情失败:', error)
     }
@@ -299,20 +351,84 @@
   }
   const reloadDetail = () => void loadDetail()
   const openDiagnostics = async (deviceId?: string) => {
-    if (!projectId.value || !deviceId) return
+    if (!canRead() || !deviceId) return
+    const generation = ++diagnosticsGeneration,
+      scope = scopeKey()
     diagnostics.value = undefined
     diagnosticsVisible.value = true
     try {
-      diagnostics.value = await fetchDeviceAccessDiagnostics(projectId.value, deviceId)
+      const result = await fetchDeviceAccessDiagnostics(projectId.value, deviceId)
+      if (generation === diagnosticsGeneration && scope === scopeKey() && diagnosticsVisible.value)
+        diagnostics.value = result
     } catch (error) {
       if (!(error instanceof HttpError)) console.error('加载接入诊断失败:', error)
     }
   }
   const stateText = (state?: string) =>
     state === 'CONNECTED' ? '连接在线' : state === 'LAST_ACTIVITY' ? '最近活动内' : '离线'
-  onMounted(async () => {
-    await Promise.allSettled([loadDevices(), loadMessages()])
+  const clearResults = () => {
+    listGeneration++
+    detailGeneration++
+    diagnosticsGeneration++
+    items.value = []
+    nextCursor.value = undefined
+    hasMore.value = loading.value = detailVisible.value = diagnosticsVisible.value = false
+    detail.value = diagnostics.value = undefined
+    selectedLogId.value = selectedDeviceId.value = ''
+  }
+  watch(
+    scopeKey,
+    () => {
+      clearResults()
+      filter.value = {
+        deviceId: '',
+        direction: '',
+        messageType: '',
+        timeRange: defaultRange(),
+        traceId: ''
+      }
+      if (!canRead()) return
+      void loadDevices()
+      if (!sourceRequested.value) void loadMessages()
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  watch(
+    sourceDevice,
+    (device) => {
+      clearResults()
+      filter.value.deviceId = device?.id ?? ''
+      if (device?.id) {
+        void ensureDevices([device.id])
+        void loadMessages()
+      }
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    sourceRequested,
+    (requested) => {
+      if (!requested && canRead()) {
+        clearResults()
+        filter.value.deviceId = ''
+        void loadMessages()
+      }
+    },
+    { flush: 'sync' }
+  )
+  watch(detailVisible, (visible) => {
+    if (!visible) {
+      detailGeneration++
+      detail.value = undefined
+    }
   })
+  watch(diagnosticsVisible, (visible) => {
+    if (!visible) {
+      diagnosticsGeneration++
+      diagnostics.value = undefined
+    }
+  })
+  onBeforeUnmount(clearResults)
 </script>
 
 <style lang="scss" scoped>

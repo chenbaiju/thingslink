@@ -1,5 +1,27 @@
 <template>
   <div class="console-page">
+    <ConsoleWorkspaceHeader
+      title="自动化"
+      description="选择设备与触发条件，编排动作；保存草稿后再明确启用。"
+      :links="[
+        { label: '消息规则', path: '/rule/messages', permission: 'rule:manage' },
+        { label: '执行记录', path: '/rule/executions?source=automation', permission: 'rule:read' }
+      ]"
+    />
+    <section v-if="sourceRequested" class="console-editor-section" aria-label="来源设备">
+      <p v-if="sourceLoading" role="status">正在核对来源设备…</p>
+      <template v-else-if="sourceDevice">
+        <p class="console-description"
+          >来源设备：{{
+            sourceDevice.name || sourceDevice.deviceKey || sourceDevice.id
+          }}。点击创建后预选此设备，保存前仍可调整。</p
+        >
+      </template>
+      <template v-else-if="sourceError">
+        <ElAlert :title="sourceError" type="warning" :closable="false" />
+        <ElButton @click="reloadSource">重试来源设备</ElButton>
+      </template>
+    </section>
     <ElCard v-if="!allowed" shadow="never"
       ><ElAlert title="需要 OWNER 或 ADMIN 的规则管理权限" type="warning" :closable="false"
     /></ElCard>
@@ -227,6 +249,8 @@
   </div>
 </template>
 <script setup lang="ts">
+  import { useWorkspaceDeviceContext } from '@/composables/useWorkspaceDeviceContext'
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import { Plus } from '@element-plus/icons-vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
@@ -246,6 +270,14 @@
   import type { RuleAction, RuleCatalog } from '@/api/rule-management'
   import RuleNodeEditor from '../components/RuleNodeEditor.vue'
   import { HttpError } from '@/utils/http/error'
+
+  const {
+    device: sourceDevice,
+    loading: sourceLoading,
+    error: sourceError,
+    requested: sourceRequested,
+    reload: reloadSource
+  } = useWorkspaceDeviceContext('rule:manage')
 
   defineOptions({ name: 'RuleAutomations' })
   const user = useUserStore()
@@ -286,6 +318,13 @@
     payload = ref('{}'),
     projectTimezone = ref('')
   const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  watch(
+    sourceDevice,
+    (next, previous) => {
+      if (previous?.id && !next && deviceId.value === previous.id) deviceId.value = ''
+    },
+    { flush: 'sync' }
+  )
   function resetTrigger() {
     form.triggerType = 'PROPERTY_REPORTED'
     form.triggerConfig = { deviceId: '' }
@@ -387,7 +426,9 @@
   function create() {
     resetTrigger()
     selected.value = undefined
-    deviceId.value = ''
+    deviceId.value = sourceDevice.value?.id ?? ''
+    if (sourceDevice.value && !devices.value.some((item) => item.id === sourceDevice.value?.id))
+      devices.value.push(sourceDevice.value)
     versions.value = []
     historyNext.value = undefined
     actions.value = []

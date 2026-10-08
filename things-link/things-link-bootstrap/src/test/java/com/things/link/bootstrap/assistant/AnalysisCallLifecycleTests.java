@@ -7,7 +7,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture.DataFixture;
 import com.things.link.shared.error.BusinessException;
 import com.things.link.shared.tenant.TenantContext;
 import com.things.link.shared.tenant.TenantScope;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -24,7 +23,7 @@ import static com.things.link.assistant.domain.AnalysisCall.Status.*;
 import static org.assertj.core.api.Assertions.*;
 
 /** 真APP/RLS/短事务，测试凭据及合成设备，不访问模型。 */
-class AnalysisCallLifecycleTests extends AbstractIntegrationTest {
+class AnalysisCallLifecycleTests extends AbstractAssistantIntegrationTest {
     static final String MASTER = ModelConfigurationApiTests.master();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r) {
         r.add("things-link.assistant.credentials.active-key-id", () -> "call-test");

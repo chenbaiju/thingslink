@@ -108,6 +108,24 @@ public class ProjectService {
      */
     @Transactional
     public ProjectMembership create(String name, String region, String timezone) {
+        return create(name, region, timezone, null);
+    }
+
+    /**
+     * 创建包含可选描述的项目；沿用原有区域、租户隔离和套餐额度校验。
+     *
+     * @param name 项目名称
+     * @param region 不可变区域编码
+     * @param timezone 项目时区，空值采用默认时区
+     * @param description 可选描述，最多1000字符，去除首尾空白后持久化
+     * @return 新建项目及创建者角色
+     */
+    @Transactional
+    public ProjectMembership create(String name, String region, String timezone, String description) {
+        String normalizedDescription = description == null ? "" : description.strip();
+        if (description != null && description.length() > 1000) {
+            throw new BusinessException(CommonErrorCode.INVALID_PARAMETER, "项目描述不能超过1000字符");
+        }
         TenantScope scope = currentScope();
         String normalizedRegion = region.trim();
         String normalizedTimezone = normalizeTimezone(timezone);
@@ -129,7 +147,7 @@ public class ProjectService {
                 normalizedTimezone,
                 projectKey,
                 Project.Status.ACTIVE,
-                java.time.Instant.now());
+                java.time.Instant.now(), 0L, normalizedDescription);
 
         projectRepository.create(project);
         projectRepository.addMember(
@@ -187,7 +205,12 @@ public class ProjectService {
      */
     @Transactional(readOnly = true)
     public List<ProjectMembership> listMine() {
-        return projectRepository.findMembershipsByAccount(currentScope().accountId());
+        List<ProjectMembership> memberships = projectRepository.findMembershipsByAccount(currentScope().accountId());
+        // 与配额读取面保持部署模式边界；非商业许可不把残留订阅记录展示为当前套餐。
+        if (entitlementPolicy.nonCommercial()) {
+            return memberships.stream().map(item -> new ProjectMembership(item.project(), item.role())).toList();
+        }
+        return memberships;
     }
 
     /**

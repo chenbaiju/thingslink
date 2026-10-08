@@ -16,6 +16,7 @@ import java.util.UUID;
  * @param projectKey 全局唯一短标识符，用于 MQTT Topic 中的 {projectKey} 段
  * @param status    项目状态
  * @param createdAt 创建时刻
+ * @param description 项目描述，最多1000字符；未填写时为空字符串
  * @param lifecycleGeneration 项目删除时单调递增的能力撤销代次
  */
 public record Project(
@@ -27,7 +28,8 @@ public record Project(
         String projectKey,
         Status status,
         Instant createdAt,
-        long lifecycleGeneration) {
+        long lifecycleGeneration,
+        String description) {
 
     /**
      * 兼容代次迁移前的构造调用；既有ACTIVE/ARCHIVED项目从零代开始。
@@ -46,8 +48,15 @@ public record Project(
         this(id, tenantId, name, region, timezone, projectKey, status, createdAt, 0L);
     }
 
+    /** 兼容未填写描述的既有构造调用，生命周期代次保持原值。 */
+    public Project(UUID id, UUID tenantId, String name, String region, String timezone,
+                   String projectKey, Status status, Instant createdAt, long lifecycleGeneration) {
+        this(id, tenantId, name, region, timezone, projectKey, status, createdAt, lifecycleGeneration, "");
+    }
+
     /** 项目能力代次必须非负；负值只能用于不存在项目的应用层拒绝投影。 */
     public Project {
+        description = description == null ? "" : description;
         if (lifecycleGeneration < 0) {
             throw new IllegalArgumentException("项目生命周期代次不能为负数");
         }

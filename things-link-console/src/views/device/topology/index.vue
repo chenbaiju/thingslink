@@ -1,5 +1,10 @@
 <template>
   <div class="console-page topology console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="网关与拓扑"
+      description="查看网关、子设备及当前绑定关系。"
+      :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
+    />
     <div class="topology__header console-toolbar console-page-actions">
       <ElButton v-if="hasAuth('device:update')" type="primary" :icon="Plus" @click="openBind">
         绑定子设备
@@ -111,6 +116,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { Plus } from '@element-plus/icons-vue'
   import { useWindowSize } from '@vueuse/core'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'

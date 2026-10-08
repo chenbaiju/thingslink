@@ -154,7 +154,9 @@ class OtaReleaseDownloadHttpIntegrationTests extends AbstractIntegrationTest {
         assertThat(response.headers().firstValue("Cache-Control")).contains("no-store");
         assertThat(download.propertyNames()).containsExactlyInAnyOrder("firmwareId", "downloadUrl", "expiresAt");
         URI url = URI.create(download.path("downloadUrl").asText());
-        assertThat(url.getRawQuery()).contains("X-Amz-Expires=60", "versionId=");
+        // 失败诊断也不打印签名query；只报告固定合同是否满足。
+        assertThat(url.getRawQuery().contains("X-Amz-Expires=60") && url.getRawQuery().contains("versionId="))
+                .as("管理票据使用60秒TTL并绑定固定对象版本").isTrue();
         var first = bytes(url, "bytes=0-1");
         var rest = bytes(url, "bytes=2-4");
         assertThat(first.statusCode()).isEqualTo(206);
@@ -227,9 +229,9 @@ class OtaReleaseDownloadHttpIntegrationTests extends AbstractIntegrationTest {
         error(send(prepared.fixture(), "POST", releasePath(prepared) + "/downloads", key(), null, false), 409, 70014);
     }
 
-    /** 签发网络窗口内角色、信任修订或项目资格变化，二次事务拒绝返回bearer地址。 */
+    /** 签发网络窗口内角色、成员、信任修订或项目资格变化，二次事务拒绝返回bearer地址。 */
     @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"role", "rotate", "project"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"role", "removed", "rotate", "archived", "project"})
     void refusesTicketWhenEligibilityChangesDuringPresigning(String change) throws Exception {
         Prepared prepared = published();
         org.mockito.Mockito.doAnswer(invocation -> {
@@ -238,7 +240,11 @@ class OtaReleaseDownloadHttpIntegrationTests extends AbstractIntegrationTest {
             switch (change) {
                 case "role" -> owner().update("UPDATE sys_project_member SET role='VIEWER' WHERE project_id=? AND account_id=?",
                         prepared.fixture().projectId(), prepared.fixture().accountId());
+                case "removed" -> owner().update("DELETE FROM sys_project_member WHERE project_id=? AND account_id=?",
+                        prepared.fixture().projectId(), prepared.fixture().accountId());
                 case "rotate" -> importState(prepared, "1", 2, "VERIFY_ONLY");
+                case "archived" -> owner().update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?",
+                        prepared.fixture().projectId());
                 case "project" -> owner().update("UPDATE sys_project SET status='DELETING',deleted_at=now(),lifecycle_generation=1 WHERE id=?",
                         prepared.fixture().projectId());
                 default -> throw new AssertionError(change);
@@ -248,11 +254,15 @@ class OtaReleaseDownloadHttpIntegrationTests extends AbstractIntegrationTest {
         var rejected = send(prepared.fixture(), "POST", releasePath(prepared) + "/downloads", key(), null, false);
         switch (change) {
             case "role" -> error(rejected, 403, 70024);
+            case "removed" -> error(rejected, 404, 50001);
             case "rotate" -> error(rejected, 409, 70022);
+            case "archived" -> error(rejected, 403, 50017);
             case "project" -> error(rejected, 404, 50001);
             default -> throw new AssertionError(change);
         }
-        assertThat(rejected.body()).doesNotContain("downloadUrl", "X-Amz", prepared.upload().versionId());
+        assertThat(rejected.body().contains("downloadUrl") || rejected.body().contains("X-Amz")
+                || rejected.body().contains(prepared.upload().versionId()))
+                .as("资格变化拒绝响应不得泄漏票据或对象版本").isFalse();
     }
 
     /** 以真实发布流程取得READY，不直接改写发布、上传或信任事实。 */
@@ -425,9 +435,9 @@ class OtaReleaseDownloadHttpIntegrationTests extends AbstractIntegrationTest {
                 .getBytes(StandardCharsets.UTF_8);
     }
     /** 唯一请求键。 */ private static String key() { return UUID.randomUUID().toString(); }
-    /** 明确HTTP状态并保留响应首因。 */
+    /** 明确HTTP状态；响应可能含bearer地址，失败诊断不能打印原文。 */
     private static JsonNode ok(HttpResponse<String> response, int status) {
-        assertThat(response.statusCode()).as(response.body()).isEqualTo(status);
+        assertThat(response.statusCode()).as("HTTP状态；可能含签名地址的响应正文不进入诊断").isEqualTo(status);
         return JSON.readTree(response.body());
     }
     /** HTTP状态和领域码均须匹配。 */

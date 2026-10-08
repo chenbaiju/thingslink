@@ -223,6 +223,15 @@ class OtaTrustDomainCollectionReadHttpIntegrationTests extends AbstractIntegrati
         assertThat(page.path("nextCursor").isNull()).isTrue();
     }
 
+    /** 只准备项目归档状态夹具，域及键仍来自真实导入；只读不能被写额度守卫拒绝。 */
+    @Test void archivedProjectRetainsPublicDomainAndKeyReads() throws Exception {
+        Fixture own = seed(CONFIGURED);
+        importBundle(own, OWN_DOMAINS.get(0), "0", 1, List.of(key(FIRST, "first", "ACTIVE")));
+        owner().update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?", own.project());
+        assertThat(domains(ok(send(own, "GET", collection(own)), 200))).containsExactly(OWN_DOMAINS.get(0));
+        assertThat(keyVersions(ok(send(own, "GET", keys(own, OWN_DOMAINS.get(0))), 200))).containsExactly("first");
+    }
+
     /** 未知域、外项目域与不可见项目一律按OTA域404/70013隐藏存在性；非法域名是400。 */
     @Test void hidesUnknownForeignDomainAndForeignProjectAsNotFound() throws Exception {
         Fixture own = seed(CONFIGURED);

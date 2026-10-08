@@ -1388,6 +1388,11 @@
     },
     {
       "method": "get",
+      "path": "/api/v1/projects/{projectId}/exports/latest",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
       "path": "/api/v1/projects/{projectId}/exports/{exportId}",
       "idempotency": "read"
     },
@@ -1763,6 +1768,16 @@
     },
     {
       "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/events",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/devices/{deviceId}/events/{messageId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
       "path": "/api/v1/projects/{projectId}/devices/{deviceId}/end-users",
       "idempotency": "read"
     },
@@ -2045,9 +2060,23 @@
       "method": "get",
       "path": "/api/v1/projects/{projectId}/assistant/analysis-runs/by-key",
       "idempotency": "required-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/end-users/lookup",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/device-types/{id}",
+      "idempotency": "read"
     }
   ],
   "pages": [
+    {
+      "name": "DeviceEventPageResponse",
+      "hasMore": false
+    },
     {
       "name": "DashboardShareAlarmQueryResponse",
       "hasMore": true
@@ -2150,6 +2179,10 @@
     },
     {
       "name": "CursorPageAppUserDashboardGrantResponse",
+      "hasMore": true
+    },
+    {
+      "name": "CursorPagePropertyPointResponse",
       "hasMore": true
     },
     {

@@ -2,6 +2,7 @@ package com.things.link.alarm.api.dto.response;
 
 import com.things.link.alarm.domain.AlarmNotificationDelivery;
 import com.things.link.alarm.domain.NotificationChannel;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -15,7 +16,7 @@ public record AlarmNotificationDeliveryResponse(
         String target,
         AlarmNotificationDelivery.Status status,
         int attemptCount,
-        Instant nextAttemptAt,
+        @Schema(description = "下一次计划时刻；未安排或终态时为空", types = {"string", "null"}, format = "date-time") Instant nextAttemptAt,
         Instant createdAt,
         Instant updatedAt) {
     public static AlarmNotificationDeliveryResponse from(AlarmNotificationDelivery v) {

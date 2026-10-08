@@ -43,6 +43,15 @@ export class ApplicationPublicationError extends Error {
 export async function writeApplicationPublicationIntent(
   intent: PublicationIntent
 ): Promise<unknown> {
+  if (
+    intent.kind === 'SOFT_DELETE' &&
+    (Object.keys(intent.body).join(',') !== 'expectedPublicationRevision' ||
+      typeof intent.body.expectedPublicationRevision !== 'string' ||
+      !/^(0|[1-9]\d{0,18})$/.test(intent.body.expectedPublicationRevision) ||
+      BigInt(intent.body.expectedPublicationRevision) > 9223372036854775807n ||
+      intent.targetVersionId !== undefined)
+  )
+    throw new ApplicationPublicationError('软删除正文不符合合同。', undefined, 400, false)
   const epoch = currentIdentityEpoch(),
     token = useUserStore().accessToken
   if (!token) throw new ApplicationPublicationError('请先登录。', 401, 401, false)
@@ -92,7 +101,9 @@ export async function writeApplicationPublicationIntent(
       ? '/versions'
       : intent.kind === 'WITHDRAW'
         ? '/withdraw'
-        : `/versions/${encodeURIComponent(intent.targetVersionId ?? '')}/rollback`
+        : intent.kind === 'SOFT_DELETE'
+          ? '/soft-delete'
+          : `/versions/${encodeURIComponent(intent.targetVersionId ?? '')}/rollback`
   try {
     check()
     const response = await bounded(
@@ -106,7 +117,11 @@ export async function writeApplicationPublicationIntent(
             Accept: 'application/json',
             'Idempotency-Key': intent.key
           },
-          body: JSON.stringify(intent.body),
+          body: JSON.stringify(
+            intent.kind === 'SOFT_DELETE'
+              ? { expectedPublicationRevision: intent.body.expectedPublicationRevision }
+              : intent.body
+          ),
           credentials: 'omit',
           cache: 'no-store',
           redirect: 'error',
@@ -178,10 +193,22 @@ export async function writeApplicationPublicationIntent(
         response.status >= 500
       )
     }
-    const expected = intent.kind === 'PUBLISH' ? 201 : intent.kind === 'WITHDRAW' ? 204 : 200
+    const expected =
+      intent.kind === 'PUBLISH'
+        ? 201
+        : intent.kind === 'WITHDRAW' || intent.kind === 'SOFT_DELETE'
+          ? 204
+          : 200
     if (response.status !== expected)
       throw new ApplicationPublicationError(
         '发布响应状态与操作不匹配。',
+        undefined,
+        response.status,
+        true
+      )
+    if (intent.kind === 'SOFT_DELETE' && response.headers.has('Location'))
+      throw new ApplicationPublicationError(
+        '软删除回执不得包含资源位置。',
         undefined,
         response.status,
         true

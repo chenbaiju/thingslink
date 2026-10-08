@@ -31,6 +31,7 @@
  * @module store/modules/user
  * @author Things Link Team
  */
+import { clearRecentResources } from '@/utils/workbench-recent'
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { LanguageEnum } from '@/enums/appEnum'
@@ -150,6 +151,7 @@ export const useUserStore = defineStore(
      * 失败静默：接口幂等，且退出的界面效果不该被网络状况左右。
      */
     const revokeSession = () => {
+      clearRecentResources()
       const base = String(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
       fetch(`${base}/api/v1/auth/logout`, {
         method: 'POST',

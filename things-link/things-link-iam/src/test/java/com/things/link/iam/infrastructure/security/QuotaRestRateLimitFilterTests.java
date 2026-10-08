@@ -48,6 +48,97 @@ class QuotaRestRateLimitFilterTests {
         assertThat(QuotaRestRateLimitFilter.isRuleManagementWrite(new MockHttpServletRequest("POST", base + "/message-rules"), UUID.randomUUID())).isFalse();
     }
 
+    /** 产品凭据早期归档检查只覆盖精确选中项目及POST，不授予读路径或恢复路径写资格。 */
+    @Test void productCredentialClassificationIsExactAndContextAware() {
+        UUID project = UUID.randomUUID(), type = UUID.randomUUID();
+        String path = "/api/v1/projects/" + project + "/device-types/" + type + "/product-credential";
+        assertThat(QuotaRestRateLimitFilter.isProductCredentialWrite(new MockHttpServletRequest("POST", path), project)).isTrue();
+        for (String method : List.of("GET", "PUT", "DELETE"))
+            assertThat(QuotaRestRateLimitFilter.isProductCredentialWrite(new MockHttpServletRequest(method, path), project)).isFalse();
+        for (String suffix : List.of("/extra", "s", "/", "?ignored=true"))
+            assertThat(QuotaRestRateLimitFilter.isProductCredentialWrite(new MockHttpServletRequest("POST", path + suffix), project)).isFalse();
+        assertThat(QuotaRestRateLimitFilter.isProductCredentialWrite(new MockHttpServletRequest("POST", path), UUID.randomUUID())).isFalse();
+        assertThat(QuotaRestRateLimitFilter.isProductCredentialWrite(new MockHttpServletRequest("POST", path.replace(type.toString(), "unknown")), project)).isFalse();
+        MockHttpServletRequest contextual = new MockHttpServletRequest("POST", "/console" + path);
+        contextual.setContextPath("/console");
+        assertThat(QuotaRestRateLimitFilter.isProductCredentialWrite(contextual, project)).isTrue();
+    }
+
+    /** 仅信任包导入新增归档预检，方法、合法域、选中项目及上下文路径必须同时匹配。 */
+    @Test void otaTrustImportClassificationIsExactAndContextAware() {
+        UUID project = UUID.randomUUID();
+        String base = "/api/v1/projects/" + project + "/ota/trust-domains/";
+        String path = base + "release.domain_1-a/bundles";
+        for (String domain : List.of("a", "release.domain_1-a", "a".repeat(64)))
+            assertThat(QuotaRestRateLimitFilter.isOtaTrustImportWrite(
+                    new MockHttpServletRequest("POST", base + domain + "/bundles"), project)).isTrue();
+        for (String method : List.of("GET", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"))
+            assertThat(QuotaRestRateLimitFilter.isOtaTrustImportWrite(new MockHttpServletRequest(method, path), project)).isFalse();
+        for (String suffix : List.of("/extra", "s", "/", "?ignored=true"))
+            assertThat(QuotaRestRateLimitFilter.isOtaTrustImportWrite(new MockHttpServletRequest("POST", path + suffix), project)).isFalse();
+        for (String domain : List.of("", ".domain", "-domain", "a".repeat(65), "bad/domain", "bad%2Fdomain", "bad;domain"))
+            assertThat(QuotaRestRateLimitFilter.isOtaTrustImportWrite(
+                    new MockHttpServletRequest("POST", base + domain + "/bundles"), project)).isFalse();
+        assertThat(QuotaRestRateLimitFilter.isOtaTrustImportWrite(new MockHttpServletRequest("POST", path), UUID.randomUUID())).isFalse();
+        for (String other : List.of(base + "release.domain_1-a/keys", base + "release.domain_1-a",
+                "/api/v1/projects/" + project + "/ota/device-types/" + UUID.randomUUID() + "/baseline",
+                "/api/v1/projects/" + project + "/restore"))
+            assertThat(QuotaRestRateLimitFilter.isOtaTrustImportWrite(new MockHttpServletRequest("POST", other), project)).isFalse();
+        MockHttpServletRequest contextual = new MockHttpServletRequest("POST", "/console" + path);
+        contextual.setContextPath("/console");
+        assertThat(QuotaRestRateLimitFilter.isOtaTrustImportWrite(contextual, project)).isTrue();
+    }
+
+    /** 类型基线登记只认选中项目和精确POST，不捕获管理GET、版本历史或其他类型管理写。 */
+    @Test void otaTypeBaselineRegistrationClassificationIsExactAndContextAware() {
+        UUID project = UUID.randomUUID(), type = UUID.randomUUID();
+        String base = "/api/v1/projects/" + project + "/ota/device-types/";
+        String path = base + type + "/baseline/registrations";
+        assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(new MockHttpServletRequest("POST", path), project)).isTrue();
+        assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(
+                new MockHttpServletRequest("POST", base + type.toString().toUpperCase(java.util.Locale.ROOT) + "/baseline/registrations"), project)).isTrue();
+        for (String method : List.of("GET", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"))
+            assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(new MockHttpServletRequest(method, path), project)).isFalse();
+        for (String suffix : List.of("/extra", "s", "/", "?ignored=true"))
+            assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(new MockHttpServletRequest("POST", path + suffix), project)).isFalse();
+        for (String identity : List.of("", "unknown", type.toString().replace("-", ""), type + "/extra", "%2F" + type))
+            assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(
+                    new MockHttpServletRequest("POST", base + identity + "/baseline/registrations"), project)).isFalse();
+        assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(new MockHttpServletRequest("POST", path), UUID.randomUUID())).isFalse();
+        for (String other : List.of(base + type + "/baseline", base + type + "/baseline/versions",
+                "/api/v1/projects/" + project + "/restore", "/api/v1/projects/" + project + "/device-types/" + type + "/product-credential"))
+            assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(new MockHttpServletRequest("POST", other), project)).isFalse();
+        MockHttpServletRequest contextual = new MockHttpServletRequest("POST", "/console" + path);
+        contextual.setContextPath("/console");
+        assertThat(QuotaRestRateLimitFilter.isOtaTypeBaselineRegistrationWrite(contextual, project)).isTrue();
+    }
+
+    /** 两个受控OTA写入口通过生命周期预检后仍受日硬限、短窗和实际计量约束，不新增配额豁免。 */
+    @ParameterizedTest
+    @CsvSource({"trust,normal", "trust,daily", "trust,window", "baseline,normal", "baseline,daily", "baseline,window"})
+    void activeControlledOtaWritesStillUseOriginalQuotaAdmission(String route, String outcome) throws Exception {
+        var lifecycle = mock(com.things.link.project.application.ProjectLifecycleAccessService.class);
+        Fixture fixture = fixture(new RestQuotaPolicy(UUID.randomUUID(), 1L, 1L, 10L, 10L), lifecycle);
+        TenantScope scope = new TenantScope(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        when(fixture.redis().execute(any(), anyList(), any(Object[].class))).thenReturn("window".equals(outcome) ? 0L : 1L);
+        if ("daily".equals(outcome)) when(fixture.daily().decideTrustedProject(any(), any(), any()))
+                .thenReturn(com.things.link.project.application.QuotaStatus.HARD_LIMIT);
+        String suffix = "baseline".equals(route) ? "/ota/device-types/" + UUID.randomUUID() + "/baseline/registrations"
+                : "/ota/trust-domains/release.domain/bundles";
+        MockHttpServletResponse response = invoke(fixture.filter(), "POST", "/api/v1/projects/" + scope.projectId() + suffix, scope);
+        verify(lifecycle).requireWritableAccountSnapshot(scope.accountId(), scope.projectId());
+        verify(fixture.resolver()).resolve(scope.projectId());
+        verify(fixture.daily()).decideTrustedProject(any(), any(), any());
+        if ("normal".equals(outcome)) {
+            assertThat(response.getStatus()).isEqualTo(200);
+            verify(fixture.recorder()).record(any(), any(), any(), any(), any());
+        } else {
+            assertThat(response.getStatus()).isEqualTo(429);
+            assertThat(objectMapper.readTree(response.getContentAsString()).get("code").asInt()).isEqualTo(10029);
+            verify(fixture.recorder(), org.mockito.Mockito.never()).record(any(), any(), any(), any(), any());
+        }
+    }
+
     /** 每个测试清除 ThreadLocal，避免后续用例继承错误的项目范围。 */
     @AfterEach
     void clearTenantContext() {
@@ -298,6 +389,12 @@ class QuotaRestRateLimitFilterTests {
      * @return 测试夹具
      */
     private Fixture fixture(RestQuotaPolicy policy) {
+        return fixture(policy, null);
+    }
+
+    /** 生命周期端口仅用于精确写入口，其他夹具继续验证相同默认计量行为。 */
+    private Fixture fixture(RestQuotaPolicy policy,
+            com.things.link.project.application.ProjectLifecycleAccessService lifecycle) {
         StringRedisTemplate redis = mock(StringRedisTemplate.class);
         RestQuotaPolicyResolver resolver = mock(RestQuotaPolicyResolver.class);
         when(resolver.resolve(any())).thenReturn(Optional.of(policy));
@@ -309,7 +406,7 @@ class QuotaRestRateLimitFilterTests {
                 com.things.link.project.application.QuotaStatus.NORMAL);
         when(recorder.record(any(), any(), any(), any(), any())).thenReturn(true);
         QuotaRestRateLimitFilter filter = new QuotaRestRateLimitFilter(
-                resolver, redis, metrics, objectMapper, daily, recorder);
+                resolver, redis, metrics, objectMapper, daily, recorder, true, lifecycle);
         return new Fixture(filter, redis, resolver, meters, daily, recorder);
     }
 

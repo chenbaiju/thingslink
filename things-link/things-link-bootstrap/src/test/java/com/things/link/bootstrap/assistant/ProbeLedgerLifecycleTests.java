@@ -10,7 +10,6 @@ import com.things.link.shared.error.BusinessException;
 import com.things.link.shared.tenant.TenantContext;
 import com.things.link.shared.tenant.TenantScope;
 import com.things.link.support.tenant.TransactionLocalRlsScope;
-import com.things.link.testing.AbstractIntegrationTest;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -29,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /** 隔离真实APP/RLS，不使用真实供应商Key，也不发送任何网络模型请求。 */
-class ProbeLedgerLifecycleTests extends AbstractIntegrationTest {
+class ProbeLedgerLifecycleTests extends AbstractAssistantIntegrationTest {
     static final String MASTER=ModelConfigurationApiTests.master();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r) {
         r.add("things-link.assistant.credentials.active-key-id",()->"probe-test");

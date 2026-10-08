@@ -19,7 +19,7 @@ import { SITE } from '@/config'
       </p>
       <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button href="/" variant="primary">返回首页</Button>
-        {SITE.docsEnabled && (<Button href={SITE.docsUrl} variant="secondary">查看文档</Button>)}
+        <Button href={SITE.docsUrl} variant="secondary">查看文档</Button>
       </div>
     </div>
   </section>

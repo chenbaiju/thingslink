@@ -8,7 +8,6 @@ import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture.DataFixture;
 import com.things.link.project.application.ProjectLifecycleAccessService;
 import com.things.link.shared.tenant.TenantContext;
 import com.things.link.support.tenant.TransactionLocalRlsScope;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-class EvidenceRetentionTests extends AbstractIntegrationTest {
+class EvidenceRetentionTests extends AbstractAssistantIntegrationTest {
     @Autowired EvidenceRetentionService service;
     @MockitoSpyBean EvidenceRetentionRepository repository;
     @Autowired ProjectLifecycleAccessService lifecycle;

@@ -45,7 +45,7 @@ test('单设备绑定：权威模型选择、保存重开与草稿快照', async
   await expect(page).toHaveURL(/dashboardId=/)
   await page.getByRole('button', { name: '读取设备目录', exact: true }).click()
   await expect(
-    page.getByLabel('绑定设备', { exact: true }).locator('option', { hasText: '绑定设备' })
+    page.getByLabel('绑定设备', { exact: true }).locator(`option[value="${fixture.deviceId}"]`)
   ).toHaveCount(1)
   const metadataResponse = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith(`/${fixture.deviceId}/binding-metadata`)

@@ -1,5 +1,13 @@
 <template>
   <div class="console-page alarm-page console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="告警历史"
+      description="查看异常设备，确认或清除告警，并从单条告警追踪通知投递。"
+      :links="[
+        { label: '告警规则', path: '/alarm/rules', permission: 'alarm:read' },
+        { label: '通知组', path: '/alarm/notification-groups', permission: 'alarm:read' }
+      ]"
+    />
     <ElAlert class="alarm-page__notice" type="info" :closable="false" show-icon>
       已清除告警不会删除。设备再次异常时会创建新一代实例，不会复活旧事故。
     </ElAlert>
@@ -84,6 +92,20 @@
     </ElCard>
 
     <ElDrawer v-model="eventsVisible" title="告警事件时间线" size="680px" destroy-on-close>
+      <div class="alarm-events__toolbar">
+        <span>摘要与事件分别读取；外部操作后可刷新查看。</span>
+        <ElButton :loading="detailLoading || eventsLoading" @click="refreshDetails">
+          刷新详情
+        </ElButton>
+      </div>
+      <ElAlert
+        v-if="detailError"
+        title="告警摘要暂不可用，请刷新详情重试"
+        type="error"
+        :closable="false"
+        show-icon
+      />
+      <ElSkeleton v-if="detailLoading" :rows="2" animated />
       <ElDescriptions v-if="selected" :column="2" border class="alarm-events__summary">
         <ElDescriptionsItem label="告警类型">{{ selected.alarmType ?? '—' }}</ElDescriptionsItem>
         <ElDescriptionsItem label="设备">{{ deviceName(selected.deviceId) }}</ElDescriptionsItem>
@@ -95,7 +117,14 @@
         </ElDescriptionsItem>
       </ElDescriptions>
 
-      <ElTimeline v-loading="eventsLoading">
+      <ElAlert
+        v-if="eventsError"
+        title="告警事件暂不可用，请刷新详情重试"
+        type="error"
+        :closable="false"
+        show-icon
+      />
+      <ElTimeline v-if="selected" v-loading="eventsLoading">
         <ElTimelineItem
           v-for="event in events"
           :key="event.id"
@@ -121,18 +150,29 @@
           </ElCard>
         </ElTimelineItem>
       </ElTimeline>
-      <ElEmpty v-if="!eventsLoading && events.length === 0" description="暂无事件" />
+      <ElEmpty
+        v-if="selected && !eventsLoading && !eventsError && events.length === 0"
+        description="暂无事件"
+      />
       <div v-if="eventsHasMore" class="alarm-page__more">
         <ElButton :loading="eventsLoading" text type="primary" @click="loadMoreEvents">
           加载更多事件
         </ElButton>
       </div>
+      <AlarmNotificationDeliveries
+        v-if="eventsVisible && selected?.id && projectId"
+        :project-id="projectId"
+        :instance-id="selected.id"
+      />
     </ElDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
+  import AlarmNotificationDeliveries from './AlarmNotificationDeliveries.vue'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
 
   import { formatTime } from '@/utils/time'
 
@@ -140,6 +180,7 @@
     fetchAcknowledgeAlarm,
     fetchAlarmEvents,
     fetchAlarmInstances,
+    fetchAlarmInstance,
     fetchClearAlarm,
     type AlarmEventResponse,
     type AlarmInstanceResponse
@@ -163,9 +204,17 @@
   const eventsVisible = ref(false)
   const eventsLoading = ref(false)
   const selected = ref<AlarmInstanceResponse>()
+  const selectedId = ref<string>()
+  const detailLoading = ref(false)
+  const detailError = ref(false)
+  const eventsError = ref(false)
   const events = ref<AlarmEventResponse[]>([])
   const eventsNextCursor = ref<string>()
   const eventsHasMore = ref(false)
+  let identity = 0,
+    instanceRead = 0,
+    eventRead = 0,
+    detailRead = 0
 
   const deviceMap = computed(
     () =>
@@ -213,18 +262,24 @@
   const canClear = (row: AlarmInstanceResponse) => row.conditionState !== 'CLEARED'
 
   const loadInstances = async (append = false) => {
-    if (!projectId.value) return
+    if (!projectId.value || loading.value) return
+    const epoch = identity,
+      sequence = ++instanceRead,
+      id = projectId.value
     loading.value = true
     try {
-      const page = await fetchAlarmInstances(projectId.value, append ? nextCursor.value : undefined)
-      items.value = append ? [...items.value, ...(page.items ?? [])] : (page.items ?? [])
+      const page = await fetchAlarmInstances(id, append ? nextCursor.value : undefined)
+      if (epoch !== identity || sequence !== instanceRead) return
       await ensureDevices((page.items ?? []).map((item) => item.deviceId))
+      if (epoch !== identity || sequence !== instanceRead) return
+      items.value = append ? [...items.value, ...(page.items ?? [])] : (page.items ?? [])
       nextCursor.value = page.nextCursor ?? undefined
       hasMore.value = page.hasMore ?? false
     } catch (error) {
-      if (!(error instanceof HttpError)) console.error('加载告警历史失败:', error)
+      if (epoch === identity && sequence === instanceRead && !(error instanceof HttpError))
+        console.error('加载告警历史失败:', error)
     } finally {
-      loading.value = false
+      if (epoch === identity && sequence === instanceRead) loading.value = false
     }
   }
   const loadMore = () => void loadInstances(true)
@@ -234,16 +289,21 @@
   }
   const acknowledge = async (row: AlarmInstanceResponse) => {
     if (!projectId.value || !row.id || row.version == null) return
+    const epoch = identity,
+      id = projectId.value
     try {
-      const value = await fetchAcknowledgeAlarm(projectId.value, row.id, { version: row.version })
+      const value = await fetchAcknowledgeAlarm(id, row.id, { version: row.version })
+      if (epoch !== identity) return
       replaceItem(value)
       ElMessage.success('告警已确认，条件状态保持不变')
     } catch (error) {
-      if (!(error instanceof HttpError)) console.error('确认告警失败:', error)
+      if (epoch === identity && !(error instanceof HttpError)) console.error('确认告警失败:', error)
     }
   }
   const clear = async (row: AlarmInstanceResponse) => {
     if (!projectId.value || !row.id || row.version == null) return
+    const epoch = identity,
+      id = projectId.value
     try {
       await ElMessageBox.confirm(
         '人工清除会结束本代事故，但不会自动标记为已确认。是否继续？',
@@ -254,44 +314,142 @@
           cancelButtonText: '取消'
         }
       )
-      const value = await fetchClearAlarm(projectId.value, row.id, { version: row.version })
+      if (epoch !== identity) return
+      const value = await fetchClearAlarm(id, row.id, { version: row.version })
+      if (epoch !== identity) return
       replaceItem(value)
       ElMessage.success('告警已人工清除')
     } catch (error) {
-      if (error !== 'cancel' && error !== 'close' && !(error instanceof HttpError)) {
+      if (
+        epoch === identity &&
+        error !== 'cancel' &&
+        error !== 'close' &&
+        !(error instanceof HttpError)
+      ) {
         console.error('人工清除告警失败:', error)
       }
     }
   }
   const loadEvents = async (append = false) => {
-    if (!projectId.value || !selected.value?.id) return
+    if (!projectId.value || !selected.value?.id || eventsLoading.value) return
+    const epoch = identity,
+      sequence = ++eventRead,
+      id = projectId.value,
+      instanceId = selected.value.id
     eventsLoading.value = true
+    eventsError.value = false
     try {
       const page = await fetchAlarmEvents(
-        projectId.value,
-        selected.value.id,
+        id,
+        instanceId,
         append ? eventsNextCursor.value : undefined
       )
+      if (
+        epoch !== identity ||
+        sequence !== eventRead ||
+        selected.value?.id !== instanceId ||
+        !eventsVisible.value
+      )
+        return
       events.value = append ? [...events.value, ...(page.items ?? [])] : (page.items ?? [])
       eventsNextCursor.value = page.nextCursor ?? undefined
       eventsHasMore.value = page.hasMore ?? false
     } catch (error) {
-      if (!(error instanceof HttpError)) console.error('加载告警事件失败:', error)
+      if (epoch === identity && sequence === eventRead && eventsVisible.value) {
+        eventsError.value = true
+        if (!(error instanceof HttpError)) console.error('加载告警事件失败:', error)
+      }
     } finally {
-      eventsLoading.value = false
+      if (epoch === identity && sequence === eventRead) eventsLoading.value = false
     }
   }
-  const openEvents = (row: AlarmInstanceResponse) => {
-    selected.value = row
+  const refreshDetails = async () => {
+    if (!projectId.value || !selectedId.value || !eventsVisible.value) return
+    const epoch = identity,
+      sequence = ++detailRead,
+      id = projectId.value,
+      instanceId = selectedId.value
+    eventRead++
+    selected.value = undefined
+    detailLoading.value = true
+    detailError.value = false
+    eventsError.value = false
+    eventsLoading.value = false
     events.value = []
     eventsNextCursor.value = undefined
+    eventsHasMore.value = false
+    const current = () =>
+      epoch === identity &&
+      sequence === detailRead &&
+      selectedId.value === instanceId &&
+      eventsVisible.value
+    try {
+      const value = await fetchAlarmInstance(id, instanceId)
+      if (!current()) return
+      selected.value = value
+      detailLoading.value = false
+      replaceItem(value)
+      // 摘要与事件是两次独立读取，不承诺后端事务快照。
+      await loadEvents()
+    } catch (error) {
+      if (!current()) return
+      detailError.value = true
+      if (!(error instanceof HttpError)) console.error('加载告警摘要失败:', error)
+    } finally {
+      if (current()) detailLoading.value = false
+    }
+  }
+  const resetDetails = () => {
+    detailRead++
+    eventRead++
+    selectedId.value = undefined
+    selected.value = undefined
+    detailLoading.value = false
+    detailError.value = false
+    eventsError.value = false
+    eventsLoading.value = false
+    events.value = []
+    eventsNextCursor.value = undefined
+    eventsHasMore.value = false
+  }
+  const openEvents = (row: AlarmInstanceResponse) => {
+    if (!row.id) return
+    selectedId.value = row.id
     eventsVisible.value = true
-    void loadEvents()
+    void refreshDetails()
   }
   const loadMoreEvents = () => void loadEvents(true)
 
-  onMounted(async () => {
-    await loadInstances()
+  watch(
+    [projectId, () => userStore.info.userId, () => userStore.info.tenantId, currentIdentityEpoch],
+    () => {
+      identity++
+      instanceRead++
+      eventRead++
+      loading.value = false
+      items.value = []
+      nextCursor.value = undefined
+      hasMore.value = false
+      eventsVisible.value = false
+      resetDetails()
+      void loadInstances()
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  watch(
+    eventsVisible,
+    (visible) => {
+      if (!visible) {
+        resetDetails()
+      }
+    },
+    { flush: 'sync' }
+  )
+  onBeforeUnmount(() => {
+    identity++
+    instanceRead++
+    eventRead++
+    detailRead++
   })
 </script>
 
@@ -325,6 +483,14 @@
     }
   }
 
+  .alarm-events__toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: var(--art-text-gray-500);
+  }
   .alarm-events__summary {
     margin-bottom: 10px;
   }

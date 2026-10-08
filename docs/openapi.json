@@ -275,6 +275,9 @@
     "name" : "OTA 回退准备",
     "description" : "读取回退观察与当前资格"
   }, {
+    "name" : "设备事件历史",
+    "description" : "平台项目成员读取当前许可窗口内的原事件发生事实与只读参数投影"
+  }, {
     "name" : "EMQX 命令回复",
     "description" : "Broker 专用命令回复回调，不是用户管理接口"
   }, {
@@ -1966,6 +1969,43 @@
       }
     },
     "/api/v1/projects/{projectId}/device-types/{id}" : {
+      "get" : {
+        "tags" : [ "设备类型" ],
+        "summary" : "读取设备类型详情",
+        "description" : "要求项目读取权限；返回当前公开状态与产品识别码，不返回产品注册秘密或摘要",
+        "operationId" : "getDeviceType",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "description" : "当前项目标识",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "description" : "类型标识",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "请求成功；返回结构见响应 Schema",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceTypeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
       "put" : {
         "tags" : [ "设备类型" ],
         "summary" : "修改设备类型",
@@ -4059,38 +4099,8 @@
               }
             }
           },
-          "409" : {
-            "description" : "同一业务消息标识与首次载荷冲突",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "载荷格式或字段无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "设备凭据缺失或无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "413" : {
-            "description" : "请求正文超过允许体积",
+          "415" : {
+            "description" : "上报或回复的媒体类型不是 application/json",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4109,8 +4119,8 @@
               }
             }
           },
-          "415" : {
-            "description" : "上报或回复的媒体类型不是 application/json",
+          "413" : {
+            "description" : "请求正文超过允许体积",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4119,8 +4129,28 @@
               }
             }
           },
-          "503" : {
-            "description" : "可靠接管或依赖暂不可用",
+          "401" : {
+            "description" : "设备凭据缺失或无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "载荷格式或字段无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "同一业务消息标识与首次载荷冲突",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4140,6 +4170,16 @@
                 }
               }
             },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "可靠接管或依赖暂不可用",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4184,38 +4224,8 @@
               }
             }
           },
-          "409" : {
-            "description" : "同一业务消息标识与首次载荷冲突",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "载荷格式或字段无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "设备凭据缺失或无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "413" : {
-            "description" : "请求正文超过允许体积",
+          "415" : {
+            "description" : "上报或回复的媒体类型不是 application/json",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4234,8 +4244,8 @@
               }
             }
           },
-          "415" : {
-            "description" : "上报或回复的媒体类型不是 application/json",
+          "413" : {
+            "description" : "请求正文超过允许体积",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4244,8 +4254,28 @@
               }
             }
           },
-          "503" : {
-            "description" : "可靠接管或依赖暂不可用",
+          "401" : {
+            "description" : "设备凭据缺失或无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "载荷格式或字段无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "同一业务消息标识与首次载荷冲突",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4265,6 +4295,16 @@
                 }
               }
             },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "可靠接管或依赖暂不可用",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4319,18 +4359,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "载荷格式或字段无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "设备凭据缺失或无效",
+          "403" : {
+            "description" : "设备未开通该协议或项目当前不接受设备写入",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4349,8 +4379,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "设备未开通该协议或项目当前不接受设备写入",
+          "401" : {
+            "description" : "设备凭据缺失或无效",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4359,8 +4389,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "可靠接管或依赖暂不可用",
+          "400" : {
+            "description" : "载荷格式或字段无效",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4380,6 +4410,16 @@
                 }
               }
             },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "可靠接管或依赖暂不可用",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4847,7 +4887,7 @@
       "get" : {
         "tags" : [ "项目" ],
         "summary" : "我的项目",
-        "description" : "列出当前账号参与的全部项目及其中的角色。结果跨租户。",
+        "description" : "列出当前账号参与的全部项目及其中的角色。结果跨租户，无需预先选定项目。同租户有效成员可见项目归属租户的活状态订阅档位 subscribedPlan；跨租户协作者、无活订阅或非商业许可时省略，不返回价格和额度。",
         "operationId" : "listMine",
         "responses" : {
           "200" : {
@@ -7133,8 +7173,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "80004权限不足",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -7151,8 +7191,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "403" : {
+            "description" : "80004权限不足",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -14877,8 +14917,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "80004权限不足",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -14895,8 +14935,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "403" : {
+            "description" : "80004权限不足",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16443,8 +16483,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "80004权限不足",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16461,8 +16501,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "403" : {
+            "description" : "80004权限不足",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16576,62 +16616,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16666,8 +16652,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16744,62 +16784,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16834,8 +16820,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16912,62 +16952,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -17002,8 +16988,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -21143,6 +21183,39 @@
         }
       }
     },
+    "/api/v1/projects/{projectId}/exports/latest" : {
+      "get" : {
+        "tags" : [ "项目导出" ],
+        "summary" : "找回最新项目导出任务",
+        "description" : "复核当前OWNER与冻结窗口，返回本人在本代次请求的最新一条任务（含终态），无任务返回204。读取不创建任务、不消耗申请限流、不返回下载地址或对象键。",
+        "operationId" : "latestProjectExport",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "description" : "删除项目ID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "找到最新任务",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProjectExportResponse"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "本代次本人尚未申请任务"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{projectId}/end-users/{appUserId}/devices" : {
       "get" : {
         "tags" : [ "终端用户" ],
@@ -21304,6 +21377,44 @@
         }
       }
     },
+    "/api/v1/projects/{projectId}/end-users/lookup" : {
+      "get" : {
+        "tags" : [ "终端用户" ],
+        "summary" : "精确查找终端用户",
+        "description" : "仅项目OWNER/ADMIN可按精确用户名找回项目归属租户的身份及本项目角色，用于预置后未分配或丢响应恢复；不提供模糊查找、租户目录、口令或其他项目角色。未知用户名统一60001。",
+        "operationId" : "lookupEndUser",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "description" : "项目ID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "username",
+          "in" : "query",
+          "description" : "精确用户名，1至64位",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "请求成功；返回结构见响应 Schema",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EndUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{projectId}/devices/{deviceId}/telemetry/property" : {
       "get" : {
         "tags" : [ "设备遥测" ],
@@ -21383,6 +21494,16 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "原始属性历史游标页，值保留写入类型，查询范围与套餐历史窗口求交",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CursorPagePropertyPointResponse"
                 }
               }
             }
@@ -22207,6 +22328,426 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/CursorPageDeviceMessageRuleActionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "consoleAccessBearer" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/projects/{projectId}/devices/{deviceId}/events" : {
+      "get" : {
+        "tags" : [ "设备事件历史" ],
+        "summary" : "分页读取设备事件发生历史",
+        "description" : "四角色可读ACTIVE/ARCHIVED；每页重新授权并与owner套餐HISTORY_WINDOW及数据库时刻90天窗口求交；原模型不重新解释，键集不保证跨请求快照。未知/重复query、非法时间或游标10001。",
+        "operationId" : "listConsoleDeviceEvents",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "description" : "项目标识",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "deviceId",
+          "in" : "path",
+          "description" : "当前设备标识",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "eventKey",
+          "in" : "query",
+          "description" : "精确事件键，[A-Za-z0-9][A-Za-z0-9_-]{0,63}",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "level",
+          "in" : "query",
+          "description" : "原发生级别：INFO、WARNING、ERROR",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "thingModelVersionId",
+          "in" : "query",
+          "description" : "原不可变模型版本UUID",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "from",
+          "in" : "query",
+          "description" : "包含起点，四位年RFC3339，最多9位小数",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "to",
+          "in" : "query",
+          "description" : "排他终点，四位年RFC3339，必须晚于起点",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "cursor",
+          "in" : "query",
+          "description" : "Base64URL版本一游标，最多8192字符，缺省首页",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "默认20，1至100",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "default" : 20,
+            "maximum" : 100,
+            "minimum" : 1
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "请求成功；返回结构见响应 Schema",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceEventPageResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "consoleAccessBearer" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/projects/{projectId}/devices/{deviceId}/events/{messageId}" : {
+      "get" : {
+        "tags" : [ "设备事件历史" ],
+        "summary" : "读取单条设备事件发生事实",
+        "description" : "先复核项目成员与当前设备归属；原模型字段及参数投影只读。消息未知、跨设备/项目或历史窗口外统一404/30072，不泄露存在性；不允许query。",
+        "operationId" : "getConsoleDeviceEvent",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "description" : "项目标识",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "deviceId",
+          "in" : "path",
+          "description" : "当前设备标识",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "messageId",
+          "in" : "path",
+          "description" : "原消息UUID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "请求成功；返回结构见响应 Schema",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceEventResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "事件历史读取失败；业务分类见错误码",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "type" : "string",
+                  "enum" : [ "no-store" ]
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
                 }
               }
             }
@@ -26095,62 +26636,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26185,8 +26672,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26277,62 +26818,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26367,8 +26854,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26443,62 +26984,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26533,8 +27020,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26677,44 +27218,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26749,8 +27254,44 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26851,62 +27392,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26941,8 +27428,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27043,62 +27584,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "80002未启用",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "10001参数或预算无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "80003凭据无效",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27133,8 +27620,62 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "80003凭据无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "10001参数或预算无效",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27631,6 +28172,62 @@
         "x-spring-path-pattern" : "/actuator/prometheus"
       }
     },
+    "/actuator/health" : {
+      "get" : {
+        "tags" : [ "运行健康与指标" ],
+        "summary" : "查询运行健康",
+        "description" : "由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。",
+        "operationId" : "management_get__actuator_health",
+        "responses" : {
+          "200" : {
+            "description" : "运行健康；内容沿框架健康合同",
+            "content" : {
+              "application/vnd.spring-boot.actuator.v3+json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              },
+              "application/vnd.spring-boot.actuator.v2+json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              },
+              "application/json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "运行健康降级或不可用；正文为框架健康状态",
+            "content" : {
+              "application/vnd.spring-boot.actuator.v3+json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              },
+              "application/vnd.spring-boot.actuator.v2+json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              },
+              "application/json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "运维资源、组件或路径不存在；不保证平台 ApiError 结构"
+          }
+        },
+        "security" : [ ],
+        "x-deployment-role" : "management",
+        "x-spring-path-pattern" : "/actuator/health"
+      }
+    },
     "/actuator/health/{componentPath}" : {
       "get" : {
         "tags" : [ "运行健康与指标" ],
@@ -27694,62 +28291,6 @@
         "security" : [ ],
         "x-deployment-role" : "management",
         "x-spring-path-pattern" : "/actuator/health/**"
-      }
-    },
-    "/actuator/health" : {
-      "get" : {
-        "tags" : [ "运行健康与指标" ],
-        "summary" : "查询运行健康",
-        "description" : "由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。",
-        "operationId" : "management_get__actuator_health",
-        "responses" : {
-          "200" : {
-            "description" : "运行健康；内容沿框架健康合同",
-            "content" : {
-              "application/vnd.spring-boot.actuator.v3+json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              },
-              "application/json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "运行健康降级或不可用；正文为框架健康状态",
-            "content" : {
-              "application/vnd.spring-boot.actuator.v3+json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              },
-              "application/json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "运维资源、组件或路径不存在；不保证平台 ApiError 结构"
-          }
-        },
-        "security" : [ ],
-        "x-deployment-role" : "management",
-        "x-spring-path-pattern" : "/actuator/health"
       }
     },
     "/ws/shares/{shareId}/properties" : {
@@ -28264,9 +28805,6 @@
           "boolean" : {
             "type" : "boolean"
           },
-          "string" : {
-            "type" : "boolean"
-          },
           "nodeType" : {
             "type" : "string",
             "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
@@ -28299,13 +28837,22 @@
           "binary" : {
             "type" : "boolean"
           },
-          "container" : {
+          "floatingPointNumber" : {
             "type" : "boolean"
           },
           "float" : {
             "type" : "boolean"
           },
+          "container" : {
+            "type" : "boolean"
+          },
           "null" : {
+            "type" : "boolean"
+          },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
+          "string" : {
             "type" : "boolean"
           },
           "array" : {
@@ -28321,12 +28868,6 @@
             "type" : "boolean"
           },
           "long" : {
-            "type" : "boolean"
-          },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
-          "floatingPointNumber" : {
             "type" : "boolean"
           },
           "embeddedValue" : {
@@ -29141,7 +29682,8 @@
             "enum" : [ "DRAFT", "PUBLISHED" ]
           },
           "productKey" : {
-            "type" : "string"
+            "type" : [ "string", "null" ],
+            "description" : "公开产品识别码；尚未生成产品凭据时为空"
           },
           "createdAt" : {
             "type" : "string",
@@ -31133,6 +31675,40 @@
             "example" : "Asia/Shanghai",
             "maxLength" : 64,
             "minLength" : 0
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "项目描述，可选，最多1000字符",
+            "example" : "厂区温湿度监测与告警",
+            "maxLength" : 1000,
+            "minLength" : 0
+          }
+        }
+      },
+      "PlanIdentityResponse" : {
+        "type" : "object",
+        "description" : "套餐最小身份投影；不含价格、额度或权益",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "description" : "稳定套餐编码",
+            "example" : "FREE"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "展示名称",
+            "example" : "免费版"
+          },
+          "revision" : {
+            "type" : "string",
+            "description" : "产品修订版标识",
+            "example" : "product-revision-1"
+          },
+          "revisionNo" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "同一套餐的修订序号",
+            "example" : 1
           }
         }
       },
@@ -31176,6 +31752,15 @@
           "createdAt" : {
             "type" : "string",
             "description" : "创建时刻"
+          },
+          "subscribedPlan" : {
+            "$ref" : "#/components/schemas/PlanIdentityResponse",
+            "description" : "项目归属租户的活状态订阅档位，仅我的项目列表且调用者为有效租户成员时提供；缺失不能视为免费版"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "项目描述，未填写时为空字符串",
+            "maxLength" : 1000
           }
         }
       },
@@ -33051,8 +33636,8 @@
             "example" : "alice"
           },
           "displayName" : {
-            "type" : "string",
-            "description" : "显示名称",
+            "type" : [ "string", "null" ],
+            "description" : "显示名称；未设置时为空",
             "example" : "张三"
           },
           "status" : {
@@ -33061,17 +33646,18 @@
             "example" : "ACTIVE"
           },
           "role" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "description" : "项目角色；未分配时为空",
             "example" : "OPERATOR"
           },
           "roleStatus" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "description" : "项目级角色状态；未分配时为空",
             "example" : "ACTIVE"
           },
           "assignedAt" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
             "description" : "角色分配时刻；未分配时为空"
           }
         }
@@ -37763,33 +38349,6 @@
           }
         }
       },
-      "PlanIdentityResponse" : {
-        "type" : "object",
-        "description" : "套餐最小身份投影；不含价格、额度或权益",
-        "properties" : {
-          "code" : {
-            "type" : "string",
-            "description" : "稳定套餐编码",
-            "example" : "FREE"
-          },
-          "name" : {
-            "type" : "string",
-            "description" : "展示名称",
-            "example" : "免费版"
-          },
-          "revision" : {
-            "type" : "string",
-            "description" : "产品修订版标识",
-            "example" : "product-revision-1"
-          },
-          "revisionNo" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "同一套餐的修订序号",
-            "example" : 1
-          }
-        }
-      },
       "PlanQuotaAdditionResponse" : {
         "type" : "object",
         "description" : "扩容或人工调整溯源行：额度为什么比套餐冻结值高",
@@ -39131,6 +39690,57 @@
           }
         }
       },
+      "CursorPagePropertyPointResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PropertyPointResponse"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ],
+            "description" : "不透明的下一页游标；末页为null"
+          },
+          "hasMore" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PropertyPointResponse" : {
+        "type" : "object",
+        "properties" : {
+          "deviceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "propertyKey" : {
+            "type" : "string"
+          },
+          "ts" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "value" : {
+            "type" : "object"
+          },
+          "dataType" : {
+            "type" : "string"
+          },
+          "thingModelVersionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "modelVersion" : {
+            "type" : "string"
+          },
+          "quality" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "PropertyHistoryPointResponse" : {
         "type" : "object",
         "properties" : {
@@ -39681,6 +40291,97 @@
           }
         },
         "required" : [ "createdAt", "id", "messageId", "operationType", "ruleId", "ruleVersionId", "status" ]
+      },
+      "DeviceEventPageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeviceEventResponse"
+            },
+            "maxItems" : 100
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ],
+            "description" : "不透明的下一页游标；末页为null"
+          },
+          "windowFrom" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "windowTo" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "retentionDays" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "事件发生时间可读保留天数，固定整数90；仍与当前套餐窗口求交",
+            "enum" : [ 90 ],
+            "maximum" : 90,
+            "minimum" : 90
+          }
+        },
+        "required" : [ "items", "nextCursor", "retentionDays", "windowFrom", "windowTo" ]
+      },
+      "DeviceEventResponse" : {
+        "type" : "object",
+        "properties" : {
+          "messageId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "deviceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "deviceTypeId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventKey" : {
+            "type" : "string"
+          },
+          "level" : {
+            "type" : "string",
+            "enum" : [ "INFO", "WARNING", "ERROR" ]
+          },
+          "thingModelVersionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "modelVersion" : {
+            "type" : "string"
+          },
+          "eligibility" : {
+            "type" : "string",
+            "enum" : [ "CURRENT", "HISTORY_ONLY" ]
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "receivedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "acceptedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "params" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "凭据整字段移除后的四种标量投影；数字按精确十进制JSON输出"
+          },
+          "paramsRedacted" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "acceptedAt", "deviceId", "deviceTypeId", "eligibility", "eventKey", "level", "messageId", "modelVersion", "occurredAt", "params", "paramsRedacted", "receivedAt", "thingModelVersionId" ]
       },
       "CursorPageDeviceEndUserResponse" : {
         "type" : "object",
@@ -41342,8 +42043,9 @@
             "format" : "int32"
           },
           "nextAttemptAt" : {
-            "type" : "string",
-            "format" : "date-time"
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "下一次计划时刻；未安排或终态时为空"
           },
           "createdAt" : {
             "type" : "string",

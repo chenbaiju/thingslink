@@ -47,7 +47,23 @@ async function verifyProfile(page: Page, email: string, role: string | null) {
     await expect(values.nth(4).locator('.el-tag')).toHaveCount(0)
     await expect(values.nth(4)).toHaveText('暂无角色信息')
   }
-  await expect(page.locator('.user-center-page__notice')).toContainText('仅供查看')
+  await expect(page.locator('.user-center-page__notice')).toContainText(
+    '以下为当前登录账号的资料。'
+  )
+  const titleStyle = await page.locator('.workspace-header h1').evaluate((element) => ({
+    size: getComputedStyle(element).fontSize,
+    weight: getComputedStyle(element).fontWeight
+  }))
+  expect(titleStyle).toEqual({ size: '28px', weight: '400' })
+  if (data.me.currentProjectId) {
+    await expect(page.locator('#app-header .console-titlebar')).not.toHaveClass(/project-titlebar/)
+    await expect(page.getByRole('button', { name: '项目列表', exact: true })).toHaveCount(0)
+  } else {
+    await expect(page.locator('#app-header .console-titlebar')).toHaveClass(/project-titlebar/)
+    await expect(page.getByRole('button', { name: '项目列表', exact: true })).toBeVisible()
+  }
+  await expect(page.getByRole('button', { name: '下一页', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '回到第一页', exact: true })).toHaveCount(0)
   await expect(page.locator('.profile-identity__text h4')).toHaveText(data.me.displayName || '—')
   await expect(
     page.locator('.user-center-page__details input, .user-center-page__details button')

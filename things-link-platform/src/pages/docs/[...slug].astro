@@ -1,4 +1,42 @@
 ---
-// Documentation routes are intentionally not generated in this standalone site.
-export function getStaticPaths() { return [] }
+/**
+ * 文档动态路由 — /docs/[...slug]
+ *
+ * 将 URL 映射到 src/content/docs/ 下的 Markdown 文件：
+ *   /docs           → content/docs/index.md
+ *   /docs/whatever  → content/docs/whatever.md
+ */
+import { getCollection, render } from 'astro:content'
+import DocsBaseLayout from '@/layouts/DocsBaseLayout.astro'
+
+export async function getStaticPaths() {
+  // 路由、目录与前后篇共用此顺序；同权重按 id 排序，避免依赖集合加载顺序。
+  const docs = (await getCollection('docs')).sort((a, b) =>
+    a.data.order - b.data.order || a.id.localeCompare(b.id, 'en')
+  )
+  const navigation = docs.map(({ id, data }) => ({ id, data: { title: data.title } }))
+  return docs.map((entry) => {
+    // glob loader 的 id 不含扩展名；index → /docs，其余保留原文档 URL。
+    const slug = entry.id === 'index' ? undefined : entry.id
+    return {
+      params: { slug },
+      props: { entry, navigation }
+    }
+  })
+}
+
+const { entry, navigation } = Astro.props
+const { Content, headings } = await render(entry)
 ---
+
+<DocsBaseLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  headings={headings}
+  docs={navigation}
+  currentDocId={entry.id}
+>
+  <div class="docs-content">
+    <Content />
+  </div>
+</DocsBaseLayout>

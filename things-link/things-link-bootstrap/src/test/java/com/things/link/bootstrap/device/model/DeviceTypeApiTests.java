@@ -45,7 +45,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * <p>测试放在 bootstrap 而不是 device：需要同时经过 iam 登录、project 项目切换和
  * device 接口，业务模块之间不能为了测试互相形成循环依赖。
  */
-@AutoConfigureMockMvc
+/** 本类含一次性产品响应，失败也禁止MockMvc自动打印请求/响应正文。 */
+@AutoConfigureMockMvc(print = org.springframework.boot.webmvc.test.autoconfigure.MockMvcPrint.NONE)
 @DisplayName("设备类型接口（S2-1/S2-2）")
 class DeviceTypeApiTests extends AbstractIntegrationTest {
     /** JSON 编解码器。 */ private static final ObjectMapper JSON = new ObjectMapper();
@@ -54,6 +55,8 @@ class DeviceTypeApiTests extends AbstractIntegrationTest {
     /** 仅用于准备跨角色关系与核验数据库结果。 */ @Autowired private JdbcTemplate jdbcTemplate;
     /** 并发冻结测试需要两条独立 PostgreSQL 连接验证真实行锁。 */ @Autowired private DataSource dataSource;
     /** 注册/登录限流器有进程级状态，每个测试必须清理。 */ @Autowired private AuthRateLimiter rateLimiter;
+    /** 真实Broker回调共享密钥只在内存用于受权HTTP，不写回执或日志。 */
+    @org.springframework.beans.factory.annotation.Value("${things-link.security.broker-callback.secret}") private String brokerSecret;
     /** OWNER 登录态。 */ private Login owner;
     /** VIEWER 登录态。 */ private Login viewer;
     /** VIEWER 的账号 ID。 */ private UUID viewerAccountId;
@@ -74,6 +77,79 @@ class DeviceTypeApiTests extends AbstractIntegrationTest {
         owner = registerAndLogin("owner-device@example.com");
         viewer = registerAndLogin("viewer-device@example.com");
         viewerAccountId = accountId("viewer-device@example.com");
+    }
+
+    /** 四角色可读取当前公开状态，生成/轮换仅OWNER/ADMIN；归档及跨项目仍由真实权限拒绝。 */
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"OWNER", "ADMIN", "OPERATOR", "VIEWER"})
+    void readsPublicTypeAndLimitsProductCredentialToManagers(String role) throws Exception {
+        UUID project = createProject(owner, "产品凭据权限");
+        Login manager = switchProject(owner, project);
+        UUID type = createdTypeId(manager, project, "product_scope");
+        Login actor = manager;
+        if (!role.equals("OWNER")) { addMember(project, viewerAccountId, role); actor = switchProject(viewer, project); }
+        String path = "/api/v1/projects/" + project + "/device-types/" + type;
+        var detail = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn();
+        assertThat(detail.getResponse().getStatus()).isEqualTo(200);
+        var draft = JSON.readTree(detail.getResponse().getContentAsString());
+        assertThat(draft.path("productKey").isNull()).isTrue();
+        assertThat(draft.has("productSecret")).isFalse(); assertThat(draft.has("productSecretHash")).isFalse();
+        var rejectedDraft = mockMvc.perform(post(path + "/product-credential").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn();
+        assertThat(rejectedDraft.getResponse().getStatus()).isIn(403, 409);
+        assertThat(mockMvc.perform(post(path + "/publish").header(HttpHeaders.AUTHORIZATION, "Bearer " + manager.accessToken())).andReturn().getResponse().getStatus()).isEqualTo(200);
+        var generated = mockMvc.perform(post(path + "/product-credential").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn();
+        assertThat(generated.getResponse().getStatus()).isEqualTo(role.equals("OWNER") || role.equals("ADMIN") ? 201 : 403);
+        // 遵守真实REST预算，避免夹具突发掩盖归档权限断言。
+        Thread.sleep(1100);
+        jdbcTemplate.update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?", project);
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn().getResponse().getStatus()).isEqualTo(200);
+        assertThat(mockMvc.perform(post(path + "/product-credential").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn().getResponse().getStatus()).isIn(403, 409);
+        // 外项目使用新的真实账号会话，不能复用已经切项目轮换过的刷新Cookie。
+        Login outsider = registerAndLogin("outside-product@example.com");
+        UUID foreign = createProject(outsider, "其他产品项目"); Login foreignScope = switchProject(outsider, foreign);
+        assertThat(mockMvc.perform(get("/api/v1/projects/" + foreign + "/device-types/" + type).header(HttpHeaders.AUTHORIZATION, "Bearer " + foreignScope.accessToken())).andReturn().getResponse().getStatus()).isEqualTo(404);
+        assertThat(mockMvc.perform(post("/api/v1/projects/" + foreign + "/device-types/" + type + "/product-credential").header(HttpHeaders.AUTHORIZATION, "Bearer " + foreignScope.accessToken())).andReturn().getResponse().getStatus()).isEqualTo(404);
+        assertThat(mockMvc.perform(get(path)).andReturn().getResponse().getStatus()).isEqualTo(401);
+    }
+
+    /** 产品轮换只影响后续动态注册，已签发设备Access Token仍通过真实Broker认证过滤链。 */
+    @Test
+    void productRotationRejectsOldRegistrationButPreservesDeviceCredentials() throws Exception {
+        UUID project = createProject(owner, "产品注册轮换"); Login actor = switchProject(owner, project);
+        UUID type = createdTypeId(actor, project, "product_rotation");
+        String path = "/api/v1/projects/" + project + "/device-types/" + type;
+        assertThat(mockMvc.perform(post(path + "/publish").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn().getResponse().getStatus()).isEqualTo(200);
+        var firstResponse = mockMvc.perform(post(path + "/product-credential").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn();
+        assertThat(firstResponse.getResponse().getStatus()).isEqualTo(201);
+        var first = JSON.readTree(firstResponse.getResponse().getContentAsString());
+        String projectKey = jdbcTemplate.queryForObject("SELECT project_key FROM sys_project WHERE id=?", String.class, project);
+        var initial = registration(projectKey, first, "first_registered"); assertThat(initial.getResponse().getStatus()).isEqualTo(201);
+        var device = JSON.readTree(initial.getResponse().getContentAsString());
+        var secondResponse = mockMvc.perform(post(path + "/product-credential").header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn();
+        assertThat(secondResponse.getResponse().getStatus()).isEqualTo(201);
+        var second = JSON.readTree(secondResponse.getResponse().getContentAsString());
+        assertThat(second.path("productKey").asString()).isEqualTo(first.path("productKey").asString());
+        // 不让断言失败输出真正一次性秘密，仅比较布尔事实。
+        assertThat(second.path("productSecret").asString().equals(first.path("productSecret").asString())).isFalse();
+        var old = registration(projectKey, first, "old_secret_attempt"); assertThat(old.getResponse().getStatus()).isEqualTo(403); assertThat(errorCode(old)).isEqualTo(30026);
+        var fresh = registration(projectKey, second, "new_registered"); assertThat(fresh.getResponse().getStatus()).isEqualTo(201);
+        var authentication = mockMvc.perform(post("/api/v1/emqx/auth").header("X-Broker-Callback-Token", brokerSecret)
+                .contentType(MediaType.APPLICATION_JSON).content(JSON.createObjectNode().put("username", projectKey + "/first_registered")
+                        .put("password", device.path("accessToken").asString()).put("clientid", "product-rotation-device").toString())).andReturn();
+        assertThat(authentication.getResponse().getStatus()).isEqualTo(200);
+        assertThat(JSON.readTree(authentication.getResponse().getContentAsString()).path("result").asString()).isEqualTo("allow");
+        var publicFact = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn();
+        var publicBody = JSON.readTree(publicFact.getResponse().getContentAsString());
+        assertThat(publicBody.has("productSecret")).isFalse(); assertThat(publicBody.has("productSecretHash")).isFalse();
+        assertThat(publicFact.getResponse().getContentAsString().contains(first.path("productSecret").asString())).isFalse();
+        assertThat(publicFact.getResponse().getContentAsString().contains(second.path("productSecret").asString())).isFalse();
+    }
+
+    /** 注册请求只经公开生产入口，未修改设备配额或直插设备/凭据事实。 */
+    private MvcResult registration(String projectKey, JsonNode product, String deviceKey) throws Exception {
+        return mockMvc.perform(post("/api/v1/emqx/register").contentType(MediaType.APPLICATION_JSON)
+                .content(JSON.createObjectNode().put("projectKey", projectKey).put("productKey", product.path("productKey").asString())
+                        .put("productSecret", product.path("productSecret").asString()).put("deviceKey", deviceKey).toString())).andReturn();
     }
 
     /** OWNER 创建后能立即从同一项目列表读取草稿。 */
@@ -229,7 +305,51 @@ class DeviceTypeApiTests extends AbstractIntegrationTest {
         MvcResult deleted = deleteType(scoped, projectId, id);
         assertThat(deleted.getResponse().getStatus()).isEqualTo(204);
         assertThat(listTypes(scoped, projectId)).isEmpty();
-        // 请求结束后项目上下文已清除，RLS 按 fail-closed 隐藏 dev_type；通过公开列表验证删除结果。
+        MvcResult deletedDetail = mockMvc.perform(get("/api/v1/projects/" + projectId + "/device-types/" + id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + scoped.accessToken())).andReturn();
+        assertThat(deletedDetail.getResponse().getStatus()).isEqualTo(404);
+        assertThat(errorCode(deletedDetail)).isEqualTo(30001);
+        MvcResult missingDetail = mockMvc.perform(get("/api/v1/projects/" + projectId + "/device-types/" + Uuid7.generate())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + scoped.accessToken())).andReturn();
+        assertThat(missingDetail.getResponse().getStatus()).isEqualTo(404);
+        assertThat(errorCode(missingDetail)).isEqualTo(30001);
+        // 请求结束后项目上下文已清除，RLS按fail-closed隐藏dev_type；只通过公开列表和单条详情验证删除。
+    }
+
+    /** 撤员及真实项目删除恢复均不复活旧项目JWT的单类型读取资格。 */
+    @Test
+    void typeDetailRejectsRemovedMemberAndPreviousProjectGenerationBearer() throws Exception {
+        UUID projectId = createProject(owner, "类型当前身份");
+        Login manager = switchProject(owner, projectId);
+        UUID typeId = createdTypeId(manager, projectId, "identity_detail");
+        addMember(projectId, viewerAccountId, "ADMIN");
+        Login member = switchProject(viewer, projectId);
+        String path = "/api/v1/projects/" + projectId + "/device-types/" + typeId;
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + member.accessToken()))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
+        assertThat(mockMvc.perform(delete("/api/v1/projects/" + projectId + "/members/" + viewerAccountId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + manager.accessToken()))
+                .andReturn().getResponse().getStatus()).isEqualTo(204);
+        MvcResult removed = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + member.accessToken())).andReturn();
+        assertThat(removed.getResponse().getStatus()).isEqualTo(401);
+        assertThat(errorCode(removed)).isEqualTo(20020);
+        assertThat(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + manager.accessToken()))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
+
+        assertThat(mockMvc.perform(delete("/api/v1/projects/" + projectId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + manager.accessToken()))
+                .andReturn().getResponse().getStatus()).isEqualTo(204);
+        assertThat(mockMvc.perform(post("/api/v1/projects/" + projectId + "/restore")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
+        MvcResult stale = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + manager.accessToken())).andReturn();
+        assertThat(stale.getResponse().getStatus()).isEqualTo(401);
+        assertThat(errorCode(stale)).isEqualTo(20020);
+
+        Login fresh = switchProject(login("owner-device@example.com"), projectId);
+        MvcResult current = mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + fresh.accessToken())).andReturn();
+        assertThat(current.getResponse().getStatus()).isEqualTo(200);
+        assertThat(JSON.readTree(current.getResponse().getContentAsString()).path("id").asString()).isEqualTo(typeId.toString());
     }
 
     /** VIEWER 的写请求由服务端拒绝，不能依赖前端隐藏操作按钮。 */
@@ -376,10 +496,16 @@ class DeviceTypeApiTests extends AbstractIntegrationTest {
                 .andReturn();
         assertThat(registered.getResponse().getStatus()).isEqualTo(204);
         jdbcTemplate.update("UPDATE sys_account SET email_verified_at = now() WHERE email = ?", email);
+        return login(email);
+    }
+
+    /** 重新走真实登录取得新会话，不伪造恢复后项目代次或复用已轮换刷新Cookie。 */
+    private Login login(String email) throws Exception {
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, PASSWORD)))
                 .andReturn();
+        assertThat(login.getResponse().getStatus()).isEqualTo(200);
         JsonNode body = JSON.readTree(login.getResponse().getContentAsString());
         String refresh = login.getResponse().getHeaders(HttpHeaders.SET_COOKIE).stream()
                 .filter(value -> value.startsWith("tc_refresh="))

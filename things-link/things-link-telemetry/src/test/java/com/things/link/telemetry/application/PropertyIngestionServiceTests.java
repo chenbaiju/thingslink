@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -71,6 +73,31 @@ class PropertyIngestionServiceTests {
                 message.tenantId(), message.projectId(), message.deviceId(), message.modelVersion(), message.receivedAt(),
                 message.payload());
         verifyNoInteractions(jdbc);
+    }
+
+    /** 旧单属性端口仍可接受旧属性重复，但不能把EVENT占用的全局ID当成成功重复。 */
+    @Test
+    void legacyPropertyCannotAcceptEventInboxCollision() {
+        var message = new PropertyReportMessage(Uuid7.generate(), UUID.randomUUID(), UUID.randomUUID(),
+                "temperature", 21, Instant.parse("2026-10-06T12:00:00Z"));
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(0);
+        when(jdbc.queryForList(anyString(), org.mockito.ArgumentMatchers.eq(String.class), any(Object[].class)))
+                .thenReturn(java.util.List.of("EVENT"));
+        assertThatThrownBy(() -> service.ingest(message))
+                .isInstanceOf(com.things.link.shared.error.BusinessException.class)
+                .satisfies(error -> org.assertj.core.api.Assertions.assertThat(
+                        ((com.things.link.shared.error.BusinessException)error).errorCode().code()).isEqualTo(30059));
+    }
+
+    /** NULL版本/摘要的旧属性重复仍沿原false合同，不为兼容数据猜补版本。 */
+    @Test
+    void legacyPropertyStillAcceptsDefaultPropertyKind() {
+        var message = new PropertyReportMessage(Uuid7.generate(), UUID.randomUUID(), UUID.randomUUID(),
+                "temperature", 21, Instant.parse("2026-10-06T12:00:00Z"));
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(0);
+        when(jdbc.queryForList(anyString(), org.mockito.ArgumentMatchers.eq(String.class), any(Object[].class)))
+                .thenReturn(java.util.List.of("PROPERTY_REPORT"));
+        org.assertj.core.api.Assertions.assertThat(service.ingest(message)).isFalse();
     }
 
     /** 构造满足封闭标准信封合同的最小属性消息，身份字段代表接入层已确权结果。 */

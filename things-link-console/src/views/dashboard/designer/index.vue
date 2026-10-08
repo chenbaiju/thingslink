@@ -3,10 +3,16 @@
   import { Plus } from '@element-plus/icons-vue'
 
   import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+  import ManagementRenameDialog from '@/components/business/ManagementRenameDialog.vue'
+  import type { ManagementCatalog } from '@/api/management-rename'
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
+  import { useWorkspaceDeviceContext } from '@/composables/useWorkspaceDeviceContext'
   import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { useDashboardDesigner } from '@/composables/useDashboardDesigner'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
+  import type { PublicationSnapshot } from '@/features/dashboard/publication-model'
   import DesignerCanvas from './components/DesignerCanvas.vue'
   import DesignerPublication from './components/DesignerPublication.vue'
   import DesignerSharing from './components/DesignerSharing.vue'
@@ -26,6 +32,13 @@
   } from '@/api/dashboard-binding'
 
   defineOptions({ name: 'DashboardDesigner' })
+  const {
+    device: sourceDevice,
+    loading: sourceLoading,
+    error: sourceError,
+    requested: sourceRequested,
+    reload: reloadSource
+  } = useWorkspaceDeviceContext('dashboard_definition:read')
   const route = useRoute()
   const router = useRouter()
   const user = useUserStore()
@@ -34,12 +47,52 @@
   const canManage = computed(
     () => user.info.buttons?.includes('dashboard_definition:manage') ?? false
   )
-  const editor = useDashboardDesigner(projectId, () => ({
-    read: canRead.value,
-    create: canManage.value,
-    update: canManage.value
-  }))
+  const deleteLocked = ref(false)
+  const deleteResult = ref('')
+  const deleteCleanupError = ref('')
+  let deletionGeneration = 0
+  let completingDeletion = false
+  const editor = useDashboardDesigner(
+    projectId,
+    () => ({
+      read: canRead.value,
+      create: canManage.value,
+      update: canManage.value
+    }),
+    () => deleteLocked.value
+  )
   const { state } = editor
+  const renameTarget = ref<{ id: string; managementName: string } | null>(null)
+  const renameIdentity = computed(
+    () => `${projectId.value}:${user.info.userId}:${user.info.tenantId}:${currentIdentityEpoch()}`
+  )
+  const renameAllowed = computed(
+    () =>
+      !!projectId.value &&
+      canRead.value &&
+      canManage.value &&
+      !deleteLocked.value &&
+      !state.offline &&
+      !state.loading &&
+      !state.creating
+  )
+  watch(
+    [renameIdentity, renameAllowed],
+    () => {
+      renameTarget.value = null
+    },
+    { flush: 'sync' }
+  )
+  function renamed(result: ManagementCatalog) {
+    state.items = state.items.map((item) =>
+      item.id === result.id
+        ? { ...item, managementName: result.managementName, updatedAt: result.updatedAt }
+        : item
+    )
+  }
+  const openedManagementName = computed(
+    () => state.items.find((item) => item.id === state.dashboardId)?.managementName
+  )
   const bindingDeviceId = ref('')
   const bindingDevices = ref<DeviceResponse[]>([])
   const bindingMetadata = ref<BindingMetadata | null>(null)
@@ -59,13 +112,56 @@
     bindingError.value = ''
     bindingCursor.value = undefined
   }
+  function setDeleteLock(locked: boolean) {
+    deleteLocked.value = locked
+    if (locked) resetBinding()
+  }
+  async function deleted(result: NonNullable<PublicationSnapshot['deleted']>) {
+    if (
+      result.projectId !== projectId.value ||
+      result.dashboardId !== state.dashboardId ||
+      result.identity !== currentIdentityEpoch()
+    )
+      return
+    const generation = deletionGeneration
+    completingDeletion = true
+    deleteCleanupError.value = ''
+    deleteResult.value =
+      result.receipt === 'NO_CONTENT'
+        ? '看板已软删除（收到204无正文回执）。'
+        : '原软删除请求已完成；完成标记不重放原204回执。'
+    editor.completeDeletion()
+    resetBinding()
+    const query = { ...route.query }
+    delete query.dashboardId
+    try {
+      await router.replace({ query })
+      if (generation === deletionGeneration && route.query.dashboardId === result.dashboardId)
+        throw new Error('地址清理未完成')
+    } catch {
+      if (generation === deletionGeneration)
+        deleteCleanupError.value =
+          '软删除已完成，但地址清理失败；请明确返回看板列表。当前编辑内容已经清除。'
+    } finally {
+      if (generation === deletionGeneration) {
+        completingDeletion = false
+        deleteLocked.value = false
+      }
+    }
+    if (
+      generation === deletionGeneration &&
+      result.projectId === projectId.value &&
+      result.identity === currentIdentityEpoch()
+    )
+      await editor.list()
+  }
   watch(
     () => [projectId.value, state.dashboardId, state.offline, user.info.userId, canManage.value],
     resetBinding,
     { flush: 'sync' }
   )
   async function loadDevices(next = false) {
-    if (bindingBusy.value || state.readonly || state.offline) return
+    if (deleteLocked.value || bindingBusy.value || state.readonly || state.offline) return
     const epoch = ++bindingEpoch
     bindingBusy.value = true
     bindingMetadata.value = null
@@ -92,7 +188,7 @@
     const epoch = ++bindingEpoch
     bindingMetadata.value = null
     bindingError.value = ''
-    if (!bindingDeviceId.value || state.readonly || state.offline) return
+    if (deleteLocked.value || !bindingDeviceId.value || state.readonly || state.offline) return
     bindingBusy.value = true
     try {
       bindingScope?.close()
@@ -121,7 +217,7 @@
   const selected = computed(() =>
     activePage.value?.components.find((component) => component.id === state.selectedId)
   )
-  const editDisabled = computed(() => state.readonly || state.offline)
+  const editDisabled = computed(() => deleteLocked.value || state.readonly || state.offline)
   const saveStatus = computed(() =>
     state.conflict
       ? 'conflict'
@@ -169,6 +265,7 @@
   watch(
     () => [projectId.value, route.query.dashboardId, canRead.value, canManage.value] as const,
     async ([project, id, readable]) => {
+      if (deleteLocked.value || completingDeletion) return
       if (!project || !readable) return
       if (typeof id === 'string' && /^[a-f0-9-]{36}$/.test(id)) {
         if (state.dashboardId !== id) await editor.open(id)
@@ -187,17 +284,32 @@
     }
   )
   watch(
-    () => user.info.userId,
-    (next, before) => {
-      if (next !== before) editor.close()
-    }
+    () => [
+      projectId.value,
+      user.info.userId,
+      user.info.tenantId,
+      currentIdentityEpoch(),
+      canRead.value,
+      canManage.value
+    ],
+    () => {
+      deletionGeneration++
+      completingDeletion = false
+      deleteLocked.value = false
+      deleteResult.value = ''
+      deleteCleanupError.value = ''
+      editor.completeDeletion()
+      resetBinding()
+    },
+    { flush: 'sync' }
   )
   async function create() {
-    if (!managementName.value.trim()) return
+    if (deleteLocked.value || !managementName.value.trim()) return
     await editor.create(managementName.value.trim())
     if (state.dashboardId) createVisible.value = false
   }
   async function confirmDiscard() {
+    if (deleteLocked.value) return false
     if (!state.dirty && !state.saving) return true
     try {
       await ElMessageBox.confirm(
@@ -213,10 +325,18 @@
   async function back() {
     if (!(await confirmDiscard())) return
     editor.close()
-    await router.replace({ query: {} })
+    try {
+      await router.replace({ query: {} })
+      if (!route.query.dashboardId) deleteCleanupError.value = ''
+    } catch {
+      if (deleteCleanupError.value)
+        deleteCleanupError.value = '软删除已完成，但地址清理仍失败；请明确重试返回看板列表。'
+    }
   }
   onBeforeRouteLeave(confirmDiscard)
   onBeforeRouteUpdate(async (to, from) => {
+    if (completingDeletion && !to.query.dashboardId && !state.dashboardId) return true
+    if (deleteLocked.value) return false
     if (
       to.query.dashboardId !== from.query.dashboardId &&
       to.query.dashboardId !== state.dashboardId
@@ -225,7 +345,7 @@
     return true
   })
   function beforeUnload(event: BeforeUnloadEvent) {
-    if (state.dirty || state.saving) {
+    if (deleteLocked.value || state.dirty || state.saving) {
       event.preventDefault()
       event.returnValue = ''
     }
@@ -250,8 +370,43 @@
 
 <template>
   <div class="console-page dashboard-designer" v-loading="state.loading">
+    <ManagementRenameDialog
+      :target="renameTarget"
+      kind="dashboards"
+      :project-id="projectId"
+      :identity="renameIdentity"
+      :allowed="renameAllowed"
+      @close="renameTarget = null"
+      @renamed="renamed"
+    />
+    <ConsoleWorkspaceHeader
+      :title="state.dashboardId ? '看板编辑' : '看板开发'"
+      description="先配置组件与设备绑定，再预览真实数据。保存草稿后，通过发布区域管理对外版本。"
+      :links="[
+        { label: '应用管理', path: '/dashboard/applications', permission: 'application:read' },
+        { label: '终端用户与授权', path: '/project/end-users', permission: 'enduser:read' }
+      ]"
+    />
+    <section v-if="sourceRequested" class="console-editor-section" aria-label="来源设备">
+      <p v-if="sourceLoading" role="status">正在核对来源设备…</p>
+      <p v-else-if="sourceDevice" class="console-description">
+        来源设备：{{ sourceDevice.name || sourceDevice.deviceKey || sourceDevice.id }}（{{
+          sourceDevice.id
+        }}）。 打开或创建看板，在组件的设备绑定区域选择此设备；此入口不会自动绑定或修改草稿。
+      </p>
+      <template v-else-if="sourceError">
+        <ElAlert :title="sourceError" type="warning" :closable="false" />
+        <ElButton @click="reloadSource">重试来源设备</ElButton>
+      </template>
+    </section>
     <header class="designer-header console-toolbar console-page-actions">
-      <ElButton v-if="state.dashboardId" @click="back">返回看板列表</ElButton>
+      <ElButton
+        v-if="state.dashboardId"
+        :disabled="deleteLocked"
+        data-testid="designer-back"
+        @click="back"
+        >返回看板列表</ElButton
+      >
       <ElButton
         v-else-if="canManage && projectId"
         type="primary"
@@ -262,8 +417,43 @@
       >
     </header>
     <ElAlert
+      v-if="deleteLocked"
+      data-testid="designer-delete-lock"
+      title="删除结果待确认；编辑、保存和导航已暂停，请在发布区域显式恢复原操作。"
+      type="warning"
+      :closable="false"
+    />
+    <ElAlert
+      v-if="deleteResult"
+      data-testid="designer-delete-result"
+      :title="deleteResult"
+      type="info"
+      :closable="false"
+    />
+    <ElAlert
+      v-if="state.error"
+      data-testid="designer-error"
+      :title="state.error"
+      type="error"
+      :closable="false"
+    />
+    <ElAlert
+      v-if="deleteCleanupError"
+      data-testid="designer-delete-cleanup-error"
+      :title="deleteCleanupError"
+      type="error"
+      :closable="false"
+    />
+    <ElButton v-if="deleteCleanupError" data-testid="designer-delete-cleanup-retry" @click="back"
+      >返回看板列表</ElButton
+    >
+    <ElAlert
       v-if="state.offline"
-      title="已离线，未保存内容已丢弃，请联网后重新加载。"
+      :title="
+        deleteLocked
+          ? '已离线，删除原意图保留；联网后请显式恢复原请求。'
+          : '已离线，未保存内容已丢弃，请联网后重新加载。'
+      "
       type="warning"
       :closable="false"
     />
@@ -293,27 +483,42 @@
             min-width="220"
           />
           <ElTableColumn show-overflow-tooltip prop="updatedAt" label="最近更新" min-width="190" />
-          <ElTableColumn class-name="console-table-actions-cell" label="操作" width="64"
+          <ElTableColumn class-name="console-table-actions-cell" label="操作" width="112"
             ><template #default="{ row }"
               ><ConsoleTableAction
                 type="primary"
                 :data-testid="`list-edit-${row.id}`"
                 @click="editor.open(row.id)"
                 :label="canManage ? '编辑草稿' : '查看草稿'"
-                icon="ri:edit-box-line" /></template
+                icon="ri:edit-box-line" />
+              <ConsoleTableAction
+                v-if="canManage"
+                :data-testid="`dashboard-rename-${row.id}`"
+                :disabled="!renameAllowed || !!renameTarget"
+                @click="renameTarget = { id: row.id, managementName: row.managementName }"
+                label="重命名"
+                icon="ri:edit-line" /></template
           ></ElTableColumn>
         </ElTable>
       </ElCard>
       <div class="pager"
         ><div class="console-actions">
-          <ElButton @click="editor.list()">首页</ElButton
-          ><ElButton :disabled="!state.nextCursor" @click="editor.list(state.nextCursor!)"
+          <ElButton :disabled="!!renameTarget" @click="editor.list()">首页</ElButton
+          ><ElButton
+            :disabled="!!renameTarget || !state.nextCursor"
+            @click="editor.list(state.nextCursor!)"
             >下一页</ElButton
           >
         </div></div
       >
     </template>
     <template v-else-if="state.schema && canRead">
+      <p
+        v-if="openedManagementName"
+        data-testid="dashboard-management-name"
+        class="console-description"
+        >管理名称：{{ openedManagementName }}</p
+      >
       <div class="toolbar">
         <ElTag
           data-testid="designer-save-state"
@@ -331,6 +536,7 @@
           >
           <ElButton
             v-if="state.error && !state.conflict && !state.readonly"
+            :disabled="editDisabled"
             @click="editor.retrySave()"
             >明确重试保存</ElButton
           >
@@ -338,6 +544,7 @@
             v-if="state.conflict"
             data-testid="designer-reload-remote"
             type="warning"
+            :disabled="editDisabled"
             @click="editor.reloadRemote()"
             >丢弃本地并重载远端</ElButton
           >
@@ -360,11 +567,13 @@
           :available="!state.offline"
           :can-read="canRead"
           :can-manage="canManage"
+          @delete-lock="setDeleteLock"
+          @deleted="deleted"
         />
         <DesignerSharing
           :project-id="projectId"
           :dashboard-id="state.dashboardId!"
-          :available="!state.offline"
+          :available="!state.offline && !deleteLocked"
           :can-manage="canManage"
         />
       </div>
@@ -372,7 +581,7 @@
         <DesignerGrants
           :project-id="projectId"
           :dashboard-id="state.dashboardId!"
-          :available="!state.offline"
+          :available="!state.offline && !deleteLocked"
           :can-manage="canManage"
         />
       </div>
@@ -380,7 +589,7 @@
         :schema="state.schema"
         :page-id="state.activePageId"
         :project-id="projectId"
-        :available="canRead && !state.offline"
+        :available="canRead && !state.offline && !deleteLocked"
       />
       <div class="workspace-scroll">
         <div class="workspace">
@@ -479,6 +688,7 @@
               v-for="page in state.schema.pages"
               :key="page.id"
               class="page-button"
+              :disabled="deleteLocked"
               :class="{ active: page.id === state.activePageId }"
               @click="editor.setPage(page.id)"
               >{{ page.title }}</button
@@ -497,6 +707,7 @@
               v-for="component in activePage?.components"
               :key="component.id"
               class="page-button"
+              :disabled="deleteLocked"
               :class="{ active: state.selectedId === component.id }"
               @click="editor.select(component.id)"
               >{{ component.kind }} · {{ component.id }}</button
@@ -771,7 +982,6 @@
         </div>
       </div>
     </template>
-    <ElAlert v-if="state.error" class="error" :title="state.error" type="error" :closable="false" />
     <ElDialog
       class="console-dialog"
       v-model="createVisible"

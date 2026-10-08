@@ -66,6 +66,19 @@ public final class GlobalStructureCustomizer implements OpenApiCustomizer {
                     }
                 });
             }
+            // 事件历史精确两条GET在认证前已禁止缓存；文档所有实际失败状态保持同一头部。
+            if ("GET".equals(method.name()) && Set.of(
+                    "/api/v1/projects/{projectId}/devices/{deviceId}/events",
+                    "/api/v1/projects/{projectId}/devices/{deviceId}/events/{messageId}").contains(path)) {
+                for (String status : List.of("400", "401", "403", "404", "429", "500", "503")) {
+                    if (!operation.getResponses().containsKey(status)) operation.getResponses().addApiResponse(status,
+                            new io.swagger.v3.oas.models.responses.ApiResponse().description("事件历史读取失败；业务分类见错误码")
+                                    .content(new Content().addMediaType("application/json", new MediaType()
+                                            .schema(new Schema<>().$ref("#/components/schemas/ApiError")))));
+                }
+                operation.getResponses().values().forEach(response -> response.addHeaderObject("Cache-Control",
+                        new io.swagger.v3.oas.models.headers.Header().schema(new StringSchema()._enum(List.of("no-store")))));
+            }
         }));
         api.getComponents().getSchemas().values().forEach(schema -> {
             if (schema.getProperties() != null && schema.getProperties().containsKey("nextCursor")) {
@@ -76,6 +89,20 @@ public final class GlobalStructureCustomizer implements OpenApiCustomizer {
                 schema.getProperties().put("nextCursor", cursor);
             }
         });
+        // 数组注解在生成器中不总是提升所属对象必填性；只补事件页既定items字段。
+        Schema<?> eventPage = api.getComponents().getSchemas().get("DeviceEventPageResponse");
+        if (eventPage != null) {
+            var required = new java.util.ArrayList<>(eventPage.getRequired() == null ? List.<String>of() : eventPage.getRequired());
+            if (!required.contains("items")) required.add("items");
+            eventPage.setRequired(required);
+            // 注解allowableValues会把int枚举写成字符串；显式数值Schema与实际JSON整数保持一致。
+            var retention = new io.swagger.v3.oas.models.media.IntegerSchema();
+            retention.setEnum(List.of(90));
+            retention.setMinimum(java.math.BigDecimal.valueOf(90));
+            retention.setMaximum(java.math.BigDecimal.valueOf(90));
+            retention.setDescription("事件发生时间可读保留天数，固定整数90；仍与当前套餐窗口求交");
+            eventPage.addProperty("retentionDays", retention);
+        }
     }
 
     /** 只补缺失的中文说明，不覆盖模块已经冻结的契约文字。 */

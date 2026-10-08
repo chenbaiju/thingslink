@@ -9,6 +9,16 @@
 -->
 <template>
   <div class="console-page ota-audits console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="升级审计"
+      description="按动作查询固件与升级操作的只读审计记录。"
+      :links="[
+        { label: '固件', path: '/ota/firmwares', permission: 'ota:read' },
+        { label: '升级活动', path: '/ota/campaigns', permission: 'ota:read' },
+        { label: '设备作业', path: '/ota/jobs', permission: 'ota:read' },
+        { label: '审计', path: '/ota/audits', permission: 'ota:read' }
+      ]"
+    />
     <ElCard class="console-list-filter" shadow="never">
       <ConsoleFilterBar
         :items="[{ key: 'field0', label: '审计动作' }]"
@@ -111,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 

@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.core.JacksonException;
 
 import java.time.Instant;
 import java.util.List;
@@ -274,6 +275,72 @@ public class DeviceIngestionService {
             throw new BusinessException(DeviceErrorCode.THING_MODEL_VERSION_REQUIRED);
         }
         return context.withPropertyDataTypes(types);
+    }
+
+    /**
+     * 校验直连MQTT设备的事件原参数，并冻结不可变模型中的级别与原接收资格。
+     *
+     * <p>只供已认证摄取链首次事务调用；已成功重放由telemetry先比较原事实，不重新裁决旧资格。
+     * 设备当前定义、发生时间、连接在线态和可变事件名称均不参与历史解释，也不产生属性副作用。</p>
+     *
+     * @param tenantId 接入层确权的实际租户
+     * @param projectId 接入层确权的项目
+     * @param deviceId 连接设备本身，不能代报子设备
+     * @param modelVersion 明确声明的原语义版本
+     * @param receivedAt 可信接入时间，唯一旧版窗口依据
+     * @param eventKey MQTT主题中的事件标识
+     * @param params 未脱敏的实际参数，校验完成后由事实域执行安全投影
+     * @return 原设备类型、不可变模型摘要、事件级别和不能提升的资格
+     */
+    @Transactional(readOnly = true)
+    public DeviceEventIngestionContext validateReportedEvent(
+            UUID tenantId, UUID projectId, UUID deviceId, String modelVersion, Instant receivedAt,
+            String eventKey, Map<String, Object> params) {
+        transactionLocalRlsScope.establish(tenantId, projectId);
+        Device device = requireDevice(projectId, deviceId);
+        if (!tenantId.equals(device.tenantId()) || !projectId.equals(device.projectId())) {
+            throw new BusinessException(DeviceErrorCode.DEVICE_NOT_FOUND);
+        }
+        if (device.deviceTypeId() == null) {
+            throw new BusinessException(DeviceErrorCode.THING_MODEL_VERSION_NOT_FOUND);
+        }
+        DeviceType type = typeRepository.findById(projectId, device.deviceTypeId())
+                .filter(value -> tenantId.equals(value.tenantId()) && projectId.equals(value.projectId())
+                        && device.deviceTypeId().equals(value.id()))
+                .orElseThrow(() -> new BusinessException(DeviceErrorCode.DEVICE_TYPE_NOT_FOUND));
+        if (type.status() != DeviceType.Status.PUBLISHED || device.gatewayId() != null
+                || (type.deviceKind() != DeviceType.DeviceKind.DIRECT && type.deviceKind() != DeviceType.DeviceKind.GATEWAY)) {
+            throw new BusinessException(DeviceErrorCode.EVENT_REPORT_INVALID);
+        }
+        if (modelVersion == null || !modelVersion.matches("(0|[1-9][0-9]{0,4})\\.(0|[1-9][0-9]{0,4})\\.(0|[1-9][0-9]{0,4})")) {
+            throw new BusinessException(DeviceErrorCode.THING_MODEL_VERSION_REQUIRED);
+        }
+        for (String part : modelVersion.split("\\.")) {
+            if (Integer.parseInt(part) > 65535) throw new BusinessException(DeviceErrorCode.THING_MODEL_VERSION_REQUIRED);
+        }
+        if (receivedAt == null || eventKey == null || !eventKey.matches("[A-Za-z0-9][A-Za-z0-9_-]{0,63}")) {
+            throw new BusinessException(DeviceErrorCode.EVENT_REPORT_INVALID);
+        }
+        DeviceIngestionContext context = versionBindingService.resolveForIngestion(projectId, deviceId, modelVersion, receivedAt);
+        if (!tenantId.equals(context.tenantId()) || !modelVersion.equals(context.versionNumber()) || context.legacyInferred()) {
+            throw new BusinessException(DeviceErrorCode.EVENT_REPORT_INVALID);
+        }
+        JsonNode snapshot;
+        try {
+            snapshot = objectMapper.readTree(context.modelSnapshot());
+        } catch (JacksonException | IllegalArgumentException exception) {
+            // 只把无法解析的旧快照映射为永久定义拒绝，不吞设备仓储或绑定服务的数据库故障。
+            throw new BusinessException(DeviceErrorCode.EVENT_REPORT_INVALID);
+        }
+        if (snapshot == null || !snapshot.isObject()) throw new BusinessException(DeviceErrorCode.EVENT_REPORT_INVALID);
+        JsonNode events = snapshot.get("events");
+        DeviceEventSchema.validateDefinitions(events);
+        JsonNode event = events.get(eventKey);
+        if (event == null) throw new BusinessException(DeviceErrorCode.EVENT_REPORT_INVALID);
+        DeviceEventSchema.validateParameters(event, params);
+        return new DeviceEventIngestionContext(tenantId, device.deviceTypeId(), context.thingModelVersionId(),
+                context.versionNumber(), context.schemaDigest(), context.digestAlgorithm(), eventKey,
+                event.path("level").asString(), context.eligibility());
     }
 
     /**

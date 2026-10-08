@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { simulatorRuntime } from './mqtt-runtime'
 import {
   enterProject,
   openDeviceList,
@@ -93,7 +94,7 @@ async function createDevice(page: Page, name: string, deviceKey: string, typeNam
 
 /** 旅程失败或完成后都停止模拟器，避免污染后续共享栈用例。 */
 test.afterEach(async ({ request }) => {
-  await request.post('http://localhost:8090/simulations/stop').catch(() => undefined)
+  await request.post(`${simulatorRuntime().baseURL}/simulations/stop`).catch(() => undefined)
 })
 
 /**
@@ -109,7 +110,7 @@ test(
       projectKey,
       'E2E_PROJECT_KEY 未注入：请用 run-e2e-tests.sh --with-simulator 运行'
     ).toBeTruthy()
-    await request.post('http://localhost:8090/simulations/stop')
+    await request.post(`${simulatorRuntime().baseURL}/simulations/stop`)
 
     const suffix = Date.now()
     const gatewayTypeName = `E2E网关类型-${suffix}`
@@ -159,9 +160,9 @@ test(
     await credDialog.getByText('我已复制并安全保存该密钥').click()
     await credDialog.getByLabel('关闭此对话框').click()
 
-    const startResponse = await request.post('http://localhost:8090/simulations/start', {
+    const startResponse = await request.post(`${simulatorRuntime().baseURL}/simulations/start`, {
       data: {
-        brokerUri: 'tcp://localhost:1883',
+        brokerUri: simulatorRuntime().brokerUri,
         projectKey,
         devices: [{ deviceKey: gatewayKey, accessToken, gateway: true }],
         intervalSeconds: 2,
@@ -224,7 +225,7 @@ test(
     }).toPass({ timeout: 30_000 })
 
     // 不发送 sub/logout，直接断开网关，证明 Broker disconnect 会把网关及其子设备级联为 OFFLINE。
-    expect((await request.post('http://localhost:8090/simulations/stop')).ok()).toBeTruthy()
+    expect((await request.post(`${simulatorRuntime().baseURL}/simulations/stop`)).ok()).toBeTruthy()
     await page.locator('.device-detail').getByRole('button', { name: '返回', exact: true }).click()
     await expect(async () => {
       await page.reload()

@@ -45,8 +45,8 @@ final class MenuCatalog {
     }
 
     /**
-     * OTA菜单。固件与升级活动是本项目的协作事实，四种项目角色都能读取；
-     * 草稿创建、对象上传、提交发布与退役撤销只下发给 OWNER 与 ADMIN。
+     * OTA菜单。整组页面仍只下发给 OWNER 与 ADMIN，匹配活动及资格接口的管理边界；
+     * 信任与基线公开历史的只读按钮不扩大菜单或写权限的授予范围。
      *
      * <p>菜单过滤只负责呈现：{@code things-link-ota} 的控制器读同一个
      * {@link com.things.link.shared.authz.ProjectRole#canManageMembers()} 判定，
@@ -67,7 +67,8 @@ final class MenuCatalog {
                         "OtaFirmwares", "firmwares", "/ota/firmwares",
                         new MenuItem.Meta("menus.ota.firmwares", "ri:archive-2-line", false, null,
                                 null, null, null,
-                                List.of(new MenuItem.AuthPoint("创建固件草稿", Permission.OTA_DEPLOY),
+                                List.of(new MenuItem.AuthPoint("查看信任与类型基线", Permission.OTA_READ),
+                                        new MenuItem.AuthPoint("创建固件草稿", Permission.OTA_DEPLOY),
                                         new MenuItem.AuthPoint("上传固件对象", Permission.OTA_DEPLOY),
                                         new MenuItem.AuthPoint("提交固件发布", Permission.OTA_DEPLOY),
                                         new MenuItem.AuthPoint("退役或撤销固件", Permission.OTA_DEPLOY))),
@@ -348,7 +349,18 @@ final class MenuCatalog {
                                         false, null, null, null, null, null),
                                 null,
                                 null),
+                        new MenuItem(
+                                "ProjectCreate", "create", "/project/create",
+                                new MenuItem.Meta("menus.project.add", "ri:add-box-line",
+                                        false, null, null, null, null, null),
+                                null, null),
+                        new MenuItem(
+                                "ProjectRecycleBin", "recycle-bin", "/project/recycle-bin",
+                                new MenuItem.Meta("menus.project.recycleBin", "ri:delete-bin-line",
+                                        false, null, null, null, null, null),
+                                null, null),
                         projectMembers(),
+                        projectEndUsers(),
                         projectSettings(),
                         projectApiKeys(), projectWebhooks()));
     }
@@ -388,6 +400,17 @@ final class MenuCatalog {
     }
 
     /**
+     * 独立终端用户目录，四角色读取，管理按钮只授予OWNER和ADMIN。
+     * @return 终端用户菜单节点
+     */
+    private static MenuItem projectEndUsers() {
+        return new MenuItem("ProjectEndUsers", "end-users", "/project/end-users",
+                new MenuItem.Meta("menus.project.endUsers", "ri:user-settings-line", false, null, null, null, null,
+                        List.of(new MenuItem.AuthPoint("管理终端用户", Permission.ENDUSER_MANAGE))),
+                Permission.ENDUSER_READ, null);
+    }
+
+    /**
      * 项目设置。
      *
      * <p>S7-2 首屏只读展示当前项目贡献和租户共享池，不提供套餐修改入口。四种项目角色都可读，
@@ -422,9 +445,9 @@ final class MenuCatalog {
     }
 
     /**
-     * 概要菜单。对应架构文档第 2 节后台菜单的第一项。
+     * 工作台菜单。开发首页作为项目默认落点，项目概况保留既有深链。
      *
-     * @return 概要菜单节点
+     * @return 工作台菜单节点
      */
     private static MenuItem dashboard() {
         return new MenuItem(
@@ -437,6 +460,11 @@ final class MenuCatalog {
                         null, null, null, null, null, null),
                 Permission.DASHBOARD_READ,
                 List.of(new MenuItem(
+                        "Workbench", "workbench", "/dashboard/workbench",
+                        new MenuItem.Meta("menus.dashboard.workbench", "ri:home-smile-2-line",
+                                false, true, null, null, null, null),
+                        // 开发首页继承父级读取权限，不扩大任何业务写权限。
+                        null, null), new MenuItem(
                         "Overview",
                         // 子级路径不带前导斜杠，前端会拼成 /dashboard/overview
                         "overview",
@@ -444,8 +472,8 @@ final class MenuCatalog {
                         new MenuItem.Meta(
                                 "menus.dashboard.overview", "ri:home-smile-2-line",
                                 false,
-                                // 登录后的落点，标签页固定不可关闭
-                                true,
+                                // 项目概况保留旧地址，固定首页迁移到开发工作台。
+                                false,
                                 null, null, null, null),
                         // 子节点不再重复声明权限：父节点已经要求 dashboard:read，
                         // 父节点被过滤掉时子节点根本不会出现
@@ -480,7 +508,7 @@ final class MenuCatalog {
                 "/index/index",
                 new MenuItem.Meta(
                         "menus.exception.title", "ri:error-warning-line",
-                        null, null, null, null, null, null),
+                        null, null, true, null, null, null),
                 null,
                 List.of(
                         exceptionPage("Exception403", "403", "menus.exception.forbidden"),
@@ -505,7 +533,8 @@ final class MenuCatalog {
                         title, null,
                         true,
                         null,
-                        null,
+                        // 异常页仅作为跳转落点，不在业务菜单展示。
+                        true,
                         // 异常页不生成标签页，也不套布局
                         true,
                         true,

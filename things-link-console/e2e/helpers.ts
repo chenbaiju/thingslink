@@ -1,10 +1,46 @@
-import { expect, type Locator, type Page } from '@playwright/test'
+import { expect, type Browser, type Locator, type Page } from '@playwright/test'
 
 /** 由 run-e2e-tests.sh 注入的预置账号（add-console-account.sh 已建、已验证）。 */
 export const OWNER_EMAIL = process.env.E2E_OWNER_EMAIL ?? 'e2e-owner@example.com'
 export const OWNER_PASSWORD = process.env.E2E_OWNER_PASSWORD ?? 'contract-pass-123'
 export const MEMBER_EMAIL = process.env.E2E_MEMBER_EMAIL ?? 'e2e-member@example.com'
 export const MEMBER_PASSWORD = process.env.E2E_MEMBER_PASSWORD ?? 'contract-pass-123'
+
+/** 仅回收指定旅程本次创建的唯一名称项目；通过真实 OWNER 会话和正常成员/软删除接口清理。 */
+export async function cleanupCreatedProject(browser: Browser, baseURL: string, name: string) {
+  const context = await browser.newContext({ baseURL })
+  try {
+    const loginResponse = await context.request.post('/api/v1/auth/login', {
+      data: { email: OWNER_EMAIL, password: OWNER_PASSWORD }
+    })
+    expect(loginResponse.status()).toBe(200)
+    const { accessToken } = await loginResponse.json()
+    const headers = { Authorization: `Bearer ${accessToken}` }
+    const response = await context.request.get('/api/v1/projects', { headers })
+    expect(response.status()).toBe(200)
+    const projects: { id: string; name: string; myRole: string }[] = await response.json()
+    const project = projects.find((row) => row.name === name && row.myRole === 'OWNER')
+    if (!project) return
+    const membersResponse = await context.request.get(`/api/v1/projects/${project.id}/members`, {
+      headers
+    })
+    expect(membersResponse.status()).toBe(200)
+    const members: { accountId: string; role: string; email: string }[] =
+      await membersResponse.json()
+    for (const member of members.filter((row) => row.role !== 'OWNER')) {
+      expect(member.email).toBe(MEMBER_EMAIL)
+      const removed = await context.request.delete(
+        `/api/v1/projects/${project.id}/members/${member.accountId}`,
+        { headers }
+      )
+      expect(removed.status()).toBe(204)
+    }
+    const deleted = await context.request.delete(`/api/v1/projects/${project.id}`, { headers })
+    expect(deleted.status()).toBe(204)
+  } finally {
+    await context.close()
+  }
+}
 
 /**
  * 完成登录页的拖拽验证（ArtDragVerify）：把滑块拖到阈值即触发 passVerify。
@@ -77,21 +113,22 @@ export async function resetSession(page: Page) {
  * 项目名按单元格精确匹配（`hasText` 是子串匹配，会把历史轮次遗留的
  * `E2E项目-<时间戳>` 一并命中）。
  */
-export async function enterProject(page: Page, projectName: string) {
+export async function enterProject(page: Page, projectName: string, clickRow = false) {
   await page.goto('/#/project/list')
   const row = page
     .locator('tr')
     .filter({ has: page.getByText(projectName, { exact: true }) })
     .first()
   await expect(row).toBeVisible({ timeout: 15_000 })
-  await row.getByRole('button', { name: '进入' }).click()
+  if (clickRow) await row.locator('td').first().click()
+  else await row.getByRole('button', { name: '进入', exact: true }).click()
   // switchProject 成功后 URL 先到 '/'，再经 hash 路由回首页（如 /#/dashboard/overview）
   await page.waitForURL((url) => url.pathname === '/' && !url.hash.includes('/project/list'), {
     timeout: 20_000
   })
   await page.waitForLoadState('load')
   // 等项目作用域菜单注册完成（exact 必须：getByRole name 默认子串匹配，「设备」会命中子菜单项）
-  await expect(page.getByRole('menuitem', { name: '设备', exact: true })).toBeVisible({
+  await expect(page.getByRole('menuitem', { name: /^(设备|设备开发)$/, exact: true })).toBeVisible({
     timeout: 20_000
   })
   await expect(page.getByRole('button', { name: /未进入项目/ })).toHaveCount(0, { timeout: 15_000 })
@@ -162,4 +199,12 @@ export async function acceptProjectInvitationFromInbox(page: Page, projectName: 
   await row.getByRole('button', { name: '确认接受', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: '确定', exact: true }).click()
   await expect(row).toContainText('已接受')
+}
+
+/** 展开当前身份已授权的业务导航分组，兼容菜单已经展开的状态。 */
+export async function expandWorkspace(page: Page, name: string) {
+  const group = page.locator('#app-sidebar').getByRole('menuitem', { name, exact: true })
+  await expect(group).toBeVisible()
+  if ((await group.getAttribute('aria-expanded')) !== 'true') await group.click()
+  await expect(group).toHaveAttribute('aria-expanded', 'true')
 }

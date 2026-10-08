@@ -170,7 +170,7 @@ class BoundedArtifactReceiverIntegrationTests {
     }
 
     /** 客户端截断仍未完成的正文后，断连和关闭不得产生重复失败回调。 */
-    @Test
+    @org.junit.jupiter.api.RepeatedTest(20)
     void disconnectedBodyFailsOnlyOnceIncludingSubsequentClose() throws Exception {
         TestWork work = register(4, sha(new byte[] {1, 2, 3, 4}), false);
         try (Socket socket = new Socket("127.0.0.1", port)) {
@@ -185,9 +185,23 @@ class BoundedArtifactReceiverIntegrationTests {
             socket.shutdownOutput();
             await(() -> work.failed.get() == 1);
         }
-        receiver.close();
+        try { receiver.close(); }
+        catch (RuntimeException failure) {
+            // 仅失败时保存真实线程与持锁关系，不延长关闭预算或跳过资源断言。
+            StringBuilder diagnostics=new StringBuilder();
+            for(var thread:java.lang.management.ManagementFactory.getThreadMXBean().dumpAllThreads(true,true)) {
+                diagnostics.append(thread).append("\n");
+                for(var frame:thread.getStackTrace()) diagnostics.append("    at ").append(frame).append("\n");
+            }
+            failure.addSuppressed(new IllegalStateException(diagnostics.toString()));
+            throw failure;
+        }
         assertThat(work.failed.get()).isEqualTo(1);
         assertThat(work.completed.get()).isZero();
+        // 断连后必须真正删去正文及实例目录，不能仅把回调计数当作资源已经回收。
+        try(var entries=Files.list(containerDirectory.resolve("receiver-root"))) {
+            assertThat(entries.map(path->path.getFileName().toString())).containsExactly("maintenance.lock");
+        }
     }
 
     /** 两个完成正文但仍处理文件的工作持续占名额，第三个请求明确忙。 */

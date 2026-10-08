@@ -23,13 +23,20 @@ class MenuCatalogContractTests {
             for (boolean commercial : List.of(false, true)) {
                 for (boolean reviewer : List.of(false, true)) {
                     var visible = rows(service.menusFor(projectRole, commercial, reviewer));
-                    cases.add(Map.of("role", role, "commercial", commercial, "reviewer", reviewer,
-                            "permissions", service.permissionCodesFor(projectRole, commercial, reviewer),
-                            "names", visible.stream().map(row -> row.get("name")).toList()));
+                    var scenario = new LinkedHashMap<String, Object>();
+                    scenario.put("reviewer", reviewer);
+                    scenario.put("names", visible.stream().map(row -> row.get("name")).toList());
+                    scenario.put("role", role);
+                    scenario.put("commercial", commercial);
+                    scenario.put("permissions", service.permissionCodesFor(projectRole, commercial, reviewer));
+                    cases.add(scenario);
                 }
             }
         }
-        var document = mapper.valueToTree(Map.of("nodes", rows(MenuCatalog.all()), "cases", cases));
+        var orderedDocument = new LinkedHashMap<String, Object>();
+        orderedDocument.put("nodes", rows(MenuCatalog.all()));
+        orderedDocument.put("cases", cases);
+        var document = mapper.valueToTree(orderedDocument);
         Path root = Path.of("").toAbsolutePath();
         while (root != null && !Files.isRegularFile(root.resolve("things-link/pom.xml"))) root = root.getParent();
         assertThat(root).as("必须定位项目根目录").isNotNull();

@@ -54,7 +54,7 @@ const examples = [
           </ol>
           <div class="mt-auto border-t border-border pt-5">
             <p class="mb-5 text-sm leading-relaxed text-text-secondary">{example.note}</p>
-            {SITE.docsEnabled && (<Button href={example.href} variant="secondary" ariaLabel={`${example.link}：${example.label}`}>{example.link}</Button>)}
+            <Button href={example.href} variant="secondary" ariaLabel={`${example.link}：${example.label}`}>{example.link}</Button>
           </div>
         </article>
       ))}

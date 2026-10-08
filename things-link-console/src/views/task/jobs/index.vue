@@ -6,6 +6,14 @@
 -->
 <template>
   <div class="console-page task-jobs console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="任务调度"
+      description="管理一次性与周期设备命令，查看每个任务的调度状态和执行记录。"
+      :links="[
+        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
+        { label: '执行记录', path: '/rule/executions', permission: 'rule:read' }
+      ]"
+    />
     <div class="task-jobs__header console-toolbar console-page-actions">
       <ElButton v-if="hasAuth('task:manage')" type="primary" :icon="Plus" @click="openCreate">
         创建任务
@@ -258,6 +266,7 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'

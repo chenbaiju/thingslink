@@ -303,7 +303,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * 读取设备类型详情
+         * @description 要求项目读取权限；返回当前公开状态与产品识别码，不返回产品注册秘密或摘要
+         */
+        get: operations["getDeviceType"];
         /**
          * 修改设备类型
          * @description 修改草稿状态设备类型的基础信息。已发布类型不可原地修改，只能创建新版本演进
@@ -962,7 +966,7 @@ export interface paths {
         };
         /**
          * 我的项目
-         * @description 列出当前账号参与的全部项目及其中的角色。结果跨租户。
+         * @description 列出当前账号参与的全部项目及其中的角色。结果跨租户，无需预先选定项目。同租户有效成员可见项目归属租户的活状态订阅档位 subscribedPlan；跨租户协作者、无活订阅或非商业许可时省略，不返回价格和额度。
          */
         get: operations["listMine"];
         put?: never;
@@ -5027,6 +5031,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectId}/exports/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 找回最新项目导出任务
+         * @description 复核当前OWNER与冻结窗口，返回本人在本代次请求的最新一条任务（含终态），无任务返回204。读取不创建任务、不消耗申请限流、不返回下载地址或对象键。
+         */
+        get: operations["latestProjectExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectId}/end-users/{appUserId}/devices": {
         parameters: {
             query?: never;
@@ -5059,6 +5083,26 @@ export interface paths {
          * @description OWNER/ADMIN可在ACTIVE或ARCHIVED项目读取目标用户的ACTIVE与REVOKED历史授权
          */
         get: operations["listAppUserDashboardGrants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/end-users/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 精确查找终端用户
+         * @description 仅项目OWNER/ADMIN可按精确用户名找回项目归属租户的身份及本项目角色，用于预置后未分配或丢响应恢复；不提供模糊查找、租户目录、口令或其他项目角色。未知用户名统一60001。
+         */
+        get: operations["lookupEndUser"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5319,6 +5363,46 @@ export interface paths {
          * @description 按动作原设备查询，含旧记录；投递终态不代替物理设备验收。limit为1至50。
          */
         get: operations["listConsoleDeviceMessageRuleActions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/devices/{deviceId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 分页读取设备事件发生历史
+         * @description 四角色可读ACTIVE/ARCHIVED；每页重新授权并与owner套餐HISTORY_WINDOW及数据库时刻90天窗口求交；原模型不重新解释，键集不保证跨请求快照。未知/重复query、非法时间或游标10001。
+         */
+        get: operations["listConsoleDeviceEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectId}/devices/{deviceId}/events/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取单条设备事件发生事实
+         * @description 先复核项目成员与当前设备归属；原模型字段及参数投影只读。消息未知、跨设备/项目或历史窗口外统一404/30072，不泄露存在性；不允许query。
+         */
+        get: operations["getConsoleDeviceEvent"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6751,26 +6835,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/actuator/health/{componentPath}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 查询运行健康
-         * @description 由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。
-         */
-        get: operations["management_get__actuator_health__componentPath_"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/actuator/health": {
         parameters: {
             query?: never;
@@ -6783,6 +6847,26 @@ export interface paths {
          * @description 由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。
          */
         get: operations["management_get__actuator_health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actuator/health/{componentPath}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询运行健康
+         * @description 由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。
+         */
+        get: operations["management_get__actuator_health__componentPath_"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6971,7 +7055,6 @@ export interface components {
         JsonNode: {
             missingNode?: boolean;
             boolean?: boolean;
-            string?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
             valueNode?: boolean;
@@ -6984,16 +7067,17 @@ export interface components {
             /** @deprecated */
             textual?: boolean;
             binary?: boolean;
-            container?: boolean;
+            floatingPointNumber?: boolean;
             float?: boolean;
+            container?: boolean;
             null?: boolean;
+            integralNumber?: boolean;
+            string?: boolean;
             array?: boolean;
             empty?: boolean;
             pojo?: boolean;
             int?: boolean;
             long?: boolean;
-            integralNumber?: boolean;
-            floatingPointNumber?: boolean;
             embeddedValue?: boolean;
         };
         /** @description 批量设备任务保存请求 */
@@ -7324,7 +7408,8 @@ export interface components {
             version?: number;
             /** @enum {string} */
             status?: "DRAFT" | "PUBLISHED";
-            productKey?: string;
+            /** @description 公开产品识别码；尚未生成产品凭据时为空 */
+            productKey?: string | null;
             /** Format: date-time */
             createdAt?: string;
         };
@@ -8053,6 +8138,35 @@ export interface components {
              * @example Asia/Shanghai
              */
             timezone?: string;
+            /**
+             * @description 项目描述，可选，最多1000字符
+             * @example 厂区温湿度监测与告警
+             */
+            description?: string;
+        };
+        /** @description 套餐最小身份投影；不含价格、额度或权益 */
+        PlanIdentityResponse: {
+            /**
+             * @description 稳定套餐编码
+             * @example FREE
+             */
+            code?: string;
+            /**
+             * @description 展示名称
+             * @example 免费版
+             */
+            name?: string;
+            /**
+             * @description 产品修订版标识
+             * @example product-revision-1
+             */
+            revision?: string;
+            /**
+             * Format: int32
+             * @description 同一套餐的修订序号
+             * @example 1
+             */
+            revisionNo?: number;
         };
         /** @description 项目 */
         ProjectResponse: {
@@ -8087,6 +8201,10 @@ export interface components {
             myRole?: string;
             /** @description 创建时刻 */
             createdAt?: string;
+            /** @description 项目归属租户的活状态订阅档位，仅我的项目列表且调用者为有效租户成员时提供；缺失不能视为免费版 */
+            subscribedPlan?: components["schemas"]["PlanIdentityResponse"];
+            /** @description 项目描述，未填写时为空字符串 */
+            description?: string;
         };
         WebhookCreate: {
             /** Format: uuid */
@@ -8777,10 +8895,10 @@ export interface components {
              */
             username?: string;
             /**
-             * @description 显示名称
+             * @description 显示名称；未设置时为空
              * @example 张三
              */
-            displayName?: string;
+            displayName?: string | null;
             /**
              * @description 租户级登录状态
              * @example ACTIVE
@@ -8790,14 +8908,17 @@ export interface components {
              * @description 项目角色；未分配时为空
              * @example OPERATOR
              */
-            role?: string;
+            role?: string | null;
             /**
              * @description 项目级角色状态；未分配时为空
              * @example ACTIVE
              */
-            roleStatus?: string;
-            /** @description 角色分配时刻；未分配时为空 */
-            assignedAt?: string;
+            roleStatus?: string | null;
+            /**
+             * Format: date-time
+             * @description 角色分配时刻；未分配时为空
+             */
+            assignedAt?: string | null;
         };
         /** @description 终端用户项目角色请求 */
         EndUserRoleRequest: {
@@ -10595,30 +10716,6 @@ export interface components {
              */
             enforcement?: "CATALOG_ONLY";
         };
-        /** @description 套餐最小身份投影；不含价格、额度或权益 */
-        PlanIdentityResponse: {
-            /**
-             * @description 稳定套餐编码
-             * @example FREE
-             */
-            code?: string;
-            /**
-             * @description 展示名称
-             * @example 免费版
-             */
-            name?: string;
-            /**
-             * @description 产品修订版标识
-             * @example product-revision-1
-             */
-            revision?: string;
-            /**
-             * Format: int32
-             * @description 同一套餐的修订序号
-             * @example 1
-             */
-            revisionNo?: number;
-        };
         /** @description 扩容或人工调整溯源行：额度为什么比套餐冻结值高 */
         PlanQuotaAdditionResponse: {
             /**
@@ -11240,6 +11337,26 @@ export interface components {
             nextCursor?: string | null;
             hasMore?: boolean;
         };
+        CursorPagePropertyPointResponse: {
+            items?: components["schemas"]["PropertyPointResponse"][];
+            /** @description 不透明的下一页游标；末页为null */
+            nextCursor?: string | null;
+            hasMore?: boolean;
+        };
+        PropertyPointResponse: {
+            /** Format: uuid */
+            deviceId?: string;
+            propertyKey?: string;
+            /** Format: date-time */
+            ts?: string;
+            value?: Record<string, never>;
+            dataType?: string;
+            /** Format: uuid */
+            thingModelVersionId?: string;
+            modelVersion?: string;
+            /** Format: int32 */
+            quality?: number;
+        };
         PropertyHistoryPointResponse: {
             /** Format: date-time */
             ts?: string;
@@ -11465,6 +11582,48 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             completedAt?: string;
+        };
+        DeviceEventPageResponse: {
+            items: components["schemas"]["DeviceEventResponse"][];
+            /** @description 不透明的下一页游标；末页为null */
+            nextCursor: string | null;
+            /** Format: date-time */
+            windowFrom: string;
+            /** Format: date-time */
+            windowTo: string;
+            /**
+             * Format: int32
+             * @description 事件发生时间可读保留天数，固定整数90；仍与当前套餐窗口求交
+             * @enum {integer}
+             */
+            retentionDays: 90;
+        };
+        DeviceEventResponse: {
+            /** Format: uuid */
+            messageId: string;
+            /** Format: uuid */
+            deviceId: string;
+            /** Format: uuid */
+            deviceTypeId: string;
+            eventKey: string;
+            /** @enum {string} */
+            level: "INFO" | "WARNING" | "ERROR";
+            /** Format: uuid */
+            thingModelVersionId: string;
+            modelVersion: string;
+            /** @enum {string} */
+            eligibility: "CURRENT" | "HISTORY_ONLY";
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: date-time */
+            receivedAt: string;
+            /** Format: date-time */
+            acceptedAt: string;
+            /** @description 凭据整字段移除后的四种标量投影；数字按精确十进制JSON输出 */
+            params: {
+                [key: string]: Record<string, never>;
+            };
+            paramsRedacted: boolean;
         };
         CursorPageDeviceEndUserResponse: {
             items?: components["schemas"]["DeviceEndUserResponse"][];
@@ -12122,8 +12281,11 @@ export interface components {
             status?: "QUEUED" | "SENDING" | "SUCCEEDED" | "RETRY_SCHEDULED" | "DEAD_LETTER" | "SKIPPED_AUTHORIZATION" | "SUPPRESSED_QUOTA" | "TEMPLATE_INVALID";
             /** Format: int32 */
             attemptCount?: number;
-            /** Format: date-time */
-            nextAttemptAt?: string;
+            /**
+             * Format: date-time
+             * @description 下一次计划时刻；未安排或终态时为空
+             */
+            nextAttemptAt?: string | null;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -13722,6 +13884,31 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DeviceAccessConfigurationResponse"];
+                };
+            };
+        };
+    };
+    getDeviceType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 当前项目标识 */
+                projectId: string;
+                /** @description 类型标识 */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DeviceTypeResponse"];
                 };
             };
         };
@@ -25638,6 +25825,36 @@ export interface operations {
             };
         };
     };
+    latestProjectExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 删除项目ID */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 找到最新任务 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectExportResponse"];
+                };
+            };
+            /** @description 本代次本人尚未申请任务 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     devices: {
         parameters: {
             query?: never;
@@ -25747,6 +25964,32 @@ export interface operations {
             };
         };
     };
+    lookupEndUser: {
+        parameters: {
+            query: {
+                /** @description 精确用户名，1至64位 */
+                username: string;
+            };
+            header?: never;
+            path: {
+                /** @description 项目ID */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EndUserResponse"];
+                };
+            };
+        };
+    };
     listProperties: {
         parameters: {
             query?: {
@@ -25772,6 +26015,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description 原始属性历史游标页，值保留写入类型，查询范围与套餐历史窗口求交 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CursorPagePropertyPointResponse"];
+                };
+            };
             /** @description 套餐历史窗口不可用（50048） */
             503: {
                 headers: {
@@ -26169,6 +26421,215 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CursorPageDeviceMessageRuleActionResponse"];
+                };
+            };
+        };
+    };
+    listConsoleDeviceEvents: {
+        parameters: {
+            query?: {
+                /** @description 精确事件键，[A-Za-z0-9][A-Za-z0-9_-]{0,63} */
+                eventKey?: string;
+                /** @description 原发生级别：INFO、WARNING、ERROR */
+                level?: string;
+                /** @description 原不可变模型版本UUID */
+                thingModelVersionId?: string;
+                /** @description 包含起点，四位年RFC3339，最多9位小数 */
+                from?: string;
+                /** @description 排他终点，四位年RFC3339，必须晚于起点 */
+                to?: string;
+                /** @description Base64URL版本一游标，最多8192字符，缺省首页 */
+                cursor?: string;
+                /** @description 默认20，1至100 */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description 项目标识 */
+                projectId: string;
+                /** @description 当前设备标识 */
+                deviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DeviceEventPageResponse"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            400: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            401: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            403: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            404: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            429: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            500: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            503: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConsoleDeviceEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 项目标识 */
+                projectId: string;
+                /** @description 当前设备标识 */
+                deviceId: string;
+                /** @description 原消息UUID */
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DeviceEventResponse"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            400: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            401: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            403: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            404: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            429: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            500: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 事件历史读取失败；业务分类见错误码 */
+            503: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
         };
@@ -29559,14 +30020,11 @@ export interface operations {
             };
         };
     };
-    management_get__actuator_health__componentPath_: {
+    management_get__actuator_health: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description 健康组或组件的多段相对路径；是否存在与可见性由当前健康配置决定 */
-                componentPath: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -29614,11 +30072,14 @@ export interface operations {
             };
         };
     };
-    management_get__actuator_health: {
+    management_get__actuator_health__componentPath_: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description 健康组或组件的多段相对路径；是否存在与可见性由当前健康配置决定 */
+                componentPath: string;
+            };
             cookie?: never;
         };
         requestBody?: never;

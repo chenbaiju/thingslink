@@ -34,7 +34,7 @@ class DatabaseNamingConventionTests extends AbstractIntegrationTest {
      * 模块归属由包名表达，表名再带一次的话，将来拆分或合并模块就要改表名，
      * 而改表名是要动迁移、代码和所有排查笔记的。
      *
-     * <p>需要新前缀时，先在 ADR 0014 的前缀表里加一行，再改这里 —— 顺序反了的话，
+     * <p>需要新前缀时，先登记架构文档和新的领域 ADR，再改这里；已接受 ADR 0014 不改写。
      * 清单会慢慢长出一堆没人解释得清的前缀。
      */
     private static final Set<String> ALLOWED_TABLE_PREFIXES = Set.of(
@@ -58,7 +58,9 @@ class DatabaseNamingConventionTests extends AbstractIntegrationTest {
             // OTA 域（S13）：固件、灰度批次、升级任务
             "ota_",
             // 集成域（S14）：API Key、Webhook 订阅与投递、物联卡
-            "integ_");
+            "integ_",
+            // Agent 域：架构 9.1 已登记；个人事实和受控知识分别沿 ADR 0233/0234。
+            "assistant_");
 
     /**
      * 豁免命名与注释检查的表，每一类都要写明理由。

@@ -153,6 +153,14 @@ class OtaTypeBaselineVersionCollectionReadHttpIntegrationTests extends AbstractI
         assertThat(page.path("nextCursor").isNull()).isTrue();
     }
 
+    /** 基线经真实登记产生，独占项目归档后仍能读取公开历史，不授予管理写资格。 */
+    @Test void archivedProjectRetainsPublicBaselineHistoryRead() throws Exception {
+        Fixture own = seed(CONFIGURED);
+        registerFirstThroughHttp(own);
+        owner().update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?", own.project());
+        assertThat(versions(ok(send(own, "GET", versions(own, own.type())), 200))).containsExactly(1L);
+    }
+
     /** 不存在与本项目无关的设备类型都按OTA父级不可见统一404/70031隐藏，不泄露跨项目存在性。 */
     @Test void hidesUnknownAndForeignDeviceTypeAsNotFound() throws Exception {
         Fixture own = seed(CONFIGURED);

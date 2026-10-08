@@ -82,8 +82,32 @@ test('概要真实快照与环图按设备最高活动告警互斥分类，删�
     await page.goto('/#/dashboard/overview')
     await page.reload()
     const card = page.locator('.overview-card--rate').filter({ hasText: '告警设备分布' })
+    await expect(
+      page
+        .locator('.overview-card--count')
+        .filter({ hasText: '告警设备数' })
+        .locator('.overview-card__value')
+    ).toHaveText('5')
     await expect(card).toContainText('5 台告警设备，按最高活动告警级别归类')
     await expectAlarmChart(page, [1, 1, 1, 1, 1, 1])
+    for (const [width, columns] of [
+      [1800, 4],
+      [1000, 2],
+      [375, 1]
+    ]) {
+      await page.setViewportSize({ width: width!, height: 1200 })
+      const grid = page.locator('.project-overview__cards--counts')
+      await expect(grid).toHaveCSS('display', 'grid')
+      await expect
+        .poll(() =>
+          grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
+        )
+        .toBe(columns)
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+        .toBe(true)
+    }
+    await page.setViewportSize({ width: 1800, height: 1200 })
     await page.evaluate(
       async ({ id, deviceId }) => {
         const path = '/src/api/device.ts'
@@ -100,6 +124,12 @@ test('概要真实快照与环图按设备最高活动告警互斥分类，删�
       INFO: 1
     })
     await page.reload()
+    await expect(
+      page
+        .locator('.overview-card--count')
+        .filter({ hasText: '告警设备数' })
+        .locator('.overview-card__value')
+    ).toHaveText('4')
     await expect(card).toContainText('4 台告警设备，按最高活动告警级别归类')
     await expectAlarmChart(page, [1, 0, 1, 1, 1, 1])
     await page.evaluate(
@@ -119,6 +149,12 @@ test('概要真实快照与环图按设备最高活动告警互斥分类，删�
       INFO: 0
     })
     await page.reload()
+    await expect(
+      page
+        .locator('.overview-card--count')
+        .filter({ hasText: '告警设备数' })
+        .locator('.overview-card__value')
+    ).toHaveText('0')
     await expect(card).toContainText('0 台告警设备，按最高活动告警级别归类')
     await expect(card).not.toContainText('告警分布暂不可用')
     await expectAlarmChart(page, null)

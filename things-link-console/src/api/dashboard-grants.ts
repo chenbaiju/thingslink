@@ -15,6 +15,13 @@ export function fetchGrantUsers(projectId: string, cursor?: string) {
     showErrorMessage: false
   })
 }
+export function fetchUserDashboardGrants(projectId: string, appUserId: string, cursor?: string) {
+  return request.get<components['schemas']['CursorPageAppUserDashboardGrantResponse']>({
+    url: base(projectId, appUserId),
+    params: { limit: 20, ...(cursor === undefined ? {} : { cursor }) },
+    showErrorMessage: false
+  })
+}
 export function fetchDashboardGrant(projectId: string, appUserId: string, dashboardId: string) {
   return request.get<components['schemas']['AppUserDashboardGrantResponse']>({
     url: `${base(projectId, appUserId)}/${encodeURIComponent(dashboardId)}`,

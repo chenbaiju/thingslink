@@ -10,7 +10,10 @@
     <ElEmpty v-if="!projectId && !loading" description="请先进入一个项目后查看概要" />
 
     <template v-else>
-      <section class="project-overview__cards" aria-label="设备数量">
+      <section
+        class="project-overview__cards project-overview__cards--counts"
+        aria-label="设备数量"
+      >
         <ElCard
           v-for="item in deviceCountCards"
           :key="item.label"
@@ -45,6 +48,7 @@
           :key="item.key"
           shadow="never"
           class="overview-card overview-card--rate"
+          :class="{ 'overview-card--alarm': item.key === 'alarm' && item.available }"
         >
           <ElSkeleton animated :loading="loading">
             <template #template>
@@ -69,46 +73,6 @@
           </ElSkeleton>
         </ElCard>
       </section>
-
-      <section
-        class="project-overview__cards project-overview__cards--traffic"
-        aria-label="消息流量概览"
-      >
-        <ElCard v-for="item in trafficCards" :key="item.label" shadow="never" class="overview-card">
-          <ElSkeleton animated :loading="loading">
-            <template #template>
-              <ElSkeletonItem variant="text" class="overview-card__label-skeleton" />
-              <ElSkeletonItem variant="h1" class="overview-card__value-skeleton" />
-              <ElSkeletonItem variant="text" class="overview-card__hint-skeleton" />
-            </template>
-            <template #default>
-              <p class="overview-card__label console-description">{{ item.label }}</p>
-              <strong class="overview-card__value">{{ item.value }}</strong>
-              <p class="overview-card__hint console-description">{{ item.hint }}</p>
-            </template>
-          </ElSkeleton>
-        </ElCard>
-      </section>
-
-      <ElCard shadow="never" class="project-overview__meta">
-        <ElSkeleton animated :loading="loading">
-          <template #template>
-            <div class="overview-meta__skeleton">
-              <ElSkeletonItem v-for="item in 2" :key="item" variant="text" />
-            </div>
-          </template>
-          <template #default>
-            <div class="overview-meta__item">
-              <span>统计窗口</span>
-              <strong>{{ windowText }}</strong>
-            </div>
-            <div class="overview-meta__item">
-              <span>生成时间</span>
-              <strong>{{ generatedAtText }}</strong>
-            </div>
-          </template>
-        </ElSkeleton>
-      </ElCard>
     </template>
   </div>
 </template>
@@ -116,9 +80,9 @@
 <script setup lang="ts">
   import { fetchProjectOverview, type OverviewResponse } from '@/api/overview'
   import { useUserStore } from '@/store/modules/user'
-  import { formatTime } from '@/utils/time'
   import { alarmDistribution } from '@/utils/alarm-distribution'
   import { HttpError } from '@/utils/http/error'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
 
   defineOptions({ name: 'DashboardOverview' })
 
@@ -126,6 +90,8 @@
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
   const loading = ref(false)
   const overview = ref<OverviewResponse>()
+  const distribution = computed(() => alarmDistribution(overview.value))
+  let requestGeneration = 0
 
   /** 只有服务端明确返回 0 才显示 0；缺失字段永远显示破折号，不把“不知道”伪造成零。 */
   const formatNumber = (value?: number) =>
@@ -134,19 +100,6 @@
   /** 概要契约中的比率为 [0, 1]；展示层才转成百分数，避免把 0.5 误显示成 0.5%。 */
   const formatRate = (value?: number) =>
     typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : '—'
-
-  /** 流量保留二进制单位，原始字节数仍由后端事实源聚合。 */
-  const formatBytes = (value?: number) => {
-    if (typeof value !== 'number') return '—'
-    const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
-    let size = value
-    let unit = 0
-    while (size >= 1024 && unit < units.length - 1) {
-      size /= 1024
-      unit += 1
-    }
-    return `${size.toLocaleString('zh-CN', { maximumFractionDigits: 1 })} ${units[unit]}`
-  }
 
   /** 比率与剩余比例直接使用概要 API 字段，不在浏览器重新统计设备或告警事实。 */
   const rateChartData = (label: string, rate?: number) =>
@@ -178,6 +131,13 @@
       tone: 'warning',
       value: formatNumber(overview.value?.devices?.active24h),
       hint: '当前在线或 24 小时内最近在线'
+    },
+    {
+      label: '告警设备数',
+      icon: 'ri:alarm-warning-line',
+      tone: 'danger',
+      value: formatNumber(distribution.value.alarmDevices),
+      hint: distribution.value.available ? '存在活动告警的去重设备数' : '告警设备数暂不可用'
     }
   ])
 
@@ -185,8 +145,8 @@
     const devices = overview.value?.devices
     const alarmRate = overview.value?.alarmRate
     const alarmValue = alarmRate?.value
-    const distribution = alarmDistribution(overview.value)
-    const alarmAvailable = distribution.available && typeof alarmValue === 'number'
+    const alarm = distribution.value
+    const alarmAvailable = alarm.available && typeof alarmValue === 'number'
     return [
       {
         key: 'online',
@@ -210,51 +170,48 @@
         key: 'alarm',
         label: '告警设备分布',
         rateText: alarmAvailable ? formatRate(alarmValue) : '—',
-        chartData: distribution.data,
+        chartData: alarm.data,
         available: alarmAvailable,
-        colors: distribution.colors,
+        colors: alarm.colors,
         hint: alarmAvailable
-          ? `${distribution.alarmDevices} 台告警设备，按最高活动告警级别归类`
+          ? `${alarm.alarmDevices} 台告警设备，按最高活动告警级别归类`
           : '告警分布暂不可用'
       }
     ]
   })
 
-  const trafficCards = computed(() => [
-    {
-      label: '24 小时消息量',
-      value: formatNumber(overview.value?.messages24h?.count),
-      hint: '窗口内消息日志总数'
-    },
-    {
-      label: '24 小时流量',
-      value: formatBytes(overview.value?.messages24h?.bytes),
-      hint: '窗口内报文总字节数'
-    }
-  ])
-
-  const windowText = computed(() => {
-    const window = overview.value?.window
-    return window?.from && window.to
-      ? `${formatTime(window.from)} 至 ${formatTime(window.to)}`
-      : '—'
-  })
-  const generatedAtText = computed(() => formatTime(overview.value?.generatedAt))
-
-  /** 失败由 HTTP 层统一提示；保留旧快照，避免一次暂时网络错误清空已读到的事实结果。 */
+  /** 同一身份内失败保留已读快照；身份变化先清空，旧请求不能回填。 */
   const refresh = async () => {
-    if (!projectId.value) return
+    const id = projectId.value
+    const generation = ++requestGeneration
+    if (!id) {
+      loading.value = false
+      return
+    }
     loading.value = true
     try {
-      overview.value = await fetchProjectOverview(projectId.value)
+      const result = await fetchProjectOverview(id)
+      if (generation === requestGeneration) overview.value = result
     } catch (error) {
-      if (!(error instanceof HttpError)) console.error('加载项目概要失败:', error)
+      if (generation === requestGeneration && !(error instanceof HttpError)) {
+        console.error('加载项目概要失败:', error)
+      }
     } finally {
-      loading.value = false
+      if (generation === requestGeneration) loading.value = false
     }
   }
 
-  onMounted(() => void refresh())
+  watch(
+    () => [projectId.value, userStore.info.userId, userStore.info.tenantId, currentIdentityEpoch()],
+    () => {
+      overview.value = undefined
+      void refresh()
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  onBeforeUnmount(() => {
+    requestGeneration++
+  })
 </script>
 
 <style lang="scss" scoped>
@@ -283,18 +240,13 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
 
+      &--counts {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
       &--rates {
         margin-top: 10px;
       }
-
-      &--traffic {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin-top: 10px;
-      }
-    }
-
-    &__meta {
-      margin-top: 10px;
     }
   }
 
@@ -340,6 +292,10 @@
       &--success {
         color: var(--el-color-success);
         background: var(--el-color-success-light-9);
+      }
+      &--danger {
+        color: var(--el-color-danger);
+        background: var(--el-color-danger-light-9);
       }
       &--warning {
         color: var(--el-color-warning);
@@ -390,6 +346,10 @@
       }
     }
 
+    &--alarm .overview-card__hint {
+      width: 80%;
+    }
+
     &__chart-skeleton {
       width: 140px;
       height: 140px;
@@ -402,27 +362,9 @@
     }
   }
 
-  .overview-meta {
-    &__skeleton {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    &__item {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-
-      span {
-        font-size: 13px;
-        color: var(--el-text-color-secondary);
-      }
-    }
-  }
-
   @media screen and (width <= 1100px) {
-    .project-overview__cards {
+    .project-overview__cards,
+    .project-overview__cards--counts {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
@@ -441,8 +383,7 @@
       }
 
       &__cards,
-      &__cards--traffic,
-      .overview-meta__skeleton {
+      &__cards--counts {
         grid-template-columns: 1fr;
       }
     }

@@ -3,7 +3,6 @@ package com.things.link.bootstrap.assistant;
 import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture;
 import com.things.link.iam.application.AuthenticatedPrincipal;
 import com.things.link.iam.application.TokenIssuer;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -16,7 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 /** 实际空主密钥配置仍能启动，但HTTP不能保存秘密；专用测试库及合成Key。 */
 @AutoConfigureMockMvc
-class ModelConfigurationUnavailableApiTests extends AbstractIntegrationTest {
+class ModelConfigurationUnavailableApiTests extends AbstractAssistantIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired TokenIssuer tokens;
     @Test void missingMasterKeyReturnsSpecificUnavailableWithoutWritingOrEchoing() throws Exception {

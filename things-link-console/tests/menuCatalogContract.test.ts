@@ -13,6 +13,7 @@ vi.mock('@/hooks/core/useAppMode', () => ({
 vi.mock('@/api/system-manage', () => ({ fetchGetMenuList: vi.fn() }))
 vi.mock('@/utils', () => ({ formatMenuTitle: (title: string) => title }))
 import { MenuProcessor } from '@/router/core/MenuProcessor'
+import { workspaceNavigation } from '@/utils/workspace-navigation'
 
 interface Row {
   name: string
@@ -79,6 +80,23 @@ describe('D-004后端目录与真实前端兜底合同', () => {
       user.info.roles = scenario.role === 'NONE' ? [] : [scenario.role]
       user.info.buttons = scenario.permissions
       const menus = await new MenuProcessor().getMenuList()
+      const visibleLeaves = (routes: readonly AppRouteRecord[]): AppRouteRecord[] =>
+        routes.flatMap((route) =>
+          route.meta.isHide
+            ? []
+            : route.children?.length
+              ? visibleLeaves(route.children)
+              : route.component && route.component !== '/index/index'
+                ? [route]
+                : []
+        )
+      const before = visibleLeaves(menus)
+      const projected = workspaceNavigation(menus).flatMap((group) => group.children ?? [])
+      expect(projected.map((leaf) => leaf.name).sort()).toEqual(
+        before.map((leaf) => leaf.name).sort()
+      )
+      expect(new Set(projected).size).toBe(projected.length)
+      for (const leaf of projected) expect(before).toContain(leaf)
       expect(
         rows(menus)
           .map((item) => item.name)
@@ -86,6 +104,18 @@ describe('D-004后端目录与真实前端兜底合同', () => {
       ).toEqual([...scenario.names].sort())
     })
   }
+  it('异常路由保留但不显示在业务导航中', () => {
+    const catalog = rows(consoleDomainRegistry.routes)
+    for (const name of ['Exception', 'Exception403', 'Exception404', 'Exception500']) {
+      expect(catalog.find((route) => route.name === name)?.hidden).toBe(true)
+    }
+    const visible = workspaceNavigation(consoleDomainRegistry.routes)
+      .flatMap((group) => group.children ?? [])
+      .map((route) => route.name)
+    expect(visible).not.toContain('Exception403')
+    expect(visible).not.toContain('Exception404')
+    expect(visible).not.toContain('Exception500')
+  })
   it('删菜单或篡改路径不可被共同子集比对掩盖', () => {
     const good = rows(consoleDomainRegistry.routes)
     expect(() => assertCatalog(good.slice(1))).toThrow()

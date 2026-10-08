@@ -8,6 +8,11 @@
       >仅列出账号、项目角色和设备关系均有效的用户；关系角色不等于项目角色。</p
     >
     <ElAlert v-if="failed" type="error" title="终端用户读取失败，请刷新重试" :closable="false" />
+    <DeviceClaimToken
+      :project-id="projectId"
+      :device-id="deviceId"
+      :primary-known="rows.some((row) => row.relationRole === 'PRIMARY')"
+    />
     <ElTable v-loading="loading" :data="rows" row-key="id">
       <ElTableColumn prop="appUserId" label="用户 ID" min-width="230" show-overflow-tooltip />
       <ElTableColumn label="显示名" min-width="140">
@@ -34,6 +39,7 @@
   </section>
 </template>
 <script setup lang="ts">
+  import DeviceClaimToken from './DeviceClaimToken.vue'
   import { useUserStore } from '@/store/modules/user'
   import { formatTime } from '@/utils/time'
   import { fetchDeviceEndUsers, type DeviceEndUser } from '@/api/device-end-users'

@@ -3,7 +3,8 @@ import { extname, relative, resolve } from 'node:path'
 
 const root = resolve('dist')
 const limits = {
-  total: 220 * 1024,
+  // 新增一篇 Agent 指南：四页基线220 KiB加一页既有30 KiB配额，单资源限制保持。
+  total: 250 * 1024,
   css: 40 * 1024,
   font: 70 * 1024,
   homeHtml: 50 * 1024,

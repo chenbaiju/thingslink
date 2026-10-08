@@ -1,6 +1,8 @@
 package com.things.link.bootstrap.fixture;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -31,6 +33,13 @@ public final class WebAppRuntimeFixture {
      */
     public static Fixture seed(JdbcTemplate owner) {
         Objects.requireNonNull(owner, "owner");
+        // 一次造数复用调用方连接；释放仍归外层JdbcTemplate，不改变自动提交或已有事务。
+        return owner.execute((ConnectionCallback<Fixture>) connection -> seedOnConnection(
+                new JdbcTemplate(new SingleConnectionDataSource(connection, true))));
+    }
+
+    /** 仅在已取得的连接上建立夹具，不逐条SQL新建Windows回环连接。 */
+    private static Fixture seedOnConnection(JdbcTemplate owner) {
         UUID tenantId = UUID.randomUUID();
         UUID projectId = UUID.randomUUID();
         UUID appUserId = UUID.randomUUID();

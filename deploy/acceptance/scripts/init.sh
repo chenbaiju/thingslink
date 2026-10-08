@@ -22,6 +22,6 @@ while read -r topic partitions retention; do
   compose exec -T redpanda rpk topic alter-config "$topic" --set "retention.ms=$retention" >/dev/null </dev/null
   count=$((count + 1))
  done < "$asset_dir/scripts/topics.tsv"
-[ "$count" -eq 24 ] || { echo "Expected 24 verified topics, got $count" >&2; exit 1; }
+[ "$count" -eq 25 ] || { echo "Expected 25 verified topics, got $count" >&2; exit 1; }
 compose --profile init run --rm minio-init
 echo 'Database extensions, topic contracts and private buckets initialized.'

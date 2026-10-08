@@ -37,6 +37,13 @@
           @click="confirmAction('WITHDRAW')"
           >撤回当前发布</el-button
         >
+        <el-button
+          data-testid="application-publication-soft-delete"
+          type="danger"
+          :disabled="!publishable"
+          @click="confirmAction('SOFT_DELETE')"
+          >软删除应用</el-button
+        >
       </template>
     </div>
     <template v-if="canManage">
@@ -52,6 +59,7 @@
         >上次操作已有完成回执，请读取当前发布事实；当前状态可能包含后续变更。</p
       >
       <el-button
+        data-testid="application-publication-retry"
         v-if="state.pending.status === 'UNKNOWN' && canManage"
         :disabled="!available || state.loading || state.writing || confirming"
         @click="publication.retry()"
@@ -128,6 +136,7 @@
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'
   import { createApplicationPublication } from '@/features/application/publication-model'
+  import type { PublicationSnapshot } from '@/features/application/publication-model'
   import {
     fetchApplicationPublicationCatalog,
     fetchApplicationPublicationHistory,
@@ -148,14 +157,19 @@
   const emit = defineEmits<{
     pending: [value: boolean]
     working: [value: boolean]
-    accessDenied: []
+    accessDenied: [code?: number]
+    deleteResourceUnavailable: []
+    deleteLock: [locked: boolean]
+    deleted: [result: NonNullable<PublicationSnapshot['deleted']>]
   }>()
   const user = useUserStore()
   const confirming = ref(false)
+  let emittedDeletion = false
   const context = () => ({ ...props, identity: currentIdentityEpoch() })
   const publication = createApplicationPublication({
     context,
-    accessDenied: () => emit('accessDenied'),
+    accessDenied: (code) => emit('accessDenied', code),
+    deleteResourceUnavailable: () => emit('deleteResourceUnavailable'),
     detail: fetchApplicationPublicationCatalog,
     list: fetchApplicationPublicationHistory,
     version: fetchApplicationPublicationVersion,
@@ -164,6 +178,11 @@
     changed: (snapshot) => {
       state.value = snapshot
       emit('pending', !!snapshot.pending)
+      emit('deleteLock', snapshot.pending?.kind === 'SOFT_DELETE' || !!snapshot.deleted)
+      if (snapshot.deleted && !emittedDeletion) {
+        emittedDeletion = true
+        emit('deleted', snapshot.deleted)
+      }
     }
   })
   const state = shallowRef(publication.getSnapshot())
@@ -196,18 +215,31 @@
     [
       () => props.projectId,
       () => props.applicationId,
-      () => props.available,
       () => props.canRead,
       () => props.canManage,
       () => user.info.userId,
-      () => user.info.tenantId
+      () => user.info.tenantId,
+      () => JSON.stringify([...(user.info.roles ?? [])].sort()),
+      () => currentIdentityEpoch()
     ],
     () => {
+      emittedDeletion = false
       publication.reset()
       if (props.available && props.canRead && props.projectId && props.applicationId)
         void publication.open()
     },
     { immediate: true, flush: 'sync' }
+  )
+  watch(
+    () => props.available,
+    () => {
+      // 删除未知期间暂时离线不撤销服务器请求，保留同身份原键供联网后恢复。
+      if (state.value.pending?.kind === 'SOFT_DELETE' || state.value.deleted) return
+      publication.reset()
+      if (props.available && props.canRead && props.projectId && props.applicationId)
+        void publication.open()
+    },
+    { flush: 'sync' }
   )
   onBeforeUnmount(() => {
     publication.reset()
@@ -216,18 +248,34 @@
   function refresh() {
     return state.value.pending ? publication.recover() : publication.open()
   }
-  async function confirmAction(kind: 'PUBLISH' | 'ROLLBACK' | 'WITHDRAW', versionId?: string) {
-    if (!writable.value || (kind === 'PUBLISH' && !publishable.value)) return
+  async function confirmAction(
+    kind: 'PUBLISH' | 'ROLLBACK' | 'WITHDRAW' | 'SOFT_DELETE',
+    versionId?: string
+  ) {
+    if (!writable.value || ((kind === 'PUBLISH' || kind === 'SOFT_DELETE') && !publishable.value))
+      return
     const confirmationContext = () =>
       JSON.stringify({
         context: context(),
+        user: {
+          userId: user.info.userId,
+          tenantId: user.info.tenantId,
+          roles: [...(user.info.roles ?? [])].sort(),
+          canRead: props.canRead,
+          canManage: props.canManage
+        },
         publicationRevision: state.value.catalog?.publicationRevision
       })
     const before = confirmationContext()
     const texts = {
       PUBLISH: ['发布当前已保存草稿？尚未保存的内容不会进入发布版本。', '确认发布', '发布'],
       ROLLBACK: ['将运行入口切换到选中的历史版本？当前草稿保持不变。', '确认回滚', '回滚'],
-      WITHDRAW: ['撤回后该应用的运行入口不可用。历史版本和当前草稿会保留。', '确认撤回', '撤回']
+      WITHDRAW: ['撤回后该应用的运行入口不可用。历史版本和当前草稿会保留。', '确认撤回', '撤回'],
+      SOFT_DELETE: [
+        '软删除不可恢复，只停止此应用的运行入口。草稿、不可变版本及历史看板引用保留；引用的看板、分享和用户历史授权不会被删除。请先保存本地修改。',
+        '确认软删除应用',
+        '软删除'
+      ]
     } as const
     confirming.value = true
     try {
@@ -241,6 +289,7 @@
       if (kind === 'PUBLISH') await publication.publish()
       else if (kind === 'ROLLBACK' && versionId) await publication.rollback(versionId)
       else if (kind === 'WITHDRAW') await publication.withdraw()
+      else if (kind === 'SOFT_DELETE') await publication.softDelete()
     } catch {
       /* 取消确认不发写请求。领域错误由发布状态模型提供安全提示。 */
     } finally {

@@ -121,7 +121,7 @@ test('受控项目知识：明确批准、换版引用、四角色读取、项�
       checkpoint = 'role-' + role + '-reload'
       console.log('knowledge-checkpoint=' + checkpoint)
       await member.reload()
-      await expect(member.getByRole('menuitem', { name: '设备', exact: true })).toBeVisible()
+      await expect(member.getByRole('menuitem', { name: '设备开发', exact: true })).toBeVisible()
       checkpoint = 'role-' + role + '-settings'
       console.log('knowledge-checkpoint=' + checkpoint)
       await member.goto('/#/project/settings')

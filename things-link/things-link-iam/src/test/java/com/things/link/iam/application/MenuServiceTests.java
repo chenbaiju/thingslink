@@ -116,7 +116,7 @@ class MenuServiceTests {
                 MenuCatalog.all(), Set.of(Permission.values()));
 
         assertThat(namesOf(menus))
-                .contains("Dashboard", "Overview", "DeviceGroups", "DeviceMessages",
+                .contains("Dashboard", "Workbench", "Overview", "DeviceGroups", "DeviceMessages",
                         "Alarm", "AlarmRules", "AlarmHistory", "AlarmNotificationGroups",
                         "AlarmNotificationTemplates", "Task", "TaskJobs", "PlanCatalog", "SystemStatus",
                         "Exception", "Exception404");
@@ -132,7 +132,7 @@ class MenuServiceTests {
 
         assertThat(namesOf(menus))
                 .as("父节点被过滤时子节点不能残留 —— 否则前端会注册一条无父级的路由")
-                .doesNotContain("Dashboard", "Overview");
+                .doesNotContain("Dashboard", "Workbench", "Overview");
     }
 
     /**
@@ -198,7 +198,29 @@ class MenuServiceTests {
                 .isNotEmpty();
         assertThat(menuService.permissionCodesFor(role)).contains("dashboard:read");
         assertThat(menuService.permissionCodesFor(role)).contains("quota:read");
-        assertThat(namesOf(menuService.menusFor(role))).contains("Overview", "ProjectSettings");
+        assertThat(namesOf(menuService.menusFor(role))).contains("Workbench", "Overview", "ProjectSettings");
+    }
+
+    /** 开发首页是所有项目角色的首个固定页，旧项目概况仍可直接打开。 */
+    @ParameterizedTest
+    @EnumSource(ProjectRole.class)
+    void workbenchIsTheOnlyFixedProjectLandingPage(ProjectRole role) {
+        var menus = menuService.menusFor(role);
+        var dashboard = menus.getFirst();
+        assertThat(dashboard.name()).isEqualTo("Dashboard");
+        var workbench = dashboard.children().getFirst();
+        assertThat(workbench.name()).isEqualTo("Workbench");
+        assertThat(workbench.path()).isEqualTo("workbench");
+        assertThat(workbench.component()).isEqualTo("/dashboard/workbench");
+        assertThat(workbench.meta().fixedTab()).isTrue();
+        assertThat(workbench.meta().authList()).isNull();
+        var overview = dashboard.children().stream()
+                .filter(item -> item.name().equals("Overview")).findFirst().orElseThrow();
+        assertThat(overview.path()).isEqualTo("overview");
+        assertThat(overview.component()).isEqualTo("/dashboard/overview");
+        assertThat(overview.meta().fixedTab()).isFalse();
+        assertThat(dashboard.children().stream().filter(item -> Boolean.TRUE.equals(item.meta().fixedTab()))
+                .map(MenuItem::name)).containsExactly("Workbench");
     }
 
     /**
@@ -212,7 +234,7 @@ class MenuServiceTests {
         assertThat(menuService.permissionCodesFor(null)).isEmpty();
         assertThat(namesOf(menuService.menusFor(null)))
                 .as("未选项目时应当只剩不需要权限的菜单，用户先去选项目")
-                .doesNotContain("Overview")
+                .doesNotContain("Workbench", "Overview")
                 .contains("Project", "PlanCatalog", "SystemStatus");
     }
 
@@ -633,9 +655,13 @@ class MenuServiceTests {
         assertThat(namesOf(menuService.menusFor(ProjectRole.ADMIN))).contains("Ota", "OtaFirmwares");
         assertThat(namesOf(menuService.menusFor(ProjectRole.OPERATOR))).doesNotContain("Ota", "OtaFirmwares");
         assertThat(namesOf(menuService.menusFor(ProjectRole.VIEWER))).doesNotContain("Ota", "OtaFirmwares");
-        assertThat(findPage(ProjectRole.OWNER, "OtaFirmwares").meta().authList()).hasSize(4);
+        assertThat(findPage(ProjectRole.OWNER, "OtaFirmwares").meta().authList()).hasSize(5);
         assertThat(findPage(ProjectRole.OWNER, "OtaFirmwares").meta().authList())
-                .allSatisfy(point -> assertThat(point.permission()).isEqualTo(Permission.OTA_DEPLOY));
+                .filteredOn(point -> point.permission() == Permission.OTA_READ).hasSize(1);
+        assertThat(findPage(ProjectRole.OWNER, "OtaFirmwares").meta().authList())
+                .filteredOn(point -> point.permission() == Permission.OTA_DEPLOY).hasSize(4);
+        assertThat(findPage(ProjectRole.ADMIN, "OtaFirmwares").meta().authList())
+                .filteredOn(point -> point.permission() == Permission.OTA_READ).hasSize(1);
         // S13-4b-2：活动子页与固件页同一授予边界，按钮级权限点也全部指向ota:deploy。
         assertThat(namesOf(menuService.menusFor(ProjectRole.OWNER))).contains("OtaCampaigns");
         assertThat(namesOf(menuService.menusFor(ProjectRole.OPERATOR))).doesNotContain("OtaCampaigns");

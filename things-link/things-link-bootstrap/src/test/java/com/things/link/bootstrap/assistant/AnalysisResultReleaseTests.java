@@ -8,7 +8,6 @@ import com.things.link.device.application.ConsoleDeviceEvidenceService;
 import com.things.link.shared.error.BusinessException;
 import com.things.link.shared.id.Uuid7;
 import com.things.link.shared.tenant.*;
-import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,7 +22,7 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class AnalysisResultReleaseTests extends AbstractIntegrationTest {
+class AnalysisResultReleaseTests extends AbstractAssistantIntegrationTest {
     static final String MASTER = ModelConfigurationApiTests.master();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r) {
         r.add("things-link.assistant.credentials.active-key-id", () -> "release-test");

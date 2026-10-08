@@ -5,7 +5,6 @@ import com.things.link.assistant.domain.ProbeLedger.*;
 import com.things.link.bootstrap.fixture.WebAppDataRuntimeFixture;
 import com.things.link.iam.application.*;
 import com.things.link.shared.tenant.*;
-import com.things.link.testing.AbstractIntegrationTest;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.*;
@@ -25,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
-class ProbeRunApiTests extends AbstractIntegrationTest {
+class ProbeRunApiTests extends AbstractAssistantIntegrationTest {
     static final String MASTER=ModelConfigurationApiTests.master();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r){
         r.add("things-link.assistant.credentials.active-key-id",()->"probe-api");r.add("things-link.assistant.credentials.keys.probe-api",()->MASTER);
@@ -39,9 +38,12 @@ class ProbeRunApiTests extends AbstractIntegrationTest {
     @Autowired JdbcTemplate app;
     @MockitoBean ProbeAuthorizationProvider grants;
     @MockitoBean ProbeTransport transport;
+    @MockitoBean java.time.Clock clock;
     JdbcTemplate owner;WebAppDataRuntimeFixture.DataFixture data;ProbeAuthorization grant;String token,path;
     String secret="synthetic-probe-api-only";AtomicReference<byte[]> delivered=new AtomicReference<>();
     @BeforeEach void setup(){
+        // 强制保留纳秒尾数，在所有平台复现数据库微秒精度的持久化边界。
+        when(clock.instant()).thenReturn(java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS).plusNanos(123));
         owner=new JdbcTemplate(new DriverManagerDataSource(POSTGRES.getJdbcUrl(),POSTGRES.getUsername(),POSTGRES.getPassword()));
         data=WebAppDataRuntimeFixture.seed(owner);var f=data.runtime();
         owner.update("INSERT INTO sys_project_member(id,project_id,account_id,role) VALUES(?,?,?,'ADMIN')",UUID.randomUUID(),f.projectId(),f.actorId());
@@ -61,6 +63,18 @@ class ProbeRunApiTests extends AbstractIntegrationTest {
         if(expected==200)assertThat(r.getHeader("Cache-Control")).isEqualTo("no-store");return r.getContentAsString();
     }
     int attempts(){return owner.queryForObject("SELECT count(*) FROM assistant_probe_attempt WHERE project_id=?",Integer.class,data.runtime().projectId());}
+    @Test void claimedAttemptUsesPersistedTimestampPrecision() {
+        var f=data.runtime();TenantContext.set(new TenantScope(f.tenantId(),f.projectId(),f.actorId()));
+        try {
+            var claimed=ledger.claim(f.projectId(),grant.id(),1);
+            var stored=ledger.read(f.projectId(),claimed.id());
+            assertThat(claimed).as("认领返回值必须与持久记录逐字段一致，不能绕过派发身份比较").isEqualTo(stored);
+            assertThat(claimed.deadline()).isEqualTo(claimed.claimedAt().plusSeconds(60));
+            var permit=execution.dispatch(f.projectId(),claimed,grant);
+            assertThat(permit.attempt()).isEqualTo(stored);
+            assertThat(execution.release(f.projectId(),permit)).isTrue();
+        } finally {TenantContext.clear();}
+    }
     @Test void normalHttpSendsOnceWipesKeyAndDoesNotQualifyBusiness(CapturedOutput output)throws Exception{
         assertThat(call(1,200)).contains("SUCCEEDED","COUNT_MISMATCH","\"delta\":1");call(1,409);call(0,400);call(4,400);
         assertThat(mvc.perform(post(path+1).header("Authorization","Bearer "+token).header("Idempotency-Key","synthetic-replay"))

@@ -1,4 +1,5 @@
-import { nextTick, ref } from 'vue'
+import { effectScope, nextTick, ref } from 'vue'
+import { invalidateIdentity } from '@/utils/http/identity-scope'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { fetchSearchDevices, fetchDeviceTypePage, fetchDeviceDetail } = vi.hoisted(() => ({
@@ -89,4 +90,61 @@ describe('设备与类型按需目录', () => {
     expect(catalog.deviceTypes.value).toEqual([])
     expect(catalog.typeHasMore.value).toBe(false)
   })
+})
+
+it.each(['search', 'detail', 'types'])(
+  '%s 的旧项目迟响应不回填选项，当前项目可立即查询',
+  async (kind) => {
+    let resolve!: (value: any) => void
+    const delayed = new Promise((done) => {
+      resolve = done
+    })
+    const project = ref('old-project')
+    const scope = effectScope()
+    const catalog = scope.run(() => usePagedDeviceCatalog(project))!
+    const api =
+      kind === 'search'
+        ? fetchSearchDevices
+        : kind === 'detail'
+          ? fetchDeviceDetail
+          : fetchDeviceTypePage
+    api.mockReturnValueOnce(delayed)
+    api.mockResolvedValue(kind === 'detail' ? { id: 'new' } : { items: [{ id: 'new' }] })
+    const invoke = () =>
+      kind === 'search'
+        ? catalog.loadDevices()
+        : kind === 'detail'
+          ? catalog.ensureDevices(['device'])
+          : catalog.loadDeviceTypes()
+    const oldRequest = invoke()
+    project.value = 'new-project'
+    await invoke()
+    resolve({ items: [{ id: 'private-old' }], id: 'private-old', hasMore: true, nextCursor: 'old' })
+    await oldRequest
+    expect(kind === 'types' ? catalog.deviceTypes.value : catalog.devices.value).toEqual([
+      { id: 'new' }
+    ])
+    expect(catalog.devicesLoading.value).toBe(false)
+    expect(catalog.deviceTypesLoading.value).toBe(false)
+    scope.stop()
+  }
+)
+it('同项目身份失效及销毁都阻止在途设备回填', async () => {
+  for (const reason of ['identity', 'dispose']) {
+    let resolve!: (value: any) => void
+    fetchSearchDevices.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
+    const scope = effectScope()
+    const catalog = scope.run(() => usePagedDeviceCatalog(ref('same-project')))!
+    const pending = catalog.loadDevices()
+    if (reason === 'identity') invalidateIdentity()
+    else scope.stop()
+    resolve({ items: [{ id: 'old-session-device' }] })
+    await pending
+    expect(catalog.devices.value).toEqual([])
+    scope.stop()
+  }
 })

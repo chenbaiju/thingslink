@@ -69,7 +69,12 @@
                 formatter: '{b}: {c} ({d}%)'
               })
             : undefined,
-          legend: props.showLegend ? getLegendStyle(props.legendPosition) : undefined,
+          legend: props.showLegend
+            ? {
+                ...getLegendStyle(props.legendPosition, { itemGap: 12 }),
+                ...(props.legendPosition === 'right' ? { right: 24 } : {})
+              }
+            : undefined,
           series: [
             {
               name: '数据占比',

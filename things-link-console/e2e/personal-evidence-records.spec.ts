@@ -36,7 +36,7 @@ test('个人事实记录：真实报告下载、空历史告警、恢复与项�
     if (request.method() !== 'GET') writes.push(path)
   })
   const open = async () => {
-    await expect(page.getByRole('menuitem', { name: '设备', exact: true })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: '设备开发', exact: true })).toBeVisible()
     await page.goto(`/#/device/list?deviceId=${deviceId}`)
     await page.getByRole('tab', { name: '诊断证据', exact: true }).click()
     await expect(page.getByTestId('personal-records')).toBeVisible()

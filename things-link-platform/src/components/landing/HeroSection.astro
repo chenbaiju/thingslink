@@ -43,10 +43,10 @@ import Icon from '@/components/ui/Icon.astro'
             <Icon name="arrow-right" size="md" />
           </Button> : <span class="inline-flex items-center rounded-lg border border-border px-5 py-3 text-sm font-medium text-text-muted" aria-disabled="true">控制台暂未开放</span>}
 
-          {SITE.docsEnabled && (<Button href={SITE.docsUrl} variant="secondary" size="md">
+          <Button href={SITE.docsUrl} variant="secondary" size="md">
             <Icon name="book" size="md" />
             查看文档
-          </Button>)}
+          </Button>
         </div>
       </div>
 

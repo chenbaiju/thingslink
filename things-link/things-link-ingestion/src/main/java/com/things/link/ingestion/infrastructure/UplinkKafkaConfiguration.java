@@ -21,6 +21,9 @@ import com.things.link.ingestion.application.InvalidDownlinkMessageException;
 import com.things.link.ingestion.application.InvalidUplinkMessageException;
 import com.things.link.ingestion.application.ModbusResponseUplinkNormalizer;
 import com.things.link.ingestion.application.RawUplinkMessageNormalizer;
+import com.things.link.ingestion.application.EventUplinkMessageReader;
+import com.things.link.ingestion.application.EventUplinkMessageNormalizer;
+import com.things.link.telemetry.application.EventIngestionService;
 import com.things.link.ingestion.application.RealtimeProjectPublisher;
 import com.things.link.ingestion.application.TopologyUplinkMessageNormalizer;
 import com.things.link.ingestion.application.UplinkPreprocessingChain;
@@ -94,6 +97,24 @@ public class UplinkKafkaConfiguration {
         return new RawUplinkMessageNormalizer(reportReader);
     }
 
+    /** @return 独立严格事件正文读取器，不继承属性兼容规则 */
+    @Bean
+    EventUplinkMessageReader eventUplinkMessageReader() {
+        return new EventUplinkMessageReader();
+    }
+
+    /** @param reader 闭合事件读取器 @return 精确MQTT事件标准化器 */
+    @Bean
+    EventUplinkMessageNormalizer eventUplinkMessageNormalizer(EventUplinkMessageReader reader) {
+        return new EventUplinkMessageNormalizer(reader);
+    }
+
+    /** @param service 事件发生事实事务端口 @return 独立生产事件消费者 */
+    @Bean
+    EventUplinkKafkaConsumer eventUplinkKafkaConsumer(EventIngestionService service) {
+        return new EventUplinkKafkaConsumer(service);
+    }
+
     /**
      * 创建 D-039 设备未来时间边界。
      *
@@ -156,6 +177,7 @@ public class UplinkKafkaConfiguration {
      * 创建 原始消息主题监听器。
      *
      * @param normalizer 原始报文标准化器
+     * @param eventNormalizer 独立事件标准化器
      * @param topologyNormalizer 拓扑报文标准化器
      * @param batchNormalizer 批量上报标准化器
      * @param configReplyNormalizer 配置回执标准化器
@@ -165,6 +187,7 @@ public class UplinkKafkaConfiguration {
     @Bean
     RawUplinkKafkaConsumer rawUplinkKafkaConsumer(
             RawUplinkMessageNormalizer normalizer,
+            EventUplinkMessageNormalizer eventNormalizer,
             TopologyUplinkMessageNormalizer topologyNormalizer,
             GatewayBatchMessageNormalizer batchNormalizer,
             ConfigReplyUplinkNormalizer configReplyNormalizer,
@@ -173,7 +196,7 @@ public class UplinkKafkaConfiguration {
             OtaDownloadRequestUplinkHandler otaDownloads, OtaProgressUplinkHandler otaProgress,
             OtaHealthUplinkHandler otaHealth, OtaCommitReceiptUplinkHandler otaCommitReceipts,
             OtaCommitReconciliationUplinkHandler otaReconciliation, OtaRollbackPreflightUplinkHandler otaPreflight, OtaRollbackUplinkHandler otaRollback, OtaInstallStopUplinkHandler otaInstallStop) {
-        return new RawUplinkKafkaConsumer(normalizer, topologyNormalizer, batchNormalizer,
+        return new RawUplinkKafkaConsumer(normalizer, eventNormalizer, topologyNormalizer, batchNormalizer,
                 configReplyNormalizer, modbusResponseNormalizer, kafkaTemplate, otaReports, otaDownloads, otaProgress, otaHealth, otaCommitReceipts, otaReconciliation, otaPreflight, otaRollback, otaInstallStop);
     }
 

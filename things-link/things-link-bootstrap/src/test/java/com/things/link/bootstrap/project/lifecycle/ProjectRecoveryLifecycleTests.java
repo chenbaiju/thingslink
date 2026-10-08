@@ -13,6 +13,12 @@ import com.things.link.support.scheduling.NotificationWorkCoordinator;
 import com.things.link.testing.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import com.things.link.project.infrastructure.persistence.JdbcProjectRepository;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -154,6 +160,33 @@ class ProjectRecoveryLifecycleTests extends AbstractIntegrationTest {
         assertThat(body.get(1).get("restorable").asBoolean()).isFalse();
         assertThat(fieldNames(body.get(0))).containsExactlyInAnyOrder(
                 "id", "name", "region", "timezone", "deletedAt", "restoreDeadline", "restorable");
+    }
+
+    /** 固定历史时间覆盖春秋夏令时；真实仓储的列表与锁定结果必须遵循三十乘二十四小时。 */
+    @ParameterizedTest
+    @CsvSource({
+            "UTC,2026-03-01T12:00:00Z", "UTC,2026-10-15T12:00:00Z",
+            "America/Los_Angeles,2026-03-01T12:00:00Z", "America/Los_Angeles,2026-10-15T12:00:00Z",
+            "Europe/Berlin,2026-03-01T12:00:00Z", "Europe/Berlin,2026-10-15T12:00:00Z"
+    })
+    void recoveryDeadlineIsFixedDurationAcrossSessionTimezones(String zone, String deleted) throws Exception {
+        Fixture fixture = fixture();
+        Instant deletedAt = Instant.parse(deleted);
+        UUID projectId = project(fixture.projectTenant(), "夏令时恢复窗口", "Asia/Shanghai", "DELETING", deletedAt, 1);
+        member(projectId, fixture.ownerAccount(), "OWNER", "ACTIVE");
+        try (Connection connection = ownerConnection()) {
+            var source = new SingleConnectionDataSource(connection, true);
+            var scopedJdbc = new JdbcTemplate(source);
+            scopedJdbc.queryForObject("SELECT set_config('TimeZone', ?, false)", String.class, zone);
+            assertThat(scopedJdbc.queryForObject("SHOW TimeZone", String.class)).isEqualTo(zone);
+            var repository = new JdbcProjectRepository(scopedJdbc);
+            var expected = deletedAt.plus(Duration.ofDays(30));
+            assertThat(repository.findDeletedOwnedBy(fixture.ownerAccount())).singleElement()
+                    .satisfies(row -> assertThat(row.restoreDeadline()).isEqualTo(expected));
+            var transaction = new TransactionTemplate(new DataSourceTransactionManager(source));
+            transaction.executeWithoutResult(status -> assertThat(repository.lockDeletedForRecovery(projectId))
+                    .hasValueSatisfying(row -> assertThat(row.restoreDeadline()).isEqualTo(expected)));
+        }
     }
 
     /** 跨租户OWNER恢复仅改变生命周期列、保留代次和成员字节，并写一条归属真实项目tenant的审计。 */

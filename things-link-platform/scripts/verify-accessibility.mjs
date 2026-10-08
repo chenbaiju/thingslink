@@ -33,7 +33,7 @@ function contrast(foreground, background) {
 }
 
 const files = await htmlFiles(dist)
-expect(files.length >= 2, `HTML 页面数不足：${files.length}`)
+expect(files.length >= 4, `HTML 页面数不足：${files.length}`)
 
 for (const file of files) {
   const html = await readFile(file, 'utf8')
@@ -71,7 +71,9 @@ const palette = {
   secondary: [color('text-secondary'), color('bg-primary')],
   muted: [color('text-muted'), color('bg-primary')],
   link: [color('brand-700'), color('bg-primary')],
-  inverse: [color('bg-primary'), color('brand-800')]
+  inverse: [color('bg-primary'), color('brand-800')],
+  buttonStart: [color('bg-primary'), color('brand-600')],
+  buttonEnd: [color('bg-primary'), color('brand-700')]
 }
 for (const [name, colors] of Object.entries(palette)) {
   const ratio = contrast(...colors)

@@ -1,6 +1,7 @@
 package com.things.link.device.api.dto.response;
 
 import com.things.link.device.domain.DeviceType;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -15,7 +16,8 @@ import java.util.UUID;
 public record DeviceTypeResponse(UUID id, UUID projectId, String typeKey, String name,
                                  DeviceType.DeviceKind deviceKind, DeviceType.PayloadProtocol payloadProtocol,
                                  DeviceType.NetworkType networkType,
-                                 int version, DeviceType.Status status, String productKey, Instant createdAt) {
+                                 int version, DeviceType.Status status,
+                                 @Schema(description = "公开产品识别码；尚未生成产品凭据时为空", types = {"string", "null"}) String productKey, Instant createdAt) {
     /** @param type 领域对象 @return API 响应 */
     public static DeviceTypeResponse from(DeviceType type) {
         return new DeviceTypeResponse(type.id(), type.projectId(), type.typeKey(), type.name(),

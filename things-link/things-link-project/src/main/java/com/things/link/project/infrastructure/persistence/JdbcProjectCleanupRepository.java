@@ -24,11 +24,12 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
     /** 沿用接口定义的契约。{@inheritDoc} */
     @Override
     public Optional<ProjectCleanupClaim> claimNext(UUID token) {
+        // 与恢复和导出共享固定七百二十小时边界，不按会话时区的自然日提前或延迟清理。
         return jdbc.query("""
                 WITH candidate AS MATERIALIZED (
                     SELECT id, status AS previous_status FROM public.sys_project
                      WHERE (status = 'DELETING' AND deleted_at IS NOT NULL
-                            AND clock_timestamp() >= deleted_at + interval '30 days')
+                            AND clock_timestamp() >= deleted_at + interval '720 hours')
                         OR (status = 'PURGING' AND cleanup_next_attempt_at <= clock_timestamp()
                             AND (cleanup_lease_until IS NULL OR cleanup_lease_until <= clock_timestamp()))
                      ORDER BY COALESCE(cleanup_next_attempt_at, deleted_at), id
@@ -41,7 +42,7 @@ public class JdbcProjectCleanupRepository implements ProjectCleanupRepository {
                        cleanup_lease_until = clock_timestamp() + interval '2 minutes', updated_at = clock_timestamp()
                   FROM candidate c WHERE p.id = c.id
                    AND ((p.status = 'DELETING' AND p.deleted_at IS NOT NULL
-                         AND clock_timestamp() >= p.deleted_at + interval '30 days')
+                         AND clock_timestamp() >= p.deleted_at + interval '720 hours')
                         OR (p.status = 'PURGING' AND p.cleanup_next_attempt_at <= clock_timestamp()
                             AND (p.cleanup_lease_until IS NULL OR p.cleanup_lease_until <= clock_timestamp())))
                 RETURNING p.tenant_id, p.id, p.lifecycle_generation, p.cleanup_stage,

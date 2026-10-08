@@ -19,7 +19,7 @@
             <ElTooltip
               class="box-item"
               effect="dark"
-              :content="$t(menu.meta.title)"
+              :content="formatMenuTitle(menu.meta.title)"
               placement="right"
               :offset="15"
               :hide-after="0"
@@ -43,7 +43,7 @@
                   }"
                 />
                 <span v-if="dualMenuShowText" class="text-md text-g-700">
-                  {{ $t(menu.meta.title) }}
+                  {{ formatMenuTitle(menu.meta.title) }}
                 </span>
                 <div v-if="menu.meta.showBadge" class="art-badge art-badge-dual" />
               </div>
@@ -132,6 +132,8 @@
 </template>
 
 <script setup lang="ts">
+  import { activeWorkspace } from '@/utils/workspace-navigation'
+  import { formatMenuTitle } from '@/utils/router'
   import AppConfig from '@/config'
   import { useSettingStore } from '@/store/modules/setting'
   import { MenuTypeEnum, MenuWidth } from '@/enums/appEnum'
@@ -179,17 +181,21 @@
   const isMobileScreen = computed(() => width.value < MOBILE_BREAKPOINT)
 
   // 路由相关
-  const firstLevelMenuPath = computed(() => route.matched[0]?.path)
+  const firstLevelMenuPath = computed(
+    () =>
+      activeWorkspace(useMenuStore().navigationMenu, String(route.meta.activePath || route.path))
+        ?.path
+  )
   const routerPath = computed(() => String(route.meta.activePath || route.path))
 
   // 菜单数据
   const firstLevelMenus = computed(() => {
-    return useMenuStore().menuList.filter((menu) => !menu.meta.isHide)
+    return useMenuStore().navigationMenu.filter((menu) => !menu.meta.isHide)
   })
 
   const menuList = computed(() => {
     const menuStore = useMenuStore()
-    const allMenus = menuStore.menuList
+    const allMenus = menuStore.navigationMenu
 
     // 如果不是顶部左侧菜单或双列菜单，直接返回完整菜单列表
     if (!isTopLeftMenu.value && !isDualMenu.value) {
@@ -207,8 +213,7 @@
     }
 
     // 返回当前顶级路径对应的子菜单
-    const currentTopPath = `/${route.path.split('/')[1]}`
-    const currentMenu = allMenus.find((menu) => menu.path === currentTopPath)
+    const currentMenu = activeWorkspace(allMenus, String(route.meta.activePath || route.path))
     return currentMenu?.children ?? []
   })
 

@@ -4,7 +4,14 @@ import { reactive } from 'vue'
 import Page from '@/views/rule/executions/index.vue'
 import * as api from '@/api/rule-execution'
 
-const mocks = vi.hoisted(() => ({ user: { info: { currentProjectId: '' } } }))
+const mocks = vi.hoisted(() => ({
+  user: { info: { currentProjectId: '' } },
+  route: { query: {} as Record<string, string> }
+}))
+vi.mock('vue-router', async () => ({
+  ...(await vi.importActual<typeof import('vue-router')>('vue-router')),
+  useRoute: () => mocks.route
+}))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => mocks.user }))
 vi.mock('@/api/rule-execution', () => ({
   fetchSceneExecutions: vi.fn(),
@@ -42,6 +49,7 @@ function mountPage() {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  mocks.route = reactive({ query: {} })
   mocks.user = reactive({ info: { currentProjectId: 'owned-project' } })
   vi.mocked(api.fetchSceneExecutions).mockResolvedValue({ items: [], hasMore: false })
   vi.mocked(api.fetchSceneExecutionSceneOptions).mockResolvedValue([])
@@ -104,3 +112,16 @@ describe('执行记录切换页签的读取合同', () => {
     }
   })
 })
+
+it.each(['rule', 'automation', 'scene'])(
+  '关联入口定位 %s 执行记录，不混读其他来源',
+  async (source) => {
+    mocks.route.query.source = source
+    const page = mountPage()
+    await flushPromises()
+    expect((page.vm as any).$.setupState.activeTab).toBe(source)
+    expect(api.fetchSceneExecutions).toHaveBeenCalledTimes(source === 'scene' ? 1 : 0)
+    expect(api.fetchRuleExecutions).toHaveBeenCalledTimes(source === 'rule' ? 1 : 0)
+    page.unmount()
+  }
+)

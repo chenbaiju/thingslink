@@ -50,7 +50,7 @@ public class JdbcProjectExportSource implements ProjectExportSource {
                  WHERE p.id = ?
                    AND p.status = 'DELETING'
                    AND p.deleted_at IS NOT NULL
-                   AND clock_timestamp() < p.deleted_at + interval '30 days'
+                   AND clock_timestamp() < p.deleted_at + interval '720 hours'
                  FOR SHARE OF p
                 """, (rs, row) -> new ProjectExportScope(
                 rs.getObject("tenant_id", UUID.class), rs.getObject("id", UUID.class),
@@ -100,7 +100,7 @@ public class JdbcProjectExportSource implements ProjectExportSource {
                   FROM sys_project p
                  WHERE p.tenant_id = ? AND p.id = ? AND p.lifecycle_generation = ?
                    AND p.status = 'DELETING' AND p.deleted_at IS NOT NULL
-                   AND clock_timestamp() < p.deleted_at + interval '30 days'
+                   AND clock_timestamp() < p.deleted_at + interval '720 hours'
                  FOR SHARE
                 """, (rs, row) -> new ProjectExportProject(
                 rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("region"),
@@ -143,7 +143,7 @@ public class JdbcProjectExportSource implements ProjectExportSource {
                     SELECT 1 FROM sys_project p
                     JOIN sys_project_member m ON m.project_id = p.id
                     WHERE p.id = ? AND p.status = 'DELETING' AND p.deleted_at IS NOT NULL
-                      AND clock_timestamp() < p.deleted_at + interval '30 days'
+                      AND clock_timestamp() < p.deleted_at + interval '720 hours'
                       AND m.account_id = ? AND m.role = 'OWNER' AND m.status = 'ACTIVE')
                 """, Boolean.class, projectId, accountId);
         return Boolean.TRUE.equals(matched);

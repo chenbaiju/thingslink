@@ -70,6 +70,211 @@ function fixture() {
   return { context, catalog, ports, model: createDashboardPublication(ports) }
 }
 describe('看板发布管理意图与权威恢复', () => {
+  it.each(['204', 'transport'] as const)(
+    'A共享回归：在途%s离线未采纳，联网恢复60034仍保持原key',
+    async (outcome) => {
+      const f = fixture()
+      await f.model.open()
+      let resolve!: (value: unknown) => void
+      let reject!: (error: unknown) => void
+      f.ports.write.mockReturnValueOnce(
+        new Promise((yes, no) => {
+          resolve = yes
+          reject = no
+        })
+      )
+      const deleting = f.model.softDelete()
+      const first = structuredClone(f.ports.write.mock.calls[0]![0])
+      f.context.available = false
+      if (outcome === '204') resolve(undefined)
+      else reject(new Error('lost'))
+      await deleting
+      f.context.available = true
+      f.ports.write.mockRejectedValueOnce({ code: 60034, status: 404, outcomeUnknown: false })
+      await f.model.retry()
+      expect(f.ports.write.mock.calls[1]![0]).toEqual(first)
+      expect(f.model.getSnapshot()).toMatchObject({ pending: first, deleted: null })
+      await f.model.softDelete()
+      expect(f.ports.newKey).toHaveBeenCalledTimes(1)
+      f.ports.write.mockRejectedValueOnce({ code: 10014, status: 409, outcomeUnknown: false })
+      await f.model.retry()
+      expect(f.model.getSnapshot().deleted?.receipt).toBe('COMPLETION_MARKER')
+    }
+  )
+  it.each([
+    { code: 60034, status: 404 },
+    { code: 10002, status: 400 }
+  ])('A共享回归保留首个明确拒绝%s，不误冻原意图', async (error) => {
+    const f = fixture()
+    await f.model.open()
+    f.ports.write.mockRejectedValueOnce({ ...error, outcomeUnknown: false })
+    await f.model.softDelete()
+    expect(f.model.getSnapshot()).toMatchObject({ pending: null, catalog: null, deleted: null })
+    await f.model.softDelete()
+    expect(f.ports.write).toHaveBeenCalledTimes(1)
+  })
+  it('不合合同的500完成码不能冒称终态或换新键', async () => {
+    const f = fixture()
+    await f.model.open()
+    f.ports.write.mockRejectedValue({ code: 10014, status: 500, outcomeUnknown: true })
+    await f.model.softDelete()
+    await f.model.retry()
+    expect(f.model.getSnapshot()).toMatchObject({
+      deleted: null,
+      pending: { kind: 'SOFT_DELETE', status: 'UNKNOWN' }
+    })
+    expect(f.ports.newKey).toHaveBeenCalledTimes(1)
+  })
+  it.each([null, id(2)])(
+    '任何发布态%s软删除204进入终态，不读取已删除目录和历史',
+    async (current) => {
+      const f = fixture()
+      f.catalog.currentVersionId = current
+      await f.model.open()
+      await f.model.selectVersion(id(1))
+      f.ports.write.mockResolvedValueOnce(undefined)
+      await f.model.softDelete()
+      expect(f.ports.write.mock.calls[0]![0]).toMatchObject({
+        kind: 'SOFT_DELETE',
+        key: id(200),
+        body: { expectedPublicationRevision: '3' }
+      })
+      expect(Object.keys(f.ports.write.mock.calls[0]![0].body)).toEqual([
+        'expectedPublicationRevision'
+      ])
+      expect(f.model.getSnapshot()).toMatchObject({
+        deleted: { receipt: 'NO_CONTENT', dashboardId: id(101) },
+        catalog: null,
+        history: [],
+        selectedVersion: null,
+        pending: null,
+        writing: false
+      })
+      await f.model.recover()
+      await f.model.open()
+      await f.model.softDelete()
+      expect(f.ports.detail).toHaveBeenCalledTimes(1)
+      expect(f.ports.list).toHaveBeenCalledTimes(1)
+      expect(f.ports.write).toHaveBeenCalledTimes(1)
+    }
+  )
+  it('未知删除即使读取404仍仅原键恢复10014，不当作原204回执', async () => {
+    const f = fixture()
+    await f.model.open()
+    f.ports.write.mockRejectedValueOnce({ outcomeUnknown: true })
+    await f.model.softDelete()
+    const first = structuredClone(f.ports.write.mock.calls[0]![0])
+    f.ports.detail.mockRejectedValueOnce({ code: 60034, status: 404 })
+    await f.model.recover()
+    expect(f.model.getSnapshot()).toMatchObject({ catalog: null, pending: first, deleted: null })
+    await f.model.publish()
+    await f.model.softDelete()
+    expect(f.ports.newKey).toHaveBeenCalledTimes(1)
+    f.ports.write.mockRejectedValueOnce({ code: 10014, status: 409 })
+    await f.model.retry()
+    expect(f.ports.write.mock.calls[1]![0]).toEqual(first)
+    expect(f.model.getSnapshot()).toMatchObject({
+      pending: null,
+      deleted: { receipt: 'COMPLETION_MARKER' }
+    })
+    expect(f.model.getSnapshot().notice).toContain('不重放原204')
+    expect(f.ports.detail).toHaveBeenCalledTimes(2)
+  })
+  it.each([{ code: 10010, status: 409 }, { code: 50017, status: 503 }, { outcomeUnknown: true }])(
+    '删除暂不可判定%s原键和body被冻结',
+    async (error) => {
+      const f = fixture()
+      await f.model.open()
+      f.ports.write.mockRejectedValue(error)
+      await f.model.softDelete()
+      const first = structuredClone(f.ports.write.mock.calls[0]![0])
+      f.catalog.publicationRevision = '99'
+      await f.model.recover()
+      await f.model.retry()
+      expect(f.ports.write.mock.calls[1]![0]).toEqual(first)
+      expect(f.ports.newKey).toHaveBeenCalledTimes(1)
+      expect(f.model.getSnapshot().deleted).toBeNull()
+    }
+  )
+  it.each(['dirty', 'saving', 'conflict'] as const)(
+    '%s必须先处理，不静默删除本地草稿',
+    async (flag) => {
+      const f = fixture()
+      await f.model.open()
+      f.context[flag] = true
+      await f.model.softDelete()
+      expect(f.ports.write).not.toHaveBeenCalled()
+      expect(f.ports.newKey).not.toHaveBeenCalled()
+    }
+  )
+  it.each([
+    { code: 60040, status: 409 },
+    { code: 60035, status: 403 },
+    { code: 50017, status: 403 }
+  ])('首次明确拒绝%s不生成删除终态，需要重读CAS', async (error) => {
+    const f = fixture()
+    await f.model.open()
+    f.ports.write.mockRejectedValueOnce(error)
+    await f.model.softDelete()
+    expect(f.model.getSnapshot()).toMatchObject({ deleted: null, pending: null, catalog: null })
+    await f.model.softDelete()
+    expect(f.ports.write).toHaveBeenCalledTimes(1)
+  })
+  it('在途删除双发被拒，身份换代后的204不能删除新资源', async () => {
+    const f = fixture()
+    await f.model.open()
+    const write = deferred<unknown>()
+    f.ports.write.mockReturnValueOnce(write.promise)
+    const deleting = f.model.softDelete()
+    await f.model.retry()
+    await f.model.softDelete()
+    f.context.identity++
+    f.model.reset()
+    write.resolve(undefined)
+    await deleting
+    expect(f.ports.write).toHaveBeenCalledTimes(1)
+    expect(f.model.getSnapshot().deleted).toBeNull()
+  })
+  it('离线迟到204保持未知且释放在途标记，联网后原键可显式恢复', async () => {
+    const f = fixture()
+    await f.model.open()
+    const write = deferred<unknown>()
+    f.ports.write.mockReturnValueOnce(write.promise)
+    const deleting = f.model.softDelete()
+    f.context.available = false
+    write.resolve(undefined)
+    await deleting
+    expect(f.model.getSnapshot()).toMatchObject({
+      writing: false,
+      pending: { kind: 'SOFT_DELETE', status: 'UNKNOWN' },
+      deleted: null
+    })
+    f.context.available = true
+    f.ports.write.mockRejectedValueOnce({ code: 10014, status: 409 })
+    await f.model.retry()
+    expect(f.model.getSnapshot().deleted?.receipt).toBe('COMPLETION_MARKER')
+    expect(f.ports.newKey).toHaveBeenCalledTimes(1)
+  })
+  it('迟到历史详情不能复活删除终态，错误200正文只能未知', async () => {
+    const f = fixture()
+    await f.model.open()
+    const read = deferred<unknown>()
+    f.ports.version.mockReturnValueOnce(read.promise as Promise<ReturnType<typeof detail>>)
+    const selecting = f.model.selectVersion(id(1))
+    f.ports.write.mockResolvedValueOnce({})
+    await f.model.softDelete()
+    expect(f.model.getSnapshot().deleted).toBeNull()
+    f.ports.write.mockResolvedValueOnce(undefined)
+    await f.model.retry()
+    read.resolve(detail(1))
+    await selecting
+    expect(f.model.getSnapshot()).toMatchObject({
+      catalog: null,
+      history: [],
+      selectedVersion: null,
+      deleted: { receipt: 'NO_CONTENT' }
+    })
+  })
   it('发布冻结双revision，成功后只读刷新当前事实', async () => {
     const f = fixture()
     await f.model.open()

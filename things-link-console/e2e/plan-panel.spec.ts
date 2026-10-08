@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { enterProject, login } from './helpers'
+import { enterProject, expandWorkspace, login } from './helpers'
 
 /**
  * 套餐面板的真实浏览器验收（S14-4c 展示面）。
@@ -19,7 +19,7 @@ const PLAN_PROJECT = process.env.E2E_PLAN_PROJECT ?? '套餐面板项目'
 test('套餐面板：默认供给的租户在真实浏览器里看到冻结额度与运行时有效额度', async ({ page }) => {
   await login(page, PLAN_EMAIL, PLAN_PASSWORD)
   await enterProject(page, PLAN_PROJECT)
-  await page.locator('#app-sidebar').getByText('项目', { exact: true }).click()
+  await expandWorkspace(page, '项目与资源')
   await page.locator('#app-sidebar').getByText('项目设置', { exact: true }).click()
 
   const panel = page.locator('.plan-summary')

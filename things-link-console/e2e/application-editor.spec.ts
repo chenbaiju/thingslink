@@ -21,13 +21,15 @@ test('应用组合：创建、固定版本排序入口、保存重开、CAS冲�
   const second = await dashboard(page, '组合看板二')
   await page.goto('/#/dashboard/applications')
   const catalog = page.getByRole('region', { name: '应用目录' })
-  const application = catalog.getByRole('listitem').filter({ hasText: '组合验收应用' })
   await expect(catalog.getByRole('heading', { name: '应用目录', exact: true })).toBeVisible()
   await page.getByLabel('管理名称', { exact: true }).fill('组合验收应用')
   await page.getByRole('button', { name: '创建应用', exact: true }).click()
   const draft = page.getByRole('region', { name: '应用草稿' })
   await expect(draft).toHaveAttribute('data-application-id', /^[a-f0-9-]{36}$/)
   const id = (await draft.getAttribute('data-application-id'))!
+  const application = catalog
+    .getByRole('listitem')
+    .filter({ has: page.getByTestId(`application-open-${id}`) })
   await expect(page.getByLabel('公开展示名')).toHaveValue('组合验收应用')
   await page.getByLabel('公开展示名').fill('公开组合应用')
   await page.getByRole('button', { name: '读取看板目录', exact: true }).click()

@@ -8,6 +8,7 @@ import com.things.link.enduser.api.dto.response.EndUserDeviceBindingResponse;
 import com.things.link.enduser.api.dto.response.EndUserResponse;
 import com.things.link.enduser.application.EndUserProvisioningService;
 import com.things.link.enduser.application.EndUserQueryService;
+import com.things.link.enduser.application.EndUserLookupService;
 import com.things.link.enduser.application.EndUserRoleService;
 import com.things.link.enduser.application.DeviceClaimService;
 import com.things.link.enduser.application.DeviceUnbindService;
@@ -63,6 +64,8 @@ public class EndUserController {
     private final EndUserProvisioningService provisioningService;
     private final EndUserRoleService roleService;
     private final EndUserQueryService queryService;
+    /** 仅管理员精确找回预置身份。 */
+    private final EndUserLookupService lookupService;
     /** 一次性 CLAIM 令牌签发服务。 */
     private final DeviceClaimService claimService;
     /** 自解绑与管理员解绑共享的关系关闭服务。 */
@@ -71,11 +74,13 @@ public class EndUserController {
     public EndUserController(EndUserProvisioningService provisioningService,
                              EndUserRoleService roleService,
                              EndUserQueryService queryService,
+                             EndUserLookupService lookupService,
                              DeviceClaimService claimService,
                              DeviceUnbindService unbindService) {
         this.provisioningService = provisioningService;
         this.roleService = roleService;
         this.queryService = queryService;
+        this.lookupService = lookupService;
         this.claimService = claimService;
         this.unbindService = unbindService;
     }
@@ -134,6 +139,21 @@ public class EndUserController {
 
         return ResponseEntity.ok(queryService.list(projectId, cursor, limit)
                 .map(EndUserResponse::from));
+    }
+
+    /**
+     * 项目管理员按精确用户名找回租户身份与本项目角色。
+     * @param projectId 项目ID，权威归属由服务器解析
+     * @param username 精确用户名，规范化为空格裁剪及小写
+     * @return 非敏感身份及可空本项目角色；缺失或其他租户统一60001
+     */
+    @GetMapping("/lookup")
+    @Operation(operationId = "lookupEndUser", summary = "精确查找终端用户",
+            description = "仅项目OWNER/ADMIN可按精确用户名找回项目归属租户的身份及本项目角色，用于预置后未分配或丢响应恢复；不提供模糊查找、租户目录、口令或其他项目角色。未知用户名统一60001。")
+    public ResponseEntity<EndUserResponse> lookup(
+            @Parameter(description = "项目ID") @PathVariable UUID projectId,
+            @Parameter(description = "精确用户名，1至64位") @RequestParam String username) {
+        return ResponseEntity.ok(EndUserResponse.from(lookupService.lookup(projectId, username)));
     }
 
     /**

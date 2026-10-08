@@ -1060,6 +1060,55 @@ class ApplicationManagementApiTests extends AbstractIntegrationTest {
         assertThat(applicationDeletionAuditCount(applicationId)).isZero();
     }
 
+    /** 新建非空日额度且从未发过HTTP的项目，归档旧Bearer必须先被生命周期拒绝，不能误报日额度耗尽。 */
+    @Test
+    void softDeleteArchivedWithFreshDailyQuotaRejectsWithoutFacts() throws Exception {
+        Fixture fixture = seed(ProjectRole.OWNER);
+        UUID applicationId = insertApplication(
+                fixture.projectId(), fixture.tenantId(), fixture.accountId(),
+                "独立日额度归档应用", 0, 0, Instant.now(), draftContent("归档应用"), false);
+        UUID policyId = Uuid7.generate();
+        String originalBearer = token(fixture);
+        try (Connection connection = fixtureOwnerConnection()) {
+            execute(connection, "INSERT INTO sys_quota_policy(id,code,rest_api_call_daily_limit) VALUES (?,?,25)",
+                    policyId, "AB17" + policyId.toString().replace("-", "").substring(0, 24));
+            execute(connection, "UPDATE sys_tenant SET quota_policy_id=? WHERE id=?", policyId, fixture.tenantId());
+            execute(connection, "UPDATE sys_project SET status='ARCHIVED' WHERE id=?", fixture.projectId());
+        }
+        error(mvc.perform(post(softDeletePath(fixture.projectId(), applicationId))
+                .header(HttpHeaders.AUTHORIZATION, originalBearer)
+                .header("Idempotency-Key", "archived-daily-" + applicationId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(publicationRevisionEnvelope("0"))).andReturn(), 403, 50017);
+        assertThat(isApplicationDeleted(applicationId)).isFalse();
+        assertThat(applicationPublicationState(applicationId)).isEqualTo("0:null:0:0");
+        assertThat(applicationDeletionAuditCount(applicationId)).isZero();
+        assertThat(restDailyFacts(fixture)).isZero();
+    }
+
+    /** 原ADMIN Bearer在撤员后失效，删除、发布状态、审计和日计量都必须零增量。 */
+    @Test
+    void softDeleteRejectsRemovedMemberOriginalBearerWithoutFacts() throws Exception {
+        Fixture fixture = seed(ProjectRole.ADMIN);
+        UUID applicationId = insertApplication(
+                fixture.projectId(), fixture.tenantId(), fixture.accountId(),
+                "撤员旧凭据应用", 0, 0, Instant.now(), draftContent("撤员应用"), false);
+        String originalBearer = token(fixture);
+        try (Connection connection = fixtureOwnerConnection()) {
+            execute(connection, "DELETE FROM sys_project_member WHERE project_id=? AND account_id=?",
+                    fixture.projectId(), fixture.accountId());
+        }
+        error(mvc.perform(post(softDeletePath(fixture.projectId(), applicationId))
+                .header(HttpHeaders.AUTHORIZATION, originalBearer)
+                .header("Idempotency-Key", "removed-member-" + applicationId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(publicationRevisionEnvelope("0"))).andReturn(), 401, 20020);
+        assertThat(isApplicationDeleted(applicationId)).isFalse();
+        assertThat(applicationPublicationState(applicationId)).isEqualTo("0:null:0:0");
+        assertThat(applicationDeletionAuditCount(applicationId)).isZero();
+        assertThat(restDailyFacts(fixture)).isZero();
+    }
+
     /** 公共完成墓碑不重放204：同正文10014、异正文10009且创建映射和历史都不清理。 */
     @Test
     @DisplayName("应用软删使用可选公共幂等完成墓碑")
@@ -1568,6 +1617,20 @@ class ApplicationManagementApiTests extends AbstractIntegrationTest {
         java.util.LinkedHashSet<String> result = new java.util.LinkedHashSet<>();
         node.propertyNames().forEach(result::add);
         return result;
+    }
+
+    /** 未进入管理写链的拒绝不能增加持久日REST调用事实。 */
+    private long restDailyFacts(Fixture fixture) throws SQLException {
+        try (Connection connection = fixtureOwnerConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT count(*) FROM sys_usage_counter_daily WHERE tenant_id=? AND project_id=? AND metric='REST_API_CALL'")) {
+            statement.setObject(1, fixture.tenantId());
+            statement.setObject(2, fixture.projectId());
+            try (var result = statement.executeQuery()) {
+                assertThat(result.next()).isTrue();
+                return result.getLong(1);
+            }
+        }
     }
 
     /** 真实JWT携带当前项目，HTTP过滤器仍会回库复核成员与项目代次。 */

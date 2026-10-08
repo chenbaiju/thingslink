@@ -27,6 +27,10 @@ public final class DashboardDataRequestPaths {
     private static final Pattern CONSOLE_COMMAND_HISTORY_GET = Pattern.compile(
             "^/api/v1/projects/[^/]+/devices/[^/]+/commands$");
 
+    /** 事件列表及单条事实在认证、归属和参数失败前同样禁止缓存，不扩展未来写入口。 */
+    private static final Pattern CONSOLE_DEVICE_EVENTS_GET = Pattern.compile(
+            "^/api/v1/projects/[^/]+/devices/[^/]+/events(?:/[^/]+)?$");
+
     /** 当前设备授权目录只登记缓存控制，成员权限仍由应用层核验。 */
     private static final Pattern CONSOLE_DEVICE_END_USERS_GET = Pattern.compile(
             "^/api/v1/projects/[^/]+/devices/[^/]+/end-users$");
@@ -65,6 +69,7 @@ public final class DashboardDataRequestPaths {
                 || ("GET".equals(method) && path != null && (APP_GET.matcher(path).matches()
                     || CONSOLE_ALARM_STATUS_GET.matcher(path).matches()
                     || CONSOLE_COMMAND_HISTORY_GET.matcher(path).matches()
+                    || CONSOLE_DEVICE_EVENTS_GET.matcher(path).matches()
                     || CONSOLE_DEVICE_END_USERS_GET.matcher(path).matches()
                     || CONSOLE_DEVICE_TASKS_GET.matcher(path).matches()
                     || CONSOLE_DEVICE_AUTOMATIONS_GET.matcher(path).matches()

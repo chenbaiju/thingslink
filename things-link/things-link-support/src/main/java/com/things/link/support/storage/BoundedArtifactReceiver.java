@@ -453,7 +453,8 @@ public final class BoundedArtifactReceiver implements AutoCloseable {
             try { work.completed(file, () -> cancelled); }
             catch (Exception exception) {
                 cancelled = true;
-                if (!response.isCommitted()) { response.setStatus(500); }
+                try { if (!response.isCommitted()) { response.setStatus(500); } }
+                catch (RuntimeException ignored) { /* 容器已回收响应仍必须执行下方finally。 */ }
             } finally {
                 synchronized (this) { finish(); }
             }
@@ -485,7 +486,10 @@ public final class BoundedArtifactReceiver implements AutoCloseable {
             // failed可能要记录业务事实，不能占用单线程watchdog而阻塞另一传输的取消。
             Runnable failure = () -> {
                 try {
-                    if (!response.isCommitted()) { response.setHeader("Connection", "close"); }
+                    try { if (!response.isCommitted()) { response.setHeader("Connection", "close"); } }
+                    catch (RuntimeException ignored) {
+                        // 已断连的响应包装器可能失效，但不能跳过唯一失败回调及资源收束。
+                    }
                     reject(work, reason);
                 } finally {
                     synchronized (Transfer.this) { finish(); }
@@ -505,7 +509,9 @@ public final class BoundedArtifactReceiver implements AutoCloseable {
                 if (output != null) { output.close(); output = null; }
             } catch (IOException ignored) { /* 仍继续尝试删除文件并释放异步请求。 */ }
             try { if (input != null) { input.close(); } }
-            catch (IOException ignored) { /* 已断开连接不阻止其余资源收束。 */ }
+            catch (IOException | RuntimeException ignored) {
+                // 容器断连后可能已回收输入流包装器，关闭异常仍须删除本文件并归还名额。
+            }
             try { Files.deleteIfExists(file); }
             catch (IOException exception) { throw new IllegalStateException("制品接收临时文件清理失败"); }
             finally {

@@ -1,5 +1,14 @@
 <template>
   <div class="console-page rule-executions">
+    <ConsoleWorkspaceHeader
+      title="执行记录"
+      description="按场景、自动化与上行规则查看真实执行结果；动作受理不代表外部送达。"
+      :links="[
+        { label: '消息规则', path: '/rule/messages', permission: 'rule:manage' },
+        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
+        { label: '任务调度', path: '/task/jobs', permission: 'task:read' }
+      ]"
+    />
     <AutomationExecutions v-if="activeTab === 'automation'">
       <template #tabs
         ><ElTabs v-model="activeTab">
@@ -356,6 +365,8 @@
 </template>
 
 <script setup lang="ts">
+  import { useRoute } from 'vue-router'
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
@@ -386,7 +397,18 @@
   const userStore = useUserStore()
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
 
-  const activeTab = ref<TabName>('scene')
+  const route = useRoute()
+  const sourceTab = (): TabName => {
+    const source = route?.query.source
+    return source === 'rule' || source === 'automation' ? source : 'scene'
+  }
+  const activeTab = ref<TabName>(sourceTab())
+  watch(
+    () => route?.query.source,
+    () => {
+      activeTab.value = sourceTab()
+    }
+  )
 
   // —— 场景执行状态 ——
   const sceneItems = ref<RuleSceneExecutionResponse[]>([])
@@ -597,7 +619,11 @@
         (value) => (sceneOptions.value = value)
       ),
       fetchRuleExecutionRuleOptions(projectId.value).then((value) => (ruleOptions.value = value)),
-      loadScene()
+      activeTab.value === 'rule'
+        ? loadRule()
+        : activeTab.value === 'scene'
+          ? loadScene()
+          : Promise.resolve()
     ])
   })
 </script>

@@ -1,6 +1,6 @@
 import { generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto'
 import { expect, test } from '@playwright/test'
-import { login, resetSession } from './helpers'
+import { expandWorkspace, login, resetSession } from './helpers'
 
 test.use({ video: 'off' })
 
@@ -76,6 +76,7 @@ test('独立审核者菜单、同人幂等、第二人一致及证据冲突', as
   }
 
   await login(page, operator, password)
+  await expandWorkspace(page, '账号与平台工具')
   await expect(
     page.locator('#app-sidebar').getByText('自部署申请审核', { exact: true })
   ).toHaveCount(0)
@@ -92,6 +93,7 @@ test('独立审核者菜单、同人幂等、第二人一致及证据冲突', as
 
   await resetSession(page)
   await login(page, firstReviewer, password)
+  await expandWorkspace(page, '账号与平台工具')
   await expect(
     page.locator('#app-sidebar').getByText('自部署授权申请', { exact: true })
   ).toHaveCount(0)
@@ -117,6 +119,7 @@ test('独立审核者菜单、同人幂等、第二人一致及证据冲突', as
 
   await resetSession(page)
   await login(page, secondReviewer, password)
+  await expandWorkspace(page, '账号与平台工具')
   await page.locator('#app-sidebar').getByText('自部署申请审核', { exact: true }).click()
   await load()
   await form('b'.repeat(64))

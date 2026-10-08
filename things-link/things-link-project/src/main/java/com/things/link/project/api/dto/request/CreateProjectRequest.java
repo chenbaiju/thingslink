@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Size;
  *
  * @param name 项目名称。不要求唯一，重名是正常的
  * @param region 区域编码。一经创建不可变更
+ * @param description 可选项目描述，最多1000字符
  * @param timezone IANA 项目时区；省略时使用大陆产品默认值 {@code Asia/Shanghai}
  */
 @Schema(description = "创建项目请求")
@@ -32,5 +33,14 @@ public record CreateProjectRequest(
 
         @Schema(description = "IANA 项目时区；省略时默认 Asia/Shanghai", example = "Asia/Shanghai")
         @Size(max = 64, message = "项目时区标识过长")
-        String timezone) {
+        String timezone,
+
+        @Schema(description = "项目描述，可选，最多1000字符", example = "厂区温湿度监测与告警")
+        @Size(max = 1000, message = "项目描述不能超过1000字符")
+        String description) {
+
+    /** 兼容未填写项目描述的既有调用。 */
+    public CreateProjectRequest(String name, String region, String timezone) {
+        this(name, region, timezone, null);
+    }
 }

@@ -11,7 +11,10 @@ const projectDomain = {
       project: {
         title: '项目',
         list: '项目列表',
+        add: '添加项目',
+        recycleBin: '项目回收站',
         members: '项目成员',
+        endUsers: '终端用户',
         settings: '项目设置',
         apiKeys: 'API Key',
         webhooks: 'Webhook'

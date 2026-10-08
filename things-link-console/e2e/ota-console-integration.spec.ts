@@ -85,10 +85,10 @@ test('OTA控制台整合：四页菜单、跨页事实一致与角色边界', as
   expect(fixture.uploadStatus).toBe('VERIFIED')
 
   // 1) 四个OTA菜单由真实后端一次性下发（同一角色、同一项目）。
-  const otaMenu = page.getByRole('menuitem', { name: 'OTA升级', exact: true })
+  const otaMenu = page.getByRole('menuitem', { name: '设备开发', exact: true })
   await expect(otaMenu).toBeVisible()
   // 子菜单在父项展开后才渲染；先展开再断言四项，避免把"折叠"误判成"缺菜单"。
-  await otaMenu.click()
+  if ((await otaMenu.getAttribute('aria-expanded')) !== 'true') await otaMenu.click()
   for (const child of ['固件管理', '灰度活动', '设备作业', '审计时间线']) {
     await expect(page.getByRole('menuitem', { name: child, exact: true })).toBeVisible()
   }
@@ -125,5 +125,7 @@ test('OTA控制台整合：四页菜单、跨页事实一致与角色边界', as
   await resetSession(page)
   await login(page, MEMBER_EMAIL, MEMBER_PASSWORD)
   await enterProject(page, 'E2E项目')
-  await expect(page.getByRole('menuitem', { name: 'OTA升级', exact: true })).toHaveCount(0)
+  for (const name of ['固件管理', '灰度活动', '设备作业', '审计时间线']) {
+    await expect(page.getByRole('menuitem', { name, exact: true })).toHaveCount(0)
+  }
 })

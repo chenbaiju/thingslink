@@ -37,6 +37,15 @@ export class DashboardPublicationError extends Error {
 }
 /** 发布管理写请求只发送一次。显式恢复才重用同key/同正文；不进入全局401刷新重放。 */
 export async function writeDashboardPublicationIntent(intent: PublicationIntent): Promise<unknown> {
+  if (
+    intent.kind === 'SOFT_DELETE' &&
+    (Object.keys(intent.body).join(',') !== 'expectedPublicationRevision' ||
+      typeof intent.body.expectedPublicationRevision !== 'string' ||
+      !/^(0|[1-9]\d{0,18})$/.test(intent.body.expectedPublicationRevision) ||
+      BigInt(intent.body.expectedPublicationRevision) > 9223372036854775807n ||
+      intent.targetVersionId !== undefined)
+  )
+    throw new DashboardPublicationError('软删除正文不符合合同。', undefined, 400, false)
   const epoch = currentIdentityEpoch(),
     token = useUserStore().accessToken
   if (!token) throw new DashboardPublicationError('请先登录。', 401, 401, false)
@@ -64,7 +73,9 @@ export async function writeDashboardPublicationIntent(intent: PublicationIntent)
       ? '/versions'
       : intent.kind === 'WITHDRAW'
         ? '/withdraw'
-        : `/versions/${encodeURIComponent(intent.targetVersionId ?? '')}/rollback`
+        : intent.kind === 'SOFT_DELETE'
+          ? '/soft-delete'
+          : `/versions/${encodeURIComponent(intent.targetVersionId ?? '')}/rollback`
   try {
     check()
     const response = await fetch(
@@ -77,7 +88,11 @@ export async function writeDashboardPublicationIntent(intent: PublicationIntent)
           Accept: 'application/json',
           'Idempotency-Key': intent.key
         },
-        body: JSON.stringify(intent.body),
+        body: JSON.stringify(
+          intent.kind === 'SOFT_DELETE'
+            ? { expectedPublicationRevision: intent.body.expectedPublicationRevision }
+            : intent.body
+        ),
         credentials: 'omit',
         cache: 'no-store',
         redirect: 'error',
@@ -148,7 +163,12 @@ export async function writeDashboardPublicationIntent(intent: PublicationIntent)
         response.status >= 500
       )
     }
-    const expected = intent.kind === 'PUBLISH' ? 201 : intent.kind === 'WITHDRAW' ? 204 : 200
+    const expected =
+      intent.kind === 'PUBLISH'
+        ? 201
+        : intent.kind === 'WITHDRAW' || intent.kind === 'SOFT_DELETE'
+          ? 204
+          : 200
     if (response.status !== expected)
       throw new DashboardPublicationError(
         '发布响应状态与操作不匹配。',

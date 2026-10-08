@@ -1,13 +1,85 @@
 <template>
   <div class="console-page device-types console-page--single-panel">
-    <div class="device-types__header console-toolbar console-page-actions">
-      <ElButton v-if="hasAuth('device:create')" type="primary" :icon="Plus" @click="openCreateType">
-        创建设备类型
-      </ElButton>
-    </div>
+    <ConsoleWorkspaceHeader
+      class="device-types__header"
+      title="设备类型与物模型"
+      description="定义属性、事件和命令，发布后继续接入设备。"
+    >
+      <template #actions>
+        <ElButton
+          v-if="hasAuth('device:create')"
+          type="primary"
+          :icon="Plus"
+          @click="openCreateType"
+        >
+          创建设备类型
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
+    <ElCard
+      v-if="workspaceId"
+      class="device-types__workspace"
+      shadow="never"
+      v-loading="workspaceLoading"
+    >
+      <div class="stream-toolbar"
+        ><h3>物模型工作区</h3><ElButton text @click="closeWorkspace">关闭</ElButton></div
+      >
+      <ElAlert v-if="workspaceError" :title="workspaceError" type="error" :closable="false" />
+      <ElButton v-if="workspaceError" @click="openWorkspace({ id: workspaceId })"
+        >重试读取</ElButton
+      >
+      <template v-if="workspaceType">
+        <ElDescriptions :column="2" border>
+          <ElDescriptionsItem label="名称">{{ workspaceType.name }}</ElDescriptionsItem>
+          <ElDescriptionsItem label="标识符">{{ workspaceType.typeKey }}</ElDescriptionsItem>
+          <ElDescriptionsItem label="状态">{{
+            workspaceType.status === 'DRAFT' ? '草稿 · 可编辑物模型' : '已发布 · 物模型已冻结'
+          }}</ElDescriptionsItem>
+          <ElDescriptionsItem label="设备分类">{{
+            kindLabels[workspaceType.deviceKind!]
+          }}</ElDescriptionsItem>
+        </ElDescriptions>
+        <div class="stream-toolbar device-types__steps">
+          <ElButton @click="openProperties(workspaceType)">属性定义</ElButton>
+          <ElButton @click="openEvents(workspaceType)">事件定义</ElButton>
+          <ElButton @click="openCommands(workspaceType)">命令定义</ElButton>
+          <ElButton
+            v-if="hasAuth('device:update') && workspaceType.status === 'DRAFT'"
+            @click="publishType(workspaceType)"
+            >发布物模型</ElButton
+          >
+          <ElButton
+            v-if="
+              productManager &&
+              workspaceType.status === 'PUBLISHED' &&
+              ['DIRECT', 'GATEWAY'].includes(workspaceType.deviceKind || '')
+            "
+            @click="openProductCredential(workspaceType)"
+            >产品凭据</ElButton
+          >
+          <ElButton
+            v-if="canCreateDevices && workspaceType.status === 'PUBLISHED'"
+            type="primary"
+            @click="continueCreateDevice(workspaceType)"
+            >继续创建设备</ElButton
+          >
+        </div>
+        <p v-if="workspaceType.status === 'DRAFT'"
+          >完成物模型定义并发布后，即可使用该类型创建设备。发布后的修改遵循既有版本规则。</p
+        >
+      </template>
+    </ElCard>
+
     <ElCard shadow="never" class="console-table-panel console-page__main-panel">
       <ElTable v-loading="loading" :data="items" row-key="id">
-        <ElTableColumn show-overflow-tooltip prop="name" label="名称" min-width="160" />
+        <ElTableColumn label="名称" min-width="160">
+          <template #default="{ row }"
+            ><ElButton link type="primary" @click="openWorkspace(row)">{{
+              row.name
+            }}</ElButton></template
+          >
+        </ElTableColumn>
         <ElTableColumn show-overflow-tooltip prop="typeKey" label="标识符" min-width="150" />
         <ElTableColumn label="设备分类" width="120">
           <template #default="{ row }">{{ kindLabels[row.deviceKind] }}</template>
@@ -63,6 +135,17 @@
               icon="ri:pencil-line"
             />
             <ConsoleTableAction
+              v-if="
+                productManager &&
+                row.status === 'PUBLISHED' &&
+                ['DIRECT', 'GATEWAY'].includes(row.deviceKind)
+              "
+              type="primary"
+              @click="openProductCredential(row)"
+              label="产品凭据"
+              icon="ri:key-line"
+            />
+            <ConsoleTableAction
               v-if="hasAuth('device:delete') && row.status === 'DRAFT'"
               type="danger"
               @click="removeType(row)"
@@ -77,6 +160,13 @@
     <div v-if="typeHasMore" class="device-types__more">
       <ElButton :loading="loading" text type="primary" @click="load(true)">加载更多</ElButton>
     </div>
+
+    <ProductCredentialDialog
+      v-model="productCredentialVisible"
+      :project-id="projectId"
+      :type-id="productCredentialTypeId"
+      @changed="load()"
+    />
 
     <ElDialog
       class="console-dialog"
@@ -491,7 +581,9 @@
 </template>
 
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
+  import { recordRecentResource } from '@/utils/workbench-recent'
 
   import { Plus } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
@@ -508,6 +600,7 @@
     fetchDeviceEventDefinitions,
     fetchDevicePropertyDefinitions,
     fetchDeviceTypePage,
+    fetchDeviceTypeDetail,
     fetchPublishDeviceType,
     fetchUpdateDeviceCommandDefinition,
     fetchUpdateDeviceEventDefinition,
@@ -518,6 +611,8 @@
     type DevicePropertyDefinitionResponse,
     type DeviceTypeResponse
   } from '@/api/device'
+  import ProductCredentialDialog from './ProductCredentialDialog.vue'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
   import { useUserStore } from '@/store/modules/user'
   import { useAuth } from '@/hooks/core/useAuth'
   import { HttpError } from '@/utils/http/error'
@@ -545,8 +640,89 @@
 
   defineOptions({ name: 'DeviceTypes' })
   const userStore = useUserStore()
+  const router = useRouter()
+  const route = useRoute()
   const { hasAuth } = useAuth()
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
+  const canCreateDevices = computed(
+    () => hasAuth('device:create') && !!userStore.info.buttons?.includes('device:create')
+  )
+  const workspaceId = ref('')
+  const workspaceType = ref<DeviceTypeResponse>()
+  const workspaceLoading = ref(false)
+  const workspaceError = ref('')
+  let workspaceRead = 0
+  function closeWorkspace() {
+    workspaceRead++
+    workspaceId.value = ''
+    workspaceType.value = undefined
+    workspaceLoading.value = false
+    workspaceError.value = ''
+  }
+  async function openWorkspace(row: DeviceTypeResponse) {
+    if (!row.id || !projectId.value) return
+    const id = row.id,
+      project = projectId.value,
+      read = ++workspaceRead,
+      identity = currentIdentityEpoch()
+    workspaceId.value = id
+    workspaceType.value = undefined
+    workspaceError.value = ''
+    workspaceLoading.value = true
+    const current = () =>
+      read === workspaceRead && project === projectId.value && identity === currentIdentityEpoch()
+    try {
+      const detail = await fetchDeviceTypeDetail(project, id)
+      if (!current()) return
+      if (detail.id !== id || detail.projectId !== project)
+        throw new Error('设备类型不属于当前项目')
+      workspaceType.value = detail
+      recordRecentResource(
+        {
+          userId: userStore.info.userId ?? '',
+          tenantId: userStore.info.tenantId ?? '',
+          projectId: project
+        },
+        { kind: 'type', id, label: detail.name ?? '设备类型' }
+      )
+    } catch {
+      if (current()) workspaceError.value = '设备类型读取失败，请重试或选择其他类型。'
+    } finally {
+      if (current()) workspaceLoading.value = false
+    }
+  }
+  function continueCreateDevice(type: DeviceTypeResponse) {
+    if (
+      !canCreateDevices.value ||
+      !type.id ||
+      type.projectId !== projectId.value ||
+      type.status !== 'PUBLISHED'
+    )
+      return
+    void router.push({
+      path: '/device/list',
+      query: { createTypeId: type.id, contextProjectId: projectId.value }
+    })
+  }
+  const productManager = computed(
+    () =>
+      userStore.info.roles?.some((r) => r === 'OWNER' || r === 'ADMIN') && hasAuth('device:update')
+  )
+  const productCredentialVisible = ref(false),
+    productCredentialTypeId = ref('')
+  const openProductCredential = (row: DeviceTypeResponse) => {
+    if (
+      productManager.value &&
+      row.id &&
+      row.status === 'PUBLISHED' &&
+      ['DIRECT', 'GATEWAY'].includes(row.deviceKind || '')
+    ) {
+      productCredentialTypeId.value = row.id
+      productCredentialVisible.value = true
+    }
+  }
+  let catalogEpoch = 0,
+    catalogRead = 0
   const loading = ref(false),
     submitting = ref(false),
     propertiesLoading = ref(false),
@@ -666,19 +842,22 @@
     ]
   }
   const load = async (append = false) => {
-    if (!projectId.value) return
+    if (!projectId.value || loading.value) return
+    const epoch = catalogEpoch,
+      read = ++catalogRead,
+      id = projectId.value
     loading.value = true
     try {
-      const page = await fetchDeviceTypePage(
-        projectId.value,
-        append ? typeCursor.value : undefined,
-        50
-      )
+      const page = await fetchDeviceTypePage(id, append ? typeCursor.value : undefined, 50)
+      if (epoch !== catalogEpoch || read !== catalogRead) return
       items.value = append ? [...items.value, ...(page.items ?? [])] : (page.items ?? [])
       typeCursor.value = page.nextCursor ?? undefined
       typeHasMore.value = page.hasMore ?? false
+    } catch (error) {
+      if (epoch === catalogEpoch && read === catalogRead && !(error instanceof HttpError))
+        console.error('设备类型读取失败', error)
     } finally {
-      loading.value = false
+      if (epoch === catalogEpoch && read === catalogRead) loading.value = false
     }
   }
   const resetProtocol = () => {
@@ -755,6 +934,7 @@
       await fetchPublishDeviceType(projectId.value, row.id)
       ElMessage.success('设备类型已发布')
       await load()
+      if (workspaceId.value === row.id) await openWorkspace(row)
     } catch (error) {
       if (error !== 'cancel' && error !== 'close' && !(error instanceof HttpError))
         console.error('发布设备类型失败:', error)
@@ -1124,26 +1304,69 @@
         console.error('删除命令定义失败:', error)
     }
   }
-  onMounted(load)
+  watch(
+    [projectId, () => userStore.info.userId, () => userStore.info.tenantId, currentIdentityEpoch],
+    () => {
+      closeWorkspace()
+      catalogEpoch++
+      catalogRead++
+      loading.value = false
+      items.value = []
+      typeCursor.value = undefined
+      typeHasMore.value = false
+      productCredentialVisible.value = false
+      productCredentialTypeId.value = ''
+      selectedType.value = undefined
+      typeVisible.value = false
+      propertiesVisible.value = false
+      propertyFormVisible.value = false
+      eventsVisible.value = false
+      eventFormVisible.value = false
+      commandsVisible.value = false
+      commandFormVisible.value = false
+      void load()
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  watch(
+    () => [route.query.resourceId, route.query.contextProjectId] as const,
+    ([resourceId, contextProject]) => {
+      if (resourceId === undefined) return
+      if (
+        typeof resourceId !== 'string' ||
+        !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(resourceId) ||
+        contextProject !== projectId.value ||
+        !userStore.info.buttons?.includes('device:read')
+      ) {
+        closeWorkspace()
+        ElMessage.warning('设备类型入口已失效，请在当前项目重新选择。')
+        return
+      }
+      void openWorkspace({ id: resourceId })
+    },
+    { immediate: true }
+  )
+  onBeforeUnmount(() => {
+    closeWorkspace()
+    catalogEpoch++
+    catalogRead++
+    productCredentialVisible.value = false
+    productCredentialTypeId.value = ''
+  })
 </script>
 
 <style lang="scss" scoped>
   .device-types {
     padding: 10px;
+    &__workspace {
+      margin-bottom: 16px;
+    }
+    &__steps {
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
     &__header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      h3 {
-        margin: 0;
-        font-size: 18px;
-      }
-      p {
-        margin: 6px 0 0;
-        font-size: 13px;
-        color: var(--art-text-gray-600);
-      }
+      margin-bottom: 16px;
     }
   }
   .form-control {

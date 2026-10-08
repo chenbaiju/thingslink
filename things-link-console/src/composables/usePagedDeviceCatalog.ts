@@ -6,7 +6,8 @@ import {
   type DeviceSearchQuery,
   type DeviceTypeResponse
 } from '@/api/device'
-import type { Ref } from 'vue'
+import { getCurrentScope, onScopeDispose, type Ref } from 'vue'
+import { currentIdentityEpoch } from '@/utils/http/identity-scope'
 
 /** 下拉滚动距离底部多少像素时按需读取下一页。 */
 const LOAD_MORE_THRESHOLD = 48
@@ -33,6 +34,18 @@ function nearBottom(event: Event) {
  * 查询，按弹层滚动逐页加载。两者都保留已经出现过的选项，保证编辑已有对象时标签不退化成 UUID。
  */
 export function usePagedDeviceCatalog(projectId: Ref<string>) {
+  let generation = 0
+  const capture = () => {
+    const epoch = generation
+    const identity = currentIdentityEpoch()
+    const project = projectId.value
+    return {
+      project,
+      current: () =>
+        epoch === generation && identity === currentIdentityEpoch() && project === projectId.value
+    }
+  }
+  if (getCurrentScope()) onScopeDispose(() => generation++)
   const devices = ref<DeviceResponse[]>([])
   const deviceTypes = ref<DeviceTypeResponse[]>([])
   const devicesLoading = ref(false)
@@ -45,6 +58,7 @@ export function usePagedDeviceCatalog(projectId: Ref<string>) {
 
   const loadDevices = async (query: DeviceSearchQuery = {}, append = false) => {
     if (!projectId.value || devicesLoading.value) return
+    const scope = capture()
     devicesLoading.value = true
     try {
       const keyword = query.keyword?.trim() ?? ''
@@ -52,28 +66,33 @@ export function usePagedDeviceCatalog(projectId: Ref<string>) {
         deviceKeyword.value = keyword
         deviceCursor.value = undefined
       }
-      const page = await fetchSearchDevices(projectId.value, {
+      const page = await fetchSearchDevices(scope.project, {
         ...query,
         keyword: keyword || undefined,
         cursor: append ? deviceCursor.value : undefined,
         limit: 50
       })
+      if (!scope.current()) return
       devices.value = mergeById(devices.value, page.items ?? [])
       deviceCursor.value = page.nextCursor ?? undefined
       deviceHasMore.value = page.hasMore ?? false
+    } catch (error) {
+      if (scope.current()) throw error
     } finally {
-      devicesLoading.value = false
+      if (scope.current()) devicesLoading.value = false
     }
   }
 
   const searchDevices = (keyword: string) => loadDevices({ keyword })
   const ensureDevices = async (ids: Array<string | undefined>) => {
     if (!projectId.value) return
+    const scope = capture()
     const known = new Set(devices.value.map((item) => item.id))
     const missing = [...new Set(ids.filter((id): id is string => Boolean(id && !known.has(id))))]
     const loaded = await Promise.allSettled(
-      missing.map((id) => fetchDeviceDetail(projectId.value, id))
+      missing.map((id) => fetchDeviceDetail(scope.project, id))
     )
+    if (!scope.current()) return
     devices.value = mergeById(
       devices.value,
       loaded
@@ -92,15 +111,19 @@ export function usePagedDeviceCatalog(projectId: Ref<string>) {
 
   const loadDeviceTypes = async (append = false) => {
     if (!projectId.value || deviceTypesLoading.value || (append && !typeHasMore.value)) return
+    const scope = capture()
     deviceTypesLoading.value = true
     try {
       if (!append) typeCursor.value = undefined
-      const page = await fetchDeviceTypePage(projectId.value, append ? typeCursor.value : undefined)
+      const page = await fetchDeviceTypePage(scope.project, append ? typeCursor.value : undefined)
+      if (!scope.current()) return
       deviceTypes.value = mergeById(deviceTypes.value, page.items ?? [])
       typeCursor.value = page.nextCursor ?? undefined
       typeHasMore.value = page.hasMore ?? false
+    } catch (error) {
+      if (scope.current()) throw error
     } finally {
-      deviceTypesLoading.value = false
+      if (scope.current()) deviceTypesLoading.value = false
     }
   }
 
@@ -108,14 +131,22 @@ export function usePagedDeviceCatalog(projectId: Ref<string>) {
     if (nearBottom(event) && typeHasMore.value) void loadDeviceTypes(true)
   }
 
-  watch(projectId, () => {
-    devices.value = []
-    deviceTypes.value = []
-    deviceCursor.value = undefined
-    typeCursor.value = undefined
-    deviceHasMore.value = false
-    typeHasMore.value = false
-  })
+  watch(
+    [projectId, currentIdentityEpoch],
+    () => {
+      generation++
+      devicesLoading.value = false
+      deviceTypesLoading.value = false
+      deviceKeyword.value = ''
+      devices.value = []
+      deviceTypes.value = []
+      deviceCursor.value = undefined
+      typeCursor.value = undefined
+      deviceHasMore.value = false
+      typeHasMore.value = false
+    },
+    { flush: 'sync' }
+  )
 
   return {
     devices,

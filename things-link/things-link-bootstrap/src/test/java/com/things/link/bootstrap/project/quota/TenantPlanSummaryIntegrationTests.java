@@ -90,6 +90,130 @@ class TenantPlanSummaryIntegrationTests extends AbstractIntegrationTest {
         }
     }
 
+    /** 描述经过创建接口持久化，成员可见；改名及删除恢复不丢失。 */
+    @Test
+    void projectDescriptionPersistsAndFollowsMembershipAndRecovery() throws Exception {
+        Actor owner = registerAndLogin("description-owner-" + UUID.randomUUID() + "@example.com");
+        MvcResult created = mockMvc.perform(post("/api/v1/projects")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"描述项目\",\"region\":\"sh-1\",\"description\":\"  厂区温湿度监测\\n支持告警 <script>原样文本</script>  \"}"))
+                .andReturn();
+        assertThat(created.getResponse().getStatus()).isEqualTo(200);
+        JsonNode body = JSON.readTree(created.getResponse().getContentAsString());
+        UUID projectId = UUID.fromString(body.get("id").asString());
+        String expected = "厂区温湿度监测\n支持告警 <script>原样文本</script>";
+        assertThat(body.get("description").asString()).isEqualTo(expected);
+        assertThat(jdbcTemplate.queryForObject("SELECT description FROM sys_project WHERE id=?", String.class, projectId))
+                .isEqualTo(expected);
+        assertThat(listedProject(owner, projectId).get("description").asString()).isEqualTo(expected);
+        Actor member = registerAndLogin("description-member-" + UUID.randomUUID() + "@example.com");
+        assertThat(JSON.readTree(mockMvc.perform(get("/api/v1/projects")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + member.accessToken())).andReturn()
+                .getResponse().getContentAsString()).isEmpty()).isTrue();
+        addMember(projectId, member.accountId(), "VIEWER");
+        assertThat(listedProject(member, projectId).get("description").asString()).isEqualTo(expected);
+        var repository = new com.things.link.project.infrastructure.persistence.JdbcProjectRepository(jdbcTemplate);
+        repository.updateName(projectId, "新名称");
+        assertThat(repository.findById(projectId).orElseThrow().description()).isEqualTo(expected);
+        repository.softDelete(projectId);
+        assertThat(repository.findDeletedOwnedBy(owner.accountId())).singleElement()
+                .satisfies(item -> assertThat(item.project().description()).isEqualTo(expected));
+        assertThat(repository.restoreWithinWindow(projectId)).isOne();
+        assertThat(listedProject(owner, projectId).get("description").asString()).isEqualTo(expected);
+    }
+
+    /** 旧客户端省略描述可创建；1001字符写入前拒绝，1000字符可保存。 */
+    @Test
+    void projectDescriptionIsOptionalAndRejectsOversizedInput() throws Exception {
+        Actor legacy = registerAndLogin("description-legacy-" + UUID.randomUUID() + "@example.com");
+        UUID legacyProject = createProject(legacy, "未填写描述");
+        assertThat(listedProject(legacy, legacyProject).get("description").asString()).isEmpty();
+        Actor actor = registerAndLogin("description-boundary-" + UUID.randomUUID() + "@example.com");
+        String request = "{\"name\":\"边界项目\",\"region\":\"sh-1\",\"description\":\"%s\"}";
+        MvcResult rejected = mockMvc.perform(post("/api/v1/projects")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())
+                .contentType(MediaType.APPLICATION_JSON).content(request.formatted("描".repeat(1001))))
+                .andReturn();
+        assertThat(rejected.getResponse().getStatus()).isEqualTo(400);
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM sys_project WHERE tenant_id=?", Integer.class, actor.tenantId())).isZero();
+        MvcResult accepted = mockMvc.perform(post("/api/v1/projects")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())
+                .contentType(MediaType.APPLICATION_JSON).content(request.formatted("描".repeat(1000))))
+                .andReturn();
+        assertThat(accepted.getResponse().getStatus()).isEqualTo(200);
+        assertThat(JSON.readTree(accepted.getResponse().getContentAsString()).get("description").asString()).hasSize(1000);
+    }
+
+    /** 未选择项目也能读取锁定版本，宽限和受限免费期仍保留订阅身份。 */
+    @Test
+    void projectListIncludesSubscribedPlanBeforeProjectSelection() throws Exception {
+        Actor owner = registerAndLogin("list-plan-owner-" + UUID.randomUUID() + "@example.com");
+        UUID projectId = createProject(owner, "列表套餐项目");
+        for (String status : java.util.List.of("ACTIVE", "GRACE", "RESTRICTED_FREE")) {
+            jdbcTemplate.update("""
+                    UPDATE sys_tenant_subscription SET status=?,
+                           starts_at=now() - interval '30 days',
+                           ends_at=now() - interval '15 days',
+                           grace_ends_at=CASE WHEN ? IN ('GRACE', 'RESTRICTED_FREE')
+                               THEN now() - interval '1 day' ELSE NULL END,
+                           restricted_at=CASE WHEN ? = 'RESTRICTED_FREE' THEN now() ELSE NULL END
+                     WHERE tenant_id=?
+                    """, status, status, status, owner.tenantId());
+            JsonNode project = listedProject(owner, projectId);
+            JsonNode plan = project.get("subscribedPlan");
+            assertThat(plan).isNotNull();
+            assertThat(plan.get("code").asString()).isEqualTo("FREE");
+            assertThat(plan.get("name").asString()).isEqualTo("免费版");
+            assertThat(plan.get("revision").asString()).isNotBlank();
+            assertThat(plan.get("revisionNo").asInt()).isPositive();
+            assertThat(project.toString()).doesNotContain("tenantId", "priceCents", "quotaDimensions");
+        }
+        jdbcTemplate.update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?", projectId);
+        assertThat(listedProject(owner, projectId).get("subscribedPlan").get("code").asString()).isEqualTo("FREE");
+    }
+
+    /** 外部成员仍能列出项目，但不能读取他人租户套餐；无活订阅也不能伪装成免费版。 */
+    @Test
+    void projectListOmitsPlanForCrossTenantMemberAndMissingSubscription() throws Exception {
+        String nonce = UUID.randomUUID().toString();
+        Actor owner = registerAndLogin("list-plan-owner-" + nonce + "@example.com");
+        UUID projectId = createProject(owner, "订阅隔离项目");
+        Actor collaborator = registerAndLogin("list-plan-collaborator-" + nonce + "@example.com");
+        addMember(projectId, collaborator.accountId(), "VIEWER");
+        assertThat(listedProject(collaborator, projectId).get("subscribedPlan")).isNull();
+        jdbcTemplate.update("DELETE FROM sys_tenant_subscription WHERE tenant_id=?", owner.tenantId());
+        assertThat(listedProject(owner, projectId).get("subscribedPlan")).isNull();
+    }
+
+    /** 租户成员失效后即使项目关系仍在，也不得泄露订阅身份。 */
+    @Test
+    void projectListRechecksTenantMembershipForPlanVisibility() throws Exception {
+        String nonce = UUID.randomUUID().toString();
+        Actor owner = registerAndLogin("list-plan-tenant-owner-" + nonce + "@example.com");
+        UUID projectId = createProject(owner, "租户成员套餐项目");
+        Actor member = joinSameTenant(owner.tenantId(), projectId, "list-plan-member-" + nonce + "@example.com");
+        assertThat(listedProject(member, projectId).get("subscribedPlan").get("code").asString()).isEqualTo("FREE");
+        jdbcTemplate.update("DELETE FROM sys_tenant_member WHERE tenant_id=? AND account_id=?", owner.tenantId(), member.accountId());
+        // 认证层可能直接拒绝已失效令牌，因此单独验证仓储成员连接的隔离边界。
+        var repository = new com.things.link.project.infrastructure.persistence.JdbcProjectRepository(jdbcTemplate);
+        assertThat(repository.findMembershipsByAccount(member.accountId()))
+                .singleElement().satisfies(item -> assertThat(item.subscribedPlan()).isNull());
+        jdbcTemplate.update("DELETE FROM sys_project_member WHERE project_id=? AND account_id=?", projectId, member.accountId());
+        assertThat(repository.findMembershipsByAccount(member.accountId())).isEmpty();
+    }
+
+    /** 从真实项目列表定位项目，验证无需查询当前项目配额接口。 */
+    private JsonNode listedProject(Actor actor, UUID projectId) throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/projects")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + actor.accessToken())).andReturn();
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        for (JsonNode project : JSON.readTree(result.getResponse().getContentAsString())) {
+            if (projectId.toString().equals(project.get("id").asString())) return project;
+        }
+        throw new AssertionError("项目列表缺少已授权项目 " + projectId);
+    }
+
     /**
      * 租户 OWNER 读到 FREE 修订版、ACTIVE 长期订阅、冻结额度与真实用量。
      *

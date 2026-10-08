@@ -84,16 +84,13 @@ await new Promise((resolveListen, reject) => {
 try {
   const address = server.address()
   const origin = `http://127.0.0.1:${address.port}`
-  const routes = ['/', '/robots.txt', '/sitemap.xml']
+  const routes = ['/', '/docs', '/docs/', '/docs/getting-started', '/docs/getting-started/', '/docs/agent', '/docs/agent/', '/robots.txt', '/sitemap.xml']
   for (const path of routes) {
     const result = await request(origin, path)
     expect(result.status === 200, `${path} 应返回 200，实际为 ${result.status}`)
     expect(result.cache === 'no-cache', `${path} 缓存策略错误：${result.cache}`)
   }
 
-  for (const path of ['/docs', '/docs/', '/docs/getting-started']) {
-    expect((await request(origin, path)).status === 404, `${path} must return 404 without source documents`)
-  }
   const missing = await request(origin, '/missing-static-route')
   expect(missing.status === 404, `未知路径应返回 404，实际为 ${missing.status}`)
   expect(missing.cache === 'no-cache', `404 缓存策略错误：${missing.cache}`)

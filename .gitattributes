@@ -8,6 +8,10 @@ things-link-client-contracts/contracts/dashboard-v1-golden/inputs/*.json text eo
 # 自部署批准修订按原始字节校验摘要，禁止 Windows 检出时转换换行。
 things-link/things-link-entitlement/src/main/resources/self-hosted/revisions/*.json text eol=lf
 
+# Agent 固定模型请求与发布裁决按原始字节校验固定摘要，各平台检出均须保留 LF。
+things-link/things-link-assistant/src/main/resources/com/things/link/assistant/model-request-contract.json text eol=lf
+things-link/things-link-assistant/src/main/resources/com/things/link/assistant/analysis-release-review.json text eol=lf
+
 # 测试 TLS 夹具必须在 Windows 与 Unix 检出为一致的 PEM 文本。
 things-link/things-link-ingestion/src/test/resources/tls/*.pem text eol=lf
 

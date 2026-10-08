@@ -17,7 +17,7 @@ const resources = [
         <article class="flex flex-col rounded-xl border border-border bg-white p-6" aria-labelledby={`resource-${resource.id}`}>
           <h3 id={`resource-${resource.id}`} class="text-xl font-semibold text-text-primary">{resource.title}</h3>
           <p class="mt-3 mb-6 leading-relaxed text-text-secondary">{resource.description}</p>
-          <div class="mt-auto">{SITE.docsEnabled && (<Button href={resource.href} variant="secondary">{resource.label}</Button>)}</div>
+          <div class="mt-auto"><Button href={resource.href} variant="secondary">{resource.label}</Button></div>
         </article>
       ))}
     </div>

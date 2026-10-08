@@ -2,12 +2,17 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 const { route } = vi.hoisted(() => ({
-  route: { matched: [] as { path: string; name: string; meta: { title: string } }[] }
+  route: {
+    path: '',
+    meta: {},
+    matched: [] as { path: string; name: string; meta: { title: string } }[]
+  }
 }))
 vi.mock('vue-router', () => ({
   useRoute: () => route,
   useRouter: () => ({ getRoutes: () => [], push: vi.fn() })
 }))
+vi.mock('@/store/modules/menu', () => ({ useMenuStore: () => ({ navigationMenu: [] }) }))
 vi.mock('@/utils/router', () => ({ formatMenuTitle: (title: string) => title }))
 import Breadcrumb from '@/components/core/layouts/art-breadcrumb/index.vue'
 const item = (path: string, title: string) => ({ path, name: path, meta: { title } })

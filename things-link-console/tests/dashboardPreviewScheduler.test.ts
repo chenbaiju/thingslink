@@ -154,6 +154,37 @@ describe('预览顶层调度与独立完整校准', () => {
 })
 
 describe('预算资格等待与固定截止', () => {
+  it.each([
+    ['资格比较时已跨过已知窗口边界', [100]],
+    ['建立唤醒时跨过已知窗口边界', [99, 100]]
+  ] as const)('%s仍以正延迟复核资格，不降为未知等待', async (_label, times) => {
+    const states: PreviewSchedulerState[] = []
+    const runFull = vi.fn<(signal: AbortSignal) => Promise<void>>().mockResolvedValue()
+    const eligible = vi
+      .fn()
+      .mockReturnValueOnce({ eligible: false, nextAvailableAt: 100 })
+      .mockReturnValue({ eligible: true, nextAvailableAt: null })
+    let reads = 0
+    const scheduler = createPreviewScheduler({
+      runFull,
+      eligible,
+      subscribeBudget: () => () => {},
+      onState: (state) => states.push(state),
+      onInvalidate: () => {},
+      now: () => times[Math.min(reads++, times.length - 1)]!
+    })
+    schedulers.push(scheduler)
+    scheduler.requestFull(true)
+    expect(states.at(-1)).toMatchObject({ fullPending: true, waitingUntil: 100 })
+    expect(runFull).not.toHaveBeenCalled()
+    expect(eligible).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(eligible).toHaveBeenCalledTimes(2)
+    expect(runFull).toHaveBeenCalledTimes(1)
+    expect(states.at(-1)).toMatchObject({ busy: 'idle', fullPending: false, latched: false })
+    expect(states.at(-1)?.waitingUntil).toBeUndefined()
+  })
   it('未开始完整轮等预算超过30秒也不试探请求，取得资格才启动截止', async () => {
     const work = deferred()
     const f = fixture(vi.fn().mockReturnValue(work.promise))
@@ -186,11 +217,12 @@ describe('预算资格等待与固定截止', () => {
     expect(f.eligible).toHaveBeenLastCalledWith('FULL')
     expect(f.runFull).toHaveBeenCalledTimes(1)
   })
-  it('未知或已过期资格时点只等预算通知，不建立零延迟循环', async () => {
+  it('未知在途资格只等预算通知，不建立计时试探循环', async () => {
     const f = fixture()
-    f.budget({ eligible: false, nextAvailableAt: 0 })
+    f.budget({ eligible: false, nextAvailableAt: null })
     f.scheduler.requestFull()
     expect(f.state().waitingUntil).toBeNull()
+    expect(vi.getTimerCount()).toBe(0)
     const reads = f.eligible.mock.calls.length
     await vi.advanceTimersByTimeAsync(120_000)
     expect(f.eligible).toHaveBeenCalledTimes(reads)

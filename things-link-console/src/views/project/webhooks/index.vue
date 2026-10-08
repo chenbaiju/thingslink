@@ -1,5 +1,13 @@
 <template>
   <div class="console-page webhooks-page">
+    <ConsoleWorkspaceHeader
+      title="Webhook"
+      description="管理事件订阅与投递，轮换签名密钥；响应不确定时先查询原操作结果。"
+      :links="[
+        { label: 'API Key', path: '/project/api-keys', permission: 'integration:manage' },
+        { label: '用量与项目设置', path: '/project/settings', permission: 'quota:read' }
+      ]"
+    />
     <ElCard v-if="!allowed" shadow="never">
       <ElAlert title="请选择有集成管理权限的项目" :closable="false" />
     </ElCard>
@@ -274,6 +282,7 @@
   </div>
 </template>
 <script setup lang="ts">
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import { Plus } from '@element-plus/icons-vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'

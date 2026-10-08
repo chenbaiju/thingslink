@@ -68,11 +68,12 @@ public class ProjectController {
      * 等出现「一个账号参与上百个项目」的真实场景再说 ——
      * 范围条件见 ARCHITECTURE_GAPS.md GAP-TODO-08： 若真要加，按开发手册的约定用游标分页，不要用 offset。
      *
-     * @return 项目列表
+     * @return 项目列表及可见的订阅档位；仅有效租户成员可读本租户订阅，不返回价格或额度
      */
     @GetMapping
     @Operation(summary = "我的项目",
-            description = "列出当前账号参与的全部项目及其中的角色。结果跨租户。")
+            description = "列出当前账号参与的全部项目及其中的角色。结果跨租户，无需预先选定项目。"
+                    + "同租户有效成员可见项目归属租户的活状态订阅档位 subscribedPlan；跨租户协作者、无活订阅或非商业许可时省略，不返回价格和额度。")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "成功"),
             @ApiResponse(responseCode = "401", description = "未认证",
@@ -127,7 +128,7 @@ public class ProjectController {
     })
     public ResponseEntity<ProjectResponse> create(@Valid @RequestBody CreateProjectRequest request) {
         return ResponseEntity.ok(ProjectResponse.from(
-                projectService.create(request.name(), request.region(), request.timezone())));
+                projectService.create(request.name(), request.region(), request.timezone(), request.description())));
     }
 
     /**

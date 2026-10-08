@@ -151,6 +151,67 @@ axiosInstance.interceptors.response.use(
     // 后端的错误响应体就是 ApiError；网络错误等情况下它不存在
     const apiError = error.response?.data as ApiError | undefined
 
+    // 基线登记只能显式恢复原意图，任何错误都不能重放或携带不可信原文。
+    if (originalConfig && isSingleAttemptOtaBaselineRegistration(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '受控类型基线登记未自动重发；结果未知时请使用原正文和原键恢复。',
+          status === ApiStatus.unauthorized
+            ? ApiStatus.unauthorized
+            : Number.isSafeInteger(apiError?.code)
+              ? apiError!.code
+              : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
+    // 根签包导入只能显式恢复原意图，任何错误都不能重放或携带不可信原文。
+    if (originalConfig && isSingleAttemptOtaTrustImport(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '受控签包导入未自动重发；结果未知时请使用原正文和原键恢复。',
+          status === ApiStatus.unauthorized
+            ? ApiStatus.unauthorized
+            : Number.isSafeInteger(apiError?.code)
+              ? apiError!.code
+              : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
+    // 下载地址是短时能力；错误正文、签名查询串与认证重放均不得进入通用恢复流程。
+    if (originalConfig && isSingleAttemptOtaDownload(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '下载地址申领未自动重发；结果未知时请按原申请重试，已完成的地址不能回查。',
+          status === ApiStatus.unauthorized
+            ? ApiStatus.unauthorized
+            : Number.isSafeInteger(apiError?.code)
+              ? apiError!.code
+              : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
+    // 产品注册秘密的生成/轮换没有幂等回查，任何失败都不能重发或传播不可信错误正文。
+    if (originalConfig && isSingleAttemptProductCredential(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          status === ApiStatus.unauthorized
+            ? '产品凭据请求未重发，请恢复登录后核对类型并重新确认轮换影响。'
+            : '产品凭据结果未确认，请核对类型；秘密不能回查，再次申请会重新轮换。',
+          status === ApiStatus.unauthorized
+            ? ApiStatus.unauthorized
+            : typeof apiError?.code === 'number'
+              ? apiError.code
+              : (status ?? ApiStatus.error)
+        )
+      )
+    }
+
     if (status === ApiStatus.unauthorized) {
       const config = error.config as ExtendedAxiosRequestConfig | undefined
       const url = config?.url ?? ''
@@ -223,7 +284,13 @@ axiosInstance.interceptors.response.use(
 function createHttpError(
   message: string,
   code: number,
-  options?: { traceId?: string; details?: string[]; url?: string; method?: string }
+  options?: {
+    traceId?: string
+    details?: string[]
+    url?: string
+    method?: string
+    outcomeUnknown?: boolean
+  }
 ) {
   return new HttpError(message, code, options)
 }
@@ -335,7 +402,14 @@ async function retryRequest<T>(
   config: ExtendedAxiosRequestConfig,
   retries: number = MAX_RETRIES
 ): Promise<T> {
-  if (isSingleAttemptAnalysis(config)) return request<T>(config)
+  if (
+    isSingleAttemptAnalysis(config) ||
+    isSingleAttemptProductCredential(config) ||
+    isSingleAttemptOtaDownload(config) ||
+    isSingleAttemptOtaTrustImport(config) ||
+    isSingleAttemptOtaBaselineRegistration(config)
+  )
+    return request<T>(config)
   try {
     return await request<T>(config)
   } catch (error) {
@@ -352,6 +426,46 @@ function isSingleAttemptAnalysis(config: ExtendedAxiosRequestConfig): boolean {
   return (
     config.method?.toUpperCase() === 'POST' &&
     /^\/api\/v1\/projects\/[^/?#]+\/assistant\/analysis-runs(?:[?#].*)?$/.test(config.url ?? '')
+  )
+}
+
+/** 产品生成/轮换只能显式单次发送，其他设备和类型操作沿各自既有恢复合同。 */
+function isSingleAttemptProductCredential(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'POST' &&
+    /^\/api\/v1\/projects\/[^/?#]+\/device-types\/[^/?#]+\/product-credential(?:[?#].*)?$/.test(
+      config.url ?? ''
+    )
+  )
+}
+
+/** 管理下载申领只发送一次；其他固件写入口保持原有认证恢复合同。 */
+function isSingleAttemptOtaDownload(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'POST' &&
+    /^\/api\/v1\/projects\/[^/?#]+\/ota\/firmwares\/[^/?#]+\/release\/downloads(?:[?#].*)?$/.test(
+      config.url ?? ''
+    )
+  )
+}
+
+/** 精确受控根签包导入，其他信任读取及OTA管理写沿原恢复合同。 */
+function isSingleAttemptOtaTrustImport(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'POST' &&
+    /^\/api\/v1\/projects\/[^/?#]+\/ota\/trust-domains\/[^/?#]+\/bundles(?:[?#].*)?$/.test(
+      config.url ?? ''
+    )
+  )
+}
+
+/** 精确类型基线登记只能显式单次发送，管理GET和其他写路径不改变恢复合同。 */
+function isSingleAttemptOtaBaselineRegistration(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'POST' &&
+    /^\/api\/v1\/projects\/[^/?#]+\/ota\/device-types\/[^/?#]+\/baseline\/registrations(?:[?#].*)?$/.test(
+      config.url ?? ''
+    )
   )
 }
 

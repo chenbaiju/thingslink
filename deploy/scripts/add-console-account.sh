@@ -98,15 +98,17 @@ if [[ -f "$DEPLOY_DIR/.env" ]]; then
     source <(grep -E '^POSTGRES_USER=|^POSTGRES_DB=' "$DEPLOY_DIR/.env")
 fi
 PGUSER="${POSTGRES_USER:-thingslink}"
-PGDB="${POSTGRES_DB:-thingslink}"
+# 隔离HTTP浏览器夹具可显式选择独立数据库；默认开发库保持原配置。
+PGDB="${TC_CONSOLE_FIXTURE_DATABASE:-${POSTGRES_DB:-thingslink}}"
+PGCONTAINER="${TC_CONSOLE_FIXTURE_POSTGRES_CONTAINER:-tc-postgres}"
 
 # 封装 psql 调用，去除输出末尾换行
 psql_query() {
-    docker exec tc-postgres psql -U "$PGUSER" -d "$PGDB" --no-psqlrc -t -A -c "$1" 2>/dev/null
+    docker exec "$PGCONTAINER" psql -U "$PGUSER" -d "$PGDB" --no-psqlrc -t -A -c "$1" 2>/dev/null
 }
 
 psql_exec() {
-    docker exec tc-postgres psql -U "$PGUSER" -d "$PGDB" --no-psqlrc -v ON_ERROR_STOP=1 -q -c "$1" 2>&1
+    docker exec "$PGCONTAINER" psql -U "$PGUSER" -d "$PGDB" --no-psqlrc -v ON_ERROR_STOP=1 -q -c "$1" 2>&1
 }
 
 # 带 psql 变量的执行入口：供给 SQL 用 :'tenant_id' 这类占位符，由 psql 自行做字面量引用，
@@ -114,7 +116,7 @@ psql_exec() {
 psql_exec_with_vars() {
     # 必须走 stdin（-f -）而不是 -c：psql 的 -c 不做事变量插值，:'tenant_id' 会原样发给服务端。
     # 由 psql 自己引用变量，因此名称里的引号/斜杠/美元符号都不会破坏 SQL。
-    printf '%s\n' "$1" | docker exec -i tc-postgres psql -U "$PGUSER" -d "$PGDB" --no-psqlrc \
+    printf '%s\n' "$1" | docker exec -i "$PGCONTAINER" psql -U "$PGUSER" -d "$PGDB" --no-psqlrc \
         -v ON_ERROR_STOP=1 -q \
         -v tenant_id="$TENANT_ID" -v tenant_name="$TENANT_NAME" -v plan_code="$PLAN_CODE" \
         -f - 2>&1

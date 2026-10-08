@@ -502,3 +502,20 @@ export function fetchUpdateDeviceLocationPoint(
     params: body
   })
 }
+
+/** 单类型公开事实，不读取产品秘密或摘要。 */
+export function fetchDeviceTypeDetail(projectId: string, typeId: string) {
+  return request.get<DeviceTypeResponse>({
+    url: `/api/v1/projects/${encodeURIComponent(projectId)}/device-types/${encodeURIComponent(typeId)}`,
+    showErrorMessage: false
+  })
+}
+export type ProductCredentialCreatedResponse =
+  components['schemas']['ProductCredentialCreatedResponse']
+/** 非幂等生成或轮换，HTTP层对该精确路径禁止自动重发。 */
+export function generateProductCredential(projectId: string, typeId: string) {
+  return request.post<ProductCredentialCreatedResponse>({
+    url: `/api/v1/projects/${encodeURIComponent(projectId)}/device-types/${encodeURIComponent(typeId)}/product-credential`,
+    showErrorMessage: false
+  })
+}

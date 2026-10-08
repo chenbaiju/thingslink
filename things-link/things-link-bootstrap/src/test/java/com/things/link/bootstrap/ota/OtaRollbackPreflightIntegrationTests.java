@@ -328,6 +328,50 @@ class OtaRollbackPreflightIntegrationTests extends com.things.link.testing.Abstr
         error(send(fixture,"GET",preflightPath(f),null,null,false),403,70043);
     }
 
+    /** 真实观察不能借管理身份跨租户、项目或活动读取，归档也不把历史准备变成当前许可。 */
+    @Test void managementReadRejectsOtherScopesAndArchivedProject() throws Exception {
+        var f=recoveryWithoutPermit();seedAndPublishQuery(f);
+        assertThat(reconcile(f,preflightReport(f,Uuid7.generate()),java.time.Instant.now()).name()).isEqualTo("PREPARABLE");
+        var fixture=f.run().prepared().fixture();var before=job(f.run());
+        var actualOwner=new Fixture(fixture.tenantId(),fixture.projectId(),fixture.ownerId(),fixture.ownerId(),
+                fixture.typeId(),fixture.modelId());
+        ok(send(actualOwner,"GET",preflightPath(f),null,null,false),200);
+        assertThat(send(null,"GET",preflightPath(f),null,null,false).statusCode()).isEqualTo(401);
+
+        // 外租户的真实OWNER与项目使其JWT本身有效，不能把无效令牌拒绝当作业务隔离证据。
+        var outsider=new Fixture(Uuid7.generate(),Uuid7.generate(),Uuid7.generate(),Uuid7.generate(),
+                Uuid7.generate(),Uuid7.generate());
+        fixtures.add(outsider);var setup=owner();
+        setup.update("INSERT INTO sys_tenant(id,name) VALUES (?,'预检外部测试租户')",outsider.tenantId());
+        for(UUID account:List.of(outsider.accountId(),outsider.ownerId())) {
+            setup.update("INSERT INTO sys_account(id,email,password_hash,display_name,email_verified_at) VALUES (?,?,'{noop}unused','预检外部测试',now())",
+                    account,account+"@example.invalid");
+            setup.update("INSERT INTO sys_tenant_member(id,tenant_id,account_id) VALUES (?,?,?)",
+                    Uuid7.generate(),outsider.tenantId(),account);
+        }
+        setup.update("INSERT INTO sys_project(id,tenant_id,name,region,project_key) VALUES (?,?,'预检外部项目','sh-1',?)",
+                outsider.projectId(),outsider.tenantId(),"preflight_"+outsider.projectId().toString().replace("-",""));
+        setup.update("INSERT INTO sys_project_member(id,project_id,account_id,role) VALUES (?,?,?,'OWNER')",
+                Uuid7.generate(),outsider.projectId(),outsider.accountId());
+        error(send(outsider,"GET",preflightPath(f),null,null,false),404,50001);
+        error(send(fixture,"GET",preflightPath(f).replace(fixture.projectId().toString(),outsider.projectId().toString()),
+                null,null,false),404,50001);
+
+        // 同项目真实另一个活动也不能读取当前作业；缺失作业沿同一固定404隐藏事实。
+        var otherCampaign=ok(send(fixture,"POST",campaigns(fixture),key(),
+                plan(f.run().prepared().firmware(),List.of(f.run().device())),false),201).path("id").asText();
+        error(send(fixture,"GET",preflightPath(f).replace(f.run().campaign().toString(),otherCampaign),
+                null,null,false),404,70044);
+        error(send(fixture,"GET",preflightPath(f).replace(before.get("id").toString(),Uuid7.generate().toString()),
+                null,null,false),404,70044);
+
+        setup.update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?",fixture.projectId());
+        error(send(fixture,"GET",preflightPath(f),null,null,false),403,50017);
+        assertThat(count(f,"ota_rollback_preflight_report")).isEqualTo(1);
+        assertThat(job(f.run())).usingRecursiveComparison().isEqualTo(before);
+        assertThat(count(f,"dev_ota_commit")).isZero();assertThat(count(f,"dev_ota_security_floor")).isZero();
+    }
+
     /** 审计故障与准备观察同事务回滚，原认证正文可安全重放。 */
     @Test void auditFailureRollsBackPreflightObservation() throws Exception {
         var f=recovery();seedAndPublishQuery(f);byte[] body=preflightReport(f,Uuid7.generate());
@@ -516,7 +560,9 @@ class OtaRollbackPreflightIntegrationTests extends com.things.link.testing.Abstr
     private JsonNode preflight(ProgressFixture f) throws Exception {
         var response=send(f.run().prepared().fixture(),"GET",preflightPath(f),null,null,false);
         assertThat(response.headers().firstValue("Cache-Control").orElseThrow()).contains("no-store");
-        var result=ok(response,200);assertThat(result.has("canonical")).isFalse();return result;
+        var result=ok(response,200);assertThat(result.has("canonical")).isFalse();
+        assertThat(result.path("executionAuthorized").asBoolean()).isFalse();
+        assertThat(result.path("requiresAtomicCommitFence").asBoolean()).isTrue();return result;
     }
 
     /** 已发送原许可后的不匹配提交证明形成真实恢复责任，不伪写状态。 */

@@ -8,7 +8,7 @@ export interface GrantContext {
 export interface GrantUser {
   id: string
   username: string
-  displayName: string
+  displayName: string | null
   status: string
   role: string | null
   roleStatus: string | null
@@ -81,7 +81,7 @@ function user(value: unknown): GrantUser {
   requireThat(
     uuid(item.id) &&
       typeof item.username === 'string' &&
-      typeof item.displayName === 'string' &&
+      (item.displayName === null || typeof item.displayName === 'string') &&
       typeof item.status === 'string' &&
       (item.role === null || typeof item.role === 'string') &&
       (item.roleStatus === null || typeof item.roleStatus === 'string') &&
@@ -113,7 +113,11 @@ function page(value: unknown) {
   )
   return { users, nextCursor: data.hasMore ? (data.nextCursor as string) : null }
 }
-function grant(value: unknown, appUserId: string, dashboardId: string): DashboardGrant {
+export function parseDashboardGrant(
+  value: unknown,
+  appUserId: string,
+  dashboardId: string
+): DashboardGrant {
   const data = object(value)
   requireThat(
     Object.keys(data).sort().join(',') ===
@@ -294,7 +298,7 @@ export function createDashboardGrants(ports: GrantPorts) {
     state.error = ''
     changed()
     try {
-      const result = grant(
+      const result = parseDashboardGrant(
         await ports.detail(context.projectId, target, context.dashboardId),
         target,
         context.dashboardId
@@ -367,7 +371,7 @@ export function createDashboardGrants(ports: GrantPorts) {
     try {
       const raw = await ports.write(structuredClone(pending.intent))
       if (epoch !== generation || !matches(context)) return
-      const result = grant(raw, pending.intent.appUserId, context.dashboardId)
+      const result = parseDashboardGrant(raw, pending.intent.appUserId, context.dashboardId)
       const before = pending.intent.body.expectedRevision
       requireThat(
         result.status === pending.intent.body.status &&

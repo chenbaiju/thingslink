@@ -63,6 +63,22 @@ public class DeviceTypeController {
     }
 
     /**
+     * 读取单个设备类型的公开状态，用于凭据操作前核对；归档项目仍可读取。
+     *
+     * @param projectId 当前项目标识
+     * @param id 类型标识
+     * @return 不含产品秘密或摘要的当前类型；不存在或跨项目统一拒绝
+     */
+    @GetMapping("/{id}")
+    @Operation(operationId = "getDeviceType", summary = "读取设备类型详情", description = "要求项目读取权限；返回当前公开状态与产品识别码，不返回产品注册秘密或摘要")
+    public ResponseEntity<DeviceTypeResponse> detail(
+            @io.swagger.v3.oas.annotations.Parameter(description = "当前项目标识") @PathVariable UUID projectId,
+            @io.swagger.v3.oas.annotations.Parameter(description = "类型标识") @PathVariable UUID id) {
+        authorization.requireRead(projectId);
+        return ResponseEntity.ok(DeviceTypeResponse.from(service.detail(projectId, id)));
+    }
+
+    /**
      * 创建设备类型。
      *
      * @param projectId 项目 ID

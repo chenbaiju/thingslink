@@ -169,16 +169,45 @@ describe('项目邀请实际页面行为', () => {
     await flushPromises()
     expect(api.acceptProjectInvitation).not.toHaveBeenCalled()
   })
-  it('使用服务端游标翻页，失败保留明确错误和刷新入口', async () => {
-    api.fetchMyProjectInvitations.mockResolvedValueOnce({
-      items: [{ ...row }],
-      nextCursor: 'signed-next'
-    })
+  it('个人中心自动加载全部页并去重，不显示分页控件', async () => {
+    api.fetchMyProjectInvitations
+      .mockResolvedValueOnce({ items: [row], nextCursor: 'signed-next' })
+      .mockResolvedValueOnce({
+        items: [row, { ...row, id: 'invite-2', projectName: '第二个项目' }]
+      })
     page()
     await flushPromises()
-    api.fetchMyProjectInvitations.mockRejectedValueOnce(new Error('unavailable'))
-    await click('下一页')
     expect(api.fetchMyProjectInvitations.mock.calls[1][0]).toBe('signed-next')
+    expect(wrapper!.text()).toContain('测试项目')
+    expect(wrapper!.text()).toContain('第二个项目')
+    expect(wrapper!.text()).not.toContain('下一页')
+    expect(wrapper!.text()).not.toContain('回到第一页')
+    expect(wrapper!.findAll('button').filter((b) => b.text() === '确认接受')).toHaveLength(2)
+  })
+  it('个人中心后续页失败时不显示不完整结果，保留刷新入口', async () => {
+    api.fetchMyProjectInvitations
+      .mockResolvedValueOnce({ items: [row], nextCursor: 'signed-next' })
+      .mockRejectedValueOnce(new Error('unavailable'))
+    page()
+    await flushPromises()
     expect(wrapper!.text()).toContain('邀请读取失败')
+    expect(wrapper!.text()).not.toContain('测试项目')
+    await click('刷新')
+    expect(wrapper!.text()).toContain('测试项目')
+  })
+  it('重复游标停止读取并显示错误，避免无限请求', async () => {
+    api.fetchMyProjectInvitations.mockResolvedValue({ items: [row], nextCursor: 'same' })
+    page()
+    await flushPromises()
+    expect(api.fetchMyProjectInvitations).toHaveBeenCalledTimes(2)
+    expect(wrapper!.text()).toContain('邀请读取失败')
+  })
+  it('项目管理继续使用服务端游标翻页', async () => {
+    api.fetchProjectInvitations.mockResolvedValueOnce({ items: [row], nextCursor: 'signed-next' })
+    page('project-1')
+    await flushPromises()
+    expect(api.fetchProjectInvitations).toHaveBeenCalledTimes(1)
+    await click('下一页')
+    expect(api.fetchProjectInvitations.mock.calls[1][1]).toBe('signed-next')
   })
 })

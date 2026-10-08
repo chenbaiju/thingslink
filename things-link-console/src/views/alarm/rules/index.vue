@@ -1,5 +1,28 @@
 <template>
   <div class="console-page alarm-page console-page--single-panel">
+    <ConsoleWorkspaceHeader
+      title="告警规则"
+      description="定义设备属性异常条件，再关联通知组与通知模板。"
+      :links="[
+        { label: '告警历史', path: '/alarm/history', permission: 'alarm:read' },
+        { label: '通知组', path: '/alarm/notification-groups', permission: 'alarm:read' },
+        { label: '通知模板', path: '/alarm/notification-templates', permission: 'alarm:read' }
+      ]"
+    />
+    <section v-if="sourceRequested" class="console-editor-section" aria-label="来源设备">
+      <p v-if="sourceLoading" role="status">正在核对来源设备…</p>
+      <template v-else-if="sourceDevice">
+        <p class="console-description"
+          >来源设备：{{
+            sourceDevice.name || sourceDevice.deviceKey || sourceDevice.id
+          }}。点击创建后预选此设备，保存前仍可调整。</p
+        >
+      </template>
+      <template v-else-if="sourceError">
+        <ElAlert :title="sourceError" type="warning" :closable="false" />
+        <ElButton @click="reloadSource">重试来源设备</ElButton>
+      </template>
+    </section>
     <div class="alarm-page__header console-toolbar console-page-actions">
       <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreate">
         创建规则
@@ -272,6 +295,8 @@
 </template>
 
 <script setup lang="ts">
+  import { useWorkspaceDeviceContext } from '@/composables/useWorkspaceDeviceContext'
+  import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { formatTime } from '@/utils/time'
@@ -300,6 +325,14 @@
   import { useAuth } from '@/hooks/core/useAuth'
   import { useUserStore } from '@/store/modules/user'
   import { HttpError } from '@/utils/http/error'
+
+  const {
+    device: sourceDevice,
+    loading: sourceLoading,
+    error: sourceError,
+    requested: sourceRequested,
+    reload: reloadSource
+  } = useWorkspaceDeviceContext('alarm:manage')
 
   defineOptions({ name: 'AlarmRules' })
 
@@ -352,6 +385,13 @@
     enabled: true
   })
   const form = reactive<SaveAlarmRuleRequest>(defaultForm())
+  watch(
+    sourceDevice,
+    (next, previous) => {
+      if (previous?.id && !next && form.deviceId === previous.id) form.deviceId = ''
+    },
+    { flush: 'sync' }
+  )
   const rules: FormRules = {
     name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
     alarmType: [{ required: true, message: '请输入告警类型', trigger: 'blur' }],
@@ -438,19 +478,29 @@
       value ?? ''
     ] as 'danger' | 'warning' | 'info' | undefined
 
+  let listGeneration = 0
   const loadRules = async (append = false) => {
-    if (!projectId.value) return
+    if (!projectId.value || !userStore.isLogin || !hasAuth('alarm:read')) return
+    const generation = ++listGeneration
+    const pid = projectId.value
+    const current = () =>
+      generation === listGeneration &&
+      pid === projectId.value &&
+      userStore.isLogin &&
+      hasAuth('alarm:read')
     loading.value = true
     try {
-      const page = await fetchAlarmRules(projectId.value, append ? nextCursor.value : undefined)
+      const page = await fetchAlarmRules(pid, append ? nextCursor.value : undefined)
+      if (!current()) return
       items.value = append ? [...items.value, ...(page.items ?? [])] : (page.items ?? [])
       await ensureDevices((page.items ?? []).map((item) => item.deviceId))
+      if (!current()) return
       nextCursor.value = page.nextCursor ?? undefined
       hasMore.value = page.hasMore ?? false
     } catch (error) {
-      if (!(error instanceof HttpError)) console.error('加载告警规则失败:', error)
+      if (current() && !(error instanceof HttpError)) console.error('加载告警规则失败:', error)
     } finally {
-      loading.value = false
+      if (current()) loading.value = false
     }
   }
   const loadMore = () => void loadRules(true)
@@ -458,6 +508,9 @@
   const openCreate = () => {
     editingId.value = ''
     resetForm()
+    form.deviceId = sourceDevice.value?.id ?? ''
+    if (sourceDevice.value && !devices.value.some((item) => item.id === sourceDevice.value?.id))
+      devices.value.push(sourceDevice.value)
     formVisible.value = true
   }
   const openEdit = (row: AlarmRuleResponse) => {
@@ -627,9 +680,32 @@
     }
   }
 
-  onMounted(async () => {
-    await Promise.allSettled([loadDevices(), loadRules()])
-  })
+  watch(
+    () => [
+      projectId.value,
+      userStore.info.userId,
+      userStore.isLogin,
+      userStore.info.buttons?.join(',')
+    ],
+    () => {
+      listGeneration++
+      items.value = []
+      devices.value = []
+      nextCursor.value = undefined
+      hasMore.value = false
+      loading.value = false
+      formVisible.value = false
+      bindingsVisible.value = false
+      bindingFormVisible.value = false
+      selectedRule.value = undefined
+      bindings.value = []
+      resetForm()
+      if (userStore.isLogin && projectId.value && hasAuth('alarm:read'))
+        void Promise.allSettled([loadDevices(), loadRules()])
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  onBeforeUnmount(() => listGeneration++)
 </script>
 
 <style scoped lang="scss">

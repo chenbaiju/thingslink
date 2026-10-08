@@ -23,7 +23,16 @@ test('OTA审计：真实动作留痕、按动作过滤与角色边界', async ({
   test.setTimeout(240_000)
   page.setDefaultTimeout(20_000)
   await login(page, OWNER_EMAIL, OWNER_PASSWORD)
-  await enterProject(page, 'E2E项目')
+  // 审计不可删除；每次使用正式API创建隔离项目，保证空动作断言不受历史业务影响。
+  const projectName = `OTA审计隔离${Date.now()}`
+  await page.evaluate(async (name) => {
+    const path = '/src/api/project.ts'
+    const api = await import(path)
+    await api.fetchCreateProject({ name, region: 'sh-1' })
+  }, projectName)
+  await page.goto('/#/project/list')
+  await page.reload()
+  await enterProject(page, projectName)
 
   // 真实API产生一条`ota.firmware.created`审计事实（同一事务内写入）。
   const fixture = await page.evaluate(async () => {
@@ -108,6 +117,8 @@ test('OTA审计：真实动作留痕、按动作过滤与角色边界', async ({
   await ensureViewerMember(page, projectId, MEMBER_EMAIL)
   await resetSession(page)
   await login(page, MEMBER_EMAIL, MEMBER_PASSWORD)
-  await enterProject(page, 'E2E项目')
-  await expect(page.getByRole('menuitem', { name: 'OTA升级', exact: true })).toHaveCount(0)
+  await enterProject(page, projectName)
+  for (const name of ['固件管理', '灰度活动', '设备作业', '审计时间线']) {
+    await expect(page.getByRole('menuitem', { name, exact: true })).toHaveCount(0)
+  }
 })

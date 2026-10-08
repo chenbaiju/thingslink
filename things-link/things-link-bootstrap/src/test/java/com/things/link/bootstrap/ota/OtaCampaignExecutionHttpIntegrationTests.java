@@ -44,6 +44,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @org.springframework.context.annotation.Import(OtaCampaignExecutionHttpIntegrationTests.SigningConfiguration.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class OtaCampaignExecutionHttpIntegrationTests extends com.things.link.testing.AbstractIntegrationTest {
+    /** 每类有限复用真实owner连接；JUnit在所有用例及清场结束后关闭，仅服务夹具。 */
+    @org.junit.jupiter.api.extension.RegisterExtension
+    static final com.things.link.bootstrap.fixture.FixtureOwnerJdbcPool OWNER_FIXTURE =
+            new com.things.link.bootstrap.fixture.FixtureOwnerJdbcPool(()->new DriverManagerDataSource(
+                    POSTGRES.getJdbcUrl(),POSTGRES.getUsername(),POSTGRES.getPassword()));
     /** 仅本测试内存持有私钥，显式测试配置不进入生产装配。 */
     private static final java.security.KeyPair ROOT = keyPair(), RELEASE = keyPair(), ROTATED = keyPair();
     /** 每例根签名冻结的发布key到期；仅过期专项缩短，不能修改已登记有效期。 */
@@ -647,7 +652,7 @@ class OtaCampaignExecutionHttpIntegrationTests extends com.things.link.testing.A
 
     /** owner连接仅用于准备/清理与观察，不走生产读取断言。 */
     private static JdbcTemplate owner() {
-        return new JdbcTemplate(new DriverManagerDataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()));
+        return OWNER_FIXTURE.jdbc();
     }
 
     /** 原样拼接固定安全fixture UUID，保留版本反例中的JSON词法。 */

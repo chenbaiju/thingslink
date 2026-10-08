@@ -38,7 +38,7 @@ export interface PublicationContext {
   conflict: boolean
 }
 export interface PublicationIntent {
-  kind: 'PUBLISH' | 'ROLLBACK' | 'WITHDRAW'
+  kind: 'PUBLISH' | 'ROLLBACK' | 'WITHDRAW' | 'SOFT_DELETE'
   projectId: string
   dashboardId: string
   targetVersionId?: string
@@ -47,6 +47,12 @@ export interface PublicationIntent {
   status: 'UNKNOWN' | 'COMPLETED' | 'RECEIVED'
 }
 export interface PublicationSnapshot {
+  deleted: null | {
+    projectId: string
+    dashboardId: string
+    identity: number
+    receipt: 'NO_CONTENT' | 'COMPLETION_MARKER'
+  }
   catalog: PublicationCatalog | null
   history: PublicationVersion[]
   nextCursor: string | null
@@ -166,6 +172,7 @@ function page(value: unknown) {
   return { items, nextCursor: data.hasMore ? (data.nextCursor as string) : null }
 }
 const initial = (): PublicationSnapshot => ({
+  deleted: null,
   catalog: null,
   history: [],
   nextCursor: null,
@@ -188,6 +195,14 @@ export function createDashboardPublication(ports: PublicationPorts) {
   let ambiguous = false
   const snapshot = () => structuredClone(state)
   const changed = () => ports.changed(snapshot())
+  const identityMatches = (context: PublicationContext) => {
+    const now = ports.context()
+    return (
+      now.identity === context.identity &&
+      now.projectId === context.projectId &&
+      now.dashboardId === context.dashboardId
+    )
+  }
   const contextMatches = (context: PublicationContext) => {
     const now = ports.context()
     return (
@@ -197,6 +212,20 @@ export function createDashboardPublication(ports: PublicationPorts) {
       now.projectId === context.projectId &&
       now.dashboardId === context.dashboardId
     )
+  }
+  function retainUnobservedDeletion(context: PublicationContext, epoch: number) {
+    const now = ports.context()
+    if (
+      epoch === generation &&
+      identityMatches(context) &&
+      now.canRead &&
+      now.canManage &&
+      !now.available &&
+      state.pending?.kind === 'SOFT_DELETE'
+    ) {
+      ambiguous = true
+      state.notice = '删除响应未被采纳，原请求结果仍未知；联网后请只恢复原操作。'
+    }
   }
   function reset() {
     generation++
@@ -209,6 +238,24 @@ export function createDashboardPublication(ports: PublicationPorts) {
   }
   function fail(error: unknown) {
     state.error = error instanceof Error ? error.message : '发布操作未完成，请检查后重试。'
+  }
+  function deleted(context: PublicationContext, receipt: 'NO_CONTENT' | 'COMPLETION_MARKER') {
+    readGeneration++
+    detailSequence++
+    state = {
+      ...initial(),
+      deleted: {
+        projectId: context.projectId,
+        dashboardId: context.dashboardId,
+        identity: context.identity,
+        receipt
+      },
+      notice:
+        receipt === 'NO_CONTENT'
+          ? '看板已软删除（收到204无正文回执）。'
+          : '原软删除请求已完成；完成标记不重放原204回执。'
+    }
+    ambiguous = false
   }
   /** 读取明确拒绝使旧业务视图失效，但不能证明正在恢复的写请求未执行。 */
   function readFailure(error: unknown) {
@@ -238,6 +285,7 @@ export function createDashboardPublication(ports: PublicationPorts) {
     changed()
   }
   async function facts(unlockCompleted: boolean) {
+    if (state.deleted) return
     const context = ports.context()
     if (
       !context.available ||
@@ -381,7 +429,7 @@ export function createDashboardPublication(ports: PublicationPorts) {
     }
   }
   async function execute() {
-    const context = ports.context(),
+    const context = { ...ports.context() },
       epoch = generation,
       intent = state.pending
     if (
@@ -399,8 +447,12 @@ export function createDashboardPublication(ports: PublicationPorts) {
     changed()
     try {
       const result = await ports.write(structuredClone(intent))
+      retainUnobservedDeletion(context, epoch)
       if (epoch !== generation || !contextMatches(context) || !ports.context().canManage) return
-      if (intent.kind !== 'WITHDRAW') {
+      if (intent.kind === 'SOFT_DELETE') {
+        requireThat(result === undefined)
+        deleted(context, 'NO_CONTENT')
+      } else if (intent.kind !== 'WITHDRAW') {
         const received = versionDetail(result)
         requireThat(
           intent.kind === 'ROLLBACK'
@@ -408,13 +460,21 @@ export function createDashboardPublication(ports: PublicationPorts) {
             : received.sourceDraftRevision === intent.body.expectedDraftRevision
         )
       } else requireThat(result === undefined || result === null)
-      state.pending = { ...intent, status: 'RECEIVED' }
+      if (intent.kind !== 'SOFT_DELETE') state.pending = { ...intent, status: 'RECEIVED' }
     } catch (error) {
+      retainUnobservedDeletion(context, epoch)
       if (epoch !== generation || !contextMatches(context) || !ports.context().canManage) return
       const failure = error as { code?: number; status?: number; outcomeUnknown?: boolean }
-      if (failure.code === 10014) state.pending = { ...intent, status: 'COMPLETED' }
-      else if (
+      if (
+        failure.code === 10014 &&
+        (intent.kind !== 'SOFT_DELETE' ||
+          (failure.status === 409 && failure.outcomeUnknown !== true))
+      ) {
+        if (intent.kind === 'SOFT_DELETE') deleted(context, 'COMPLETION_MARKER')
+        else state.pending = { ...intent, status: 'COMPLETED' }
+      } else if (
         failure.code === 10010 ||
+        (intent.kind === 'SOFT_DELETE' && failure.code === 10014) ||
         failure.outcomeUnknown ||
         failure.status === undefined ||
         failure.status >= 500 ||
@@ -430,7 +490,7 @@ export function createDashboardPublication(ports: PublicationPorts) {
         state.notice = '本次操作被明确拒绝；重新读取发布状态后再决定新操作。'
       }
     } finally {
-      if (epoch === generation && contextMatches(context)) {
+      if (epoch === generation && identityMatches(context)) {
         state.writing = false
         changed()
       }
@@ -449,6 +509,7 @@ export function createDashboardPublication(ports: PublicationPorts) {
       !owner ||
       !contextMatches(owner) ||
       !context.canManage ||
+      state.deleted ||
       state.loading ||
       state.writing ||
       state.pending ||
@@ -456,10 +517,10 @@ export function createDashboardPublication(ports: PublicationPorts) {
     )
       return
     if (
-      kind === 'PUBLISH' &&
+      (kind === 'PUBLISH' || kind === 'SOFT_DELETE') &&
       (context.dirty || context.saving || context.conflict || !revision(context.draftRevision))
     ) {
-      state.error = '请先保存有效草稿并解决冲突后发布。'
+      state.error = '请先保存有效草稿并解决冲突，再发布或软删除。'
       changed()
       return
     }
@@ -495,6 +556,7 @@ export function createDashboardPublication(ports: PublicationPorts) {
     publish: () => begin('PUBLISH'),
     rollback: (id: string) => begin('ROLLBACK', id),
     withdraw: () => begin('WITHDRAW'),
+    softDelete: () => begin('SOFT_DELETE'),
     retry: execute,
     recover,
     reset,

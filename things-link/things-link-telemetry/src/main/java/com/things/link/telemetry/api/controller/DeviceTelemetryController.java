@@ -68,6 +68,7 @@ public class DeviceTelemetryController {
      * @return 历史点分页
      */
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "503", description = "套餐历史窗口不可用（50048）", content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = com.things.link.shared.error.ApiError.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "原始属性历史游标页，值保留写入类型，查询范围与套餐历史窗口求交", useReturnTypeSchema = true)
     @GetMapping("/property")
     @Operation(summary = "属性历史查询", description = "按设备和时间窗口查询属性时序数据点，支持游标分页；查询先与所属租户套餐历史窗口求交，缺投影503/50048")
     public ResponseEntity<CursorPage<PropertyPointResponse>> listProperties(
