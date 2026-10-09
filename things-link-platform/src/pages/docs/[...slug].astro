@@ -14,7 +14,7 @@ export async function getStaticPaths() {
   const docs = (await getCollection('docs')).sort((a, b) =>
     a.data.order - b.data.order || a.id.localeCompare(b.id, 'en')
   )
-  const navigation = docs.map(({ id, data }) => ({ id, data: { title: data.title } }))
+  const navigation = docs.map(({ id, data }) => ({ id, data: { title: data.title, group: data.group } }))
   return docs.map((entry) => {
     // glob loader 的 id 不含扩展名；index → /docs，其余保留原文档 URL。
     const slug = entry.id === 'index' ? undefined : entry.id

@@ -84,7 +84,18 @@ await new Promise((resolveListen, reject) => {
 try {
   const address = server.address()
   const origin = `http://127.0.0.1:${address.port}`
-  const routes = ['/', '/docs', '/docs/', '/docs/getting-started', '/docs/getting-started/', '/docs/agent', '/docs/agent/', '/robots.txt', '/sitemap.xml']
+  async function documentRoutes(directory) {
+    const entries = await readdir(directory, { withFileTypes: true })
+    const paths = await Promise.all(entries.map(async (entry) => {
+      const path = resolve(directory, entry.name)
+      if (entry.isDirectory()) return documentRoutes(path)
+      if (entry.name !== 'index.html') return []
+      const route = path.slice(root.length).replaceAll('\\', '/').replace(/\/index\.html$/, '')
+      return [route, `${route}/`]
+    }))
+    return paths.flat()
+  }
+  const routes = ['/', ...await documentRoutes(resolve(root, 'docs')), '/robots.txt', '/sitemap.xml']
   for (const path of routes) {
     const result = await request(origin, path)
     expect(result.status === 200, `${path} 应返回 200，实际为 ${result.status}`)
@@ -97,12 +108,14 @@ try {
   expect(missing.body.includes('页面未找到'), '404 未返回自定义页面')
   expect(!missing.body.includes('物联网云平台 让设备连接更简单'), '未知路径错误回退到了首页')
 
-  const assetFile = (await readdir(resolve(root, '_astro'))).find((file) => /\.(?:css|js)$/.test(file))
-  expect(assetFile, '未找到带哈希的 CSS/JS 资源')
-  const assetPath = `/_astro/${assetFile}`
-  const asset = await request(origin, assetPath)
-  expect(asset.status === 200, `${assetPath} 应返回 200`)
-  expect(asset.cache === 'public, max-age=31536000, immutable', `哈希资源缓存策略错误：${asset.cache}`)
+  const assetFiles = (await readdir(resolve(root, '_astro'))).filter((file) => /\.(?:css|js)$/.test(file))
+  expect(assetFiles.length, '未找到带哈希的 CSS/JS 资源')
+  for (const file of assetFiles) {
+    const assetPath = `/_astro/${file}`
+    const asset = await request(origin, assetPath)
+    expect(asset.status === 200, `${assetPath} 应返回 200`)
+    expect(asset.cache === 'public, max-age=31536000, immutable', `哈希资源缓存策略错误：${asset.cache}`)
+  }
 
   const font = await request(origin, '/fonts/ThingsLink_Cereal_VF_W_Wght.woff2')
   expect(font.status === 200, '字体资源应返回 200')

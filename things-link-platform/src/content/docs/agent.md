@@ -1,7 +1,8 @@
 ---
 title: Agent 运维助手
 description: 查看设备排查证据、检索项目知识并手动生成个人事实报告
-order: 2
+order: 370
+group: 业务开发
 ---
 
 # Agent 运维助手

@@ -434,6 +434,18 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
                 .containsExactlyInAnyOrder("longitude","latitude","version");
     }
 
+    /** 曲线桶空值不能在生成合同中被缩成非空整数。 */
+    @Test void overviewTrendsPreservesNullableBucketValuesAndExplicitSource() throws Exception {
+        var spec = PRETTY.readTree(fetchSpec());
+        var items = spec.path("components").path("schemas").path("OverviewTrendSeries")
+                .path("properties").path("values").path("items");
+        assertThat(items.path("type").valueStream().map(JsonNode::asString).toList())
+                .containsExactlyInAnyOrder("integer", "null");
+        assertThat(spec.path("components").path("schemas").path("OverviewTrendsResponse")
+                .path("properties").path("source").path("enum").valueStream().map(JsonNode::asString).toList())
+                .containsExactly("OBSERVED", "SIMULATED", "NONE");
+    }
+
     /** 全局守卫必须能发现头、错误和分页的真实结构破坏。 */
     @Test void globalStructureRejectsMissingHeadersWrongErrorsAndBrokenPages() throws Exception {
         var good = PRETTY.readTree(fetchSpec());

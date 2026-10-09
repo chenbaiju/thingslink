@@ -54,9 +54,9 @@ const home = await readFile(resolve(dist, 'index.html'), 'utf8')
 expect(count(home, /class="demo-panel\b/g) === 3, '无脚本首页应保留三组产品示意内容')
 expect(!/class="demo-panel\b[^>]*\shidden(?:\s|>|=)/.test(home), '产品示意不应在初始 HTML 中隐藏')
 
-const cssFile = (await readdir(resolve(dist, '_astro'))).find((file) => file.endsWith('.css'))
-expect(cssFile, '未找到构建后的 CSS')
-const css = await readFile(resolve(dist, '_astro', cssFile), 'utf8')
+const cssFiles = (await readdir(resolve(dist, '_astro'))).filter((file) => file.endsWith('.css'))
+expect(cssFiles.length, '未找到构建后的 CSS')
+const css = (await Promise.all(cssFiles.map((file) => readFile(resolve(dist, '_astro', file), 'utf8')))).join('\n')
 expect(css.includes('prefers-reduced-motion:reduce'), '构建 CSS 缺少减少动态效果规则')
 expect(css.includes('.skip-link'), '构建 CSS 缺少跳过导航样式')
 

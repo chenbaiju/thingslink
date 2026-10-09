@@ -1273,6 +1273,11 @@
     },
     {
       "method": "get",
+      "path": "/api/v1/projects/{projectId}/overview/trends",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
       "path": "/api/v1/projects/{projectId}/ota/trust-domains",
       "idempotency": "read"
     },

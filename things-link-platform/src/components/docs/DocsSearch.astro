@@ -1,0 +1,11 @@
+---
+interface Props { id: string }
+const { id } = Astro.props
+---
+<div class="docs-search" data-docs-search hidden>
+  <label class="sr-only" for={id}>搜索文档</label>
+  <input id={id} type="search" role="combobox" placeholder="搜索文档"
+    autocomplete="off" aria-autocomplete="list" aria-expanded="false" aria-controls={`${id}-results`} />
+  <div id={`${id}-results`} class="docs-search-results" role="listbox" aria-label="匹配文档" hidden></div>
+  <span class="sr-only" role="status" aria-live="polite"></span>
+</div>

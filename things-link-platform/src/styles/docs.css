@@ -91,3 +91,42 @@
 .docs-content dt { font-weight: 600; }
 .docs-content dd { margin-inline-start: 1.5rem; }
 .docs-content :where(img, video) { max-width: 100%; height: auto; border-radius: var(--radius-md); }
+
+/* 分组导航使用共享样式，避免文章数量增加后重复大量类名。 */
+.docs-nav-group + .docs-nav-group { margin-top: 1.25rem; }
+.docs-nav-group-title {
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.docs-nav-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.docs-nav-link {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.docs-nav-link:hover, .docs-nav-link:focus-visible {
+  color: var(--color-brand-600);
+  background: var(--color-brand-50);
+}
+.docs-nav-link[aria-current="page"] {
+  color: var(--color-brand-600);
+  background: var(--color-brand-50);
+  font-weight: 600;
+}
+
+/* 搜索常驻侧栏顶部，建议浮层不改变目录布局及滚动位置。 */
+.docs-sidebar-header { position: relative; z-index: 10; flex-shrink: 0; padding: 1.5rem 1.5rem 1rem; background: white; }
+.docs-search { position: relative; margin-bottom: 0.5rem; }
+.docs-search input { width: 100%; min-width: 0; height: 2.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--color-text-primary); background: white; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.docs-search input:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
+.docs-search-results { position: absolute; top: calc(100% + 0.5rem); inset-inline: 0; z-index: 20; max-height: 20rem; overflow-y: auto; background: white; border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: 0 8px 24px rgb(15 23 42 / 12%); }
+.docs-search[hidden], .docs-search-results[hidden] { display: none; }
+.docs-search-results a { display: block; padding: 0.625rem 0.75rem; color: var(--color-text-primary); font-size: 0.875rem; line-height: 1.5; overflow-wrap: anywhere; }
+.docs-search-results a:hover, .docs-search-results a[aria-selected="true"] { color: var(--color-brand-600); background: var(--color-brand-50); }
+.docs-search-results small { display: block; margin-top: 0.125rem; color: var(--color-text-muted); font-size: 0.75rem; }
+.docs-search-results p { padding: 0.75rem; color: var(--color-text-secondary); font-size: 0.875rem; }

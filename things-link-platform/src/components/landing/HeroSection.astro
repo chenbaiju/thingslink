@@ -5,8 +5,8 @@
  * 左右结构：左侧价值主张与 CTA，右侧产品视觉位。
  * 手机上按“标题 → 摘要 → 按钮 → 视觉”的自然顺序排列（DOM 顺序即阅读顺序）。
  *
- * 右侧当前是**明确标注的占位块**，不是已上线界面。真实截图属 T05，
- * 拿到素材前不得把它当作产品界面展示。
+ * 右侧使用本地 Console 项目概况截图，侧栏分组保持收起。
+ * 截图内使用统计为模拟数据，来源与验证记录见官网能力证据 T05-C。
  */
 import { SITE } from '@/config'
 import Button from '@/components/ui/Button.astro'
@@ -50,15 +50,18 @@ import Icon from '@/components/ui/Icon.astro'
         </div>
       </div>
 
-      <!-- 右列：产品视觉位（占位，待 T05 替换为真实截图） -->
+      <!-- 右列：真实 Console 项目概况截图 -->
       <div class="w-full">
-        <div class="w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] rounded-2xl border border-border bg-bg-secondary shadow-card flex flex-col items-center justify-center gap-3 p-6 text-center">
-          <Icon name="chart" size="lg" class="text-brand-400" />
-          <p class="text-sm font-medium text-text-secondary">产品界面示意图</p>
-          <p class="text-xs text-text-muted max-w-xs">
-            占位区域。真实控制台截图与脱敏演示数据尚未就绪，将在对应阶段替换。
-          </p>
-        </div>
+        <img
+          src="/images/console-project-overview.jpg"
+          alt="ThingsLink 项目概况：设备数量、在线率、告警分布及模拟使用统计，侧栏菜单收起"
+          width="1176"
+          height="873"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          class="block w-full h-auto rounded-2xl border border-border bg-bg-secondary shadow-card"
+        />
       </div>
     </div>
   </div>

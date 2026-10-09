@@ -73,11 +73,13 @@
           </ElSkeleton>
         </ElCard>
       </section>
+      <OverviewStatistics v-if="projectId" :project-id="projectId" :identity="trendIdentity" />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
+  import OverviewStatistics from './components/OverviewStatistics.vue'
   import { fetchProjectOverview, type OverviewResponse } from '@/api/overview'
   import { useUserStore } from '@/store/modules/user'
   import { alarmDistribution } from '@/utils/alarm-distribution'
@@ -88,6 +90,14 @@
 
   const userStore = useUserStore()
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
+  const trendIdentity = computed(() =>
+    JSON.stringify([
+      projectId.value,
+      userStore.info.userId,
+      userStore.info.tenantId,
+      currentIdentityEpoch()
+    ])
+  )
   const loading = ref(false)
   const overview = ref<OverviewResponse>()
   const distribution = computed(() => alarmDistribution(overview.value))

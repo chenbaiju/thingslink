@@ -4551,6 +4551,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectId}/overview/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询项目历史统计曲线
+         * @description 只读查询完整小时统计，来源不混算，缺样为null；模拟统计不代表真实用量。
+         */
+        get: operations["getOverviewTrends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectId}/ota/trust-domains": {
         parameters: {
             query?: never;
@@ -7053,8 +7073,13 @@ export interface components {
             updatedAt: string;
         };
         JsonNode: {
+            container?: boolean;
             missingNode?: boolean;
             boolean?: boolean;
+            string?: boolean;
+            pojo?: boolean;
+            int?: boolean;
+            long?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
             valueNode?: boolean;
@@ -7067,17 +7092,12 @@ export interface components {
             /** @deprecated */
             textual?: boolean;
             binary?: boolean;
-            floatingPointNumber?: boolean;
-            float?: boolean;
-            container?: boolean;
             null?: boolean;
-            integralNumber?: boolean;
-            string?: boolean;
             array?: boolean;
             empty?: boolean;
-            pojo?: boolean;
-            int?: boolean;
-            long?: boolean;
+            float?: boolean;
+            integralNumber?: boolean;
+            floatingPointNumber?: boolean;
             embeddedValue?: boolean;
         };
         /** @description 批量设备任务保存请求 */
@@ -10964,6 +10984,49 @@ export interface components {
             from?: string;
             /** Format: date-time */
             to?: string;
+        };
+        OverviewTrendChart: {
+            key?: string;
+            title?: string;
+            /** @enum {string} */
+            unit?: "COUNT" | "DEVICES" | "BYTES";
+            /** @enum {string} */
+            aggregation?: "SUM" | "LAST";
+            series?: components["schemas"]["OverviewTrendSeries"][];
+        };
+        OverviewTrendSeries: {
+            key?: string;
+            label?: string;
+            values?: (number | null)[];
+        };
+        OverviewTrendsResponse: {
+            /**
+             * Format: uuid
+             * @description 已授权项目标识
+             */
+            projectId?: string;
+            /**
+             * Format: date-time
+             * @description 窗口起点，包含，UTC小时边界
+             */
+            from?: string;
+            /**
+             * Format: date-time
+             * @description 窗口终点，不包含，最近完整UTC小时
+             */
+            to?: string;
+            /**
+             * Format: int32
+             * @description 每桶小时数，计数求和、设备状态取桶末快照
+             */
+            stepHours?: number;
+            /**
+             * @description 单一数据来源；模拟不代表真实业务或额度用量
+             * @enum {string}
+             */
+            source?: "OBSERVED" | "SIMULATED" | "NONE";
+            /** @description 固定顺序的十二类统计图表 */
+            charts?: components["schemas"]["OverviewTrendChart"][];
         };
         CursorPageOtaTrustDomainSummaryResponse: {
             items?: components["schemas"]["OtaTrustDomainSummaryResponse"][];
@@ -25158,6 +25221,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OverviewResponse"];
+                };
+            };
+        };
+    };
+    getOverviewTrends: {
+        parameters: {
+            query?: {
+                /** @description 窗口天数，仅1、3、7、15、30 */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                /** @description 项目 ID */
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 请求成功；返回结构见响应 Schema */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OverviewTrendsResponse"];
                 };
             };
         };

@@ -25,6 +25,7 @@ function render() {
         },
         ElSkeletonItem: { template: '<i class="skeleton"/>' },
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
+        OverviewStatistics: true,
         ArtRingChart: true,
         ArtSvgIcon: true
       }
