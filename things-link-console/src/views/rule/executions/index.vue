@@ -1,13 +1,9 @@
 <template>
   <div class="console-page rule-executions">
     <ConsoleWorkspaceHeader
+      project-style
       title="执行记录"
       description="按场景、自动化与上行规则查看真实执行结果；动作受理不代表外部送达。"
-      :links="[
-        { label: '消息规则', path: '/rule/messages', permission: 'rule:manage' },
-        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
-        { label: '任务调度', path: '/task/jobs', permission: 'task:read' }
-      ]"
     />
     <AutomationExecutions v-if="activeTab === 'automation'">
       <template #tabs
@@ -27,11 +23,11 @@
         <template v-if="activeTab === 'scene'"
           ><ConsoleFilterBar
             :items="[
-              { key: 'field0', label: '场景' },
-              { key: 'field1', label: '执行状态' },
-              { key: 'field2', label: '发生时间', span: 24 }
+              { key: 'field0', label: '场景', labelWidth: 90, span: 8 },
+              { key: 'field1', label: '执行状态', labelWidth: 90, span: 8 },
+              { key: 'field2', label: '发生时间', labelWidth: 90, span: 16 }
             ]"
-            :show-expand="false"
+            :show-expand="true"
             :show-reset="true"
             :show-search="true"
             @search="queryScene"
@@ -80,11 +76,11 @@
         <template v-else
           ><ConsoleFilterBar
             :items="[
-              { key: 'field0', label: '消息规则' },
-              { key: 'field1', label: '执行状态' },
-              { key: 'field2', label: '发生时间', span: 24 }
+              { key: 'field0', label: '消息规则', labelWidth: 90, span: 8 },
+              { key: 'field1', label: '执行状态', labelWidth: 90, span: 8 },
+              { key: 'field2', label: '发生时间', labelWidth: 90, span: 16 }
             ]"
-            :show-expand="false"
+            :show-expand="true"
             :show-reset="true"
             :show-search="true"
             @search="queryRule"
@@ -267,7 +263,7 @@
         </ElDescriptionsItem>
       </ElDescriptions>
 
-      <h4 class="rule-executions__section">通知投递</h4>
+      <ElDivider content-position="left">通知投递</ElDivider>
       <ElTable
         v-loading="sceneDetailLoading"
         :data="sceneDetail?.notifications ?? []"
@@ -291,7 +287,7 @@
         <template #empty><ElEmpty description="本次执行没有通知投递" /></template>
       </ElTable>
 
-      <h4 class="rule-executions__section">设备动作投递</h4>
+      <ElDivider content-position="left">设备动作投递</ElDivider>
       <ElTable :data="sceneDetail?.deviceActions ?? []" row-key="commandId">
         <ElTableColumn label="设备" min-width="150" show-overflow-tooltip prop="deviceId" />
         <ElTableColumn label="操作类型" width="110">
@@ -632,32 +628,14 @@
   .rule-executions {
     padding: 10px;
 
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
+    :deep(.console-filter-bar .el-form-item__label) {
+      justify-content: flex-end;
     }
 
-    &__filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin: 10px 0;
-    }
-
-    &__filter {
-      width: 220px;
+    :deep(.console-filter-bar .el-date-editor.el-range-editor) {
+      flex-grow: 0;
+      width: 400px !important;
+      max-width: 100%;
     }
 
     &__more {

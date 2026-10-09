@@ -75,7 +75,7 @@ describe('快照失败', () => {
     })
     await wrapper.find('button').trigger('click')
     await flushPromises()
-    expect(wrapper.find('el-alert-stub').attributes('title')).toContain('读取失败')
+    expect(wrapper.find('el-alert-stub[type="error"]').attributes('title')).toContain('读取失败')
     expect(wrapper.find('button').attributes('disabled')).toBeUndefined()
     expect(wrapper.get('[data-testid=preview-rest-state]').attributes('data-state')).toBe(
       'RETRY_REQUIRED'

@@ -1,30 +1,24 @@
 <template>
-  <section>
-    <div class="console-toolbar">
-      <div class="console-actions">
-        <ElButton
-          v-if="canManage"
-          :type="mode === 'definitions' ? 'primary' : 'default'"
-          @click="mode = 'definitions'"
-          >项目消息规则候选</ElButton
-        >
-        <ElButton :type="mode === 'history' ? 'primary' : 'default'" @click="mode = 'history'"
-          >执行尝试</ElButton
-        >
-        <ElButton :type="mode === 'actions' ? 'primary' : 'default'" @click="mode = 'actions'"
-          >设备动作</ElButton
-        >
-      </div>
-      <ElButton :loading="loading" @click="refresh">刷新消息规则</ElButton>
-    </div>
-    <p class="console-description">{{
+  <section class="device-detail-list">
+    <ElTabs v-model="mode" class="device-message-rule-tabs" aria-label="消息规则视图">
+      <ElTabPane v-if="canManage" name="definitions" label="项目消息规则候选" />
+      <ElTabPane name="history" label="执行尝试" />
+      <ElTabPane name="actions" label="设备动作" />
+    </ElTabs>
+    <ElAlert type="info" :closable="false" show-icon>{{
       mode === 'definitions'
         ? '项目规则候选未绑定此设备；任意脚本的过滤结果只能运行时判定，暂停规则不处理新消息。'
         : mode === 'history'
           ? '仅包含写入设备身份后的执行尝试；旧日志设备未知，不推测回填。SUCCESS不表示物理动作成功。'
           : '按动作原设备查询仍保留的记录，含旧动作；投递终态不代替物理设备验收。'
-    }}</p>
-    <ElAlert v-if="failed" type="error" title="消息规则读取失败，请刷新重试" :closable="false" />
+    }}</ElAlert>
+    <ElAlert
+      v-if="failed"
+      type="error"
+      title="消息规则读取失败，请重新打开消息规则页重试"
+      :closable="false"
+      show-icon
+    />
     <ElTable v-loading="loading" :data="rows" row-key="id">
       <ElTableColumn
         prop="id"
@@ -108,7 +102,12 @@
           "
       /></template>
     </ElTable>
-    <div class="console-page-actions">
+    <div
+      v-if="rows.length > 0"
+      class="device-detail-pagination"
+      role="navigation"
+      aria-label="列表分页"
+    >
       <ElButton :disabled="loading || pageIndex === 0" @click="previous">上一页</ElButton>
       <span>第 {{ pageIndex + 1 }} 页</span>
       <ElButton :disabled="loading || failed || !nextCursor" @click="next">下一页</ElButton>
@@ -257,3 +256,17 @@
     controller?.abort()
   })
 </script>
+
+<style scoped>
+  .device-message-rule-tabs {
+    flex: none;
+  }
+
+  .device-message-rule-tabs :deep(.el-tabs__header) {
+    margin-bottom: 10px;
+  }
+
+  .device-message-rule-tabs :deep(.el-tabs__content) {
+    display: none;
+  }
+</style>

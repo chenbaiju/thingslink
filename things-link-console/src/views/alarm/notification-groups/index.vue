@@ -1,19 +1,21 @@
 <template>
   <div class="console-page notification-page console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="通知组"
       description="管理告警通知的接收对象，再在告警规则中关联通知路由。"
-      :links="[
-        { label: '通知模板', path: '/alarm/notification-templates', permission: 'alarm:read' },
-        { label: '告警规则', path: '/alarm/rules', permission: 'alarm:read' },
-        { label: '告警历史', path: '/alarm/history', permission: 'alarm:read' }
-      ]"
-    />
-    <div class="notification-page__header console-toolbar console-page-actions">
-      <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreateGroup">
-        创建通知组
-      </ElButton>
-    </div>
+    >
+      <template #actions>
+        <ElButton
+          v-if="hasAuth('alarm:manage')"
+          type="primary"
+          :icon="Plus"
+          @click="openCreateGroup"
+        >
+          创建通知组
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
 
     <ElAlert
       class="notification-page__notice"
@@ -101,7 +103,13 @@
       destroy-on-close
     >
       <div class="recipient-toolbar">
-        <span>地址只展示脱敏值，服务端不会向浏览器返回完整目标。</span>
+        <ElAlert
+          class="recipient-toolbar__notice"
+          title="地址只展示脱敏值，服务端不会向浏览器返回完整目标。"
+          type="info"
+          :closable="false"
+          show-icon
+        />
         <ElButton
           v-if="hasAuth('alarm:manage')"
           type="primary"
@@ -454,22 +462,8 @@
   .notification-page {
     padding: 10px;
 
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-        font-size: 20px;
-      }
-
-      p {
-        margin: 0;
-        color: var(--el-text-color-secondary);
-      }
+    :deep(.workspace-header > .console-actions) {
+      margin-bottom: 0;
     }
 
     &__notice {
@@ -490,6 +484,28 @@
     justify-content: space-between;
     margin-bottom: 10px;
     color: var(--el-text-color-secondary);
+
+    > .recipient-toolbar__notice {
+      min-width: 0;
+      margin: 0;
+    }
+    > .el-button {
+      flex-shrink: 0;
+    }
+  }
+
+  .notification-page__notice,
+  .recipient-toolbar__notice {
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
   }
 
   .recipient-replace-alert {

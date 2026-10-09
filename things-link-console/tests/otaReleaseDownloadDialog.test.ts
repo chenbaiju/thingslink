@@ -67,6 +67,7 @@ function render(
     },
     global: {
       stubs: {
+        ElDivider: { template: '<div role="separator"><slot /></div>' },
         ElDialog: {
           props: ['modelValue', 'title'],
           template:
@@ -76,7 +77,7 @@ function render(
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot/></button>'
         },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' }
       }
     }
   })

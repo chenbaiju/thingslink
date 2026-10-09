@@ -1,13 +1,25 @@
 <template>
-  <section v-if="allowed" class="analysis-recovery" data-testid="analysis-recovery">
-    <h5>原分析调用核对</h5>
-    <p>{{ localMessage }}</p>
+  <section
+    v-if="allowed"
+    class="analysis-recovery console-feedback"
+    data-testid="analysis-recovery"
+  >
+    <ElAlert type="info" :closable="false" show-icon>
+      选题不发送数据；分析正文仅本次可见，刷新后无法恢复。事实记录与报告需手动生成。
+      <template v-if="!parentBusy && !localMessage">暂无待核对调用。</template>
+    </ElAlert>
+    <template v-if="localMessage">
+      <ElDivider content-position="left">原分析调用核对</ElDivider>
+      <p>{{ localMessage }}</p>
+    </template>
     <template v-if="pending">
       <ElButton :disabled="busy || parentBusy" :loading="busy" @click="lookup">
         核对原调用状态
       </ElButton>
       <p v-if="call">调用编号：{{ call.id }}；{{ statusLabel }}</p>
-      <p>此操作只查询原调用，不重新分析。刷新后不能恢复模型正文，未知结果不能视为零费用。</p>
+      <ElAlert class="console-hint" type="info" show-icon :closable="false"
+        >此操作只查询原调用，不重新分析。刷新后不能恢复模型正文，未知结果不能视为零费用。</ElAlert
+      >
       <template v-if="canForget">
         <ElCheckbox v-model="confirmed" :disabled="busy || parentBusy">
           我已记录核对结果，理解清除本地意图不会取消远端调用，后续新分析可能再次产生费用。
@@ -16,9 +28,11 @@
           确认处置本地意图
         </ElButton>
       </template>
-      <p v-else>保留原意图，待原调用结束或原键到期并经过执行窗口后，再确认处置。</p>
+      <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
+        >保留原意图，待原调用结束或原键到期并经过执行窗口后，再确认处置。</ElAlert
+      >
     </template>
-    <ElAlert v-if="error" type="warning" :closable="false" :title="error" />
+    <ElAlert v-if="error" type="warning" :closable="false" :title="error" show-icon />
   </section>
 </template>
 
@@ -54,7 +68,7 @@
   const busy = ref(false)
   const confirmed = ref(false)
   const error = ref('')
-  const localMessage = ref('尚未核对本地意图。')
+  const localMessage = ref('')
   const now = ref(Date.now())
   const canForget = computed(
     () => !!pending.value && mayForgetAnalysisIntent(pending.value, call.value, now.value)
@@ -92,7 +106,7 @@
     busy.value = false
     confirmed.value = false
     error.value = ''
-    localMessage.value = '尚未核对本地意图。'
+    localMessage.value = ''
   }
   function local() {
     clear()
@@ -100,7 +114,7 @@
     if (!allowed.value || props.parentBusy) return
     try {
       const loaded = store().load(scope())
-      if (loaded.kind === 'missing') localMessage.value = '当前账号没有待核对的本地分析意图。'
+      if (loaded.kind === 'missing') return
       else if (loaded.kind === 'other-scope' || loaded.intent.request.deviceId !== props.deviceId)
         localMessage.value = '当前账号在其他范围有待核对意图，请回到原项目和设备处理。'
       else {

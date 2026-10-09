@@ -99,11 +99,12 @@ async function fixture(canManage = true) {
     props: { projectId, dashboardId, available: true, canManage },
     global: {
       stubs: {
+        ElDivider: { template: '<div role="separator"><slot /></div>' },
         ElButton: {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot /></button>'
         },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' },
+        ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' },
         ElInputNumber: { props: ['modelValue'], template: '<input :value="modelValue" />' },
         ElFormItem: { template: '<div><slot /></div>' },
         ElSelect: {

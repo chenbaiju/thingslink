@@ -60,6 +60,7 @@
 </script>
 <template>
   <ElDialog
+    class="console-dialog"
     :model-value="!!target && allowed"
     title="重命名管理名称"
     width="min(480px, 92vw)"
@@ -68,11 +69,11 @@
     :show-close="!busy"
     @close="emit('close')"
   >
-    <p class="console-description"
-      >仅修改目录中的管理名称，草稿内容、草稿修订和已发布版本保持不变。</p
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >仅修改目录中的管理名称，草稿内容、草稿修订和已发布版本保持不变。</ElAlert
     >
     <ElInput v-model="name" aria-label="新的管理名称" :disabled="busy" @keyup.enter="submit" />
-    <ElAlert v-if="error" :title="error" type="error" :closable="false" />
+    <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
     <template #footer>
       <ElButton :disabled="busy" @click="emit('close')">取消</ElButton>
       <ElButton type="primary" :loading="busy" :disabled="busy || !allowed" @click="submit"

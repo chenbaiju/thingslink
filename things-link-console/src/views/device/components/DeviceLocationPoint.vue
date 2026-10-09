@@ -4,14 +4,18 @@
     v-loading="loading"
     data-testid="device-location-point"
   >
-    <p class="console-description">WGS84 当前坐标，与安装位置说明分别保存。经度在前，纬度在后。</p>
-    <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" />
+    <ElAlert type="info" :closable="false" show-icon
+      >WGS84 当前坐标，与安装位置说明分别保存。经度在前，纬度在后。</ElAlert
+    >
+    <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" show-icon />
     <template v-if="current">
-      <p class="console-description" data-testid="location-current">{{
-        current.longitude == null
-          ? '未设置坐标'
-          : `经度 ${current.longitude}°，纬度 ${current.latitude}°`
-      }}</p>
+      <p
+        v-if="current.longitude != null"
+        class="console-description"
+        data-testid="location-current"
+      >
+        经度 {{ current.longitude }}°，纬度 {{ current.latitude }}°
+      </p>
       <ElForm
         class="device-location__form"
         v-if="editable"
@@ -28,7 +32,7 @@
           ><ElInput v-model="latitude" aria-label="设备纬度" placeholder="留空并清空经度可移除坐标"
         /></ElFormItem>
       </ElForm>
-      <p class="console-description" v-else>当前角色仅可查看坐标。</p>
+      <ElAlert v-else type="info" :closable="false" show-icon>当前角色仅可查看坐标。</ElAlert>
     </template>
     <div class="console-actions">
       <ElButton

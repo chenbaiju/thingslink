@@ -130,7 +130,7 @@ it('项目切换关闭产品凭据，OPERATOR没有产品入口', async () => {
   expect(wrapper.findAll('button').some((b) => b.text() === '产品凭据')).toBe(false)
 })
 
-it('物模型工作区读取单条事实，继续创建携带当前项目和类型', async () => {
+it('物模型工作区读取单条事实并记录最近访问，不显示继续创建设备按钮', async () => {
   render()
   await flushPromises()
   await wrapper
@@ -143,14 +143,7 @@ it('物模型工作区读取单条事实，继续创建携带当前项目和类�
     { userId: 'owner', tenantId: 'tenant', projectId: 'project-a' },
     { kind: 'type', id: 'current', label: 'CURRENT' }
   )
-  await wrapper
-    .findAll('button')
-    .find((b) => b.text() === '继续创建设备')!
-    .trigger('click')
-  expect(state.push).toHaveBeenCalledWith({
-    path: '/device/list',
-    query: { createTypeId: 'current', contextProjectId: 'project-a' }
-  })
+  expect(wrapper.text()).not.toContain('继续创建设备')
 })
 it('草稿与只读角色不出现继续创建入口', async () => {
   vi.mocked(fetchDeviceTypeDetail).mockResolvedValue({ ...row, status: 'DRAFT' } as any)

@@ -1,9 +1,11 @@
 <template>
   <section class="console-editor-section console-fragment" aria-label="应用发布与历史恢复">
-    <h3 class="console-heading">发布与历史版本</h3>
-    <p class="console-description">发布使用已保存草稿；回滚和撤回只改变运行版本，保留当前草稿。</p>
-    <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" />
-    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" />
+    <ElDivider content-position="left">发布与历史版本</ElDivider>
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >发布使用已保存草稿；回滚和撤回只改变运行版本，保留当前草稿。</ElAlert
+    >
+    <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" show-icon />
+    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" show-icon />
     <p
       class="console-description"
       v-if="state.catalog"
@@ -47,16 +49,26 @@
       </template>
     </div>
     <template v-if="canManage">
-      <p class="console-description" v-if="dirty || saving || conflict"
-        >请先完成草稿保存并处理冲突，再发布。</p
+      <ElAlert
+        v-if="dirty || saving || conflict"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >请先完成草稿保存并处理冲突，再发布。</ElAlert
       >
     </template>
     <template v-if="state.pending">
-      <p class="console-description" v-if="state.pending.status === 'UNKNOWN'"
-        >上次操作结果尚未确认。读取当前状态不会证明上次操作是否完成，请重试原操作后再执行新操作。</p
+      <ElAlert
+        v-if="state.pending.status === 'UNKNOWN'"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >上次操作结果尚未确认。读取当前状态不会证明上次操作是否完成，请重试原操作后再执行新操作。</ElAlert
       >
-      <p class="console-description" v-else
-        >上次操作已有完成回执，请读取当前发布事实；当前状态可能包含后续变更。</p
+      <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
+        >上次操作已有完成回执，请读取当前发布事实；当前状态可能包含后续变更。</ElAlert
       >
       <el-button
         data-testid="application-publication-retry"
@@ -100,12 +112,14 @@
       >下一页历史版本</el-button
     >
     <section v-if="state.selectedVersion" aria-label="不可变版本详情">
-      <h4>版本 {{ state.selectedVersion.versionNumber }}</h4>
+      <ElDivider content-position="left">版本 {{ state.selectedVersion.versionNumber }}</ElDivider>
       <p class="console-description"
         >发布于 {{ state.selectedVersion.publishedAt }}；来源草稿修订
         {{ state.selectedVersion.sourceDraftRevision }}。</p
       >
-      <p class="console-description">该版本只读，查看不会覆盖当前草稿。</p>
+      <ElAlert class="console-hint" type="info" show-icon :closable="false"
+        >该版本只读，查看不会覆盖当前草稿。</ElAlert
+      >
       <p class="console-description"
         >公开展示名：{{ state.selectedVersion.snapshot.displayName }}</p
       >

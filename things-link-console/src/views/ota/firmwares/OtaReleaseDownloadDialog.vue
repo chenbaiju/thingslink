@@ -1,13 +1,14 @@
 <template>
   <ElDialog
+    class="console-dialog"
     v-model="visible"
     title="下载已发布固件"
     data-testid="ota-release-download-dialog"
     width="560px"
     destroy-on-close
   >
-    <p
-      >每次下载都由服务端重新核对当前资格，并读取固定发布版本。已就绪状态不代表当前可下载，也不代表设备升级资格。</p
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >每次下载都由服务端重新核对当前资格，并读取固定发布版本。已就绪状态不代表当前可下载，也不代表设备升级资格。</ElAlert
     >
     <p v-if="reading">正在读取当前项目与固件状态…</p>
     <p v-else-if="qualified">当前项目有效，固件已就绪；申领时仍由服务端重新确权。</p>
@@ -17,6 +18,7 @@
       type="info"
       :closable="false"
       data-testid="ota-release-download-notice"
+      show-icon
     />
     <p v-if="expiresAt" data-testid="ota-release-download-expiry"
       >本次地址保守到期：{{ expiresAt }}</p

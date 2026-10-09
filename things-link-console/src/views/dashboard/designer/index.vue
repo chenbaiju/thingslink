@@ -380,13 +380,28 @@
       @renamed="renamed"
     />
     <ConsoleWorkspaceHeader
+      project-style
       :title="state.dashboardId ? '看板编辑' : '看板开发'"
       description="先配置组件与设备绑定，再预览真实数据。保存草稿后，通过发布区域管理对外版本。"
-      :links="[
-        { label: '应用管理', path: '/dashboard/applications', permission: 'application:read' },
-        { label: '终端用户与授权', path: '/project/end-users', permission: 'enduser:read' }
-      ]"
-    />
+    >
+      <template #actions>
+        <ElButton
+          v-if="state.dashboardId"
+          :disabled="deleteLocked"
+          data-testid="designer-back"
+          @click="back"
+          >返回看板列表</ElButton
+        >
+        <ElButton
+          v-else-if="canManage && projectId"
+          type="primary"
+          :icon="Plus"
+          data-testid="dashboard-create"
+          @click="createVisible = true"
+          >创建看板</ElButton
+        >
+      </template>
+    </ConsoleWorkspaceHeader>
     <section v-if="sourceRequested" class="console-editor-section" aria-label="来源设备">
       <p v-if="sourceLoading" role="status">正在核对来源设备…</p>
       <p v-else-if="sourceDevice" class="console-description">
@@ -399,23 +414,6 @@
         <ElButton @click="reloadSource">重试来源设备</ElButton>
       </template>
     </section>
-    <header class="designer-header console-toolbar console-page-actions">
-      <ElButton
-        v-if="state.dashboardId"
-        :disabled="deleteLocked"
-        data-testid="designer-back"
-        @click="back"
-        >返回看板列表</ElButton
-      >
-      <ElButton
-        v-else-if="canManage && projectId"
-        type="primary"
-        :icon="Plus"
-        data-testid="dashboard-create"
-        @click="createVisible = true"
-        >创建看板</ElButton
-      >
-    </header>
     <ElAlert
       v-if="deleteLocked"
       data-testid="designer-delete-lock"
@@ -501,16 +499,6 @@
           ></ElTableColumn>
         </ElTable>
       </ElCard>
-      <div class="pager"
-        ><div class="console-actions">
-          <ElButton :disabled="!!renameTarget" @click="editor.list()">首页</ElButton
-          ><ElButton
-            :disabled="!!renameTarget || !state.nextCursor"
-            @click="editor.list(state.nextCursor!)"
-            >下一页</ElButton
-          >
-        </div></div
-      >
     </template>
     <template v-else-if="state.schema && canRead">
       <p
@@ -1019,23 +1007,19 @@
     min-width: 0;
     padding: 10px;
   }
-  .designer-header,
-  .toolbar,
-  .pager {
+  .toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
     margin-bottom: 10px;
   }
-  .designer-header {
-    justify-content: space-between;
+  .toolbar > .console-actions {
+    margin-bottom: 0;
   }
-  .designer-header h2 {
-    margin: 0 0 8px;
-    font-size: 18px;
+  .dashboard-designer :deep(.workspace-header > .console-actions) {
+    margin-bottom: 0;
   }
-  .designer-header p,
   .hint,
   .revision {
     font-size: 13px;

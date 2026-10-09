@@ -1,10 +1,16 @@
 <template>
-  <section class="agent-evidence" data-testid="agent-evidence">
-    <h4>诊断证据</h4>
-    <p class="console-description"
-      >查看设备事实与来源状态。读取证据不会调用外部模型；模型分析需另行确认。</p
+  <section class="agent-evidence" data-testid="agent-evidence" @click.capture="clearPreviousError">
+    <ElDivider content-position="left">诊断证据</ElDivider>
+    <ElAlert type="info" :closable="false" show-icon
+      >查看设备事实与来源状态。读取证据不会调用外部模型；模型分析需另行确认。</ElAlert
     >
-    <ElAlert v-if="!readable" type="info" :closable="false" title="请选择当前可访问项目内的设备" />
+    <ElAlert
+      v-if="!readable"
+      type="info"
+      :closable="false"
+      title="请选择当前可访问项目内的设备"
+      show-icon
+    />
     <template v-else>
       <div class="console-toolbar">
         <ElButton :disabled="busy" @click="loadCatalog">加载属性目录</ElButton>
@@ -20,7 +26,7 @@
         </ElSelect>
         <ElButton :disabled="!canRead" :loading="busy" @click="read">读取证据</ElButton>
       </div>
-      <ElAlert v-if="error" type="error" :closable="false" :title="error" />
+      <ElAlert v-if="error" type="error" :closable="false" :title="error" show-icon />
       <p v-if="metadata && !keys.length">当前物模型没有可读取的属性。</p>
       <template v-if="snapshot">
         <ElDescriptions :column="1" border>
@@ -43,8 +49,8 @@
             snapshot.alarmSummary.observedAt
           }}</ElDescriptionsItem>
         </ElDescriptions>
-        <p class="console-description"
-          >各来源读取时间可能不同；属性值仅供浏览器展示，不能代替实时观测或模型分析输入。</p
+        <ElAlert type="info" :closable="false" show-icon
+          >各来源读取时间可能不同；属性值仅供浏览器展示，不能代替实时观测或模型分析输入。</ElAlert
         >
         <ElTable :data="snapshot.properties" row-key="key">
           <ElTableColumn prop="key" label="属性键" min-width="140" />
@@ -68,9 +74,7 @@
           <ElTableColumn prop="readAt" label="属性读取时间" min-width="210" />
         </ElTable>
       </template>
-      <p v-else-if="!error">{{
-        busy ? '正在读取…' : '加载属性目录并选择属性后，手动读取证据。'
-      }}</p>
+      <p v-else-if="busy && !error">正在读取…</p>
     </template>
     <DeviceAgentAnalysis
       :project-id="projectId"
@@ -120,6 +124,10 @@
   const snapshot = ref<DeviceEvidenceSnapshot>()
   const busy = ref(false)
   const error = ref('')
+  function clearPreviousError(event: MouseEvent) {
+    const button = event.target instanceof Element ? event.target.closest('button') : null
+    if (button && !button.disabled) error.value = ''
+  }
   const keys = computed(() => metadata.value?.properties.map((p) => p.key) ?? [])
   const readable = computed(() =>
     Boolean(

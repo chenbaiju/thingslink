@@ -1,24 +1,29 @@
 <template>
   <div class="console-page project-end-users">
     <ConsoleWorkspaceHeader
+      project-style
       title="项目终端用户"
       description="为应用使用者管理账号、项目角色、设备绑定与看板授权。"
-      :links="[
-        { label: '应用管理', path: '/dashboard/applications', permission: 'application:read' },
-        { label: '看板开发', path: '/dashboard/designer', permission: 'dashboard_definition:read' }
-      ]"
     />
-    <p class="console-description"
-      >终端用户使用独立登录身份。目录只列本项目已分配角色的账号；账号状态与项目角色状态分别展示。</p
-    >
+    <ElAlert
+      class="project-end-users__notice"
+      title="终端用户使用独立登录身份。目录只列本项目已分配角色的账号；账号状态与项目角色状态分别展示。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" />
     <ElAlert v-if="!projectId" title="请先进入项目" type="info" :closable="false" />
     <template v-else>
       <ElCard v-if="canManage" shadow="never">
-        <h4>预置账号与查找</h4>
-        <p
-          >预置只创建账号，不自动分配项目角色。若用户名已存在或申请结果未知，请按精确用户名找回并核对身份。</p
-        >
+        <ElAlert
+          class="project-end-users__notice"
+          title="预置账号与查找"
+          description="预置只创建账号，不自动分配项目角色。若用户名已存在或申请结果未知，请按精确用户名找回并核对身份。"
+          type="info"
+          :closable="false"
+          show-icon
+        />
         <ElForm label-position="top" @submit.prevent>
           <ElFormItem label="精确用户名"
             ><ElInput
@@ -83,7 +88,9 @@
           @click="changeStatus('restore')"
           >恢复项目角色</ElButton
         >
-        <p>这些操作只影响本项目。恢复角色不会重新打开停用时关闭的设备关系。</p>
+        <ElAlert type="info" show-icon :closable="false"
+          >这些操作只影响本项目。恢复角色不会重新打开停用时关闭的设备关系。</ElAlert
+        >
       </ElCard>
       <ElCard v-if="selected" shadow="never">
         <h4>{{ selected.username }}的设备关系</h4>
@@ -102,7 +109,7 @@
       </ElCard>
       <ElCard shadow="never">
         <div class="console-toolbar"
-          ><h4>本项目角色目录</h4
+          ><ElDivider content-position="left">本项目角色目录</ElDivider
           ><ElButton :disabled="busy || loading" @click="refresh">刷新目录</ElButton></div
         >
         <ElTable v-loading="loading" :data="rows" row-key="id">
@@ -129,11 +136,15 @@
               "
           /></template>
         </ElTable>
-        <div class="console-page-actions">
+        <div
+          class="project-end-users__pagination"
+          role="navigation"
+          aria-label="本项目角色目录分页"
+        >
           <ElButton :disabled="busy || loading || pageIndex === 0" @click="load(pageIndex - 1)"
             >上一页</ElButton
           >
-          <span>第{{ pageIndex + 1 }}页</span>
+          <span>第 {{ pageIndex + 1 }} 页</span>
           <ElButton :disabled="busy || loading || failed || !nextCursor" @click="next"
             >下一页</ElButton
           >
@@ -365,3 +376,37 @@
     form.password = ''
   })
 </script>
+
+<style scoped lang="scss">
+  .project-end-users__pagination {
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    padding-block: 5px;
+    margin-top: 5px;
+
+    > .el-button {
+      margin: 0;
+    }
+  }
+
+  .project-end-users__notice {
+    margin-bottom: 10px;
+
+    :deep(.el-alert__title),
+    :deep(.el-alert__description) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+  }
+</style>

@@ -4,7 +4,7 @@ import { enterProject, login, OWNER_EMAIL, OWNER_PASSWORD } from './helpers'
 // 本旅程只创建类型和设备，不读取或拍摄凭据；核心请求全部经过真实后端。
 test.use({ trace: 'off', video: 'off', screenshot: 'off' })
 
-test('物模型工作区：从已发布类型接续创建设备并重读确认绑定', async ({ page }) => {
+test('物模型工作区：已发布类型可经预选入口创建设备并重读确认绑定', async ({ page }) => {
   await login(page, OWNER_EMAIL, OWNER_PASSWORD)
   await enterProject(page, process.env.E2E_PROJECT_NAME ?? 'E2E项目')
   const fixture = await page.evaluate(async () => {
@@ -47,7 +47,10 @@ test('物模型工作区：从已发布类型接续创建设备并重读确认�
   await expect(page.locator('.device-types')).toHaveCSS('opacity', '1')
   if (process.env.E2E_RUN_DIR)
     await page.screenshot({ path: `${process.env.E2E_RUN_DIR}/type-workspace.png`, fullPage: true })
-  await workspace.getByRole('button', { name: '继续创建设备', exact: true }).click()
+  await expect(workspace.getByRole('button', { name: '继续创建设备', exact: true })).toHaveCount(0)
+  await page.goto(
+    `/#/device/list?createTypeId=${fixture.typeId}&contextProjectId=${fixture.projectId}`
+  )
   const form = page.getByRole('dialog', { name: '创建设备', exact: true })
   await expect(form).toBeVisible()
   await expect(form.locator('.el-select')).toContainText(fixture.typeName)

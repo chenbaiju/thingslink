@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, reactive } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ElTabs, ElTabPane } from 'element-plus'
 const api = vi.hoisted(() => ({ fetchDeviceTasks: vi.fn() }))
 vi.mock('@/api/device-tasks', () => api)
 const user = reactive({ info: { userId: 'actor', tenantId: 'home' } })
@@ -56,18 +57,27 @@ function page() {
   wrapper = mount(DeviceTasks, {
     props: { projectId: 'project-a', deviceId: 'device-a' },
     global: {
+      components: { ElTabs, ElTabPane },
       directives: { loading: () => {} },
       stubs: {
         ElButton: button,
         ElTable: table,
         ElTableColumn: true,
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })
 }
 async function click(label: string) {
+  if (['当前任务', '执行历史'].includes(label)) {
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((tab) => tab.text() === label)!
+      .trigger('click')
+    await flushPromises()
+    return
+  }
   await wrapper
     .findAll('button')
     .find((b) => b.text() === label)!
@@ -92,7 +102,8 @@ describe('设备任务', () => {
     expect(wrapper.text()).toContain('第 2 页')
     await click('上一页')
     expect(api.fetchDeviceTasks.mock.calls[2][3]).toBeUndefined()
-    await click('刷新任务')
+    await click('执行历史')
+    await click('当前任务')
     expect(wrapper.text()).toContain('第 1 页')
     expect(wrapper.text()).toContain('当前目标包含该设备的任务')
   })
@@ -137,7 +148,8 @@ describe('设备任务', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('设备任务读取失败')
     api.fetchDeviceTasks.mockResolvedValue({ items: [] })
-    await click('刷新任务')
+    await click('执行历史')
+    await click('当前任务')
     expect(wrapper.text()).toContain('暂无当前关联任务')
     expect(wrapper.text()).not.toContain('设备任务读取失败')
   })
@@ -174,7 +186,29 @@ describe('设备任务', () => {
     expect(wrapper.text()).toContain('整体执行状态与该设备结果分别展示')
     api.fetchDeviceTasks.mockResolvedValue({ items: [] })
     await click('当前任务')
-    expect(wrapper.text()).toContain('第 1 页')
+    expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)
     expect(api.fetchDeviceTasks.mock.calls.at(-1)?.[3]).toBeUndefined()
   })
+})
+
+it('空列表隐藏分页，刷新取得数据后恢复分页', async () => {
+  api.fetchDeviceTasks.mockResolvedValue({ items: [], nextCursor: null })
+  page()
+  await flushPromises()
+  expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)
+  api.fetchDeviceTasks.mockResolvedValue({ items: [item], nextCursor: null })
+  await click('执行历史')
+  await click('当前任务')
+  expect(wrapper.find('.device-detail-pagination').exists()).toBe(true)
+})
+it('只保留当前任务和执行历史两个标签', async () => {
+  page()
+  await flushPromises()
+  api.fetchDeviceTasks.mockResolvedValue({ items: [history], nextCursor: null })
+  await click('执行历史')
+  expect(api.fetchDeviceTasks.mock.lastCall?.[2]).toBe('history')
+  expect(wrapper.get('#tab-history').attributes('aria-selected')).toBe('true')
+  expect(wrapper.findAll('[role="tab"]')).toHaveLength(2)
+  expect(wrapper.find('#tab-refresh').exists()).toBe(false)
+  expect(wrapper.text()).toContain('execution-1')
 })

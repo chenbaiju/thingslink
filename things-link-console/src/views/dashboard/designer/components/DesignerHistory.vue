@@ -312,8 +312,10 @@
 </script>
 <template>
   <section class="console-fragment" aria-label="历史曲线编辑">
-    <h3 class="console-heading">时间预设变量</h3
-    ><p class="console-description">仅支持三个固定预设；默认值写入草稿，预览选择不会改写默认值。</p>
+    <ElDivider content-position="left">时间预设变量</ElDivider
+    ><ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >仅支持三个固定预设；默认值写入草稿，预览选择不会改写默认值。</ElAlert
+    >
     <div class="console-actions">
       <button :disabled="disabled" @click="newTime">新建时间变量</button>
       <button v-for="time in times" :key="time.key" :disabled="disabled" @click="editTime(time.key)"
@@ -355,11 +357,16 @@
           >删除时间变量</button
         >
       </div>
-      <p class="console-description" v-if="editing && references.length"
-        >时间变量被以下组件引用，不能删除：{{ references.join('；') }}</p
+      <ElAlert
+        v-if="editing && references.length"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >时间变量被以下组件引用，不能删除：{{ references.join('；') }}</ElAlert
       ></fieldset
     >
-    <h3 class="console-heading">历史曲线</h3
+    <ElDivider content-position="left">历史曲线</ElDivider
     ><fieldset :disabled="disabled"
       ><label>图表标题<input v-model="title" aria-label="历史图表标题" maxlength="80" /></label
       ><label
@@ -440,7 +447,15 @@
         ></label
       >
       <button :disabled="rows.length <= 1" @click="remove(index)">删除系列{{ index + 1 }}</button
-      ><p class="console-description" v-if="row.error" role="alert">{{ row.error }}</p></fieldset
+      ><ElAlert
+        v-if="row.error"
+        role="alert"
+        class="console-hint"
+        type="error"
+        show-icon
+        :closable="false"
+        >{{ row.error }}</ElAlert
+      ></fieldset
     >
     <div class="console-actions">
       <button :disabled="disabled || rows.length >= 4" @click="rows.push(blank())"

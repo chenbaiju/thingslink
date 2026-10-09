@@ -6,30 +6,42 @@
   >
     <ElAlert v-if="notice" :title="notice" :type="noticeType" :closable="false" show-icon />
     <template v-if="current">
-      <p class="console-description" data-testid="access-current">
-        当前协议 {{ current.protocol }} · {{ current.enabled ? '已启用' : '已禁用' }} · 配置版本
-        {{ current.configVersion }} · 凭据版本 {{ current.credentialVersion }}
-        {{ current.configured ? '' : '（存量默认配置）' }}
-      </p>
+      <ElDivider content-position="left">
+        <span class="device-access__heading">
+          <span>接入协议</span>
+          <span class="device-access__current" data-testid="access-current">
+            当前协议 {{ current.protocol }} · {{ current.enabled ? '已启用' : '已禁用' }} · 配置版本
+            {{ current.configVersion }} · 凭据版本 {{ current.credentialVersion }}
+            {{ current.configured ? '' : '（存量默认配置）' }}
+          </span>
+        </span>
+      </ElDivider>
       <ElAlert
         v-if="!current.enabled"
         title="设备接入已禁用；恢复启用后设备需要重新连接或认证。"
         type="warning"
         :closable="false"
+        show-icon
       />
-      <p class="console-description" v-if="!current.canManage" data-testid="access-readonly">
+      <ElAlert
+        v-if="!current.canManage"
+        data-testid="access-readonly"
+        type="info"
+        :closable="false"
+        show-icon
+      >
         {{
           current.allowedProtocols.length
             ? '当前为只读状态，需要可写项目的管理员权限。'
             : '此设备类型不支持独立配置接入协议。'
         }}
-      </p>
+      </ElAlert>
       <ElForm
         class="device-access__form"
         label-position="top"
         :disabled="!current.canManage || loading || saving || needsRefresh"
       >
-        <ElFormItem label="接入协议">
+        <ElFormItem>
           <ElSelect v-model="protocol" aria-label="接入协议">
             <ElOption
               v-for="value in current.allowedProtocols"
@@ -42,8 +54,8 @@
         <ElFormItem label="允许设备接入">
           <ElSwitch v-model="enabled" aria-label="允许设备接入" />
         </ElFormItem>
-        <p class="console-description"
-          >修改协议或关闭接入会使旧连接失效；切换协议不会自动更换设备凭据。</p
+        <ElAlert type="info" :closable="false" show-icon
+          >修改协议或关闭接入会使旧连接失效；切换协议不会自动更换设备凭据。</ElAlert
         >
       </ElForm>
     </template>
@@ -153,6 +165,19 @@
 </script>
 
 <style scoped>
+  .device-access__heading {
+    display: inline-flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .device-access__current {
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 20px;
+    color: var(--el-text-color-secondary);
+  }
+
   .device-access__form {
     max-width: 520px;
   }

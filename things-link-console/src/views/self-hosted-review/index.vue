@@ -1,6 +1,7 @@
 <template>
   <div class="console-page">
     <ConsoleWorkspaceHeader
+      project-style
       title="自部署申请 · 责任审核"
       description="核对申请摘要与材料并记录审核事实；审核资格独立于运营身份与项目角色。"
       :links="[
@@ -12,8 +13,16 @@
         type="warning"
         :closable="false"
         title="一名授权责任人核验是签发前置；第二人复核可选。审核记录仍不代表客户归属已确认，也不会自动签发。"
+        show-icon
       />
-      <ElAlert v-if="error" class="spacing" type="error" :closable="false" :title="error" />
+      <ElAlert
+        v-if="error"
+        class="spacing"
+        type="error"
+        :closable="false"
+        :title="error"
+        show-icon
+      />
       <div class="spacing">
         <ElInput
           v-model="requestId"
@@ -23,7 +32,7 @@
         <ElButton :disabled="busy || !validRequestId" @click="loadDetail">读取申请摘要</ElButton>
       </div>
       <section v-if="detail" class="spacing" data-testid="review-detail">
-        <h4>不可变申请摘要</h4>
+        <ElDivider content-position="left">不可变申请摘要</ElDivider>
         <p>申请：{{ detail.requestId }}</p>
         <p>部署：{{ detail.deploymentId }}</p>
         <p>声明租户（未核验）：{{ detail.claimedTenantId }}</p>
@@ -32,8 +41,10 @@
         <p>已批准修订：{{ detail.revisionId }}</p>
         <p>修订 SHA-256：{{ detail.revisionSha256 }}</p>
         <p>现有审核事实：{{ detail.attestationCount }}（至少 1 份；最多 2 份）</p>
-        <h4>独立核对后的记录</h4>
-        <p>请对照外部组织材料和原申请核验上述标识及摘要，再填写材料索引、摘要和档位。</p>
+        <ElDivider content-position="left">独立核对后的记录</ElDivider>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >请对照外部组织材料和原申请核验上述标识及摘要，再填写材料索引、摘要和档位。</ElAlert
+        >
         <ElInput
           v-model.trim="organizationReference"
           data-testid="review-organization"

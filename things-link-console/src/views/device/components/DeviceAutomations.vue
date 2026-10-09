@@ -1,25 +1,21 @@
 <template>
-  <section>
-    <div class="console-toolbar">
-      <div class="console-actions">
-        <ElButton
-          v-if="canManage"
-          :type="mode === 'definitions' ? 'primary' : 'default'"
-          @click="mode = 'definitions'"
-          >当前自动化</ElButton
-        >
-        <ElButton :type="mode === 'history' ? 'primary' : 'default'" @click="mode = 'history'"
-          >执行历史</ElButton
-        >
-      </div>
-      <ElButton :loading="loading" @click="refresh">刷新自动化</ElButton>
-    </div>
-    <p class="console-description">{{
+  <section class="device-detail-list">
+    <ElTabs v-model="mode" class="device-automation-tabs" aria-label="自动化视图">
+      <ElTabPane v-if="canManage" name="definitions" label="当前自动化" />
+      <ElTabPane name="history" label="执行历史" />
+    </ElTabs>
+    <ElAlert type="info" :closable="false" show-icon>{{
       mode === 'definitions'
         ? '仅显示当前发布版本的设备关系，含暂停配置；定时触发使用设备上下文，不是设备主动上报。'
         : '保留原执行版本；动作意图受理及设备动作记录数均不代表设备物理执行成功。'
-    }}</p>
-    <ElAlert v-if="failed" type="error" title="自动化读取失败，请刷新重试" :closable="false" />
+    }}</ElAlert>
+    <ElAlert
+      v-if="failed"
+      type="error"
+      title="自动化读取失败，请重新打开自动化页重试"
+      :closable="false"
+      show-icon
+    />
     <ElTable v-loading="loading" :data="rows" row-key="id">
       <ElTableColumn
         prop="id"
@@ -89,7 +85,12 @@
           "
       /></template>
     </ElTable>
-    <div class="console-page-actions">
+    <div
+      v-if="rows.length > 0"
+      class="device-detail-pagination"
+      role="navigation"
+      aria-label="列表分页"
+    >
       <ElButton :disabled="loading || pageIndex === 0" @click="previous">上一页</ElButton>
       <span>第 {{ pageIndex + 1 }} 页</span>
       <ElButton :disabled="loading || failed || !nextCursor" @click="next">下一页</ElButton>
@@ -229,3 +230,17 @@
     controller?.abort()
   })
 </script>
+
+<style scoped>
+  .device-automation-tabs {
+    flex: none;
+  }
+
+  .device-automation-tabs :deep(.el-tabs__header) {
+    margin-bottom: 10px;
+  }
+
+  .device-automation-tabs :deep(.el-tabs__content) {
+    display: none;
+  }
+</style>

@@ -1,6 +1,7 @@
 <template>
   <div class="console-page message-logs console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="消息调试"
       description="按设备与时间定位上报摘要，继续检查接入状态。"
       :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
@@ -10,19 +11,29 @@
       >
     </ConsoleWorkspaceHeader>
     <RealtimeTicketDialog v-if="ticketVisible && canRead()" @close="ticketVisible = false" />
-    <ElAlert v-if="sourceError" :title="sourceError" type="warning" :closable="false">
+    <ElAlert
+      v-if="sourceError"
+      class="message-logs__hint"
+      :title="sourceError"
+      type="warning"
+      :closable="false"
+    >
       <ElButton text @click="reloadSource">重试读取来源设备</ElButton>
     </ElAlert>
     <ElAlert
       v-else-if="sourceDevice"
+      class="message-logs__hint"
       :title="`来源设备：${sourceDevice.name || sourceDevice.deviceKey}`"
       type="info"
       :closable="false"
     />
-    <ElAlert class="message-logs__notice" type="info" :closable="false" show-icon>
-      <template #title>日志仅保留报文摘要</template>
-      原始报文不会提供给浏览器；摘要最多保留 256 个字符，详细长度以“字节数”为准。
-    </ElAlert>
+    <ElAlert
+      class="message-logs__hint"
+      title="日志仅保留报文摘要，最多 256 字符；不提供原始报文，原始长度见“字节数”。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElCard class="console-list-filter" shadow="never">
       <MessageLogFilterForm
@@ -114,7 +125,7 @@
       width="760px"
       destroy-on-close
     >
-      <ElAlert type="info" :closable="false" show-icon>
+      <ElAlert class="message-logs__hint" type="info" :closable="false" show-icon>
         凭据类字段由服务端整字段移除；截断与采样标记如实呈现，摘要不代表完整报文。
       </ElAlert>
       <ElRadioGroup v-model="detailFormat" class="message-logs__format" @change="reloadDetail">
@@ -435,21 +446,8 @@
   .message-logs {
     padding: 10px;
 
-    &__header {
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
-    }
-
-    &__notice {
-      margin-bottom: 10px;
+    :deep(.workspace-header .console-actions) {
+      margin-bottom: 0;
     }
 
     &__more {
@@ -476,6 +474,25 @@
       white-space: pre-wrap;
       background: var(--art-bg-color);
       border-radius: 4px;
+    }
+  }
+
+  .message-logs__hint {
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 20px;
+
+    :deep(.el-alert__title),
+    :deep(.el-alert__description) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
     }
   }
 </style>

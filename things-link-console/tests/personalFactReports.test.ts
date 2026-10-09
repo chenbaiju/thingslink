@@ -43,8 +43,9 @@ async function page() {
     props: { projectId: 'p', deviceId: 'd', modelVersionId: 'new-model', propertyKeys: ['n'] },
     global: {
       stubs: {
+        ElDivider: { template: '<div><slot /></div>' },
         ElButton: { template: '<button><slot /></button>' },
-        ElAlert: { props: ['title'], template: '<p>{{ title }}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{ title }}<slot /></p>' }
       }
     }
   })

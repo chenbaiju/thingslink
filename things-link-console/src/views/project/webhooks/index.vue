@@ -1,23 +1,32 @@
 <template>
   <div class="console-page webhooks-page">
     <ConsoleWorkspaceHeader
+      project-style
       title="Webhook"
       description="管理事件订阅与投递，轮换签名密钥；响应不确定时先查询原操作结果。"
       :links="[
         { label: 'API Key', path: '/project/api-keys', permission: 'integration:manage' },
         { label: '用量与项目设置', path: '/project/settings', permission: 'quota:read' }
       ]"
-    />
+    >
+      <template #leading-actions>
+        <ElButton
+          v-if="allowed"
+          type="primary"
+          :icon="Plus"
+          :disabled="busy || !!pending"
+          @click="openForm()"
+        >
+          创建订阅
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
     <ElCard v-if="!allowed" shadow="never">
       <ElAlert title="请选择有集成管理权限的项目" :closable="false" />
     </ElCard>
     <template v-else>
-      <div class="console-toolbar console-page-actions">
-        <ElButton type="primary" :icon="Plus" :disabled="busy || !!pending" @click="openForm()">
-          创建订阅
-        </ElButton>
-      </div>
       <ElCard shadow="never">
+        <ElDivider content-position="left">事件订阅</ElDivider>
         <ElAlert v-if="error" :title="error" type="error" :closable="false" />
         <ElTable :data="items" row-key="id" v-loading="busy">
           <ElTableColumn show-overflow-tooltip prop="name" label="名称" /><ElTableColumn
@@ -69,20 +78,28 @@
         <ElButton v-if="next" :disabled="busy" @click="load(true)">更多订阅</ElButton>
       </ElCard>
       <ElCard shadow="never">
-        <h3 class="console-heading">查询原操作</h3
-        ><p class="console-description"
-          >响应丢失时先查询。查询不恢复秘密，秘密丢失请显式轮换。结束本地尝试不会取消服务器操作。</p
-        >
+        <ElDivider content-position="left">查询原操作</ElDivider>
+        <ElAlert
+          type="info"
+          show-icon
+          :closable="false"
+          title="响应丢失时先查询。查询不恢复秘密，秘密丢失请显式轮换。结束本地尝试不会取消服务器操作。"
+        />
         <p class="console-description" v-if="pending"
           >待确认操作：<code data-testid="pending-operation">{{ pending }}</code></p
         >
-        <div class="console-toolbar">
+        <div class="console-toolbar webhooks-recovery">
           <ElSelect v-model="recoveryKind" aria-label="操作类别" :disabled="busy || !!pending"
             ><ElOption value="subscription" label="订阅操作" /><ElOption
               value="delivery"
               label="交付恢复"
           /></ElSelect>
-          <ElInput v-model="recoveryId" aria-label="原操作 ID" :disabled="busy || !!pending" />
+          <ElInput
+            v-model="recoveryId"
+            aria-label="原操作 ID"
+            placeholder="输入原操作 ID"
+            :disabled="busy || !!pending"
+          />
           <ElButton :disabled="busy || !(pending || recoveryId)" @click="recoverOperation"
             >查询操作结果</ElButton
           >
@@ -95,11 +112,14 @@
           :closable="false"
         />
       </ElCard>
-      <ElCard class="console-list-filter" shadow="never">
-        <h3 class="console-heading">投递与尝试</h3
-        ><p class="console-description"
-          >终态和拒绝明细保留至少七天。列表是实时分页；找不到明细不代表从未发生，请结合原业务接口查询。</p
-        >
+      <ElCard class="webhooks-section" shadow="never">
+        <ElDivider content-position="left">投递与尝试</ElDivider>
+        <ElAlert
+          type="info"
+          show-icon
+          :closable="false"
+          title="终态和拒绝明细保留至少七天。列表是实时分页；找不到明细不代表从未发生，请结合原业务接口查询。"
+        />
         <ConsoleFilterBar
           :items="[{ key: 'field0', label: '投递状态' }]"
           :show-expand="false"
@@ -119,8 +139,6 @@
                 :label="value" /></ElSelect
           ></template>
         </ConsoleFilterBar>
-      </ElCard>
-      <ElCard class="console-list-data" shadow="never">
         <ElTable :data="deliveryItems" row-key="id">
           <ElTableColumn
             show-overflow-tooltip
@@ -153,8 +171,8 @@
           >更多投递</ElButton
         >
       </ElCard>
-      <ElCard class="console-list-filter" shadow="never">
-        <h3 class="console-heading">事件受理记录</h3>
+      <ElCard class="webhooks-section" shadow="never">
+        <ElDivider content-position="left">事件受理记录</ElDivider>
         <ConsoleFilterBar
           :items="[
             { key: 'field0', label: '事件类型' },
@@ -189,8 +207,6 @@
                 :label="value" /></ElSelect
           ></template>
         </ConsoleFilterBar>
-      </ElCard>
-      <ElCard class="console-list-data" shadow="never">
         <ElTable :data="eventItems" row-key="eventId"
           ><ElTableColumn
             show-overflow-tooltip
@@ -212,7 +228,7 @@
       </ElCard>
     </template>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog webhooks-dialog"
       v-model="formVisible"
       :title="target ? '编辑 Webhook' : '创建 Webhook'"
       :close-on-click-modal="false"
@@ -222,9 +238,14 @@
         <ElFormItem label="名称"
           ><ElInput v-model="name" aria-label="Webhook 名称" maxlength="80" :disabled="busy"
         /></ElFormItem>
-        <ElFormItem label="目标 HTTPS（禁止查询串、凭据和片段）"
-          ><ElInput v-model="targetUrl" aria-label="目标 HTTPS" maxlength="2048" :disabled="busy"
-        /></ElFormItem>
+        <ElFormItem label="目标 HTTPS"
+          ><ElInput
+            v-model="targetUrl"
+            aria-label="目标 HTTPS"
+            maxlength="2048"
+            :disabled="busy"
+          /><p class="form-help">禁止查询串、凭据和片段。</p></ElFormItem
+        >
         <ElFormItem label="事件类型"
           ><ElCheckboxGroup v-model="selectedEvents" :disabled="busy"
             ><ElCheckbox v-for="value in eventTypes" :key="value" :value="value">{{
@@ -232,28 +253,40 @@
             }}</ElCheckbox></ElCheckboxGroup
           ></ElFormItem
         >
-        <ElFormItem label="设备 ID，每行一个；留空表示项目全部设备"
-          ><ElInput v-model="deviceIds" type="textarea" aria-label="设备 ID" :disabled="busy"
-        /></ElFormItem>
-        <div class="console-actions">
+        <ElFormItem label="设备 ID"
+          ><ElInput v-model="deviceIds" type="textarea" aria-label="设备 ID" :disabled="busy" /><p
+            class="form-help"
+            >每行一个设备 ID；留空表示项目全部设备。</p
+          ></ElFormItem
+        >
+      </ElForm>
+      <template #footer>
+        <div class="console-actions console-dialog-actions">
           <ElButton type="primary" :disabled="busy || !!pending" @click="save">保存订阅</ElButton
           ><ElButton :disabled="busy" @click="formVisible = false">关闭填写窗口</ElButton>
         </div>
-      </ElForm>
+      </template>
     </ElDialog>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog webhooks-dialog"
       v-model="secretVisible"
       title="仅本次展示签名秘密"
       :close-on-click-modal="false"
     >
-      <p class="console-description">请安全交给接收端。关闭后无法查询，丢失请显式轮换。</p
-      ><ElInput :model-value="secret" aria-label="签名秘密" readonly /><ElButton
-        @click="clearSecret"
-        >已保存，关闭</ElButton
-      >
+      <ElAlert
+        type="info"
+        show-icon
+        :closable="false"
+        title="请安全交给接收端。关闭后无法查询，丢失请显式轮换。"
+      />
+      <ElInput :model-value="secret" aria-label="签名秘密" readonly />
+      <template #footer><ElButton @click="clearSecret">已保存，关闭</ElButton></template>
     </ElDialog>
-    <ElDialog class="console-dialog" v-model="detailVisible" title="Webhook 投递详情">
+    <ElDialog
+      class="console-dialog webhooks-dialog"
+      v-model="detailVisible"
+      title="Webhook 投递详情"
+    >
       <template v-if="detail"
         ><p class="console-description"
           >冻结目标：{{ detail.targetUrl }}；订阅：{{ detail.name }}；修订：{{
@@ -598,7 +631,39 @@
   onBeforeUnmount(clear)
 </script>
 <style scoped>
-  .console-toolbar > .el-select {
-    width: 220px;
+  .webhooks-page :deep(.workspace-header .console-actions) {
+    margin-bottom: 0;
+  }
+  .webhooks-page :deep(.el-alert),
+  .webhooks-dialog :deep(.el-alert) {
+    margin-bottom: 10px;
+  }
+  .webhooks-page :deep(.el-alert__title),
+  .webhooks-dialog :deep(.el-alert__title) {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+  .webhooks-page :deep(.el-alert__icon),
+  .webhooks-dialog :deep(.el-alert__icon) {
+    width: 14px;
+    font-size: 14px;
+  }
+  .webhooks-recovery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .webhooks-recovery > .el-select {
+    width: 180px;
+  }
+  .webhooks-recovery > .el-input {
+    flex: 1 1 240px;
+    max-width: 440px;
+  }
+  .webhooks-recovery > .el-button {
+    flex-shrink: 0;
+    margin: 0;
   }
 </style>

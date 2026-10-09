@@ -286,9 +286,9 @@
 </script>
 <template>
   <section class="console-fragment" aria-label="设备变量管理">
-    <h3 class="console-heading">设备变量</h3
-    ><p class="console-description"
-      >默认设备写入草稿；预览中的临时选择不会修改默认值。设备可见性由每次读取重新确认。</p
+    <ElDivider content-position="left">设备变量</ElDivider
+    ><ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >默认设备写入草稿；预览中的临时选择不会修改默认值。设备可见性由每次读取重新确认。</ElAlert
     >
     <button :disabled="disabled" data-testid="variable-new" @click="startNew">新建设备变量</button>
     <div v-for="v in variables" :key="v.key"
@@ -334,8 +334,13 @@
           max="20"
           aria-label="变量最多设备数"
       /></label>
-      <p class="console-description" v-if="references.length"
-        >此变量正在被引用，不能删除或修改类型、模型：{{ references.join('；') }}</p
+      <ElAlert
+        v-if="references.length"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >此变量正在被引用，不能删除或修改类型、模型：{{ references.join('；') }}</ElAlert
       >
       <div class="console-actions">
         <button :disabled="!model" @click="catalog()">读取变量设备目录</button
@@ -391,8 +396,16 @@
         ></label
       >
     </fieldset>
-    <p class="console-description" v-if="error" role="alert">{{ error }}</p>
-    <h3 class="console-heading">变量组件</h3>
+    <ElAlert
+      v-if="error"
+      role="alert"
+      class="console-hint"
+      type="error"
+      show-icon
+      :closable="false"
+      >{{ error }}</ElAlert
+    >
+    <ElDivider content-position="left">变量组件</ElDivider>
     <fieldset :disabled="disabled || busy">
       <label
         >组件类型<select v-model="kind" aria-label="变量组件类型"
@@ -437,8 +450,8 @@
             min="1"
             max="256"
             aria-label="多设备表每页行数" /></label
-        ><p class="console-description"
-          >请先编辑该变量，读取同模型设备的属性元数据，再配置 1～10 个标量列。</p
+        ><ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >请先编辑该变量，读取同模型设备的属性元数据，再配置 1～10 个标量列。</ElAlert
         >
         <div v-for="(column, index) in columns" :key="index"
           ><label>列标题<input v-model="column.label" :aria-label="`第${index + 1}列标题`" /></label

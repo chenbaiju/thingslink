@@ -42,7 +42,7 @@ function page(overrides: Record<string, unknown> = {}) {
         ElSelect: { template: '<div><slot/></div>' },
         ElOption: true,
         ElCheckbox: { props: ['modelValue', 'disabled'], template: '<label><slot/></label>' },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })

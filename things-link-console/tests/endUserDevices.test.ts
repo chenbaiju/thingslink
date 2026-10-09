@@ -20,11 +20,12 @@ function render() {
     props: { projectId: 'p', appUserId: 'a', allowWrite: true },
     global: {
       stubs: {
+        ElDivider: { template: '<div role="separator"><slot /></div>' },
         ElButton: {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot/></button>'
         },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' },
+        ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' },
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
         ElTable: {
           props: ['data'],

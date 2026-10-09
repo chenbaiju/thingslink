@@ -1,8 +1,13 @@
 <template>
-  <section role="region" aria-label="回退准备观察与当前评估" data-testid="ota-rollback-preflight">
+  <section
+    class="console-feedback"
+    role="region"
+    aria-label="回退准备观察与当前评估"
+    data-testid="ota-rollback-preflight"
+  >
     <ElDivider content-position="left">回退准备观察与当前评估</ElDivider>
-    <p
-      >这里只读取既有报告，不创建准备查询或触发回退。可准备分类仍不授予执行权；回退必须满足受控原子提交互斥要求。</p
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >这里只读取既有报告，不创建准备查询或触发回退。可准备分类仍不授予执行权；回退必须满足受控原子提交互斥要求。</ElAlert
     >
     <ElButton
       data-testid="ota-rollback-preflight-refresh"
@@ -11,8 +16,14 @@
       >刷新回退准备观察</ElButton
     >
     <p v-if="loading">正在读取回退准备观察…</p>
-    <p v-else-if="missing" data-testid="ota-rollback-preflight-no-report"
-      >当前范围没有可读取的回退准备报告。这不等于设备报告的 UNKNOWN（未知）分类。</p
+    <ElAlert
+      v-else-if="missing"
+      data-testid="ota-rollback-preflight-no-report"
+      class="console-hint"
+      type="info"
+      show-icon
+      :closable="false"
+      >当前范围没有可读取的回退准备报告。这不等于设备报告的 UNKNOWN（未知）分类。</ElAlert
     >
     <ElAlert
       v-else-if="error"
@@ -20,6 +31,7 @@
       type="info"
       :closable="false"
       data-testid="ota-rollback-preflight-error"
+      show-icon
     />
     <div v-if="snapshot" data-testid="ota-rollback-preflight-result">
       <ElAlert
@@ -28,8 +40,9 @@
         type="warning"
         :closable="false"
         data-testid="ota-rollback-preflight-stale"
+        show-icon
       />
-      <h4>当时观察</h4>
+      <ElDivider content-position="left">当时观察</ElDivider>
       <ElDescriptions :column="1" border>
         <ElDescriptionsItem label="当时分类"
           ><span data-testid="ota-rollback-observed-disposition">{{
@@ -48,7 +61,7 @@
           }}</span></ElDescriptionsItem
         >
       </ElDescriptions>
-      <h4>服务端当次重验</h4>
+      <ElDivider content-position="left">服务端当次重验</ElDivider>
       <ElDescriptions :column="1" border>
         <ElDescriptionsItem label="当次分类"
           ><span data-testid="ota-rollback-current-disposition">{{

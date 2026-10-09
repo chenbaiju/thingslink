@@ -81,7 +81,7 @@ function page() {
         ElTableColumn: true,
         ElDescriptions: slots,
         ElDescriptionsItem: slots,
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })
@@ -203,6 +203,22 @@ describe('受权只读设备证据', () => {
     expect(vm().metadata).toBeUndefined()
     expect(vm().error).toBe('')
     expect(fetchBindingMetadata).toHaveBeenCalledOnce()
+  })
+  it('其他操作清除旧目录提示，但不恢复目录或自动读取证据', async () => {
+    vi.mocked(fetchBindingMetadata).mockRejectedValue(new Error('unavailable'))
+    page()
+    await vm().loadCatalog()
+    expect(panel.text()).toContain('属性目录不可用')
+    const refresh = panel.findAll('button').find((button) => button.text() === '刷新本人记录')!
+    await refresh.trigger('click')
+    expect(vm().error).toBe('')
+    expect(panel.text()).not.toContain('属性目录不可用')
+    expect(vm().metadata).toBeUndefined()
+    expect(vm().canRead).toBe(false)
+    expect(fetchBindingMetadata).toHaveBeenCalledOnce()
+    expect(readDeviceEvidence).not.toHaveBeenCalled()
+    await vm().loadCatalog()
+    expect(panel.text()).toContain('属性目录不可用')
   })
   it('模型变化必须重新加载，不自动重发或回显错误', async () => {
     page()

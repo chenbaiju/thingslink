@@ -1,9 +1,9 @@
 <template>
   <section class="project-retention-export" aria-label="删除项目留存导出">
-    <p class="console-description"
-      >导出删除时冻结项目的留存数据，不包含所有历史遥测。下载会重新核验资格，短时地址请勿转发。</p
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >导出删除时冻结项目的留存数据，不包含所有历史遥测。下载会重新核验资格，短时地址请勿转发。</ElAlert
     >
-    <ElAlert v-if="notice" type="warning" :title="notice" :closable="false" />
+    <ElAlert v-if="notice" type="warning" :title="notice" :closable="false" show-icon />
     <div class="console-toolbar">
       <ElButton :disabled="busy" @click="loadLatest">刷新最新任务</ElButton>
       <ElButton type="primary" :disabled="busy || pending" @click="requestExport"
@@ -17,7 +17,14 @@
     <p v-if="loaded && !job">当前删除代次尚无本人申请的导出任务。</p>
     <template v-if="job">
       <p>任务ID：{{ job.id }}；状态：{{ statusText }}；尝试次数：{{ job.attemptCount }}</p>
-      <p v-if="job.failureCode">失败分类：{{ job.failureCode }}；先核对原因再重新申请。</p>
+      <ElAlert
+        v-if="job.failureCode"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >失败分类：{{ job.failureCode }}；先核对原因再重新申请。</ElAlert
+      >
       <p>申请时间：{{ formatTime(job.requestedAt) }}；快照时间：{{ formatTime(job.snapshotAt) }}</p>
       <p v-if="job.status === 'SUCCEEDED'"
         >对象到期：{{ formatTime(job.expiresAt) }}（浏览器本地时间）；大小：{{

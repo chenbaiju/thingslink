@@ -1,8 +1,12 @@
 <template>
   <section class="console-fragment">
-    <p class="console-description"
-      >按顺序执行。选择节点后填写参数，复杂值使用 JSON；保存不会自动发布。</p
-    >
+    <ElAlert
+      class="rule-node-editor__notice"
+      title="按顺序执行。选择节点后填写参数，复杂值使用 JSON；保存不会自动发布。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <div class="console-toolbar">
       <ElSelect v-model="newType" placeholder="选择节点" aria-label="选择节点" :disabled="disabled">
         <ElOption
@@ -158,6 +162,22 @@
   }
 </script>
 <style scoped>
+  .rule-node-editor__notice {
+    margin-bottom: 10px;
+  }
+
+  .rule-node-editor__notice :deep(.el-alert__title) {
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 20px;
+  }
+
+  .rule-node-editor__notice :deep(.el-alert__icon) {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+  }
+
   .node-card {
     margin-top: 12px;
   }

@@ -1,12 +1,12 @@
 <template>
   <div class="console-page modbus-points console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="Modbus 点位"
       description="选择网关，维护寄存器点位并发布配置。"
       :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
-    />
-    <div class="modbus-points__header console-toolbar console-page-actions">
-      <div class="modbus-points__actions console-actions">
+    >
+      <template #leading-actions>
         <ElButton v-if="hasAuth('device:update')" type="primary" @click="openCreate" :icon="Plus"
           >添加点位</ElButton
         >
@@ -17,8 +17,8 @@
           @click="publish"
           >发布（{{ draftCount }} 个草稿）</ElButton
         >
-      </div>
-    </div>
+      </template>
+    </ConsoleWorkspaceHeader>
 
     <ElCard class="console-list-filter" shadow="never">
       <ConsoleFilterBar
@@ -438,24 +438,8 @@
 <style lang="scss" scoped>
   .modbus-points {
     padding: 10px;
-    &__header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      h3 {
-        margin: 0;
-        font-size: 18px;
-      }
-      p {
-        margin: 6px 0 0;
-        font-size: 13px;
-        color: var(--art-text-gray-600);
-      }
-    }
-    &__actions {
-      display: flex;
-      gap: 8px;
+    :deep(.workspace-header .console-actions) {
+      margin-bottom: 0;
     }
     &__filter {
       margin-bottom: 10px;

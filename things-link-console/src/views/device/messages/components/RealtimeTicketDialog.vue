@@ -146,16 +146,20 @@
 </script>
 <template>
   <ElDialog
+    class="console-dialog"
     :model-value="true"
     title="短期实时订阅票据"
     width="min(720px, 94vw)"
     :close-on-click-modal="false"
     @close="close"
   >
-    <p class="console-description"
-      >选择一个当前项目设备及 1 至 50 个属性，生成仅供调试的连接参数。票据最长 5
-      分钟，未使用也占用共享额度；本工具不自动连接，现有实时页面不受影响。</p
-    >
+    <ElAlert
+      class="realtime-ticket__hint"
+      title="选择一个当前项目设备及 1 至 50 个属性，生成仅供调试的连接参数。票据最长 5 分钟，未使用也占用共享额度；本工具不自动连接，现有实时页面不受影响。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <ElForm label-position="top">
       <ElFormItem label="订阅协议">
         <ElRadioGroup v-model="protocol" aria-label="订阅协议" :disabled="state.attempted">
@@ -163,7 +167,7 @@
           <ElRadioButton value="MQTT">MQTT 3.1.1</ElRadioButton>
         </ElRadioGroup>
       </ElFormItem>
-      <ElFormItem label="设备">
+      <ElFormItem label="设备" class="realtime-ticket__field">
         <ElSelect
           v-model="deviceId"
           aria-label="订阅设备"
@@ -189,7 +193,7 @@
           >下一页设备</ElButton
         >
       </ElFormItem>
-      <ElFormItem label="属性范围（最多 50 个）">
+      <ElFormItem label="属性范围（最多 50 个）" class="realtime-ticket__field">
         <ElSelect
           v-model="propertyKeys"
           aria-label="订阅属性"
@@ -220,12 +224,14 @@
       :title="readError || state.error"
       type="warning"
       :closable="false"
+      show-icon
     />
     <section v-if="state.ticket" aria-label="本次订阅连接参数">
       <ElAlert
         title="秘密仅本次显示；关闭窗口、切换身份或项目、离线及到期均清除。关闭窗口不会撤销服务端票据。"
         type="warning"
         :closable="false"
+        show-icon
       />
       <ElDescriptions :column="1" border>
         <ElDescriptionsItem label="票据 ID">{{ state.ticket.ticketId }}</ElDescriptionsItem>
@@ -251,17 +257,22 @@
         autocomplete="off"
         aria-label="本次短期秘密"
       />
-      <p v-if="state.ticket.protocol === 'WS'" class="console-description"
+      <ElAlert
+        v-if="state.ticket.protocol === 'WS'"
+        class="console-hint"
+        type="info"
+        show-icon
+        :closable="false"
         >通过 Sec-WebSocket-Protocol 同时发送上述子协议与短期秘密，不得将秘密放入
-        URL。连接地址须使用部署环境允许的安全入口。</p
+        URL。连接地址须使用部署环境允许的安全入口。</ElAlert
       >
-      <p v-else class="console-description"
+      <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
         >Broker 地址请向管理员获取独立应用 Listener 配置；本接口不返回地址。password
-        使用短期秘密，仅订阅上述精确 Topic，QoS 1；不能发布或使用设备 Topic。</p
+        使用短期秘密，仅订阅上述精确 Topic，QoS 1；不能发布或使用设备 Topic。</ElAlert
       >
     </section>
-    <p v-if="state.attempted" class="console-description"
-      >再次签发属于新意图，旧票据仍可能有效并占用额度；系统不自动重试或恢复首次秘密。</p
+    <ElAlert v-if="state.attempted" class="console-hint" type="warning" show-icon :closable="false"
+      >再次签发属于新意图，旧票据仍可能有效并占用额度；系统不自动重试或恢复首次秘密。</ElAlert
     >
     <template #footer>
       <ElButton @click="close">关闭并清除</ElButton>
@@ -274,3 +285,40 @@
     </template>
   </ElDialog>
 </template>
+
+<style scoped lang="scss">
+  .realtime-ticket__hint {
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 20px;
+
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+  }
+
+  .realtime-ticket__field {
+    :deep(.el-form-item__content) {
+      gap: 10px;
+      align-items: center;
+    }
+
+    :deep(.el-select) {
+      flex: 1 1 220px;
+      width: auto;
+      min-width: 0;
+    }
+
+    :deep(.el-button) {
+      margin: 0;
+    }
+  }
+</style>

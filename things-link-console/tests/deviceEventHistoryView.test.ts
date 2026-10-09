@@ -68,11 +68,12 @@ it('详情是纯文本精确投影与脱敏说明，关闭宿主清旧内容；�
         ElTable: table,
         ElTableColumn: column,
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })
   await flushPromises()
+  expect(wrapper.find('[aria-label="事件历史分页"]').exists()).toBe(true)
   await wrapper.get('[data-testid="device-event-detail-open"]').trigger('click')
   await flushPromises()
   expect(wrapper.get('pre').text()).toContain('12345678901234567890123456789012345678')
@@ -91,6 +92,7 @@ it('详情是纯文本精确投影与脱敏说明，关闭宿主清旧内容；�
   await wrapper.setProps({ active: true })
   await flushPromises()
   expect(wrapper.text()).toContain('当前可读窗口内暂无事件')
+  expect(wrapper.find('[aria-label="事件历史分页"]').exists()).toBe(false)
   api.fetchDeviceEvents.mockRejectedValue(new Error('private'))
   await wrapper.get('[data-testid="device-event-history-refresh"]').trigger('click')
   await flushPromises()

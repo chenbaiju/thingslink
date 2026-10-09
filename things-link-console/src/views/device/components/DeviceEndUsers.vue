@@ -1,13 +1,19 @@
 <template>
-  <section>
-    <div class="console-toolbar">
-      <h4>当前终端用户</h4>
+  <section class="device-detail-list">
+    <ElDivider content-position="left">当前终端用户</ElDivider>
+    <div class="device-end-users__actions">
       <ElButton :loading="loading" @click="refresh">刷新用户</ElButton>
+      <ElAlert type="info" :closable="false" show-icon
+        >仅列出账号、项目角色和设备关系均有效的用户；关系角色不等于项目角色。</ElAlert
+      >
     </div>
-    <p class="console-description"
-      >仅列出账号、项目角色和设备关系均有效的用户；关系角色不等于项目角色。</p
-    >
-    <ElAlert v-if="failed" type="error" title="终端用户读取失败，请刷新重试" :closable="false" />
+    <ElAlert
+      v-if="failed"
+      type="error"
+      title="终端用户读取失败，请刷新重试"
+      :closable="false"
+      show-icon
+    />
     <DeviceClaimToken
       :project-id="projectId"
       :device-id="deviceId"
@@ -31,14 +37,19 @@
           "
       /></template>
     </ElTable>
-    <div class="console-page-actions">
-      <ElButton :disabled="loading || pageIndex === 0" @click="previous">上一页</ElButton>
-      <span>第 {{ pageIndex + 1 }} 页</span>
-      <ElButton :disabled="loading || failed || !nextCursor" @click="next">下一页</ElButton>
-    </div>
+    <DeviceDetailPagination
+      v-if="rows.length > 0"
+      :page-index="pageIndex"
+      :loading="loading"
+      :failed="failed"
+      :has-next="!!nextCursor"
+      @previous="previous"
+      @next="next"
+    />
   </section>
 </template>
 <script setup lang="ts">
+  import DeviceDetailPagination from './DeviceDetailPagination.vue'
   import DeviceClaimToken from './DeviceClaimToken.vue'
   import { useUserStore } from '@/store/modules/user'
   import { formatTime } from '@/utils/time'
@@ -117,3 +128,18 @@
     controller?.abort()
   })
 </script>
+
+<style scoped>
+  .device-end-users__actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .device-end-users__actions :deep(.el-alert) {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+</style>

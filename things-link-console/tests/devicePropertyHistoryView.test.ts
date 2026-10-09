@@ -59,15 +59,15 @@ it('原始值按纯文本保真展示，关闭宿主清旧内容；空态与错�
         ElTable: table,
         ElTableColumn: column,
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })
   await flushPromises()
+  expect(wrapper.find('[aria-label="原始属性历史分页"]').exists()).toBe(true)
   expect(wrapper.get('pre').text()).toContain('12345678901234567890123456789012345678')
   expect(wrapper.get('pre').text()).toContain('<script>bad</script>')
   expect(wrapper.find('script').exists()).toBe(false)
-  expect(wrapper.text()).toContain('查询范围受当前套餐可读历史窗口限制')
   await wrapper.setProps({ active: false })
   expect(wrapper.find('pre').exists()).toBe(false)
   api.fetchDevicePropertyHistory.mockResolvedValue({
@@ -78,6 +78,7 @@ it('原始值按纯文本保真展示，关闭宿主清旧内容；空态与错�
   await wrapper.setProps({ active: true })
   await flushPromises()
   expect(wrapper.text()).toContain('当前筛选与套餐可读窗口内暂无数据')
+  expect(wrapper.find('[aria-label="原始属性历史分页"]').exists()).toBe(false)
   api.fetchDevicePropertyHistory.mockRejectedValue(new Error('private'))
   await wrapper.get('[data-testid="device-property-history-refresh"]').trigger('click')
   await flushPromises()

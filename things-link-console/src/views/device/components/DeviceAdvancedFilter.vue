@@ -70,7 +70,7 @@
     { key: 'groupId', label: '设备组' },
     { key: 'tagKey', label: '标签键' },
     { key: 'tagValue', label: '标签值' }
-  ]
+  ].map((item) => ({ ...item, labelWidth: 90 }))
   /** 设备高级筛选的固定白名单状态；不向后端传递自由表达式或排序字段。 */
   export interface DeviceAdvancedFilterModel {
     keyword: string
@@ -97,3 +97,9 @@
     reset: []
   }>()
 </script>
+
+<style lang="scss">
+  .device-advanced-filter.console-filter-bar .el-form-item .el-form-item__label {
+    justify-content: flex-end;
+  }
+</style>

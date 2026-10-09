@@ -41,6 +41,7 @@ function render(props = {}) {
     },
     global: {
       stubs: {
+        ElDivider: { template: '<div role="separator"><slot /></div>' },
         ElDialog: {
           props: ['modelValue'],
           template: '<section v-if="modelValue"><slot/><slot name="footer"/></section>'
@@ -49,7 +50,7 @@ function render(props = {}) {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot/></button>'
         },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' }
       }
     }
   })

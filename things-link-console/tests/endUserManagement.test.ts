@@ -256,7 +256,7 @@ it('uses cursor history and resets pagination on project change', async () => {
   state.user.info.currentProjectId = 'q'
   await flushPromises()
   expect(api.fetchEndUsers).toHaveBeenLastCalledWith('q', undefined)
-  expect(page.text()).toContain('第1页')
+  expect(page.find('[aria-label="本项目角色目录分页"]').text()).toMatch(/第\s*1\s*页/)
 })
 
 it('changes only an existing project role via PATCH and rereads the selected identity', async () => {

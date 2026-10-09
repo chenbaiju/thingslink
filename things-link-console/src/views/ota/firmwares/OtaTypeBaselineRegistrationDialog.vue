@@ -1,33 +1,51 @@
 <template>
   <ElDialog
+    class="console-dialog ota-firmware-feedback"
     v-model="visible"
     title="登记受控类型基线"
     width="720px"
     data-testid="ota-baseline-registration-dialog"
     destroy-on-close
   >
-    <p
-      >仅登记服务器为本租户、项目与精确类型预配的受控基线。页面不接收基线JSON、能力开关或制造证据，不显示无法获知的待登记配置版本。</p
-    >
-    <ElSelect
-      v-model="selectedType"
-      aria-label="已发布设备类型"
-      data-testid="ota-baseline-registration-type"
-      :loading="typesLoading"
-      :disabled="typesLoading || busy || checking || locked || types.length === 0"
-    >
-      <ElOption
-        v-for="type in types"
-        :key="type.id"
-        :label="`${type.name}（${type.id}）`"
-        :value="type.id"
-      />
-    </ElSelect>
-    <p v-if="!typesLoading && !typesError && !types.length">没有具备产品标识的已发布设备类型</p>
-    <p v-if="missingProduct"
-      >有 {{ missingProduct }} 个已发布类型缺少产品标识，不能作为OTA权威类型。</p
-    >
-    <ElAlert v-if="typesError" :title="typesError" type="error" :closable="false" />
+    <ElAlert
+      title="仅登记服务器为本租户、项目与精确类型预配的受控基线。页面不接收基线JSON、能力开关或制造证据，不显示无法获知的待登记配置版本。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+    <div class="ota-baseline-type-field">
+      <label for="ota-baseline-registration-type-input">已发布设备类型</label>
+      <ElSelect
+        id="ota-baseline-registration-type-input"
+        v-model="selectedType"
+        aria-label="已发布设备类型"
+        data-testid="ota-baseline-registration-type"
+        :loading="typesLoading"
+        :disabled="typesLoading || busy || checking || locked || types.length === 0"
+      >
+        <ElOption
+          v-for="type in types"
+          :key="type.id"
+          :label="`${type.name}（${type.id}）`"
+          :value="type.id"
+        />
+      </ElSelect>
+    </div>
+    <ElAlert
+      v-if="!typesLoading && !typesError && !types.length"
+      title="没有具备产品标识的已发布设备类型"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
+      v-if="missingProduct"
+      :title="`有 ${missingProduct} 个已发布类型缺少产品标识，不能作为OTA权威类型。`"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert show-icon v-if="typesError" :title="typesError" type="error" :closable="false" />
     <ElButton v-if="typesError" :disabled="busy || checking || locked" @click="loadTypes"
       >重读设备类型</ElButton
     >
@@ -38,12 +56,21 @@
       @click="readCurrent"
       >读取当前登记</ElButton
     >
-    <p v-if="revision !== undefined" data-testid="ota-baseline-registration-revision"
-      >当前登记修订：{{ revision }}</p
+    <div
+      v-if="revision !== undefined"
+      class="ota-registration-revision"
+      data-testid="ota-baseline-registration-revision"
     >
-    <p v-if="revision === '0'"
-      >服务端返回登记不存在或不可见；这不证明服务器已配置基线，也不能推断先前请求失败。首次登记仍由服务器核对受控来源与权威类型。</p
-    >
+      <span>当前登记修订：</span>
+      <span class="ota-registration-revision__value">{{ revision }}</span>
+    </div>
+    <ElAlert
+      v-if="revision === '0'"
+      title="服务端返回登记不存在或不可见；这不证明服务器已配置基线，也不能推断先前请求失败。首次登记仍由服务器核对受控来源与权威类型。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <div v-if="currentState" data-testid="ota-baseline-registration-current">
       <p data-testid="ota-baseline-registration-version"
         >已登记基线版本：{{ currentState.baseline.baselineVersion }}</p
@@ -59,10 +86,12 @@
           ><dd>{{ row.value }}</dd></div
         ></dl
       >
-      <p
-        >以上是已登记的受控声明，不代表本进程当前配置匹配、制造证据已验真或设备当前升级资格。缺能力的
-        false/0 不会被页面提升。</p
-      >
+      <ElAlert
+        title="以上是已登记的受控声明，不代表本进程当前配置匹配、制造证据已验真或设备当前升级资格。缺能力的 false/0 不会被页面提升。"
+        type="info"
+        :closable="false"
+        show-icon
+      />
     </div>
     <ElCheckbox
       v-if="revision !== undefined && phase === 'idle'"
@@ -72,19 +101,34 @@
     >
       已确认服务器已更新本项目与精确类型的受控基线配置
     </ElCheckbox>
-    <p v-if="revision === '9223372036854775807'">当前修订已达上限，不能继续登记。</p>
-    <p
+    <ElAlert
+      v-if="revision === '9223372036854775807'"
+      title="当前修订已达上限，不能继续登记。"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
       v-if="
         completedSlot !== undefined &&
         revision !== undefined &&
         BigInt(revision) <= BigInt(completedSlot)
       "
       data-testid="ota-baseline-registration-completed-fence"
-      >当前身份已知本类型修订槽
-      {{ completedSlot }} 的请求完成；当前读取得到同槽或更低修订，不能用新键重提原意图。</p
-    >
-    <p v-if="fenceFull">当前身份已达到64类型的完成记录预算，不能在新类型发起登记。</p>
+      :title="`当前身份已知本类型修订槽 ${completedSlot} 的请求完成；当前读取得到同槽或更低修订，不能用新键重提原意图。`"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <ElAlert
+      v-if="fenceFull"
+      title="当前身份已达到64类型的完成记录预算，不能在新类型发起登记。"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
+      show-icon
       v-if="notice"
       :title="notice"
       type="info"
@@ -113,6 +157,7 @@
 </template>
 
 <script setup lang="ts">
+  import './ota-feedback.scss'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import { fetchDeviceTypeDetail, fetchDeviceTypePage, type DeviceTypeResponse } from '@/api/device'
   import {

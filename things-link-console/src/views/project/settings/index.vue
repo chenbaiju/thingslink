@@ -8,6 +8,7 @@
 <template>
   <div class="console-page project-settings" v-loading="loading">
     <ConsoleWorkspaceHeader
+      project-style
       title="用量与项目设置"
       description="先查看当前项目用量与租户共享额度，再按需要配置项目 Agent 与知识资料。"
       :links="[
@@ -20,7 +21,7 @@
 
     <template v-else>
       <section aria-label="用量与额度">
-        <h2 class="console-heading">用量与额度</h2>
+        <ElDivider content-position="left">用量与额度</ElDivider>
         <ElAlert
           type="info"
           show-icon
@@ -71,10 +72,15 @@
               <div class="quota-section__header console-page-header">
                 <div>
                   <h4>{{ $t('quota.projectUsageTitle') }}</h4>
-                  <p class="console-description">{{ $t('quota.projectUsageHint') }}</p>
                 </div>
               </div>
             </template>
+            <ElAlert
+              type="info"
+              show-icon
+              :closable="false"
+              :title="$t('quota.projectUsageHint')"
+            />
             <QuotaUsageTable :scope="overview?.project" />
           </ElCard>
 
@@ -83,19 +89,22 @@
               <div class="quota-section__header console-page-header">
                 <div>
                   <h4>{{ $t('quota.tenantPoolTitle') }}</h4>
-                  <p class="console-description">{{ $t('quota.tenantPoolHint') }}</p>
                 </div>
               </div>
             </template>
+            <ElAlert type="info" show-icon :closable="false" :title="$t('quota.tenantPoolHint')" />
             <QuotaUsageTable :scope="overview?.tenantSharedPool" />
           </ElCard>
         </section>
       </section>
-      <section class="console-editor-section" aria-label="Agent 与知识配置">
-        <h2 class="console-heading">Agent 与知识配置</h2>
-        <p class="console-description"
-          >按需配置项目模型接入、知识资料与个人事实集合。具体操作遵循当前账号权限。</p
-        >
+      <section class="project-settings__configuration" aria-label="Agent 与知识配置">
+        <ElDivider content-position="left">Agent 与知识配置</ElDivider>
+        <ElAlert
+          type="info"
+          show-icon
+          :closable="false"
+          title="按需配置项目模型接入、知识资料与个人事实集合，操作权限以当前账号为准。"
+        />
         <AgentModelPanel />
         <ProjectKnowledgePanel :project-id="projectId" />
         <PersonalFactCollectionPanel :project-id="projectId" />
@@ -171,91 +180,88 @@
   .project-settings {
     padding: 10px;
 
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
+    :deep(.el-alert) {
       margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
     }
-
-    &__notice {
-      margin-bottom: 10px;
+    :deep(.el-alert__title),
+    :deep(.el-alert__description) {
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 20px;
+    }
+    :deep(.el-alert__icon) {
+      width: 14px;
+      font-size: 14px;
+    }
+    :deep(.el-card__header .console-heading) {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    :deep(.console-toolbar) {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    :deep(.console-toolbar .el-button + .el-button) {
+      margin-left: 0;
+    }
+    :deep(.el-form-item__label) {
+      margin-bottom: 8px;
     }
 
     &__meta {
       margin-bottom: 10px;
     }
-
     &__sections {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
+    &__sections > *,
+    &__configuration > * {
+      min-width: 0;
+    }
   }
-
   .quota-meta {
     &__skeleton,
     &__content {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 2.2fr) repeat(3, minmax(0, 0.8fr));
+      gap: 16px;
     }
-
     &__item {
       display: flex;
       flex-direction: column;
       gap: 8px;
-
+      overflow-wrap: anywhere;
       span {
-        font-size: 13px;
+        font-size: 12px;
         color: var(--art-text-gray-500);
       }
     }
   }
-
   .quota-section__header {
+    margin: 0;
     h4 {
-      margin: 0 0 6px;
-      font-size: 16px;
-    }
-
-    p {
       margin: 0;
-      font-size: 13px;
-      color: var(--art-text-gray-500);
+      font-size: 14px;
+      font-weight: 500;
     }
   }
-
-  @media screen and (width <= 1100px) {
+  @media screen and (width <= 1500px) {
     .project-settings__sections {
       grid-template-columns: 1fr;
     }
   }
-
-  @media screen and (width <= 640px) {
-    .project-settings {
-      padding: 16px;
-
-      &__header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      &__header .el-button {
-        align-self: flex-start;
-      }
+  @media screen and (width <= 1100px) {
+    .quota-meta__skeleton,
+    .quota-meta__content {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
+  }
+  @media screen and (width <= 640px) {
     .quota-meta__skeleton,
     .quota-meta__content {
       grid-template-columns: 1fr;

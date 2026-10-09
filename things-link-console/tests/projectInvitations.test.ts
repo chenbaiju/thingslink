@@ -195,19 +195,64 @@ describe('项目邀请实际页面行为', () => {
     await click('刷新')
     expect(wrapper!.text()).toContain('测试项目')
   })
-  it('重复游标停止读取并显示错误，避免无限请求', async () => {
-    api.fetchMyProjectInvitations.mockResolvedValue({ items: [row], nextCursor: 'same' })
-    page()
+  it.each([undefined, 'project-1'])('邀请范围%s重复游标停止读取并显示错误', async (projectId) => {
+    const fetch = projectId ? api.fetchProjectInvitations : api.fetchMyProjectInvitations
+    fetch.mockResolvedValue({ items: [row], nextCursor: 'same' })
+    page(projectId)
     await flushPromises()
-    expect(api.fetchMyProjectInvitations).toHaveBeenCalledTimes(2)
+    expect(fetch).toHaveBeenCalledTimes(2)
     expect(wrapper!.text()).toContain('邀请读取失败')
   })
-  it('项目管理继续使用服务端游标翻页', async () => {
-    api.fetchProjectInvitations.mockResolvedValueOnce({ items: [row], nextCursor: 'signed-next' })
+  it('项目管理自动加载全部页并去重，不显示分页控件', async () => {
+    api.fetchProjectInvitations
+      .mockResolvedValueOnce({ items: [row], nextCursor: 'signed-next' })
+      .mockResolvedValueOnce({
+        items: [row, { ...row, id: 'invite-2', targetEmail: 'second@example.test' }]
+      })
     page('project-1')
     await flushPromises()
-    expect(api.fetchProjectInvitations).toHaveBeenCalledTimes(1)
-    await click('下一页')
+    expect(api.fetchProjectInvitations).toHaveBeenCalledTimes(2)
     expect(api.fetchProjectInvitations.mock.calls[1][1]).toBe('signed-next')
+    expect(wrapper!.text()).toContain('second@example.test')
+    expect(wrapper!.text()).not.toContain('下一页')
+    expect(wrapper!.text()).not.toContain('回到第一页')
+    expect(wrapper!.findAll('button').filter((b) => b.text() === '重发')).toHaveLength(2)
+  })
+  it('项目管理后续页失败不呈现残缺列表，刷新重新加载完整集合', async () => {
+    api.fetchProjectInvitations
+      .mockResolvedValueOnce({ items: [row], nextCursor: 'signed-next' })
+      .mockRejectedValueOnce(new Error('unavailable'))
+    page('project-1')
+    await flushPromises()
+    expect(wrapper!.text()).toContain('邀请读取失败')
+    expect(wrapper!.text()).not.toContain('recipient@example.test')
+    await click('刷新')
+    expect(wrapper!.text()).toContain('recipient@example.test')
+  })
+  it('项目切换取消续页并拒绝旧项目迟到的完整结果', async () => {
+    let resolve!: (value: unknown) => void
+    api.fetchProjectInvitations
+      .mockResolvedValueOnce({ items: [row], nextCursor: 'signed-next' })
+      .mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            resolve = r
+          })
+      )
+      .mockResolvedValueOnce({
+        items: [{ ...row, projectId: 'project-2', targetEmail: 'current@example.test' }]
+      })
+    page('project-1')
+    await flushPromises()
+    const signal = api.fetchProjectInvitations.mock.calls[1][2] as AbortSignal
+    await wrapper!.setProps({ projectId: 'project-2' })
+    await flushPromises()
+    expect(signal.aborted).toBe(true)
+    expect(api.fetchProjectInvitations.mock.calls[2][0]).toBe('project-2')
+    resolve({ items: [{ ...row, id: 'late-invite', targetEmail: 'late@example.test' }] })
+    await flushPromises()
+    expect(wrapper!.text()).toContain('current@example.test')
+    expect(wrapper!.text()).not.toContain('recipient@example.test')
+    expect(wrapper!.text()).not.toContain('late@example.test')
   })
 })

@@ -53,7 +53,7 @@ function render(
         },
         ElDescriptions: { template: '<div><slot/></div>' },
         ElDescriptionsItem: { props: ['label'], template: '<p>{{label}}: <slot/></p>' },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' }
       }
     }
   })

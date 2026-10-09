@@ -54,7 +54,7 @@ async function page() {
     global: {
       stubs: {
         ElButton: { template: '<button><slot /></button>' },
-        ElAlert: { props: ['title'], template: '<p>{{ title }}</p>' },
+        ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' },
         ElCard: { template: '<section><slot name="header" /><slot /></section>' }
       }
     }

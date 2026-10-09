@@ -1,13 +1,15 @@
 <template>
-  <section v-if="value" class="analysis-result" data-testid="analysis-result">
-    <h5>本次分析结果</h5>
+  <section v-if="value" class="analysis-result console-feedback" data-testid="analysis-result">
+    <ElDivider content-position="left">本次分析结果</ElDivider>
     <p>{{ categoryLabel }}</p>
     <p v-if="value.call">调用编号：{{ value.call.id }}</p>
     <template v-if="value.result">
-      <p>以下为模型生成内容，需人工核对；引用编号不证明结论正确。</p>
+      <ElAlert class="console-hint" type="info" show-icon :closable="false"
+        >以下为模型生成内容，需人工核对；引用编号不证明结论正确。</ElAlert
+      >
       <p class="analysis-text">{{ value.result.summary }}</p>
       <div v-for="group in groups" :key="group.kind">
-        <h6>{{ group.label }}</h6>
+        <ElDivider content-position="left">{{ group.label }}</ElDivider>
         <p v-if="group.items.length === 0">未返回此类条目。</p>
         <ul v-else>
           <li v-for="(finding, index) in group.items" :key="index">
@@ -16,7 +18,7 @@
           </li>
         </ul>
       </div>
-      <h6>限制</h6>
+      <ElDivider content-position="left">限制</ElDivider>
       <ul v-if="value.result.limitations.length">
         <li
           v-for="(limitation, index) in value.result.limitations"
@@ -25,7 +27,9 @@
           >{{ limitation }}</li
         >
       </ul>
-      <p v-else>模型未列出限制，不代表不存在限制。</p>
+      <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
+        >模型未列出限制，不代表不存在限制。</ElAlert
+      >
       <p
         >Token 用量：输入 {{ value.result.usage.promptTokens }}，输出
         {{ value.result.usage.completionTokens }}，合计
@@ -33,14 +37,22 @@
         {{ value.result.usage.cacheHitTokens }}，未命中
         {{ value.result.usage.cacheMissTokens }}。用量不等于费用结算。</p
       >
-      <p>正文只在当前页面暂存，刷新或切换身份及设备后消失；不能从原调用状态恢复正文。</p>
+      <ElAlert class="console-hint" type="info" show-icon :closable="false"
+        >正文只在当前页面暂存，刷新或切换身份及设备后消失；不能从原调用状态恢复正文。</ElAlert
+      >
     </template>
-    <p v-else
-      >本次没有可展示正文，用量与费用无法由此确认。请保留原意图，手动核对原调用，勿自动重新分析。</p
+    <ElAlert v-else class="console-hint" type="warning" show-icon :closable="false"
+      >本次没有可展示正文，用量与费用无法由此确认。请保留原意图，手动核对原调用，勿自动重新分析。</ElAlert
     >
   </section>
-  <p v-else-if="run !== undefined" role="alert"
-    >分析结果未通过校验，正文不展示；请核对原调用，勿重复提交。</p
+  <ElAlert
+    v-else-if="run !== undefined"
+    role="alert"
+    class="console-hint"
+    type="error"
+    show-icon
+    :closable="false"
+    >分析结果未通过校验，正文不展示；请核对原调用，勿重复提交。</ElAlert
   >
 </template>
 <script setup lang="ts">

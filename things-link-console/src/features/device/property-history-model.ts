@@ -110,6 +110,8 @@ export class PropertyHistoryModel {
   filters = emptyPropertyFilters()
   items: PropertyHistoryItem[] = []
   nextCursor?: string
+  pageIndex = 0
+  private cursors: (string | undefined)[] = [undefined]
   loading = false
   error = ''
   private project = ''
@@ -149,18 +151,28 @@ export class PropertyHistoryModel {
     this.applied = emptyPropertyFilters()
     this.items = []
     this.nextCursor = undefined
+    this.pageIndex = 0
+    this.cursors = [undefined]
     this.error = ''
     this.loading = false
   }
   async refresh() {
     this.applied = { ...this.filters }
-    await this.load()
+    this.cursors = [undefined]
+    await this.load(0)
   }
   async next() {
-    if (this.nextCursor && !this.loading && !this.error) await this.load(this.nextCursor)
+    if (!this.nextCursor || this.loading || this.error) return
+    this.cursors[this.pageIndex + 1] = this.nextCursor
+    await this.load(this.pageIndex + 1)
   }
-  private async load(cursor?: string) {
+  async previous() {
+    if (!this.loading && this.pageIndex > 0) await this.load(this.pageIndex - 1)
+  }
+  private async load(index: number) {
     if (!this.active) return
+    this.pageIndex = index
+    const cursor = this.cursors[index]
     const generation = this.generation,
       identity = this.epoch(),
       run = ++this.run

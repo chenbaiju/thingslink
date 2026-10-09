@@ -1,7 +1,7 @@
 <template>
   <div class="console-page device-types console-page--single-panel">
     <ConsoleWorkspaceHeader
-      class="device-types__header"
+      project-style
       title="设备类型与物模型"
       description="定义属性、事件和命令，发布后继续接入设备。"
     >
@@ -25,7 +25,13 @@
       <div class="stream-toolbar"
         ><h3>物模型工作区</h3><ElButton text @click="closeWorkspace">关闭</ElButton></div
       >
-      <ElAlert v-if="workspaceError" :title="workspaceError" type="error" :closable="false" />
+      <ElAlert
+        v-if="workspaceError"
+        :title="workspaceError"
+        type="error"
+        :closable="false"
+        show-icon
+      />
       <ElButton v-if="workspaceError" @click="openWorkspace({ id: workspaceId })"
         >重试读取</ElButton
       >
@@ -58,12 +64,6 @@
             @click="openProductCredential(workspaceType)"
             >产品凭据</ElButton
           >
-          <ElButton
-            v-if="canCreateDevices && workspaceType.status === 'PUBLISHED'"
-            type="primary"
-            @click="continueCreateDevice(workspaceType)"
-            >继续创建设备</ElButton
-          >
         </div>
         <p v-if="workspaceType.status === 'DRAFT'"
           >完成物模型定义并发布后，即可使用该类型创建设备。发布后的修改遵循既有版本规则。</p
@@ -73,7 +73,7 @@
 
     <ElCard shadow="never" class="console-table-panel console-page__main-panel">
       <ElTable v-loading="loading" :data="items" row-key="id">
-        <ElTableColumn label="名称" min-width="160">
+        <ElTableColumn label="名称" min-width="160" fixed="left">
           <template #default="{ row }"
             ><ElButton link type="primary" @click="openWorkspace(row)">{{
               row.name
@@ -231,7 +231,9 @@
       width="940px"
     >
       <div class="stream-toolbar">
-        <span>属性定义用于校验设备上报、云端下发和云端私有数据。</span>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >属性定义用于校验设备上报、云端下发和云端私有数据。</ElAlert
+        >
         <ElButton
           v-if="hasAuth('device:update') && selectedType?.status === 'DRAFT'"
           type="primary"
@@ -365,7 +367,9 @@
       width="940px"
     >
       <div class="stream-toolbar">
-        <span>事件由设备主动上报，可携带经过 Schema 校验的参数。</span>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >事件由设备主动上报，可携带经过 Schema 校验的参数。</ElAlert
+        >
         <ElButton
           v-if="hasAuth('device:update') && selectedType?.status === 'DRAFT'"
           type="primary"
@@ -481,7 +485,9 @@
       width="940px"
     >
       <div class="stream-toolbar">
-        <span>命令是云端向设备发起的 RPC 动作，可定义输入/输出 JSON Schema 与超时。</span>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >命令是云端向设备发起的 RPC 动作，可定义输入/输出 JSON Schema 与超时。</ElAlert
+        >
         <ElButton
           v-if="hasAuth('device:update') && selectedType?.status === 'DRAFT'"
           type="primary"
@@ -640,13 +646,9 @@
 
   defineOptions({ name: 'DeviceTypes' })
   const userStore = useUserStore()
-  const router = useRouter()
   const route = useRoute()
   const { hasAuth } = useAuth()
   const projectId = computed(() => userStore.info.currentProjectId ?? '')
-  const canCreateDevices = computed(
-    () => hasAuth('device:create') && !!userStore.info.buttons?.includes('device:create')
-  )
   const workspaceId = ref('')
   const workspaceType = ref<DeviceTypeResponse>()
   const workspaceLoading = ref(false)
@@ -690,19 +692,6 @@
     } finally {
       if (current()) workspaceLoading.value = false
     }
-  }
-  function continueCreateDevice(type: DeviceTypeResponse) {
-    if (
-      !canCreateDevices.value ||
-      !type.id ||
-      type.projectId !== projectId.value ||
-      type.status !== 'PUBLISHED'
-    )
-      return
-    void router.push({
-      path: '/device/list',
-      query: { createTypeId: type.id, contextProjectId: projectId.value }
-    })
   }
   const productManager = computed(
     () =>
@@ -1361,12 +1350,15 @@
     &__workspace {
       margin-bottom: 16px;
     }
-    &__steps {
+    &__steps.stream-toolbar {
       flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-start;
       margin-top: 16px;
-    }
-    &__header {
-      margin-bottom: 16px;
+
+      :deep(.el-button) {
+        margin: 0;
+      }
     }
   }
   .form-control {
@@ -1395,9 +1387,15 @@
   }
   .stream-toolbar {
     display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
     color: var(--art-text-gray-600);
+    :deep(.console-hint) {
+      flex: 1 1 280px;
+      margin-bottom: 0;
+    }
   }
 </style>

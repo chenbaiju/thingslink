@@ -1,12 +1,12 @@
 <template>
   <ElCard v-if="allowed" shadow="never" class="agent-model-panel" data-testid="agent-model-panel">
     <template #header><h4 class="console-heading">Agent 模型配置</h4></template>
-    <p class="console-description"
-      >使用本项目的 DeepSeek Key，费用由对应供应商账号承担；平台不设置模型金额上限。</p
-    >
-    <p class="console-description"
-      >保存新 Key 后自动启用，可随时停用。保存和启用不会发起模型请求；诊断功能尚未开放。</p
-    >
+    <ElAlert
+      type="info"
+      show-icon
+      :closable="false"
+      title="使用本项目的 DeepSeek Key，费用由供应商账号承担，平台不设置模型金额上限。新 Key 保存后自动启用，可随时停用；保存和启用不会发起模型请求，诊断功能尚未开放。"
+    />
     <ElAlert v-if="error" :title="error" type="warning" :closable="false" show-icon />
     <div v-if="configuration" class="agent-model-panel__status" aria-live="polite">
       <span data-testid="model-status">{{
@@ -40,9 +40,13 @@
         <ElButton :disabled="busy" @click="load">刷新状态</ElButton>
       </div>
     </ElForm>
-    <p v-if="uncertain" class="console-description"
-      >提交结果尚未确认。请先刷新当前项目状态，再决定是否重新操作；刷新不会重发 Key。</p
-    >
+    <ElAlert
+      v-if="uncertain"
+      type="warning"
+      show-icon
+      :closable="false"
+      title="提交结果尚未确认。请先刷新当前项目状态，再决定是否重新操作；刷新不会重发 Key。"
+    />
   </ElCard>
 </template>
 
@@ -196,11 +200,16 @@
   .agent-model-panel {
     margin-bottom: 10px;
 
+    :deep(.el-form) {
+      max-width: 720px;
+    }
+
     &__status {
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
-      margin: 16px 0;
+      align-items: center;
+      margin: 10px 0;
     }
   }
 </style>

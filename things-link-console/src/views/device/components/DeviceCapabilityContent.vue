@@ -1,8 +1,14 @@
 <template>
-  <section v-loading="loading" class="device-capability console-fragment">
-    <div class="device-capability__toolbar">
-      <span>{{ descriptions[kind] }}</span>
+  <section
+    v-loading="loading"
+    class="device-capability console-fragment"
+    :class="{ 'device-detail-list': kind === 'ota' }"
+  >
+    <div v-if="$slots.actions" class="device-capability__header">
+      <slot name="actions" />
+      <ElAlert type="info" :closable="false" show-icon>{{ descriptions[kind] }}</ElAlert>
     </div>
+    <ElAlert v-else type="info" :closable="false" show-icon>{{ descriptions[kind] }}</ElAlert>
     <ElAlert v-if="error" :title="error" type="warning" :closable="false" show-icon />
     <template v-else-if="loaded">
       <template v-if="kind === 'diagnostics' && diagnostics">
@@ -32,13 +38,24 @@
           </ElTableColumn>
           <template #empty><ElEmpty :description="emptyTexts[kind]" /></template>
         </ElTable>
-        <div v-if="kind === 'alarms' || kind === 'ota'" class="device-capability__pagination">
-          <div class="console-actions">
-            <ElButton :disabled="loading || !pageCursor" @click="load()">首页</ElButton>
-            <ElButton :disabled="loading || !hasMore || !nextCursor" @click="load(nextCursor)"
-              >下一页</ElButton
-            >
-          </div>
+        <DeviceDetailPagination
+          v-if="kind === 'ota' && rows.length > 0"
+          :page-index="pageIndex"
+          :loading="loading"
+          :failed="!!error"
+          :has-next="hasMore && !!nextCursor"
+          aria-label="固件升级分页"
+          @previous="previous"
+          @next="next"
+        />
+        <div
+          v-else-if="kind === 'alarms' && rows.length > 0"
+          class="device-detail-pagination"
+          role="navigation"
+          aria-label="告警分页"
+        >
+          <ElButton :disabled="loading || pageIndex === 0" @click="refresh">首页</ElButton>
+          <ElButton :disabled="loading || !hasMore || !nextCursor" @click="next">下一页</ElButton>
         </div>
       </template>
     </template>
@@ -46,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+  import DeviceDetailPagination from './DeviceDetailPagination.vue'
   import {
     fetchDeviceCredentials,
     fetchDeviceAccessDiagnostics,
@@ -81,7 +99,8 @@
   const error = ref('')
   const rows = shallowRef<object[]>([])
   const diagnostics = ref<DeviceAccessDiagnosticsResponse>()
-  const pageCursor = ref<string>()
+  const pageIndex = ref(0)
+  let cursors: (string | undefined)[] = [undefined]
   const nextCursor = ref<string>()
   const hasMore = ref(false)
   let generation = 0
@@ -188,7 +207,9 @@
       return jobStatusLabel(value)
     return labels[String(value)] ?? String(value)
   }
-  const load = async (cursor?: string) => {
+  const load = async (index: number) => {
+    const cursor = cursors[index]
+    pageIndex.value = index
     const token = ++generation
     const identity = currentIdentityEpoch()
     readScope?.close()
@@ -253,7 +274,6 @@
         hasMore.value = result.hasMore
       }
       if (current()) {
-        pageCursor.value = cursor
         loaded.value = true
       }
     } catch (cause) {
@@ -263,11 +283,19 @@
       if (current()) loading.value = false
     }
   }
-  watch(
-    () => [props.projectId, props.device.id, props.kind],
-    () => void load(),
-    { immediate: true }
-  )
+  function refresh() {
+    cursors = [undefined]
+    void load(0)
+  }
+  function next() {
+    if (loading.value || error.value || !hasMore.value || !nextCursor.value) return
+    cursors[pageIndex.value + 1] = nextCursor.value
+    void load(pageIndex.value + 1)
+  }
+  function previous() {
+    if (!loading.value && pageIndex.value > 0) void load(pageIndex.value - 1)
+  }
+  watch(() => [props.projectId, props.device.id, props.kind], refresh, { immediate: true })
   onUnmounted(() => {
     generation += 1
     readScope?.close()
@@ -275,20 +303,16 @@
 </script>
 
 <style scoped>
-  .device-capability__toolbar {
+  .device-capability__header {
     display: flex;
-    gap: 16px;
+    gap: 10px;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
-  .device-capability__toolbar > span {
-    color: var(--el-text-color-secondary);
-  }
-  .device-capability__pagination {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 16px;
+
+  .device-capability__header :deep(.el-alert) {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
   }
 </style>

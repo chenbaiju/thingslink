@@ -11,27 +11,24 @@
 <template>
   <div class="console-page ota-campaigns console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="升级活动"
       description="从已发布固件组织灰度升级，按冻结目标查看执行。"
-      :links="[
-        { label: '固件', path: '/ota/firmwares', permission: 'ota:read' },
-        { label: '升级活动', path: '/ota/campaigns', permission: 'ota:read' },
-        { label: '设备作业', path: '/ota/jobs', permission: 'ota:read' },
-        { label: '审计', path: '/ota/audits', permission: 'ota:read' }
-      ]"
-    />
-    <div class="ota-campaigns__header console-toolbar console-page-actions">
-      <div class="ota-campaigns__header-actions console-actions">
+    >
+      <template #actions>
         <ElButton v-if="hasAuth('ota:deploy')" type="primary" :icon="Plus" @click="openCreate">
           创建活动
         </ElButton>
-      </div>
-    </div>
+      </template>
+    </ConsoleWorkspaceHeader>
 
-    <ElAlert class="ota-campaigns__notice" type="info" :closable="false" show-icon>
-      <template #title>活动创建前置条件</template>
-      活动只能使用已完成签名发布的固件。请先确认固件已发布，再创建或启动升级活动。
-    </ElAlert>
+    <ElAlert
+      class="ota-campaigns__notice"
+      title="创建或启动活动前，请确认固件已完成签名发布。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="campaigns" row-key="id">
@@ -153,7 +150,7 @@
             placeholder="到达该时间后才能启动第一批"
           />
         </ElFormItem>
-        <ElFormItem label="执行策略">
+        <ElFormItem class="ota-campaigns__policy-row" label="执行策略">
           <ElCollapse class="ota-campaigns__policy">
             <ElCollapseItem title="高级策略（保守默认值，可修改）" name="policy">
               <ElFormItem label="并发下载" label-width="150px">
@@ -685,33 +682,24 @@
 
 <style lang="scss" scoped>
   .ota-campaigns {
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 4px;
-        font-size: 18px;
-      }
-
-      p {
-        margin: 0;
-        font-size: 13px;
-        color: var(--art-text-gray-600);
-      }
-    }
-
-    &__header-actions {
-      display: flex;
-      flex-shrink: 0;
-      gap: 8px;
+    :deep(.workspace-header > .console-actions) {
+      margin-bottom: 0;
     }
 
     &__notice {
       margin-bottom: 10px;
+
+      :deep(.el-alert__title) {
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 20px;
+      }
+
+      :deep(.el-alert__icon) {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+      }
     }
 
     &__more {
@@ -726,6 +714,16 @@
 
     &__policy {
       width: 100%;
+
+      :deep(.el-form-item__content) {
+        gap: 8px;
+        align-items: center;
+      }
+    }
+
+    &__policy-row > :deep(.el-form-item__label) {
+      height: 50px !important;
+      line-height: 50px !important;
     }
 
     &__actions {

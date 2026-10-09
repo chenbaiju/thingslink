@@ -1,22 +1,21 @@
 <template>
-  <section>
-    <div class="console-toolbar">
-      <div class="console-actions">
-        <ElButton :type="mode === 'jobs' ? 'primary' : 'default'" @click="mode = 'jobs'"
-          >当前任务</ElButton
-        >
-        <ElButton :type="mode === 'history' ? 'primary' : 'default'" @click="mode = 'history'"
-          >执行历史</ElButton
-        >
-      </div>
-      <ElButton :loading="loading" @click="refresh">刷新任务</ElButton>
-    </div>
-    <p class="console-description">{{
+  <section class="device-detail-list">
+    <ElTabs v-model="mode" class="device-task-tabs" aria-label="任务调度视图">
+      <ElTabPane name="jobs" label="当前任务" />
+      <ElTabPane name="history" label="执行历史" />
+    </ElTabs>
+    <ElAlert type="info" :closable="false" show-icon>{{
       mode === 'jobs'
         ? '当前目标包含该设备的任务，含暂停配置；动态组变化后结果可能变化。'
         : '仅列出执行时实际选中过该设备的目标记录，整体执行状态与该设备结果分别展示。'
-    }}</p>
-    <ElAlert v-if="failed" type="error" title="设备任务读取失败，请刷新重试" :closable="false" />
+    }}</ElAlert>
+    <ElAlert
+      v-if="failed"
+      type="error"
+      title="设备任务读取失败，请切换标签后重试"
+      :closable="false"
+      show-icon
+    />
     <ElTable v-loading="loading" :data="rows" row-key="id">
       <ElTableColumn
         prop="id"
@@ -74,7 +73,12 @@
           "
       /></template>
     </ElTable>
-    <div class="console-page-actions">
+    <div
+      v-if="rows.length > 0"
+      class="device-detail-pagination"
+      role="navigation"
+      aria-label="列表分页"
+    >
       <ElButton :disabled="loading || pageIndex === 0" @click="previous">上一页</ElButton>
       <span>第 {{ pageIndex + 1 }} 页</span>
       <ElButton :disabled="loading || failed || !nextCursor" @click="next">下一页</ElButton>
@@ -197,3 +201,17 @@
     controller?.abort()
   })
 </script>
+
+<style scoped>
+  .device-task-tabs {
+    flex: none;
+  }
+
+  .device-task-tabs :deep(.el-tabs__header) {
+    margin-bottom: 10px;
+  }
+
+  .device-task-tabs :deep(.el-tabs__content) {
+    display: none;
+  }
+</style>

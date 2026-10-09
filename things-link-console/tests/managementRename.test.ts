@@ -40,7 +40,10 @@ function mountDialog() {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot /></button>'
         },
-        ElAlert: { props: ['title'], template: '<p role="alert">{{title}}</p>' }
+        ElAlert: {
+          props: ['title', 'type'],
+          template: '<p role="alert" :data-type="type">{{title}}<slot /></p>'
+        }
       }
     }
   })
@@ -98,7 +101,7 @@ describe('管理名称独立合同', () => {
     await wrapper.findAll('button')[1].trigger('click')
     await flushPromises()
     expect(wrapper.find('input').element.value).toBe('新名称')
-    expect(wrapper.find('[role="alert"]').text()).toContain('未知')
+    expect(wrapper.find('[role="alert"][data-type="error"]').text()).toContain('未知')
     expect(fetcher).toHaveBeenCalledTimes(1)
     expect(wrapper.emitted('renamed')).toBeUndefined()
     wrapper.unmount()

@@ -145,3 +145,37 @@ it('翻页绑定已应用筛选，刷新移除旧游标；失败明确并可恢�
   await model.refresh()
   expect(model.error).toBe('')
 })
+
+it('上一页重读已访问游标并保留应用筛选，刷新和换设备重置页码', async () => {
+  const list = vi.fn().mockImplementation(async (_p, _d, _f, cursor) => ({
+    items: [],
+    nextCursor: cursor === 'page-3' ? undefined : cursor === 'page-2' ? 'page-3' : 'page-2',
+    hasMore: cursor !== 'page-3'
+  }))
+  const model = new PropertyHistoryModel({ list }, () => 0)
+  model.scope('project', 'device', true)
+  await flushPromises()
+  model.filters.propertyKey = 'temperature'
+  await model.refresh()
+  await model.next()
+  await model.next()
+  expect(model.pageIndex).toBe(2)
+  model.filters.propertyKey = 'draft'
+  await model.previous()
+  expect(model.pageIndex).toBe(1)
+  expect(list.mock.lastCall?.[2].propertyKey).toBe('temperature')
+  expect(list.mock.lastCall?.[3]).toBe('page-2')
+  await model.previous()
+  expect(model.pageIndex).toBe(0)
+  expect(list.mock.lastCall?.[3]).toBeUndefined()
+  await model.next()
+  await model.refresh()
+  expect(model.pageIndex).toBe(0)
+  expect(list.mock.lastCall?.[2].propertyKey).toBe('draft')
+  await model.next()
+  model.scope('project', 'other-device', true)
+  await flushPromises()
+  expect(model.pageIndex).toBe(0)
+  expect(list.mock.lastCall?.[1]).toBe('other-device')
+  expect(list.mock.lastCall?.[3]).toBeUndefined()
+})

@@ -11,19 +11,13 @@
   从各自的只读集合读取，不把展示信息当作当前设备升级资格。
 -->
 <template>
-  <div class="console-page ota-firmwares console-page--single-panel">
+  <div class="console-page ota-firmwares console-page--single-panel ota-firmware-feedback">
     <ConsoleWorkspaceHeader
+      project-style
       title="固件与发布"
       description="维护固件草稿、受控签名发布及信任基线。"
-      :links="[
-        { label: '固件', path: '/ota/firmwares', permission: 'ota:read' },
-        { label: '升级活动', path: '/ota/campaigns', permission: 'ota:read' },
-        { label: '设备作业', path: '/ota/jobs', permission: 'ota:read' },
-        { label: '审计', path: '/ota/audits', permission: 'ota:read' }
-      ]"
-    />
-    <div class="ota-firmwares__header console-toolbar console-page-actions">
-      <div class="ota-firmwares__header-actions console-actions">
+    >
+      <template #actions>
         <ElButton
           v-if="hasAuth('ota:deploy')"
           data-testid="ota-baseline-registration-open"
@@ -45,13 +39,16 @@
         <ElButton v-if="hasAuth('ota:deploy')" type="primary" :icon="Plus" @click="openCreate">
           创建固件草稿
         </ElButton>
-      </div>
-    </div>
+      </template>
+    </ConsoleWorkspaceHeader>
 
-    <ElAlert class="ota-firmwares__notice" type="info" :closable="false" show-icon>
-      <template #title>固件发布前置条件</template>
-      固件发布需要签名服务。未配置签名服务时，发布会被拒绝，也不会生成就绪或已发布版本。
-    </ElAlert>
+    <ElAlert
+      class="ota-firmwares__notice"
+      title="固件发布需要签名服务；未配置时会拒绝发布，不生成就绪或已发布版本。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="firmwares" row-key="id">
@@ -174,7 +171,7 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog ota-firmware-feedback"
       v-model="createVisible"
       title="创建固件草稿"
       width="560px"
@@ -205,10 +202,20 @@
             <span v-else-if="modelVersion">
               {{ modelVersion.versionNumber }} · {{ modelVersion.id }}
             </span>
-            <span v-else-if="modelVersionError" class="ota-firmwares__warn">{{
-              modelVersionError
-            }}</span>
-            <span v-else>选择设备类型后自动读取其最新已发布版本。</span>
+            <ElAlert
+              v-else-if="modelVersionError"
+              :title="modelVersionError"
+              type="warning"
+              :closable="false"
+              show-icon
+            />
+            <ElAlert
+              v-else
+              title="选择设备类型后自动读取其最新已发布版本。"
+              type="info"
+              :closable="false"
+              show-icon
+            />
           </div>
         </ElFormItem>
         <ElFormItem label="固件版本" required>
@@ -529,6 +536,7 @@
 </template>
 
 <script setup lang="ts">
+  import './ota-feedback.scss'
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
   import OtaMetadataDrawer from './OtaMetadataDrawer.vue'
@@ -1098,29 +1106,8 @@
 
 <style lang="scss" scoped>
   .ota-firmwares {
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 4px;
-        font-size: 18px;
-      }
-
-      p {
-        margin: 0;
-        font-size: 13px;
-        color: var(--art-text-gray-600);
-      }
-    }
-
-    &__header-actions {
-      display: flex;
-      flex-shrink: 0;
-      gap: 8px;
+    :deep(.workspace-header .console-actions) {
+      margin-bottom: 0;
     }
 
     &__notice,

@@ -1,13 +1,14 @@
 <template>
   <ElDialog
+    class="console-dialog"
     v-model="visible"
     title="公开发布证明"
     width="min(760px, 94vw)"
     destroy-on-close
     data-testid="ota-release-proof-dialog"
   >
-    <p class="release-proof__boundary"
-      >材料由服务端复核当前管理读取资格后提供。公钥本身不是设备信任来源，展示不代表设备验签通过或获得升级资格。</p
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >材料由服务端复核当前管理读取资格后提供。公钥本身不是设备信任来源，展示不代表设备验签通过或获得升级资格。</ElAlert
     >
     <p v-if="busy" role="status">正在读取当前资格与发布证明…</p>
     <ElAlert
@@ -16,6 +17,7 @@
       :closable="false"
       type="warning"
       data-testid="ota-release-proof-notice"
+      show-icon
     />
     <div v-if="proof" class="release-proof" data-testid="ota-release-proof-content">
       <dl class="release-proof__summary">
@@ -27,7 +29,9 @@
       </dl>
       <details class="release-proof__raw">
         <summary>查看原始公开材料（Base64）</summary>
-        <p>保留服务端返回的精确编码。Manifest 为规范 UTF-8 字节，未重新排版或签名。</p>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >保留服务端返回的精确编码。Manifest 为规范 UTF-8 字节，未重新排版或签名。</ElAlert
+        >
         <label
           >Manifest<textarea readonly :value="proof.manifestBase64" aria-label="Manifest Base64" />
         </label>

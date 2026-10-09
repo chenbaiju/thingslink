@@ -1,15 +1,17 @@
 <template>
   <div class="console-page device-groups console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="设备组"
       description="按静态成员或动态规则组织设备，接续管理设备与接入。"
       :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
-    />
-    <div class="device-groups__header console-toolbar console-page-actions">
-      <ElButton v-if="hasAuth('device:create')" type="primary" :icon="Plus" @click="openCreate">
-        创建设备组
-      </ElButton>
-    </div>
+    >
+      <template #leading-actions>
+        <ElButton v-if="hasAuth('device:create')" type="primary" :icon="Plus" @click="openCreate">
+          创建设备组
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
 
     <ElCard shadow="never" class="console-table-panel console-page__main-panel">
       <ElTable v-loading="loading" :data="groups" row-key="id">
@@ -79,7 +81,13 @@
             <ElRadioButton value="STATIC">静态组</ElRadioButton>
             <ElRadioButton value="DYNAMIC">动态组</ElRadioButton>
           </ElRadioGroup>
-          <div class="form-help">创建后类型不可修改，避免静态成员被静默解释为动态结果。</div>
+          <ElAlert
+            class="device-groups-type-hint"
+            title="创建后类型不可修改，避免静态成员被静默解释为动态结果。"
+            type="info"
+            :closable="false"
+            show-icon
+          />
         </ElFormItem>
         <template v-if="form.type === 'DYNAMIC'">
           <ElDivider content-position="left">动态规则（条件之间为 AND）</ElDivider>
@@ -486,29 +494,29 @@
 <style lang="scss" scoped>
   .device-groups {
     padding: 10px;
-    &__header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      h3 {
-        margin: 0;
-        font-size: 18px;
-      }
-      p {
-        margin: 6px 0 0;
-        font-size: 13px;
-        color: var(--art-text-gray-600);
-      }
+    :deep(.workspace-header .console-actions) {
+      margin-bottom: 0;
     }
   }
   .form-control {
     width: 100%;
   }
-  .form-help {
-    margin-top: 4px;
+  .device-groups-type-hint {
+    margin-top: 8px;
     font-size: 12px;
-    color: var(--art-text-gray-600);
+    line-height: 20px;
+
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
   }
   .tag-rule-list {
     display: flex;

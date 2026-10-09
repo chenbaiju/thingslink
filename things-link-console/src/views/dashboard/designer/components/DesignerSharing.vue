@@ -4,22 +4,28 @@
     v-if="canManage"
     aria-label="匿名只读分享管理"
   >
-    <h3 class="console-heading">匿名只读分享</h3>
-    <p class="console-description"
-      >持有完整链接的人可查看选定版本的全部页面、静态内容、默认值及下列全部候选设备；无需登录，可转发链接。</p
+    <ElDivider content-position="left">匿名只读分享</ElDivider>
+    <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+      >持有完整链接的人可查看选定版本的全部页面、静态内容、默认值及下列全部候选设备；无需登录，可转发链接。</ElAlert
     >
     <el-alert
       v-if="state.error || versions.error || pickerError"
       :title="state.error || versions.error || pickerError"
       type="error"
       :closable="false"
+      show-icon
     />
-    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" />
+    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" show-icon />
     <el-button data-testid="sharing-refresh" :disabled="!usable || busy" @click="refresh"
       >刷新分享管理</el-button
     >
-    <p class="console-description" v-if="state.configuration && !state.configuration.available"
-      >当前宿主未准备好，暂不能创建分享；已有分享仍可查询和撤销。</p
+    <ElAlert
+      v-if="state.configuration && !state.configuration.available"
+      class="console-hint"
+      type="info"
+      show-icon
+      :closable="false"
+      >当前宿主未准备好，暂不能创建分享；已有分享仍可查询和撤销。</ElAlert
     >
     <p
       class="console-description"
@@ -39,8 +45,8 @@
         >已选择版本 {{ state.versionNumber }}：包含全部
         {{ state.pageCount }} 个页面。分享不会随以后的草稿编辑或发布自动改变。</p
       >
-      <p class="console-description"
-        >期限范围5分钟～24小时；来源限制使用平台宿主，不允许嵌入其他网站。分享只能读取，不能控制设备或处理告警。</p
+      <ElAlert class="console-hint" type="info" show-icon :closable="false"
+        >期限范围5分钟～24小时；来源限制使用平台宿主，不允许嵌入其他网站。分享只能读取，不能控制设备或处理告警。</ElAlert
       >
       <el-form-item label="有效秒数">
         <el-input-number
@@ -52,13 +58,18 @@
           aria-label="分享有效秒数"
         />
       </el-form-item>
-      <p class="console-description" v-if="!state.variables.length"
-        >此版本没有设备变量，将分享所有静态页面内容。</p
+      <ElAlert
+        v-if="!state.variables.length"
+        class="console-hint"
+        type="info"
+        show-icon
+        :closable="false"
+        >此版本没有设备变量，将分享所有静态页面内容。</ElAlert
       >
       <div v-for="variable in state.variables" :key="variable.variableKey">
-        <h4>{{ variable.title }}</h4>
-        <p class="console-description"
-          >以下全部设备均获授权；不只限运行时当前选中的设备。默认设备必须保留。</p
+        <ElDivider content-position="left">{{ variable.title }}</ElDivider>
+        <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+          >以下全部设备均获授权；不只限运行时当前选中的设备。默认设备必须保留。</ElAlert
         >
         <ul
           ><li v-for="id in variable.deviceIds" :key="id">
@@ -76,7 +87,9 @@
         >
       </div>
       <div v-if="pickerVariable">
-        <p class="console-description">选择候选设备；创建时会复核每台设备的权限及精确物模型。</p>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >选择候选设备；创建时会复核每台设备的权限及精确物模型。</ElAlert
+        >
         <div class="console-toolbar">
           <el-select
             v-model="pickerId"
@@ -113,8 +126,8 @@
     <div v-if="state.hasSecret" data-testid="sharing-created" :data-share-id="state.createdShareId">
       <p class="console-description">创建成功，到期时间：{{ state.createdExpiresAt }}</p>
       <p class="console-description">{{ state.maskedLink }}</p>
-      <p class="console-description"
-        >完整链接不会显示在页面。请立即复制；隐藏、离线或离开此页会清除本次复制能力。</p
+      <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+        >完整链接不会显示在页面。请立即复制；隐藏、离线或离开此页会清除本次复制能力。</ElAlert
       >
       <div class="console-actions">
         <el-button data-testid="sharing-copy" :disabled="!usable" @click="copy"
@@ -126,8 +139,8 @@
       </div>
     </div>
     <div v-if="state.pending">
-      <p class="console-description"
-        >创建结果未知；请重试原操作，不能凭列表猜测本次创建是否成功。</p
+      <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+        >创建结果未知；请重试原操作，不能凭列表猜测本次创建是否成功。</ElAlert
       >
       <el-button data-testid="sharing-retry" :disabled="busy || !usable" @click="sharing.retry()"
         >重试原创建</el-button
@@ -138,20 +151,22 @@
       data-testid="sharing-unrecoverable"
       :data-share-id="state.recoverShareId"
     >
-      <p class="console-description"
-        >已创建分享 {{ state.recoverShareId }}，完整链接无法恢复。撤销后才可明确重新创建。</p
+      <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+        >已创建分享 {{ state.recoverShareId }}，完整链接无法恢复。撤销后才可明确重新创建。</ElAlert
       >
       <el-button :disabled="busy || !usable" @click="confirmRevoke(state.recoverShareId!)"
         >撤销无法恢复的分享</el-button
       >
     </div>
     <div v-if="state.revokePending">
-      <p class="console-description">撤销结果尚未确认。</p>
+      <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+        >撤销结果尚未确认。</ElAlert
+      >
       <el-button :disabled="busy || !usable" @click="sharing.revoke(state.revokePending!)"
         >重试原撤销</el-button
       >
     </div>
-    <h4>分享记录</h4>
+    <ElDivider content-position="left">分享记录</ElDivider>
     <p class="console-description" v-if="state.listLoaded && !state.items.length && !state.loading"
       >当前页没有分享记录。</p
     >

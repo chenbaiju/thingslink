@@ -1,12 +1,12 @@
 <template>
   <section data-testid="device-evidence-tools">
-    <h4>历史与告警事实</h4>
-    <p class="console-description"
-      >手动读取，不调用模型。空结果不代表正常；单位及行业阈值未提供。</p
-    >
-    <p v-if="!available">先加载当前设备的属性目录。</p>
-    <template v-else>
-      <h5>单属性历史</h5>
+    <ElDivider content-position="left">历史与告警事实</ElDivider>
+    <ElAlert type="info" :closable="false" show-icon>
+      <template v-if="!available">请先加载设备属性目录。</template>
+      手动读取，不调用模型；空结果不代表正常，单位及行业阈值未提供。
+    </ElAlert>
+    <template v-if="available">
+      <ElDivider content-position="left">单属性历史</ElDivider>
       <div class="console-toolbar">
         <label
           >数值属性
@@ -33,9 +33,12 @@
           >读取历史</ElButton
         >
       </div>
-      <p>使用浏览器本地时区，提交时转换为 UTC；最多过去 24 小时。时间和属性变化会清除旧结果。</p>
+      <ElAlert type="info" :closable="false" show-icon
+        >使用浏览器本地时区，提交时转换为 UTC；最多过去 24
+        小时。时间和属性变化会清除旧结果。</ElAlert
+      >
       <p v-if="!propertyKeys.length">当前目录没有 NUMBER 数值属性。</p>
-      <ElAlert v-if="historyError" type="error" :closable="false" :title="historyError" />
+      <ElAlert v-if="historyError" type="error" :closable="false" :title="historyError" show-icon />
       <div v-if="history" data-testid="history-evidence-result">
         <p>查询区间：{{ history.requestedFrom }} 至 {{ history.requestedTo }}</p>
         <p
@@ -48,20 +51,27 @@
           {{ history.actualGranularity }}；聚合 {{ history.aggregation }}；读取时间
           {{ history.readAt }}</p
         >
-        <p v-if="history.state !== 'HAS_POINTS'"
+        <ElAlert v-if="history.state !== 'HAS_POINTS'" type="info" :closable="false" show-icon
           >{{
             history.state === 'OUTSIDE_RETENTION'
               ? '查询位于保留窗口外，未取得点。'
               : '区间内未取得点。'
           }}
-          不代表正常。</p
+          不代表正常。</ElAlert
         >
         <div v-if="historyOverview.length" data-testid="history-evidence-overview">
-          <h5>返回证据概览</h5>
-          <p>按来源模型分别统计，单位未提供；不计算完整率、异常或趋势。</p>
-          <p v-if="history.actualGranularity !== 'RAW'">
+          <ElDivider content-position="left">返回证据概览</ElDivider>
+          <ElAlert type="info" :closable="false" show-icon
+            >按来源模型分别统计，单位未提供；不计算完整率、异常或趋势。</ElAlert
+          >
+          <ElAlert
+            v-if="history.actualGranularity !== 'RAW'"
+            type="info"
+            :closable="false"
+            show-icon
+          >
             以下范围只包含已返回桶均值，不代表原始采样的最小值或最大值。
-          </p>
+          </ElAlert>
           <ul>
             <li
               v-for="group in historyOverview"
@@ -96,18 +106,24 @@
           >
         </ElTable>
       </div>
-      <h5>告警事故页</h5>
+      <ElDivider content-position="left">告警事故页</ElDivider>
       <div class="console-toolbar">
         <ElButton :disabled="busy || parentBusy" @click="readAlarms(false)">读取告警首页</ElButton>
         <ElButton :disabled="busy || parentBusy || !alarms?.hasMore" @click="readAlarms(true)"
           >读取下一页</ElButton
         >
       </div>
-      <p>每页 20 条，下一页替换本页；无时间窗筛选，不承诺分页期间全量稳定快照。</p>
-      <ElAlert v-if="alarmError" type="error" :closable="false" :title="alarmError" />
+      <ElAlert type="info" :closable="false" show-icon
+        >每页 20 条，下一页替换本页；无时间窗筛选，不承诺分页期间全量稳定快照。</ElAlert
+      >
+      <ElAlert v-if="alarmError" type="error" :closable="false" :title="alarmError" show-icon />
       <div v-if="alarms?.items" data-testid="alarm-evidence-result">
-        <p>取证时间 {{ alarms.collectedAt }}；事故来源模型未提供，当前模型仅用于访问复核。</p>
-        <p v-if="!alarms.items.length">本页为空，不代表设备正常。</p>
+        <ElAlert type="info" :closable="false" show-icon
+          >取证时间 {{ alarms.collectedAt }}；事故来源模型未提供，当前模型仅用于访问复核。</ElAlert
+        >
+        <ElAlert v-if="!alarms.items.length" type="info" :closable="false" show-icon
+          >本页为空，不代表设备正常。</ElAlert
+        >
         <ElTable :data="alarms.items" row-key="id">
           <ElTableColumn prop="id" label="事故编号" />
           <ElTableColumn label="严重度"
@@ -142,7 +158,9 @@
           <ElTableColumn prop="lastReceivedAt" label="最近接收时间" />
           <ElTableColumn prop="version" label="事故版本" />
         </ElTable>
-        <p>{{ alarms.hasMore ? '查询时有后续页，可手动继续。' : '查询时未返回后续游标。' }}</p>
+        <ElAlert type="info" :closable="false" show-icon>{{
+          alarms.hasMore ? '查询时有后续页，可手动继续。' : '查询时未返回后续游标。'
+        }}</ElAlert>
       </div>
     </template>
   </section>

@@ -105,7 +105,7 @@ export function useDashboardDesigner(
   }
   window.addEventListener('offline', offline)
   window.addEventListener('online', online)
-  async function list(cursor?: string) {
+  async function list() {
     if (frozen() || !available() || !projectId.value || !permissions().read || state.loading) return
     const generation = epoch
     const sequence = ++loadSequence
@@ -113,20 +113,47 @@ export function useDashboardDesigner(
     const project = projectId.value
     state.loading = true
     state.error = ''
+    state.items = []
+    state.nextCursor = null
+    const active = () =>
+      epoch === generation &&
+      sequence === loadSequence &&
+      currentIdentityEpoch() === identity &&
+      available() &&
+      !frozen() &&
+      permissions().read
     try {
-      const page = await fetchDashboards(project, cursor)
-      if (epoch !== generation || sequence !== loadSequence || currentIdentityEpoch() !== identity)
-        return
-      if (
-        !Array.isArray(page.items) ||
-        page.items.length > 20 ||
-        page.items.some((item) => !item.id || !item.managementName) ||
-        typeof page.hasMore !== 'boolean' ||
-        (page.hasMore && !page.nextCursor)
-      )
-        throw new Error('目录响应不完整')
-      state.items = page.items
-      state.nextCursor = page.hasMore ? page.nextCursor! : null
+      const items: DashboardCatalog[] = []
+      const ids = new Set<string>()
+      const cursors = new Set<string>()
+      let cursor: string | undefined
+      while (active()) {
+        const page = await fetchDashboards(project, cursor)
+        if (!active()) return
+        if (
+          !Array.isArray(page.items) ||
+          page.items.length > 20 ||
+          page.items.some((item) => !item.id || !item.managementName) ||
+          typeof page.hasMore !== 'boolean' ||
+          (page.hasMore &&
+            (!page.items.length ||
+              typeof page.nextCursor !== 'string' ||
+              !page.nextCursor ||
+              cursors.has(page.nextCursor)))
+        )
+          throw new Error('目录响应不完整')
+        for (const item of page.items) {
+          if (ids.has(item.id!)) throw new Error('目录响应重复')
+          ids.add(item.id!)
+          items.push(item)
+        }
+        if (!page.hasMore) {
+          state.items = items
+          return
+        }
+        cursor = page.nextCursor!
+        cursors.add(cursor)
+      }
     } catch {
       if (epoch === generation && sequence === loadSequence)
         state.error = '目录读取失败，请明确重试。'

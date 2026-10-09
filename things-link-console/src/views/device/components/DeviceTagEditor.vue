@@ -2,9 +2,8 @@
   <div class="device-tags console-fragment" v-loading="loading">
     <div class="device-tags__header console-page-header">
       <div>
-        <strong>设备标签</strong>
-        <p class="console-description"
-          >标签键在单台设备内唯一，动态设备组会按这里的最新键值实时筛选。</p
+        <ElAlert type="info" :closable="false" show-icon
+          >标签键在单台设备内唯一，动态设备组会按这里的最新键值实时筛选。</ElAlert
         >
       </div>
     </div>
@@ -184,11 +183,6 @@
   .device-tags {
     &__header {
       margin-bottom: 12px;
-      p {
-        margin: 4px 0 0;
-        font-size: 12px;
-        color: var(--art-text-gray-600);
-      }
     }
     &__form {
       display: grid;

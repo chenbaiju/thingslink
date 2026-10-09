@@ -1,22 +1,31 @@
 <template>
   <ElDrawer
+    class="ota-firmware-feedback"
     v-model="visible"
     title="OTA 信任与类型基线"
     size="min(960px, 95vw)"
     destroy-on-close
     data-testid="ota-metadata-drawer"
   >
-    <p>这里只展示服务端登记的公开元数据；密钥状态、有效期和基线版本不代表当前设备升级资格。</p>
+    <ElAlert
+      title="这里只展示服务端登记的公开元数据；密钥状态、有效期和基线版本不代表当前设备升级资格。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElDivider content-position="left">信任域</ElDivider>
-    <ElButton
-      :loading="domainsLoading"
-      :disabled="domainsLoading"
-      data-testid="ota-trust-domains-refresh"
-      @click="loadDomains()"
-      >刷新信任域</ElButton
-    >
+    <div class="ota-metadata-toolbar">
+      <ElButton
+        :loading="domainsLoading"
+        :disabled="domainsLoading"
+        data-testid="ota-trust-domains-refresh"
+        @click="loadDomains()"
+        >刷新信任域</ElButton
+      >
+    </div>
     <ElAlert
+      show-icon
       v-if="domainsError"
       :title="domainsError"
       type="error"
@@ -58,6 +67,7 @@
       </ElTableColumn>
       <template #empty
         ><ElEmpty
+          :image-size="70"
           :description="
             domainsError
               ? '信任域读取失败'
@@ -80,15 +90,17 @@
     <p v-if="selectedDomain" data-testid="ota-trust-selected-domain"
       >信任域：{{ selectedDomain }}</p
     >
-    <ElButton
-      v-if="selectedDomain"
-      :loading="keysLoading"
-      :disabled="keysLoading"
-      data-testid="ota-trust-keys-refresh"
-      @click="loadKeys()"
-      >刷新发布键</ElButton
-    >
+    <div v-if="selectedDomain" class="ota-metadata-toolbar">
+      <ElButton
+        :loading="keysLoading"
+        :disabled="keysLoading"
+        data-testid="ota-trust-keys-refresh"
+        @click="loadKeys()"
+        >刷新发布键</ElButton
+      >
+    </div>
     <ElAlert
+      show-icon
       v-if="keysReset"
       title="信任包已变化，已清除旧包发布键并重新读取。"
       type="info"
@@ -96,6 +108,7 @@
       data-testid="ota-trust-keys-reset"
     />
     <ElAlert
+      show-icon
       v-if="keysError"
       :title="keysError"
       type="error"
@@ -125,6 +138,7 @@
       >
       <template #empty
         ><ElEmpty
+          :image-size="70"
           :description="
             !selectedDomain
               ? '请先选择信任域'
@@ -147,6 +161,7 @@
 
     <ElDivider content-position="left">类型基线版本历史</ElDivider>
     <ElAlert
+      show-icon
       v-if="typesError"
       :title="typesError"
       type="error"
@@ -154,36 +169,52 @@
       data-testid="ota-baseline-types-error"
     />
     <ElButton v-if="typesError" :loading="typesLoading" @click="loadTypes()">重读设备类型</ElButton>
-    <p>基线历史读取要求类型已发布并已生成产品标识；尚未登记基线时显示空集。</p>
-    <label for="ota-baseline-type">已发布设备类型</label>
-    <ElSelect
-      id="ota-baseline-type"
-      v-model="selectedType"
-      aria-label="已发布设备类型"
-      data-testid="ota-baseline-type"
-      :loading="typesLoading"
-      :disabled="typesLoading || types.length === 0"
-      placeholder="选择已发布设备类型"
-      clearable
-      @change="changeType"
-    >
-      <ElOption
-        v-for="type in types"
-        :key="type.id"
-        :label="`${type.name}（${type.id}）`"
-        :value="type.id"
-      />
-    </ElSelect>
-    <p v-if="!typesLoading && !typesError && types.length === 0">没有已发布设备类型</p>
-    <ElButton
-      v-if="selectedType"
-      :loading="baselineLoading"
-      :disabled="baselineLoading"
-      data-testid="ota-baseline-refresh"
-      @click="loadBaseline()"
-      >刷新基线历史</ElButton
-    >
     <ElAlert
+      title="基线历史读取要求类型已发布并已生成产品标识；尚未登记基线时显示空集。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+    <div class="ota-metadata-filter">
+      <div class="ota-metadata-toolbar">
+        <label for="ota-baseline-type">已发布设备类型</label>
+        <ElSelect
+          id="ota-baseline-type"
+          v-model="selectedType"
+          aria-label="已发布设备类型"
+          data-testid="ota-baseline-type"
+          :loading="typesLoading"
+          :disabled="typesLoading || types.length === 0"
+          placeholder="选择已发布设备类型"
+          clearable
+          @change="changeType"
+        >
+          <ElOption
+            v-for="type in types"
+            :key="type.id"
+            :label="`${type.name}（${type.id}）`"
+            :value="type.id"
+          />
+        </ElSelect>
+        <ElButton
+          v-if="selectedType"
+          :loading="baselineLoading"
+          :disabled="baselineLoading"
+          data-testid="ota-baseline-refresh"
+          @click="loadBaseline()"
+          >刷新基线历史</ElButton
+        >
+      </div>
+    </div>
+    <ElAlert
+      v-if="!typesLoading && !typesError && types.length === 0"
+      title="没有已发布设备类型"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
+      show-icon
       v-if="baselineError"
       :title="baselineError"
       type="error"
@@ -203,6 +234,7 @@
       >
       <template #empty
         ><ElEmpty
+          :image-size="70"
           :description="
             !selectedType
               ? '请先选择已发布设备类型'
@@ -227,6 +259,7 @@
 </template>
 
 <script setup lang="ts">
+  import './ota-feedback.scss'
   import { fetchDeviceTypePage } from '@/api/device'
   import {
     fetchOtaTrustDomains,

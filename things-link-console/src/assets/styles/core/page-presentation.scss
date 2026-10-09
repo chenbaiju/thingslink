@@ -255,10 +255,16 @@
 }
 
 // Dialogs teleport to body: a class on the originating dialog keeps the scope explicit.
-.console-dialog {
+.el-dialog.console-dialog {
   max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - min(6vh, 48px) - 16px);
+  margin-top: min(6vh, 48px);
+  margin-bottom: 0;
   border-radius: calc(var(--custom-radius) + 4px);
   .el-dialog__header {
+    flex-shrink: 0;
     padding-bottom: 16px;
     margin-right: 0;
   }
@@ -267,6 +273,9 @@
     font-weight: 500;
   }
   .el-dialog__body {
+    min-height: 0;
+    overflow-y: auto;
+    padding-block: 12px !important;
     line-height: 1.7;
   }
   .el-button:not(.is-link, .is-text, .is-circle) {
@@ -274,6 +283,7 @@
     padding-inline: 16px;
   }
   .el-dialog__footer {
+    flex-shrink: 0;
     padding-top: 16px;
     border-top: 1px solid var(--el-border-color-lighter);
   }
@@ -285,11 +295,20 @@
     margin-left: 0;
   }
   .el-form-item {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
+  }
+  .el-form--label-top .el-form-item__label {
+    height: auto !important;
+    line-height: 20px !important;
+    margin-bottom: 6px;
   }
   .el-form-item__label {
     font-size: 13px;
     color: var(--el-text-color-regular);
+  }
+  .el-dialog__footer .console-dialog-actions[class] {
+    justify-content: flex-end;
+    margin-bottom: 0;
   }
   .el-select {
     max-width: 100%;
@@ -298,6 +317,47 @@
     overflow: auto;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
+  }
+}
+
+// 提示只调整文字层级，错误和警告仍沿用 Element Plus 的语义颜色。
+:is(.console-page, .console-dialog, .console-feedback) {
+  .el-alert {
+    --el-alert-icon-size: 14px;
+    --el-alert-icon-large-size: 14px;
+    --el-alert-title-font-size: 12px;
+    --el-alert-title-with-description-font-size: 12px;
+    --el-alert-description-font-size: 12px;
+    margin-bottom: 10px;
+    line-height: 20px;
+  }
+  .el-alert__content,
+  .el-alert__title,
+  .el-alert__description {
+    margin: 0;
+    font-size: 12px;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+  }
+  .el-alert__icon[class],
+  .el-alert__icon.is-big {
+    width: 14px;
+    font-size: 14px;
+  }
+  .console-hint[class] {
+    width: 100%;
+    font-size: 12px;
+    line-height: 20px;
+  }
+  .console-metadata {
+    margin-block: 10px;
+    color: var(--el-text-color-regular);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .el-divider__text {
+    font-size: 14px;
+    font-weight: 500;
   }
 }
 
@@ -424,7 +484,7 @@
     width: 100%;
     margin-top: 8px;
     color: var(--el-text-color-secondary);
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.7;
   }
   .el-table td.console-table-actions-cell .cell {

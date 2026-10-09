@@ -2,20 +2,28 @@
   <div class="console-page device-list" :class="{ 'device-list--detail': detailVisible }">
     <div v-show="!detailVisible" class="device-list__content">
       <ConsoleWorkspaceHeader
+        project-style
         title="设备与接入"
         description="创建设备、获取接入配置，查看真实上报并接续规则与看板开发。"
         :links="[
           { label: '设备类型与物模型', path: '/device/types', permission: 'device:read' },
           { label: '消息调试', path: '/device/messages', permission: 'device:read' }
         ]"
-      />
-      <div class="device-list__header console-toolbar console-page-actions">
-        <ElButton v-if="hasAuth('device:create')" type="primary" :icon="Plus" @click="openCreate()">
-          创建设备
-        </ElButton>
-      </div>
+      >
+        <template #leading-actions>
+          <ElButton
+            v-if="hasAuth('device:create')"
+            type="primary"
+            :icon="Plus"
+            @click="openCreate()"
+          >
+            创建设备
+          </ElButton>
+        </template>
+      </ConsoleWorkspaceHeader>
       <ElAlert v-if="resourceError" :title="resourceError" type="warning" :closable="false" />
       <ElAlert v-if="typeHandoffError" :title="typeHandoffError" type="warning" :closable="false" />
+      <ElAlert v-if="deviceListError" :title="deviceListError" type="error" :closable="false" />
       <ElCard class="device-list__filter console-list-filter" shadow="never">
         <DeviceAdvancedFilter
           v-model="deviceFilter"
@@ -27,7 +35,7 @@
       </ElCard>
       <ElCard class="device-list__data" shadow="never">
         <ElTable
-          v-loading="loading"
+          v-loading="loading || devicePageLoading"
           :data="items"
           row-key="id"
           row-class-name="device-list__clickable-row"
@@ -96,9 +104,36 @@
           </ElTableColumn>
           <template #empty><ElEmpty description="还没有设备" /></template>
         </ElTable>
-        <div v-if="deviceHasMore" class="device-list__more">
-          <ElButton :loading="loading" text type="primary" @click="loadDevices(true)"
-            >加载更多</ElButton
+        <div class="device-list__pagination" role="navigation" aria-label="设备列表分页">
+          <span>本页 {{ items.length }} 条</span>
+          <ElSelect
+            :model-value="devicePageSize"
+            :disabled="loading || devicePageLoading"
+            aria-label="每页设备条数"
+            @change="loadDevices($event)"
+          >
+            <ElOption
+              v-for="size in [20, 50, 100, 200]"
+              :key="size"
+              :label="`${size} 条/页`"
+              :value="size"
+            />
+          </ElSelect>
+          <ElButton
+            :disabled="loading || devicePageLoading || devicePage === 1"
+            @click="goToDevicePage(devicePage - 1)"
+          >
+            上一页
+          </ElButton>
+          <span aria-live="polite">第 {{ devicePage }} 页</span>
+          <ElButton
+            :disabled="loading || devicePageLoading || !deviceHasMore"
+            @click="goToDevicePage(devicePage + 1)"
+          >
+            下一页
+          </ElButton>
+          <ElButton v-if="deviceListError" :disabled="devicePageLoading" @click="retryDevicePage()"
+            >重试</ElButton
           >
         </div>
       </ElCard>
@@ -215,21 +250,19 @@
         <template #empty><ElEmpty description="还没有凭据，请生成新密钥" /></template>
       </ElTable>
     </ElDialog>
-    <ElCard v-if="detailVisible" v-loading="detailLoading" class="device-detail" shadow="never">
+    <header v-if="detailVisible" class="device-detail__header">
       <div class="device-detail__heading">
-        <ElButton class="device-detail__back" text :icon="ArrowLeft" @click="returnToList"
-          >返回</ElButton
-        >
+        <ElButton
+          class="device-detail__back"
+          link
+          type="primary"
+          :icon="ArrowLeft"
+          aria-label="返回设备列表"
+          @click="returnToList"
+        />
         <span class="device-detail__separator" aria-hidden="true"></span>
         <ArtSvgIcon class="device-detail__icon" icon="ri:box-3-line" />
         <h2 class="console-heading">{{ detailDevice ? detailName : '正在加载设备…' }}</h2>
-        <ElButton
-          v-if="detailDevice && hasAuth('device:update')"
-          class="device-detail__edit"
-          size="small"
-          @click="openEdit(detailDevice)"
-          >编辑</ElButton
-        >
       </div>
       <div v-if="detailDevice" class="device-detail__metadata">
         <span>ID：{{ detailTagDeviceId }}</span>
@@ -246,7 +279,37 @@
           />
           {{ detailAlarmLabel }}
         </span>
+        <ElButton
+          v-if="hasAuth('device:update')"
+          class="device-detail__edit"
+          link
+          type="primary"
+          size="small"
+          @click="openEdit(detailDevice)"
+        >
+          <ArtSvgIcon icon="ri:edit-line" />
+          <span>编辑信息</span>
+        </ElButton>
       </div>
+    </header>
+    <ElCard
+      v-if="detailVisible"
+      v-loading="detailLoading"
+      class="device-detail"
+      :class="{
+        'device-detail--paged': [
+          'property-history',
+          'event-history',
+          'end-users',
+          'ota',
+          'tasks',
+          'automations',
+          'scenes',
+          'message-rules'
+        ].includes(detailTab)
+      }"
+      shadow="never"
+    >
       <div
         v-if="detailDevice && detailTypeUnavailable"
         data-testid="device-detail-type-unavailable"
@@ -259,28 +322,13 @@
           >重试读取设备类型</ElButton
         >
       </div>
-      <nav
+      <ElTabs
         v-if="detailDevice"
-        class="device-detail__next console-actions"
-        aria-label="设备开发步骤"
+        ref="detailTabs"
+        v-model="detailTab"
+        class="device-detail__tabs"
+        @tab-click="(pane) => revealAdjacentTab(detailTabs, pane)"
       >
-        <ElButton @click="detailTab = 'settings'">接入配置</ElButton>
-        <ElButton @click="detailTab = 'shadow'">查看上报</ElButton>
-        <ElButton @click="openDeviceWorkspace('/device/messages', 'device:read')"
-          >消息调试</ElButton
-        >
-        <ElButton
-          v-if="canNavigate('rule:read')"
-          @click="openDeviceWorkspace('/rule/automations', 'rule:read')"
-          >配置自动化</ElButton
-        >
-        <ElButton
-          v-if="canNavigate('dashboard_definition:read')"
-          @click="openDeviceWorkspace('/dashboard/designer', 'dashboard_definition:read')"
-          >看板设计</ElButton
-        >
-      </nav>
-      <ElTabs v-if="detailDevice" v-model="detailTab" class="device-detail__tabs">
         <ElTabPane name="overview" label="概览" lazy>
           <ElDescriptions :column="2" border>
             <ElDescriptionsItem label="设备标识符">{{ detailDeviceKey }}</ElDescriptionsItem>
@@ -351,7 +399,7 @@
             :editable="hasAuth('device:update')"
           />
           <ElDivider content-position="left">设备类型事件定义</ElDivider>
-          <p class="form-help console-description">当前设备类型定义的事件。</p>
+          <ElAlert type="info" :closable="false" show-icon>当前设备类型定义的事件。</ElAlert>
           <ElAlert
             v-if="!eventDefinitionsAvailable"
             title="事件定义暂不可用，请重新进入详情重试"
@@ -374,10 +422,12 @@
         <ElTabPane name="properties" label="属性" lazy>
           <div v-loading="shadowLoading">
             <div class="shadow-section">
-              <div class="shadow-section__header console-page-header">
-                <span>期望状态（Desired）</span>
-                <span class="shadow-version">版本 {{ shadowVersion }}</span>
-              </div>
+              <ElDivider content-position="left">
+                <span class="shadow-section__title">
+                  <span>期望状态（Desired）</span>
+                  <span class="shadow-version">版本 {{ shadowVersion }}</span>
+                </span>
+              </ElDivider>
               <ElInput
                 v-model="shadowDesired"
                 type="textarea"
@@ -386,29 +436,31 @@
               />
             </div>
             <div class="shadow-section">
-              <div class="shadow-section__header console-page-header"
-                ><span>上报状态（Reported）</span></div
-              >
-              <ElTag
-                class="realtime-status"
-                :type="
-                  realtimeStatus === 'connected'
-                    ? 'success'
-                    : realtimeStatus === 'quota_exceeded'
-                      ? 'warning'
-                      : 'info'
-                "
-              >
-                {{
-                  realtimeStatus === 'connected'
-                    ? '实时连接已建立'
-                    : realtimeStatus === 'connecting'
-                      ? '实时连接中'
-                      : realtimeStatus === 'quota_exceeded'
-                        ? '租户共享连接额度已满，暂不自动重连'
-                        : '实时连接已断开'
-                }}
-              </ElTag>
+              <ElDivider content-position="left">
+                <span class="shadow-section__title">
+                  <span>上报状态（Reported）</span>
+                  <ElTag
+                    class="realtime-status"
+                    :type="
+                      realtimeStatus === 'connected'
+                        ? 'success'
+                        : realtimeStatus === 'quota_exceeded'
+                          ? 'warning'
+                          : 'info'
+                    "
+                  >
+                    {{
+                      realtimeStatus === 'connected'
+                        ? '实时连接已建立'
+                        : realtimeStatus === 'connecting'
+                          ? '实时连接中'
+                          : realtimeStatus === 'quota_exceeded'
+                            ? '租户共享连接额度已满，暂不自动重连'
+                            : '实时连接已断开'
+                    }}
+                  </ElTag>
+                </span>
+              </ElDivider>
               <ElInput
                 v-model="shadowReported"
                 type="textarea"
@@ -416,11 +468,46 @@
                 placeholder="暂无设备上报"
                 readonly
               />
-              <ul aria-label="上报属性来源" data-testid="reported-property-sources">
-                <li v-for="fact in reportedSources" :key="fact.key"
-                  >{{ fact.key }}：{{ fact.source }} · 接受序号 {{ fact.revision }}</li
-                >
-              </ul>
+              <section
+                v-if="reportedSources.length"
+                class="reported-sources"
+                aria-label="上报属性来源"
+                data-testid="reported-property-sources"
+              >
+                <ElDivider content-position="left">上报属性明细</ElDivider>
+                <ElAlert type="info" :closable="false" show-icon>
+                  来源版本用于追溯上报时的物模型，接受序号用于判断数据新旧；“未提供”表示该条数据缺少对应元信息。
+                </ElAlert>
+                <ElTable :data="reportedSources" row-key="key">
+                  <ElTableColumn label="属性名称" min-width="200">
+                    <template #default="{ row }">
+                      <span class="reported-sources__name">{{ row.name || row.key }}</span>
+                      <span v-if="row.name && row.name !== row.key" class="reported-sources__key">
+                        {{ row.key }}
+                      </span>
+                    </template>
+                  </ElTableColumn>
+                  <ElTableColumn label="采集时间（本地）" min-width="190">
+                    <template #default="{ row }">{{
+                      formatTime(row.occurredAt, '未提供')
+                    }}</template>
+                  </ElTableColumn>
+                  <ElTableColumn label="来源物模型版本" min-width="280" show-overflow-tooltip>
+                    <template #default="{ row }">
+                      <span :class="{ 'reported-sources__missing': !row.source }">
+                        {{ row.source || '未提供' }}
+                      </span>
+                    </template>
+                  </ElTableColumn>
+                  <ElTableColumn label="接受序号" min-width="160" show-overflow-tooltip>
+                    <template #default="{ row }">
+                      <span :class="{ 'reported-sources__missing': !row.revision }">
+                        {{ row.revision || '未提供' }}
+                      </span>
+                    </template>
+                  </ElTableColumn>
+                </ElTable>
+              </section>
             </div>
           </div>
           <ElButton
@@ -450,7 +537,18 @@
               实际粒度：{{ granularityLabel(historyActualGranularity) }}
             </ElTag>
           </div>
+          <ElEmpty
+            v-if="!historyLoading && historyValues.every((value) => value === null)"
+            class="history-empty"
+            :image-size="72"
+            description="所选范围暂无历史曲线"
+          >
+            <template #image>
+              <ArtSvgIcon class="history-empty__icon" icon="ri:line-chart-line" />
+            </template>
+          </ElEmpty>
           <ArtLineChart
+            v-else
             height="260px"
             :loading="historyLoading"
             :is-empty="historyValues.length === 0"
@@ -559,18 +657,16 @@
           :label="tab.label"
           lazy
         >
-          <ElButton
-            v-if="tab.key === 'credentials'"
-            class="device-detail__manage-credentials"
-            @click="openCredentials(detailDevice)"
-            >管理凭据</ElButton
-          >
           <DeviceCapabilityContent
             v-if="detailTab === tab.key"
             :project-id="projectId"
             :device="detailDevice"
             :kind="tab.key"
-          />
+          >
+            <template v-if="tab.key === 'credentials'" #actions>
+              <ElButton @click="openCredentials(detailDevice)">管理凭据</ElButton>
+            </template>
+          </DeviceCapabilityContent>
         </ElTabPane>
         <ElTabPane name="agent-evidence" label="诊断证据" lazy>
           <DeviceAgentEvidence
@@ -639,9 +735,9 @@
   import { deviceStatusLabel, deviceStatusTag } from '@/utils/deviceStatus'
   import { toSeriesValue } from '@/utils/series'
   import { ArrowLeft, Plus } from '@element-plus/icons-vue'
-  import type { FormInstance, FormRules } from 'element-plus'
+  import type { FormInstance, FormRules, TabsInstance } from 'element-plus'
+  import { revealAdjacentTab } from '@/utils/tab-navigation'
   import {
-    fetchSearchDevices,
     fetchDeviceDetail,
     fetchDeviceTypeDetail,
     fetchDeviceEventDefinitions,
@@ -682,6 +778,7 @@
   import { resolveTypeHandoff } from '@/features/device/type-handoff'
   import { IdempotentSubmission } from '@/utils/idempotent-submission'
   import { usePagedDeviceCatalog } from '@/composables/usePagedDeviceCatalog'
+  import { useDeviceListPagination } from '@/composables/useDeviceListPagination'
   import { fetchBindingMetadata, createDesignerReadScope } from '@/api/dashboard-binding'
   import { fetchDesignerAlarms } from '@/api/dashboard-alarms'
   import type { DesignerReadScope } from '@/api/designer-read-scope'
@@ -728,15 +825,9 @@
     shadowLoading = ref(false)
   const detailLoading = ref(false)
   const detailTab = ref('overview')
+  const detailTabs = ref<TabsInstance>()
   const resourceError = ref('')
   const canNavigate = (permission: string) => !!userStore.info.buttons?.includes(permission)
-  const openDeviceWorkspace = (path: string, permission: string) => {
-    if (!detailDevice.value?.id || !canNavigate('device:read') || !canNavigate(permission)) return
-    void router.push({
-      path,
-      query: { deviceId: detailDevice.value.id, contextProjectId: projectId.value }
-    })
-  }
   const detailDevice = ref<DeviceResponse>()
   const detailDeviceType = ref<DeviceTypeResponse>()
   const detailTypeLoading = ref(false)
@@ -800,7 +891,9 @@
     shadowReported = ref(''),
     shadowVersion = ref(0)
   const reported = new ReportedValues()
-  const reportedSources = ref<Array<{ key: string; source: string; revision: string }>>([])
+  const reportedSources = ref<
+    Array<{ key: string; name?: string; occurredAt: string; source?: string; revision?: string }>
+  >([])
   let detailGeneration = 0
   let detailIdentity = currentIdentityEpoch()
   let currentRequest: Promise<void> | undefined
@@ -852,12 +945,9 @@
   })
   // 命令 POST 的响应可能在后端受理后丢失；同一用户意图重试必须复用原键，成功或明确拒绝后才释放。
   const commandSubmission = new IdempotentSubmission()
-  const items = ref<DeviceResponse[]>([])
   const { deviceTypes, deviceTypesLoading, loadDeviceTypes, onDeviceTypePopupScroll } =
     usePagedDeviceCatalog(projectId)
   const deviceGroups = ref<DeviceGroupResponse[]>([])
-  const deviceCursor = ref<string>()
-  const deviceHasMore = ref(false)
   const deviceFilter = ref<DeviceAdvancedFilterModel>({
     keyword: '',
     deviceTypeIds: [],
@@ -915,33 +1005,34 @@
       )
       .map((group) => ({ id: group.id, name: group.name }))
   )
-  const deviceSearchQuery = (cursor?: string) => ({
+  const deviceSearchQuery = () => ({
     keyword: deviceFilter.value.keyword || undefined,
     deviceTypeIds: deviceFilter.value.deviceTypeIds,
     statuses: deviceFilter.value.statuses,
     groupId: deviceFilter.value.groupId || undefined,
     tagKey: deviceFilter.value.tagKey || undefined,
-    tagValue: deviceFilter.value.tagValue || undefined,
-    cursor,
-    limit: 50
+    tagValue: deviceFilter.value.tagValue || undefined
   })
-  const alarmListRevision = ref(0)
-  const loadDevices = async (append = false) => {
-    if (!projectId.value) return
-    loading.value = true
-    try {
-      const page = await fetchSearchDevices(
-        projectId.value,
-        deviceSearchQuery(append ? deviceCursor.value : undefined)
-      )
-      items.value = append ? [...items.value, ...(page.items ?? [])] : (page.items ?? [])
-      if (!append) alarmListRevision.value++
-      deviceCursor.value = page.nextCursor ?? undefined
-      deviceHasMore.value = page.hasMore ?? false
-    } finally {
-      loading.value = false
-    }
-  }
+  const {
+    items,
+    pageSize: devicePageSize,
+    currentPage: devicePage,
+    hasNext: deviceHasMore,
+    loading: devicePageLoading,
+    error: deviceListError,
+    revision: alarmListRevision,
+    search: loadDevices,
+    goToPage: goToDevicePage,
+    retry: retryDevicePage
+  } = useDeviceListPagination(projectId, deviceSearchQuery, () =>
+    JSON.stringify([
+      projectId.value,
+      userStore.info.userId,
+      userStore.info.tenantId,
+      currentIdentityEpoch(),
+      userStore.info.buttons?.join(',')
+    ])
+  )
   const load = async () => {
     if (!projectId.value) return
     loading.value = true
@@ -1454,8 +1545,10 @@
     shadowReported.value = JSON.stringify(reported.values(), null, 2)
     reportedSources.value = reported.entries().map(([key, fact]) => ({
       key,
-      source: fact.thingModelVersionId ?? '历史来源未知',
-      revision: fact.reportedRevision ?? '历史顺序未知'
+      name: detailProperties.value.find((property) => property.propertyKey === key)?.name,
+      occurredAt: fact.occurredAt,
+      source: fact.thingModelVersionId,
+      revision: fact.reportedRevision
     }))
   }
   const closeRealtime = () => {
@@ -1724,11 +1817,6 @@
 </script>
 
 <style lang="scss" scoped>
-  .device-detail__next {
-    flex-wrap: wrap;
-    margin: 16px 0;
-  }
-
   .device-list {
     display: flex;
     flex-direction: column;
@@ -1739,7 +1827,20 @@
       flex-direction: column;
     }
     &__data {
+      display: flex;
       flex: 1;
+      flex-direction: column;
+
+      :deep(> .el-card__body) {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        padding-bottom: 5px;
+      }
+
+      :deep(.el-table) {
+        flex: 1;
+      }
     }
     &--detail {
       box-sizing: border-box;
@@ -1748,28 +1849,30 @@
       min-height: var(--art-full-height);
       padding: 10px;
     }
-    &__header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      h3 {
-        margin: 0;
-        font-size: 18px;
-      }
-      p {
-        margin: 6px 0 0;
-        font-size: 13px;
-        color: var(--art-text-gray-600);
-      }
+    :deep(.workspace-header > .console-actions > nav) {
+      margin-bottom: 0;
     }
     &__filter {
       margin-bottom: 10px;
     }
-    &__more {
+    &__pagination {
+      box-sizing: border-box;
       display: flex;
-      justify-content: center;
-      padding-top: 12px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%;
+      padding-block: 5px;
+
+      .el-select {
+        width: 120px;
+      }
+
+      .el-button + .el-button {
+        margin-left: 0;
+      }
     }
   }
   .device-list__actions-trigger.el-button {
@@ -1816,6 +1919,27 @@
   .device-detail {
     flex: 1 0 auto;
     width: 100%;
+
+    :deep(.el-alert),
+    :deep(.el-alert__title),
+    :deep(.el-alert__description),
+    :deep(.console-description) {
+      font-size: 12px;
+      line-height: 20px;
+    }
+
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+
+    &__header {
+      flex-shrink: 0;
+      padding-bottom: 18px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--console-line);
+    }
     &__heading {
       display: flex;
       gap: 10px;
@@ -1824,13 +1948,18 @@
       h2 {
         min-width: 0;
         margin: 0;
-        font-size: 20px;
+        font-size: 28px;
         font-weight: 400;
+        line-height: 40px;
         overflow-wrap: anywhere;
       }
     }
     &__back {
       flex-shrink: 0;
+      width: 28px;
+      height: 32px;
+      padding: 0;
+      font-size: 20px;
     }
     &__separator {
       flex-shrink: 0;
@@ -1842,8 +1971,17 @@
       flex-shrink: 0;
       color: var(--el-text-color-secondary);
     }
-    &__edit {
+    &__edit.el-button {
       flex-shrink: 0;
+      height: 20px;
+      min-height: 20px;
+      padding: 0;
+      font-size: 12px;
+      line-height: 20px;
+
+      :deep(> span) {
+        gap: 6px;
+      }
     }
     &__status {
       display: inline-flex;
@@ -1861,18 +1999,13 @@
       flex-wrap: wrap;
       gap: 12px 24px;
       align-items: center;
-      margin: 14px 0 24px;
-      font-size: 13px;
+      margin: 8px 0 0;
+      font-size: 12px;
+      line-height: 20px;
       color: var(--el-text-color-secondary);
       span {
         overflow-wrap: anywhere;
       }
-    }
-    &__manage-credentials {
-      margin-bottom: 10px;
-    }
-    &__tabs {
-      min-height: 360px;
     }
   }
   .form-control {
@@ -1906,20 +2039,133 @@
   }
   .shadow-section {
     margin-bottom: 10px;
-    &__header {
-      display: flex;
+    &__title {
+      display: inline-flex;
+      gap: 10px;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 6px;
-      font-weight: 500;
     }
   }
   .shadow-version {
     font-size: 12px;
     color: var(--art-text-gray-600);
   }
-  .realtime-status {
-    margin-bottom: 8px;
+  .reported-sources {
+    margin-top: 12px;
+
+    &__name,
+    &__key {
+      display: block;
+    }
+
+    &__key {
+      font-size: 12px;
+      color: var(--el-text-color-secondary);
+    }
+
+    &__missing {
+      color: var(--el-text-color-secondary);
+    }
+  }
+  .device-detail--paged {
+    display: flex;
+    flex-direction: column;
+
+    :deep(> .el-card__body) {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding-bottom: 5px;
+    }
+
+    .device-detail__tabs {
+      flex: 1;
+    }
+
+    :deep(.el-tabs__content),
+    :deep(.el-tab-pane),
+    :deep(.device-detail-list) {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+    }
+
+    :deep(.device-detail-list > .el-table) {
+      flex: 1;
+    }
+
+    :deep(.device-detail-pagination) {
+      flex-shrink: 0;
+    }
+  }
+
+  .device-detail__tabs {
+    min-height: 360px;
+
+    :deep(.console-toolbar > .console-actions) {
+      margin-bottom: 0;
+    }
+
+    :deep(.device-history-filter) {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    :deep(.device-history-filter > .el-form-item) {
+      margin: 0;
+    }
+
+    :deep(.device-history-filter > .el-button) {
+      margin: 0;
+    }
+
+    :deep(.device-history-filter--events) {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    :deep(.device-history-filter--events .el-form-item__label) {
+      justify-content: flex-end;
+      width: 110px;
+    }
+
+    :deep(.device-history-filter--events .el-form-item__content) {
+      min-width: 0;
+    }
+
+    :deep(.device-history-filter--events .el-input),
+    :deep(.device-history-filter--events .el-select) {
+      width: 100%;
+    }
+
+    :deep(.device-history-filter__actions.console-actions) {
+      justify-content: flex-end;
+      margin-bottom: 0;
+    }
+
+    :deep(.device-detail-pagination) {
+      box-sizing: border-box;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%;
+      padding-block: 5px;
+      margin-top: 5px;
+    }
+
+    :deep(.device-detail-pagination > .el-button) {
+      margin: 0;
+    }
+  }
+
+  @media (width <= 1000px) {
+    .device-detail__tabs :deep(.device-history-filter--events) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   .history-toolbar {
     display: flex;
@@ -1928,6 +2174,16 @@
     margin-bottom: 10px;
     .el-select {
       width: 160px;
+    }
+  }
+  .history-empty {
+    box-sizing: border-box;
+    height: 260px;
+
+    &__icon {
+      width: 72px;
+      height: 72px;
+      color: var(--el-color-primary-light-5);
     }
   }
   .stream-toolbar {

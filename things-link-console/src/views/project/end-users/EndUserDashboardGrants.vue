@@ -1,15 +1,18 @@
 <template>
   <section v-if="canManage" class="end-user-dashboard-grants">
-    <div class="console-toolbar">
-      <h4>{{ account.username }}的看板读取授权</h4>
+    <ElDivider content-position="left">{{ account.username }}的看板读取授权</ElDivider>
+    <div class="console-actions">
       <ElButton :disabled="loading" @click="refresh">刷新授权目录</ElButton>
     </div>
-    <p>目录包含有效与已撤销记录。项目角色不代表看板读取授权；历史看板以稳定ID识别。</p>
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >目录包含有效与已撤销记录。项目角色不代表看板读取授权；历史看板以稳定ID识别。</ElAlert
+    >
     <ElAlert
       v-if="failed"
       title="授权目录读取失败，请刷新；不能据此判断没有授权。"
       type="error"
       :closable="false"
+      show-icon
     />
     <ul>
       <li v-for="row in rows" :key="row.dashboardId" :data-dashboard-id="row.dashboardId">
@@ -31,9 +34,9 @@
       <span>第{{ pageIndex + 1 }}页</span>
       <ElButton :disabled="loading || failed || !nextCursor" @click="next">下一页授权</ElButton>
     </div>
-    <h4>选择当前项目看板</h4>
-    <p
-      >从服务端目录选择后，可显式查看或授予读取权限。未发布、已删除或角色无效等边界仍由服务端核验。</p
+    <ElDivider content-position="left">选择当前项目看板</ElDivider>
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >从服务端目录选择后，可显式查看或授予读取权限。未发布、已删除或角色无效等边界仍由服务端核验。</ElAlert
     >
     <ElButton :disabled="catalogLoading" @click="loadCatalog()">刷新可选看板</ElButton>
     <ElAlert
@@ -41,6 +44,7 @@
       title="可选看板读取失败，请刷新。"
       type="error"
       :closable="false"
+      show-icon
     />
     <ul
       ><li v-for="item in catalog" :key="item.id">

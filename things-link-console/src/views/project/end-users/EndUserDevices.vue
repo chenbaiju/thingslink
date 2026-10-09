@@ -1,11 +1,14 @@
 <template>
   <section class="end-user-devices">
-    <div class="console-toolbar"
-      ><h4>当前用户的设备关系</h4
+    <ElDivider content-position="left">当前用户的设备关系</ElDivider>
+    <div class="console-actions"
       ><ElButton :disabled="loading || busy" @click="refresh">刷新设备关系</ElButton></div
     >
-    <p>用户ID：{{ appUserId }}。项目角色不代表设备授权；关闭关系后不会因恢复项目角色而自动恢复。</p>
-    <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" />
+    <p class="console-metadata">用户 ID：{{ appUserId }}</p>
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >项目角色不代表设备授权；关闭关系后不会因恢复项目角色而自动恢复。</ElAlert
+    >
+    <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" show-icon />
     <ElTable v-loading="loading" :data="rows" row-key="deviceId">
       <ElTableColumn prop="deviceId" label="设备ID" min-width="230" />
       <ElTableColumn prop="relationRole" label="设备关系角色" min-width="150" />

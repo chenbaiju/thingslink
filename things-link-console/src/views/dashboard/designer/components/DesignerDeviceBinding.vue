@@ -1,6 +1,6 @@
 <template>
   <el-form class="console-fragment" label-position="top" :disabled="disabled || busy">
-    <el-alert v-if="error" :title="error" type="error" :closable="false" />
+    <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon />
     <el-form-item label="组件类型"
       ><el-select v-model="kind" aria-label="绑定组件类型">
         <el-option label="属性值" value="VALUE_CARD" /><el-option label="设备状态" value="STATUS" />
@@ -83,8 +83,13 @@
         :precision="0"
         aria-label="绑定每页行数"
     /></el-form-item>
-    <p v-if="kind === 'TABLE' || kind === 'JSON_VIEW'"
-      >只读取完整顶层属性，不支持嵌套路径。表格分页和展开不改变原始值。</p
+    <ElAlert
+      v-if="kind === 'TABLE' || kind === 'JSON_VIEW'"
+      class="console-hint"
+      type="info"
+      show-icon
+      :closable="false"
+      >只读取完整顶层属性，不支持嵌套路径。表格分页和展开不改变原始值。</ElAlert
     >
     <p v-if="!deviceId || !model">请先选择设备并加载其已发布物模型。</p>
     <p v-else-if="kind !== 'STATUS' && !supportedProperties.length"

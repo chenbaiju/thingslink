@@ -1,16 +1,22 @@
 <template>
   <section class="personal-records" data-testid="personal-records">
-    <h4>个人事实记录</h4>
-    <p class="console-description"
-      >仅本人且当前仍有项目权限可读；历史事实不代表设备当前状态，不是模型诊断。记录30天后不可读，文本与对象值不保存。</p
+    <ElDivider content-position="left">个人事实记录</ElDivider>
+    <ElAlert type="info" :closable="false" show-icon
+      >仅本人且当前仍有项目权限可读；历史事实不代表设备当前状态，不是模型诊断。记录30天后不可读，文本与对象值不保存。</ElAlert
     >
     <div class="console-toolbar">
       <ElButton :disabled="!canSave" :loading="busy" @click="save">重新取证并保存</ElButton>
       <ElButton :disabled="!readable || busy" @click="refresh">刷新本人记录</ElButton>
     </div>
-    <ElAlert v-if="error" type="error" :closable="false" :title="error" />
-    <p v-if="notice">{{ notice }}</p>
-    <p v-if="loaded && !rows.length">当前设备没有本人有效记录。</p>
+    <ElAlert v-if="error" type="error" :closable="false" :title="error" show-icon />
+    <ElAlert v-if="notice" type="info" :closable="false" show-icon>{{ notice }}</ElAlert>
+    <ElAlert
+      v-if="loaded && !rows.length"
+      type="error"
+      :closable="false"
+      title="当前设备没有本人有效记录。"
+      show-icon
+    />
     <ul v-if="rows.length">
       <li v-for="row in rows" :key="row.id">
         <span>{{ row.createdAt }}（可见至 {{ row.expiresAt }}）</span>
@@ -47,8 +53,10 @@
       </ul>
     </template>
     <section v-if="report" aria-label="个人历史事实报告" data-testid="personal-fact-report">
-      <h4>个人历史事实报告</h4>
-      <p>仅汇编本条历史记录，未做模型诊断；下载会再次核验当前权限与来源有效期。</p>
+      <ElDivider content-position="left">个人历史事实报告</ElDivider>
+      <ElAlert type="info" :closable="false" show-icon
+        >仅汇编本条历史记录，未做模型诊断；下载会再次核验当前权限与来源有效期。</ElAlert
+      >
       <p>来源记录：{{ report.sourceRecord.id }}；报告摘要：{{ report.contentSha256 }}</p>
       <pre>{{ report.markdown }}</pre>
     </section>

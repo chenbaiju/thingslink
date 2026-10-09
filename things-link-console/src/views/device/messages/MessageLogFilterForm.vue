@@ -64,7 +64,7 @@
     { key: 'messageType', label: '消息类型' },
     { key: 'traceId', label: 'Trace ID' },
     { key: 'timeRange', label: '发生时间', span: 24 }
-  ]
+  ].map((item) => ({ ...item, labelWidth: 90 }))
   /** 已归一化的消息日志筛选状态；请求 DTO 仍由生成的 OpenAPI 类型约束。 */
   export interface MessageLogFilterModel {
     deviceId: string
@@ -94,3 +94,17 @@
     'device-scroll': [event: Event]
   }>()
 </script>
+
+<style lang="scss">
+  .message-log-filter.console-filter-bar .el-form-item {
+    .el-form-item__label {
+      justify-content: flex-end;
+    }
+
+    .el-date-editor.el-range-editor {
+      flex-grow: 0;
+      width: 400px !important;
+      max-width: 100%;
+    }
+  }
+</style>

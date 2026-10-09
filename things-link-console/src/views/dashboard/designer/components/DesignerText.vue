@@ -134,9 +134,9 @@
 </script>
 <template>
   <section class="console-fragment" aria-label="枚举文本编辑"
-    ><h3 class="console-heading">文本枚举变量</h3
-    ><p class="console-description"
-      >选项值是稳定标识，文本组件仅展示标签。默认选项写入草稿，预览选择不会写回默认。</p
+    ><ElDivider content-position="left">文本枚举变量</ElDivider
+    ><ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >选项值是稳定标识，文本组件仅展示标签。默认选项写入草稿，预览选择不会写回默认。</ElAlert
     >
     <div class="console-actions">
       <button :disabled="disabled" @click="newVariable">新建文本变量</button
@@ -176,10 +176,13 @@
       <p class="console-description" v-if="!validOptions"
         >请配置 1～20 个值唯一的选项；值使用小写字母开头的字母、数字、下划线，标签为 1～80
         个字符且不含控制字符。</p
-      ><p
-        class="console-description"
+      ><ElAlert
         v-if="defaultValue && !options.some((o) => o.value === defaultValue)"
-        >原默认选项已移除，请明确选择新默认值或无默认选项。</p
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >原默认选项已移除，请明确选择新默认值或无默认选项。</ElAlert
       >
       <div class="console-actions">
         <button :disabled="!readyVariable" data-testid="text-variable-save" @click="saveVariable"
@@ -191,11 +194,16 @@
           @click="emit('remove', editing)"
           >删除文本变量</button
         > </div
-      ><p class="console-description" v-if="editing && references.length"
-        >变量仍被引用，不能删除：{{ references.join('；') }}</p
+      ><ElAlert
+        v-if="editing && references.length"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >变量仍被引用，不能删除：{{ references.join('；') }}</ElAlert
       ></fieldset
     >
-    <h3 class="console-heading">文本组件</h3
+    <ElDivider content-position="left">文本组件</ElDivider
     ><fieldset :disabled="disabled">
       <label
         >文本模式<select v-model="mode" aria-label="文本模式"

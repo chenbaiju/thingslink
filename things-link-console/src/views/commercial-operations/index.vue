@@ -1,6 +1,7 @@
 <template>
   <div class="console-page console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="商业运营"
       description="面向受控运营身份的租户额度审批。项目角色不授予运营权限。"
       :links="[
@@ -13,6 +14,7 @@
         type="info"
         :closable="false"
         title="仅审批当前租户的临时增量；数量不代表已验证的基础设施容量，最长有效期为24个UTC日历月。"
+        show-icon
       />
       <ElAlert
         v-if="state.error"
@@ -20,6 +22,7 @@
         type="warning"
         :closable="false"
         :title="state.error"
+        show-icon
       />
       <ElForm class="spacing" label-position="top" @submit.prevent>
         <ElFormItem label="目标租户 ID"
@@ -36,7 +39,7 @@
         >
       </ElForm>
       <section v-if="state.pending" class="spacing" data-testid="pending-adjustment">
-        <h4>待确认申请</h4>
+        <ElDivider content-position="left">待确认申请</ElDivider>
         <p class="console-description">租户：{{ state.pending.tenantId }}</p
         ><p class="console-description">申请编号：{{ state.pending.request.idempotencyKey }}</p>
         <p class="console-description"
@@ -93,7 +96,7 @@
         >
       </ElForm>
       <section v-if="!state.pending" class="spacing">
-        <h4>查询既有申请</h4>
+        <ElDivider content-position="left">查询既有申请</ElDivider>
         <div class="console-toolbar">
           <ElButton :disabled="state.busy" @click="readPending">读取本机待确认记录</ElButton>
           <ElInput
@@ -110,7 +113,9 @@
         </div>
       </section>
       <section v-if="state.result" class="spacing" data-testid="adjustment-result">
-        <h4>申请事实 · {{ statusLabel(state.result.status) }}</h4>
+        <ElDivider content-position="left"
+          >申请事实 · {{ statusLabel(state.result.status) }}</ElDivider
+        >
         <p class="console-description">租户：{{ state.result.tenantId }}</p
         ><p class="console-description">申请编号：{{ state.result.idempotencyKey }}</p>
         <p class="console-description"

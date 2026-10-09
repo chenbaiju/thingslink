@@ -4,10 +4,16 @@
       <h4>命令执行历史</h4>
       <ElButton :loading="loading" @click="refresh">刷新历史</ElButton>
     </div>
-    <p class="console-description">
+    <ElAlert type="info" :closable="false" show-icon>
       按受理时间倒序，包含命令与属性设置。受理或交给 Broker 不代表设备执行成功。
-    </p>
-    <ElAlert v-if="failed" type="error" title="命令历史读取失败，请刷新重试" :closable="false" />
+    </ElAlert>
+    <ElAlert
+      v-if="failed"
+      type="error"
+      title="命令历史读取失败，请刷新重试"
+      :closable="false"
+      show-icon
+    />
     <ElTable v-loading="loading" :data="rows" row-key="id">
       <ElTableColumn prop="id" label="命令 ID" min-width="230" show-overflow-tooltip />
       <ElTableColumn label="操作" min-width="130">
@@ -36,14 +42,19 @@
           "
       /></template>
     </ElTable>
-    <div class="console-page-actions">
-      <ElButton :disabled="loading || pageIndex === 0" @click="previous">上一页</ElButton>
-      <span>第 {{ pageIndex + 1 }} 页</span>
-      <ElButton :disabled="loading || failed || !nextCursor" @click="next">下一页</ElButton>
-    </div>
+    <DeviceDetailPagination
+      v-if="rows.length > 0"
+      :page-index="pageIndex"
+      :loading="loading"
+      :failed="failed"
+      :has-next="!!nextCursor"
+      @previous="previous"
+      @next="next"
+    />
   </section>
 </template>
 <script setup lang="ts">
+  import DeviceDetailPagination from './DeviceDetailPagination.vue'
   import { useUserStore } from '@/store/modules/user'
   import { formatTime } from '@/utils/time'
   import {

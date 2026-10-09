@@ -1,19 +1,31 @@
 <template>
-  <ElCard v-if="readable" shadow="never" data-testid="personal-fact-collection">
+  <ElCard
+    v-if="readable"
+    shadow="never"
+    class="personal-collection"
+    data-testid="personal-fact-collection"
+  >
     <template #header><h4 class="console-heading">个人历史设备集合报告</h4></template>
-    <p class="console-description"
-      >仅汇编本人所选历史记录，未做实时巡检或模型诊断；最多五设备，每设备选一条。记录仍仅本人且当前有权可读。</p
-    >
+    <ElAlert
+      type="info"
+      show-icon
+      :closable="false"
+      title="仅汇编本人所选历史记录，未做实时巡检或模型诊断；最多五设备，每设备选一条。记录仍仅本人且当前有权可读。"
+    />
     <div class="console-toolbar">
       <ElButton :disabled="busy" @click="refresh">刷新本人项目记录</ElButton>
       <ElButton :disabled="!canGenerate" @click="generate()">生成集合事实报告</ElButton>
       <ElButton :disabled="!canGenerate" @click="generate(true)">重新确权并下载集合报告</ElButton>
     </div>
-    <ElAlert v-if="error" type="error" :closable="false" :title="error" />
-    <p v-if="notice">{{ notice }}</p>
-    <p v-if="loaded && !rows.length"
-      >当前项目没有本人有效记录，请在设备详情的诊断证据页签手动保存。空记录不代表设备正常。</p
-    >
+    <ElAlert v-if="error" type="error" :closable="false" show-icon :title="error" />
+    <ElAlert v-if="notice" type="info" show-icon :closable="false" :title="notice" />
+    <ElAlert
+      v-if="loaded && !rows.length"
+      type="info"
+      show-icon
+      :closable="false"
+      title="当前项目没有本人有效记录，请在设备详情的诊断证据页签手动保存。空记录不代表设备正常。"
+    />
     <p v-if="rows.length"
       >已选 {{ selected.length }} 个设备；标识仅用于区分历史来源，不补查设备当前名称或状态。</p
     >
@@ -27,8 +39,12 @@
             :aria-label="`选择历史记录 ${row.id}`"
             @change="toggle(row.id)"
           />
-          设备 {{ row.deviceId }}；记录 {{ row.id }}；采集时模型 {{ row.modelVersionId }}；保存
-          {{ row.createdAt }}；可见至 {{ row.expiresAt }}
+          <span class="personal-collection__record">
+            <span>设备：{{ row.deviceId }}</span>
+            <span>记录：{{ row.id }}</span>
+            <span>采集时模型：{{ row.modelVersionId }}</span>
+            <span>保存：{{ row.createdAt }}；可见至：{{ row.expiresAt }}</span>
+          </span>
         </label>
       </li>
     </ul>
@@ -37,21 +53,22 @@
       data-testid="personal-collection-report"
       aria-label="个人历史集合事实报告"
     >
+      <ElDivider content-position="left">集合事实报告</ElDivider>
       <p
         >仅所选来源：{{ report.coverage.devices }} 个设备，{{
           report.coverage.selectedProperties
         }}
         个属性；可用 {{ report.coverage.availableValues }}，缺项
-        {{ report.coverage.unavailableValues }}（其中省略
-        {{ report.coverage.omittedValues }}）。缺项不代表正常。</p
+        {{ report.coverage.unavailableValues }}（其中省略 {{ report.coverage.omittedValues }}）。</p
       >
       <p
         >历史采集包络：{{ report.earliestCollectionAt }} 至
-        {{ report.latestCollectionAt }}；不保证连续时序或同时刻快照。最早来源期限：{{
-          report.expiresAt
-        }}。</p
+        {{ report.latestCollectionAt }}；最早来源期限：{{ report.expiresAt }}。</p
       >
-      <p>报告摘要：{{ report.contentSha256 }}；下载会再次向服务端核验全部来源与当前权限。</p>
+      <p class="console-metadata">报告摘要：{{ report.contentSha256 }}。</p>
+      <ElAlert type="info" show-icon :closable="false"
+        >缺项不代表正常，历史采集包络不保证连续时序或同时刻快照；下载会再次向服务端核验全部来源与当前权限。</ElAlert
+      >
       <pre>{{ report.markdown }}</pre>
     </section>
   </ElCard>
@@ -313,6 +330,31 @@
   onBeforeUnmount(clear)
 </script>
 <style scoped>
+  .personal-collection {
+    overflow-wrap: anywhere;
+  }
+  ul {
+    padding: 0;
+    list-style: none;
+  }
+  li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+  label {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  input {
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .personal-collection__record {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
   pre {
     overflow-wrap: anywhere;
     white-space: pre-wrap;

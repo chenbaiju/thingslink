@@ -11,11 +11,11 @@
       <div class="plan-summary__header">
         <div>
           <h4>{{ $t('quota.planSummaryTitle') }}</h4>
-          <p>{{ $t('quota.planSummaryHint') }}</p>
         </div>
       </div>
     </template>
 
+    <ElAlert type="info" show-icon :closable="false" :title="$t('quota.planSummaryHint')" />
     <ElAlert
       v-if="!model"
       data-testid="plan-summary-unavailable"
@@ -77,8 +77,8 @@
 
       <section class="plan-summary__sections">
         <div>
-          <h5>{{ $t('quota.planLimitsTitle') }}</h5>
-          <p>{{ $t('quota.planLimitsHint') }}</p>
+          <ElDivider content-position="left">{{ $t('quota.planLimitsTitle') }}</ElDivider>
+          <ElAlert type="info" show-icon :closable="false" :title="$t('quota.planLimitsHint')" />
           <ElTable data-testid="plan-frozen-limits" :data="model.limits" size="small">
             <ElTableColumn :label="$t('quota.planLimitDimension')" min-width="150">
               <template #default="{ row }">{{ row.label }}</template>
@@ -93,8 +93,13 @@
           </ElTable>
         </div>
         <div>
-          <h5>{{ $t('quota.planEffectiveLimitsTitle') }}</h5>
-          <p>{{ $t('quota.planEffectiveLimitsHint') }}</p>
+          <ElDivider content-position="left">{{ $t('quota.planEffectiveLimitsTitle') }}</ElDivider>
+          <ElAlert
+            type="info"
+            show-icon
+            :closable="false"
+            :title="$t('quota.planEffectiveLimitsHint')"
+          />
           <ElTable
             v-if="model.effectiveLimitsAvailable"
             data-testid="plan-effective-limits"
@@ -122,8 +127,8 @@
           />
         </div>
         <div>
-          <h5>{{ $t('quota.planAdditionsTitle') }}</h5>
-          <p>{{ $t('quota.planAdditionsHint') }}</p>
+          <ElDivider content-position="left">{{ $t('quota.planAdditionsTitle') }}</ElDivider>
+          <ElAlert type="info" show-icon :closable="false" :title="$t('quota.planAdditionsHint')" />
           <ElTable data-testid="plan-additions" :data="model.additions" size="small">
             <ElTableColumn :label="$t('quota.planAdditionSource')" min-width="100">
               <template #default="{ row }">{{ row.sourceLabel }}</template>
@@ -151,8 +156,13 @@
           </ElTable>
         </div>
         <div>
-          <h5>{{ $t('quota.planCapabilitiesTitle') }}</h5>
-          <p>{{ $t('quota.planCapabilitiesHint') }}</p>
+          <ElDivider content-position="left">{{ $t('quota.planCapabilitiesTitle') }}</ElDivider>
+          <ElAlert
+            type="info"
+            show-icon
+            :closable="false"
+            :title="$t('quota.planCapabilitiesHint')"
+          />
           <div class="plan-summary__capabilities">
             <ElTag
               v-for="capability in model.enabledCapabilities"
@@ -209,25 +219,20 @@
 
 <style lang="scss" scoped>
   .plan-summary {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 
     &__header {
       h4 {
-        margin: 0 0 6px;
-        font-size: 16px;
-      }
-
-      p {
         margin: 0;
-        font-size: 13px;
-        color: var(--art-text-gray-500);
+        font-size: 14px;
+        font-weight: 500;
       }
     }
 
     &__meta {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 20px;
+      gap: 16px;
     }
 
     &__item {
@@ -235,8 +240,8 @@
       flex-direction: column;
       gap: 8px;
 
-      span {
-        font-size: 13px;
+      > span {
+        font-size: 12px;
         color: var(--art-text-gray-500);
       }
 
@@ -244,6 +249,10 @@
         font-size: 12px;
         color: var(--art-text-gray-500);
       }
+    }
+
+    &__item :deep(.el-tag) {
+      align-self: flex-start;
     }
 
     &__mismatch {
@@ -254,17 +263,13 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
-      margin-top: 16px;
+      margin-top: 10px;
 
-      h5 {
-        margin: 0 0 6px;
-        font-size: 14px;
+      > div {
+        min-width: 0;
       }
-
-      p {
-        margin: 0 0 8px;
-        font-size: 13px;
-        color: var(--art-text-gray-500);
+      > div:nth-child(-n + 2) :deep(.el-alert) {
+        min-height: 76px;
       }
     }
 
@@ -276,8 +281,18 @@
   }
 
   @media screen and (width <= 1100px) {
-    .plan-summary__meta,
     .plan-summary__sections {
+      grid-template-columns: 1fr;
+      > div:nth-child(-n + 2) :deep(.el-alert) {
+        min-height: 0;
+      }
+    }
+    .plan-summary__meta {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media screen and (width <= 640px) {
+    .plan-summary__meta {
       grid-template-columns: 1fr;
     }
   }

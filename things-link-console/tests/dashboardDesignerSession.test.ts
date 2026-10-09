@@ -202,7 +202,7 @@ describe('设计器会话边界', () => {
     await designer.open(id)
     expect(designer.state.schema).not.toBeNull()
   })
-  it('目录分页替换而不积累，close后仍可重新使用', async () => {
+  it('自动读取全部目录页，close后仍可重新使用', async () => {
     const { designer } = fixture()
     api.fetchDashboards
       .mockResolvedValueOnce({
@@ -215,10 +215,68 @@ describe('设计器会话边界', () => {
         hasMore: false
       })
     await designer.list()
-    await designer.list('next')
-    expect(designer.state.items.map((item) => item.managementName)).toEqual(['第二页'])
+    expect(api.fetchDashboards.mock.calls).toEqual([
+      ['project-a', undefined],
+      ['project-a', 'next']
+    ])
+    expect(designer.state.items.map((item) => item.managementName)).toEqual(['第一页', '第二页'])
+    expect(designer.state.nextCursor).toBeNull()
     designer.close()
     await designer.open(id)
     expect(designer.state.dashboardId).toBe(id)
+  })
+  it('后续页失败不展示不完整目录', async () => {
+    const { designer } = fixture()
+    api.fetchDashboards
+      .mockResolvedValueOnce({
+        items: [{ id, managementName: '第一页' }],
+        hasMore: true,
+        nextCursor: 'next'
+      })
+      .mockRejectedValueOnce(new Error('读取失败'))
+    await designer.list()
+    expect(designer.state.items).toEqual([])
+    expect(designer.state.error).toContain('目录读取失败')
+    expect(designer.state.loading).toBe(false)
+  })
+  it('读取后续页时切换项目，丢弃旧目录且停止继续读取', async () => {
+    const { designer, project } = fixture()
+    const pending = deferred<any>()
+    api.fetchDashboards
+      .mockResolvedValueOnce({
+        items: [{ id, managementName: '旧项目第一页' }],
+        hasMore: true,
+        nextCursor: 'next'
+      })
+      .mockReturnValueOnce(pending.promise)
+    const loading = designer.list()
+    await vi.waitFor(() => expect(api.fetchDashboards).toHaveBeenCalledTimes(2))
+    project.value = 'project-b'
+    pending.resolve({
+      items: [{ id: 'second', managementName: '旧项目第二页' }],
+      hasMore: true,
+      nextCursor: 'third'
+    })
+    await loading
+    expect(designer.state.items).toEqual([])
+    expect(api.fetchDashboards).toHaveBeenCalledTimes(2)
+  })
+  it('重复游标终止全量读取，避免循环请求', async () => {
+    const { designer } = fixture()
+    api.fetchDashboards
+      .mockResolvedValueOnce({
+        items: [{ id, managementName: '第一页' }],
+        hasMore: true,
+        nextCursor: 'next'
+      })
+      .mockResolvedValueOnce({
+        items: [{ id: 'second', managementName: '第二页' }],
+        hasMore: true,
+        nextCursor: 'next'
+      })
+    await designer.list()
+    expect(designer.state.items).toEqual([])
+    expect(designer.state.error).toContain('目录读取失败')
+    expect(api.fetchDashboards).toHaveBeenCalledTimes(2)
   })
 })

@@ -1,22 +1,24 @@
 <template>
-  <div class="console-page">
+  <div class="console-page message-rules">
     <ConsoleWorkspaceHeader
+      project-style
       title="消息规则"
       description="处理上行数据并配置动作。先保存草稿与调试，再明确启用版本。"
-      :links="[
-        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
-        { label: '执行记录', path: '/rule/executions?source=rule', permission: 'rule:read' }
-      ]"
-    />
+    >
+      <template #actions>
+        <ElButton v-if="allowed" type="primary" :icon="Plus" :disabled="busy" @click="create">
+          创建规则
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
     <ElCard v-if="!allowed" shadow="never"
-      ><ElAlert title="需要 OWNER 或 ADMIN 的规则管理权限" type="warning" :closable="false"
+      ><ElAlert
+        title="需要 OWNER 或 ADMIN 的规则管理权限"
+        type="warning"
+        :closable="false"
+        show-icon
     /></ElCard>
     <template v-else>
-      <div class="console-toolbar console-page-actions"
-        ><ElButton type="primary" :icon="Plus" :disabled="busy" @click="create"
-          >创建规则</ElButton
-        ></div
-      >
       <ElCard class="console-list-filter" shadow="never"
         ><ConsoleFilterBar
           :items="[
@@ -122,7 +124,7 @@
         >
       </ElForm>
       <template v-if="selected">
-        <h3 class="console-heading">不可变历史（最新版本在前）</h3>
+        <ElDivider content-position="left">不可变历史（最新版本在前）</ElDivider>
         <ElTable :data="versions" row-key="id"
           ><ElTableColumn show-overflow-tooltip prop="versionNumber" label="版本号" /><ElTableColumn
             show-overflow-tooltip
@@ -157,7 +159,7 @@
         /></ElFormItem>
         <pre data-testid="debug-result">{{ debugResult }}</pre>
       </template>
-      <ElAlert v-if="error" :title="error" type="error" :closable="false" />
+      <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
     </ElDialog>
   </div>
 </template>
@@ -381,3 +383,9 @@
   )
   onBeforeUnmount(clear)
 </script>
+
+<style scoped lang="scss">
+  .message-rules :deep(.workspace-header > .console-actions) {
+    margin-bottom: 0;
+  }
+</style>

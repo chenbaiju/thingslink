@@ -11,14 +11,9 @@
 <template>
   <div class="console-page ota-jobs console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="设备升级作业"
       description="查看真实升级阶段、失败原因与转移记录。"
-      :links="[
-        { label: '固件', path: '/ota/firmwares', permission: 'ota:read' },
-        { label: '升级活动', path: '/ota/campaigns', permission: 'ota:read' },
-        { label: '设备作业', path: '/ota/jobs', permission: 'ota:read' },
-        { label: '审计', path: '/ota/audits', permission: 'ota:read' }
-      ]"
     />
     <ElCard class="console-list-filter" shadow="never">
       <ConsoleFilterBar
@@ -47,10 +42,13 @@
       </ConsoleFilterBar>
     </ElCard>
 
-    <ElAlert class="ota-jobs__notice" type="info" :closable="false" show-icon>
-      <template #title>作业状态以服务端为准</template>
-      重试等待、对账恢复与超时都由冻结策略和设备事实上报驱动；控制台只呈现事实，不代设备推进状态。
-    </ElAlert>
+    <ElAlert
+      class="ota-jobs__notice"
+      title="作业状态以服务端为准；重试、对账恢复与超时由冻结策略和设备事实驱动，页面仅展示。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="jobs" row-key="id">
@@ -337,37 +335,24 @@
 
 <style lang="scss" scoped>
   .ota-jobs {
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 4px;
-        font-size: 18px;
-      }
-
-      p {
-        margin: 0;
-        font-size: 13px;
-        color: var(--art-text-gray-600);
-      }
-    }
-
-    &__header-actions {
-      display: flex;
-      flex-shrink: 0;
-      gap: 8px;
-    }
-
     &__filter {
       width: 240px;
     }
 
     &__notice {
       margin-bottom: 10px;
+
+      :deep(.el-alert__title) {
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 20px;
+      }
+
+      :deep(.el-alert__icon) {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+      }
     }
 
     &__more {

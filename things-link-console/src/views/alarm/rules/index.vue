@@ -1,14 +1,16 @@
 <template>
   <div class="console-page alarm-page console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="告警规则"
       description="定义设备属性异常条件，再关联通知组与通知模板。"
-      :links="[
-        { label: '告警历史', path: '/alarm/history', permission: 'alarm:read' },
-        { label: '通知组', path: '/alarm/notification-groups', permission: 'alarm:read' },
-        { label: '通知模板', path: '/alarm/notification-templates', permission: 'alarm:read' }
-      ]"
-    />
+    >
+      <template #actions>
+        <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreate">
+          创建规则
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
     <section v-if="sourceRequested" class="console-editor-section" aria-label="来源设备">
       <p v-if="sourceLoading" role="status">正在核对来源设备…</p>
       <template v-else-if="sourceDevice">
@@ -23,15 +25,13 @@
         <ElButton @click="reloadSource">重试来源设备</ElButton>
       </template>
     </section>
-    <div class="alarm-page__header console-toolbar console-page-actions">
-      <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreate">
-        创建规则
-      </ElButton>
-    </div>
-
-    <ElAlert class="alarm-page__notice" type="info" :closable="false" show-icon>
-      规则仅支持固定数值比较；修改规则不会改写已经产生的告警实例和事件。
-    </ElAlert>
+    <ElAlert
+      class="alarm-page__notice"
+      title="规则仅支持固定数值比较；修改规则不会改写已经产生的告警实例和事件。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="items" row-key="id">
@@ -712,24 +712,23 @@
   .alarm-page {
     padding: 10px;
 
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
+    :deep(.workspace-header > .console-actions) {
+      margin-bottom: 0;
     }
 
     &__notice {
       margin-bottom: 10px;
+
+      :deep(.el-alert__title) {
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 20px;
+      }
+      :deep(.el-alert__icon) {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+      }
     }
     &__more {
       display: flex;

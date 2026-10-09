@@ -1,22 +1,21 @@
 <template>
   <div class="console-page notification-page console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="通知模板"
       description="按渠道维护通知内容，关联告警规则后通过告警历史检查投递结果。"
-      :links="[
-        { label: '通知组', path: '/alarm/notification-groups', permission: 'alarm:read' },
-        { label: '告警规则', path: '/alarm/rules', permission: 'alarm:read' },
-        { label: '告警历史', path: '/alarm/history', permission: 'alarm:read' }
-      ]"
-    />
-    <div class="notification-page__header console-toolbar console-page-actions">
-      <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreate">
-        创建通知模板
-      </ElButton>
-    </div>
+    >
+      <template #actions>
+        <ElButton v-if="hasAuth('alarm:manage')" type="primary" :icon="Plus" @click="openCreate">
+          创建通知模板
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
 
     <ElAlert class="notification-page__notice" type="info" :closable="false" show-icon>
-      模板不执行脚本或任意表达式；未知的 <code>${...}</code> 变量会在保存时被服务端拒绝。
+      <template #title>
+        模板不执行脚本或任意表达式；未知的 <code>${...}</code> 变量会在保存时被服务端拒绝。
+      </template>
     </ElAlert>
 
     <ElCard class="console-page__main-panel" shadow="never">
@@ -68,11 +67,13 @@
       </div>
     </ElCard>
 
-    <ElDialog
+    <component
+      :is="editingId ? ElDrawer : ElDialog"
       class="console-dialog"
+      :class="{ 'notification-template-drawer': !!editingId }"
       v-model="formVisible"
       :title="editingId ? '编辑通知模板' : '创建通知模板'"
-      width="760px"
+      v-bind="editingId ? { size: '760px' } : { width: '760px' }"
       destroy-on-close
     >
       <ElForm ref="formRef" :model="form" :rules="rules" label-position="top">
@@ -90,11 +91,17 @@
 
         <ElFormItem label="可用变量">
           <div class="template-variables">
-            <ElTag v-for="variable in templateVariables" :key="variable" type="info">
-              {{ variable }}
+            <ElTag v-for="variable in templateVariables" :key="variable.key" type="info">
+              {{ variable.label }}：{{ variable.key }}
             </ElTag>
           </div>
-          <div class="form-help">变量名和大小写必须完全一致，可用于主题和正文。</div>
+          <ElAlert
+            class="template-variables__notice"
+            title="变量名和大小写必须完全一致，可用于主题和正文。"
+            type="info"
+            :closable="false"
+            show-icon
+          />
         </ElFormItem>
 
         <ElFormItem v-if="form.channel === 'EMAIL'" label="邮件主题" prop="subjectTemplate">
@@ -122,7 +129,7 @@
         <ElButton @click="formVisible = false">取消</ElButton>
         <ElButton type="primary" :loading="submitting" @click="submitTemplate">保存</ElButton>
       </template>
-    </ElDialog>
+    </component>
   </div>
 </template>
 
@@ -132,6 +139,7 @@
 
   import { formatTime } from '@/utils/time'
   import { Plus } from '@element-plus/icons-vue'
+  import { ElDialog, ElDrawer } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
   import {
     fetchAlarmNotificationTemplates,
@@ -159,11 +167,11 @@
   const editingId = ref('')
   const formRef = ref<FormInstance>()
   const templateVariables = [
-    '${alarm.type}',
-    '${alarm.severity}',
-    '${alarm.value}',
-    '${alarm.activatedAt}',
-    '${alarm.instanceId}'
+    { key: '${alarm.type}', label: '告警类型' },
+    { key: '${alarm.severity}', label: '告警级别' },
+    { key: '${alarm.value}', label: '告警事件值' },
+    { key: '${alarm.activatedAt}', label: '告警激活时间' },
+    { key: '${alarm.instanceId}', label: '告警实例 ID' }
   ]
 
   const defaultForm = (): SaveAlarmNotificationTemplateRequest => ({
@@ -269,29 +277,30 @@
 </script>
 
 <style scoped lang="scss">
+  :global(.notification-template-drawer.el-drawer) {
+    border-radius: 0;
+  }
+
   .notification-page {
     padding: 10px;
 
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-        font-size: 20px;
-      }
-
-      p {
-        margin: 0;
-        color: var(--el-text-color-secondary);
-      }
+    :deep(.workspace-header > .console-actions) {
+      margin-bottom: 0;
     }
 
     &__notice {
       margin-bottom: 10px;
+
+      :deep(.el-alert__title) {
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 20px;
+      }
+      :deep(.el-alert__icon) {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+      }
     }
 
     &__more {
@@ -313,10 +322,19 @@
     gap: 8px;
   }
 
-  .form-help {
-    margin-top: 6px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
+  .template-variables__notice {
+    margin-top: 8px;
+
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
   }
 
   @media (width <= 768px) {

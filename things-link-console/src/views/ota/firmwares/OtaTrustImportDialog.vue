@@ -1,15 +1,19 @@
 <template>
   <ElDialog
+    class="console-dialog ota-firmware-feedback"
     v-model="visible"
     title="导入受控信任包"
     width="640px"
     data-testid="ota-trust-import-dialog"
     destroy-on-close
   >
-    <p
-      >只载入离线签发的公开包与签名；这里不接收或生成私钥，不配置受控根，不授予固件发布或设备升级资格。</p
-    >
-    <ElForm label-width="120px">
+    <ElAlert
+      title="只载入离线签发的公开包与签名；这里不接收或生成私钥，不配置受控根，不授予固件发布或设备升级资格。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
+    <ElForm class="ota-trust-import-form" label-width="110px" label-position="left">
       <ElFormItem label="绑定信任域"
         ><ElInput
           v-model="domain"
@@ -20,6 +24,7 @@
       /></ElFormItem>
       <ElFormItem label="离线公开签包"
         ><input
+          class="ota-trust-import-file"
           type="file"
           accept=".json,application/json"
           data-testid="ota-trust-import-file"
@@ -33,10 +38,18 @@
       <p data-testid="ota-trust-import-bundle-version">材料包版本：{{ materialVersion }}</p>
       <p data-testid="ota-trust-import-bundle-sha">材料规范包 SHA-256：{{ digest }}</p>
       <p v-if="materialRevision !== undefined">材料冻结的期望修订：{{ materialRevision }}</p>
-      <p>材料只经过结构与公开摘要检查；受控根签名及状态演进仍由服务端裁决。</p>
-      <p
-        >本次导入为完整包替换，历史键必须保留；撤销发布键可使相关活动安全暂停。请核对以下公开状态，页面不提供单键编辑。</p
-      >
+      <ElAlert
+        title="材料只经过结构与公开摘要检查；受控根签名及状态演进仍由服务端裁决。"
+        type="info"
+        :closable="false"
+        show-icon
+      />
+      <ElAlert
+        title="本次导入为完整包替换，历史键必须保留；撤销发布键可使相关活动安全暂停。请核对以下公开状态，页面不提供单键编辑。"
+        type="info"
+        :closable="false"
+        show-icon
+      />
       <ul data-testid="ota-trust-import-keys">
         <li v-for="key in previewKeys" :key="key.keyVersion">
           键版本：{{ key.keyVersion }}；签名规格：{{ key.signatureProfile }}；状态：{{
@@ -54,9 +67,14 @@
       @click="readCurrent"
       >读取当前登记</ElButton
     >
-    <p v-if="revision !== undefined" data-testid="ota-trust-import-revision"
-      >当前登记修订：{{ revision }}</p
+    <div
+      v-if="revision !== undefined"
+      class="ota-registration-revision"
+      data-testid="ota-trust-import-revision"
     >
+      <span>当前登记修订：</span>
+      <span class="ota-registration-revision__value">{{ revision }}</span>
+    </div>
     <div v-if="currentState" data-testid="ota-trust-import-current">
       <p>当前包版本：{{ currentState.bundleVersion }}</p>
       <p>当前规范包 SHA-256：{{ currentState.bundleSha256 }}</p>
@@ -65,6 +83,7 @@
     </div>
     <template v-if="revision === '0'">
       <ElAlert
+        show-icon
         title="服务端返回本域尚未登记或不可见；首次修订0仅允许在本项目与精确域已预配受控离线根时尝试，否则服务端会拒绝。此读取不证明受控根存在。"
         type="warning"
         :closable="false"
@@ -76,8 +95,14 @@
         >已确认本项目与信任域已预配受控离线根</ElCheckbox
       >
     </template>
-    <p v-if="ready && materialDomain !== domain">材料绑定域与所填域不同，不能导入。</p>
-    <p
+    <ElAlert
+      v-if="ready && materialDomain !== domain"
+      title="材料绑定域与所填域不同，不能导入。"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
       v-if="
         phase === 'idle' &&
         ready &&
@@ -85,24 +110,39 @@
         materialRevision !== undefined &&
         materialRevision !== revision
       "
-      >材料期望修订与当前登记不同；必须重新取得匹配材料，页面不会改写。</p
-    >
-    <p v-if="ready && currentState && BigInt(currentState.bundleVersion) >= BigInt(materialVersion)"
-      >当前包版本已等于或高于材料版本；不得用新键重复提交旧包。</p
-    >
-    <p
+      title="材料期望修订与当前登记不同；必须重新取得匹配材料，页面不会改写。"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
+      v-if="ready && currentState && BigInt(currentState.bundleVersion) >= BigInt(materialVersion)"
+      title="当前包版本已等于或高于材料版本；不得用新键重复提交旧包。"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
       v-if="
         ready &&
         completedVersion !== undefined &&
         BigInt(completedVersion) >= BigInt(materialVersion)
       "
       data-testid="ota-trust-import-completed-fence"
-    >
-      当前身份已确认本域版本 <span>{{ completedVersion }}</span>
-      的请求完成；同版或更低材料不能新键重提，后续登记不可见也不表示原写失败。
-    </p>
-    <p v-if="fenceFull">当前身份已达到64域的完成记录内存预算，不能在新域发起导入。</p>
+      :title="`当前身份已确认本域版本 ${completedVersion} 的请求完成；同版或更低材料不能新键重提，后续登记不可见也不表示原写失败。`"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <ElAlert
+      v-if="fenceFull"
+      title="当前身份已达到64域的完成记录内存预算，不能在新域发起导入。"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
+      show-icon
       v-if="notice"
       :title="notice"
       type="info"
@@ -124,6 +164,7 @@
 </template>
 
 <script setup lang="ts">
+  import './ota-feedback.scss'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import {
     fetchOtaTrustDomain,

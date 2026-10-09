@@ -52,7 +52,7 @@ function page() {
         ElTable: table,
         ElTableColumn: true,
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })
@@ -137,4 +137,14 @@ describe('设备命令历史', () => {
     wrapper.unmount()
     expect(signal.aborted).toBe(true)
   })
+})
+
+it('空列表隐藏分页，刷新取得数据后恢复分页', async () => {
+  api.fetchDeviceCommandHistory.mockResolvedValue({ items: [], nextCursor: null })
+  page()
+  await flushPromises()
+  expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)
+  api.fetchDeviceCommandHistory.mockResolvedValue({ items: [item], nextCursor: null })
+  await click('刷新历史')
+  expect(wrapper.find('.device-detail-pagination').exists()).toBe(true)
 })

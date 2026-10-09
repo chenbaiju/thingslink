@@ -1,7 +1,13 @@
 <template>
-  <section aria-label="事件历史" data-testid="device-event-history">
-    <p>设备发生记录，只读展示原模型与发生时刻。</p>
-    <ElForm inline @submit.prevent="model.refresh()">
+  <section class="device-detail-list" aria-label="事件历史" data-testid="device-event-history">
+    <ElAlert type="info" :closable="false" show-icon
+      >设备发生记录，只读展示原模型与发生时刻。</ElAlert
+    >
+    <ElForm
+      inline
+      class="device-history-filter device-history-filter--events"
+      @submit.prevent="model.refresh()"
+    >
       <ElFormItem label="事件键"
         ><ElInput v-model="model.filters.eventKey" aria-label="事件键" maxlength="64"
       /></ElFormItem>
@@ -25,25 +31,30 @@
       <ElFormItem label="至（排他）"
         ><ElInput v-model="model.filters.to" aria-label="事件时间至" placeholder="RFC3339，含时区"
       /></ElFormItem>
-      <ElButton
-        data-testid="device-event-history-refresh"
-        :loading="model.loading"
-        @click="model.refresh()"
-        >筛选 / 刷新事件历史</ElButton
-      >
-      <ElButton :disabled="model.loading" @click="reset">清除筛选</ElButton>
+      <div class="console-actions device-history-filter__actions">
+        <ElButton
+          data-testid="device-event-history-refresh"
+          :loading="model.loading"
+          @click="model.refresh()"
+          >筛选 / 刷新事件历史</ElButton
+        >
+        <ElButton :disabled="model.loading" @click="reset">清除筛选</ElButton>
+      </div>
     </ElForm>
-    <p v-if="model.windowFrom" data-testid="device-event-history-window"
-      >当前有效窗口 {{ model.windowFrom }} 至 {{ model.windowTo }}（不包含）；存储保留 90
-      天，当前套餐可读窗口可能更短。</p
-    >
-    <p>套餐决定当前可读时间范围。</p>
+    <ElAlert type="info" :closable="false" show-icon>
+      <span v-if="model.windowFrom" data-testid="device-event-history-window">
+        当前有效窗口 {{ model.windowFrom }} 至 {{ model.windowTo }}（不包含）；存储保留 90
+        天，当前套餐可读窗口可能更短。
+      </span>
+      套餐决定当前可读时间范围。
+    </ElAlert>
     <ElAlert
       v-if="model.error"
       data-testid="device-event-history-error"
       :title="model.error"
       type="error"
       :closable="false"
+      show-icon
     />
     <ElTable
       v-loading="model.loading"
@@ -78,12 +89,6 @@
           "
       /></template>
     </ElTable>
-    <ElButton
-      data-testid="device-event-history-next"
-      :disabled="model.loading || !!model.error || !model.nextCursor"
-      @click="model.next()"
-      >下一页</ElButton
-    >
     <section
       v-if="model.detailLoading || model.detail || model.detailError"
       aria-label="事件详情"
@@ -91,7 +96,13 @@
     >
       <ElButton @click="model.clearDetail()">关闭事件详情</ElButton>
       <p v-if="model.detailLoading">正在读取事件详情</p>
-      <ElAlert v-if="model.detailError" :title="model.detailError" type="error" :closable="false" />
+      <ElAlert
+        v-if="model.detailError"
+        :title="model.detailError"
+        type="error"
+        :closable="false"
+        show-icon
+      />
       <template v-if="model.detail">
         <dl
           ><dt>消息 ID</dt><dd>{{ model.detail.messageId }}</dd
@@ -104,17 +115,35 @@
             {{ model.detail.acceptedAt }}</dd
           ><dt>首次受理资格</dt><dd>{{ model.detail.eligibility }}</dd></dl
         >
-        <p data-testid="device-event-detail-redaction">{{
-          model.detail.paramsRedacted
-            ? '参数已按存储规则脱敏；此处只展示只读脱敏投影。'
-            : '此记录未发生参数脱敏；此处只展示只读参数投影。'
-        }}</p>
+        <ElAlert
+          data-testid="device-event-detail-redaction"
+          type="info"
+          :closable="false"
+          show-icon
+          >{{
+            model.detail.paramsRedacted
+              ? '参数已按存储规则脱敏；此处只展示只读脱敏投影。'
+              : '此记录未发生参数脱敏；此处只展示只读参数投影。'
+          }}</ElAlert
+        >
         <pre data-testid="device-event-detail-params" v-text="model.detail.paramsText" />
       </template>
     </section>
+    <DeviceDetailPagination
+      v-if="model.items.length > 0"
+      :page-index="model.pageIndex"
+      :loading="model.loading"
+      :failed="!!model.error"
+      :has-next="!!model.nextCursor"
+      aria-label="事件历史分页"
+      next-test-id="device-event-history-next"
+      @previous="model.previous()"
+      @next="model.next()"
+    />
   </section>
 </template>
 <script setup lang="ts">
+  import DeviceDetailPagination from './DeviceDetailPagination.vue'
   import { computed, onBeforeUnmount, reactive, watch } from 'vue'
   import { fetchDeviceEvent, fetchDeviceEvents } from '@/api/device-event-history'
   import { EventHistoryModel, emptyEventFilters } from '@/features/device/event-history-model'

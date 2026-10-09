@@ -4,14 +4,15 @@
       <slot name="tabs" />
       <ConsoleFilterBar
         :items="[
-          { key: 'field0', label: '自动化 ID' },
-          { key: 'field1', label: '执行状态' },
-          { key: 'field2', label: '发生时间', span: 24 }
+          { key: 'field0', label: '自动化 ID', labelWidth: 90, span: 8 },
+          { key: 'field1', label: '执行状态', labelWidth: 90, span: 8 },
+          { key: 'field2', label: '发生时间', labelWidth: 90, span: 16 }
         ]"
-        :show-expand="false"
-        :show-reset="false"
+        :show-expand="true"
+        :show-reset="true"
         :show-search="true"
         @search="load(false)"
+        @reset="resetFilters"
         :loading="busy"
       >
         <template #field0
@@ -35,14 +36,19 @@
             type="datetimerange"
             start-placeholder="开始时间"
             end-placeholder="结束时间"
+            range-separator="至"
         /></template>
       </ConsoleFilterBar>
     </ElCard>
     <ElCard class="console-list-data" shadow="never">
-      <p class="console-description"
-        >按冻结属性事件或时间发生点独立求值。DISPATCHED 表示动作已受理，不等于外部送达。</p
-      >
-      <ElAlert v-if="error" :title="error" type="error" :closable="false" />
+      <ElAlert
+        class="automation-executions__notice"
+        title="按冻结属性事件或时间发生点独立求值。DISPATCHED 表示动作已受理，不等于外部送达。"
+        type="info"
+        :closable="false"
+        show-icon
+      />
+      <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
       <ElTable :data="items" v-loading="busy" row-key="id">
         <ElTableColumn min-width="190" show-overflow-tooltip prop="automationId" label="自动化" />
         <ElTableColumn
@@ -68,7 +74,9 @@
       <ElButton v-if="next" :loading="busy" @click="load(true)">更多自动化日志</ElButton>
     </ElCard>
     <ElDialog class="console-dialog" v-model="visible" title="自动化运行详情" destroy-on-close>
-      <p class="console-description">只读状态摘要；不包含原始输入和配置。</p>
+      <ElAlert class="console-hint" type="info" show-icon :closable="false"
+        >只读状态摘要；不包含原始输入和配置。</ElAlert
+      >
       <pre data-testid="automation-execution-detail">{{ JSON.stringify(detail, null, 2) }}</pre>
     </ElDialog>
   </div>
@@ -157,6 +165,10 @@
       }
     })
   }
+  function resetFilters() {
+    clear()
+    return load(false)
+  }
   function open(id: string) {
     return run(async (pid, current) => {
       const value = await getAutomationExecution(pid, id)
@@ -176,3 +188,21 @@
   )
   onBeforeUnmount(clear)
 </script>
+
+<style scoped lang="scss">
+  .automation-executions__notice {
+    margin-bottom: 10px;
+
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+  }
+</style>

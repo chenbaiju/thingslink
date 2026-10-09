@@ -1,14 +1,18 @@
 <template>
   <section v-if="canManage" class="device-claim-token">
-    <h4>设备认领令牌</h4>
-    <p
-      >令牌用于终端用户认领本设备，签发不等于绑定给指定用户。仅无主控设备可认领；令牌仅本次响应可见，请勿转发。</p
+    <ElDivider content-position="left">设备认领令牌</ElDivider>
+    <div class="device-claim-token__actions">
+      <ElButton :disabled="busy || projectStatus !== 'ACTIVE' || primaryKnown" @click="issue"
+        >签发认领令牌</ElButton
+      >
+      <ElAlert type="info" :closable="false" show-icon
+        >令牌用于终端用户认领本设备，签发不等于绑定给指定用户。仅无主控设备可认领；令牌仅本次响应可见，请勿转发。</ElAlert
+      >
+    </div>
+    <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" show-icon />
+    <ElAlert v-if="primaryKnown" type="info" :closable="false" show-icon
+      >已知当前设备已有主控，不能再次签发认领令牌。</ElAlert
     >
-    <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" />
-    <ElButton :disabled="busy || projectStatus !== 'ACTIVE' || primaryKnown" @click="issue"
-      >签发认领令牌</ElButton
-    >
-    <p v-if="primaryKnown">已知当前设备已有主控，不能再次签发认领令牌。</p>
     <template v-if="token">
       <ElInput
         :model-value="token"
@@ -18,7 +22,11 @@
         readonly
         autocomplete="off"
       />
-      <p>到期：{{ formatTime(expiresAt) }}（浏览器本地时间）；关闭展示不会撤销已经签发的令牌。</p>
+      <ElAlert type="info" :closable="false" show-icon
+        >到期：{{
+          formatTime(expiresAt)
+        }}（浏览器本地时间）；关闭展示不会撤销已经签发的令牌。</ElAlert
+      >
       <ElButton @click="clear">关闭令牌展示</ElButton>
     </template>
   </section>
@@ -125,3 +133,18 @@
     clear()
   })
 </script>
+
+<style scoped>
+  .device-claim-token__actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .device-claim-token__actions :deep(.el-alert) {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+</style>

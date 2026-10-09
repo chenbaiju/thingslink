@@ -1,22 +1,24 @@
 <template>
-  <div class="console-page">
+  <div class="console-page scene-page">
     <ConsoleWorkspaceHeader
+      project-style
       title="手动场景"
       description="管理可复用的动作组合，手动执行前确认目标设备。"
-      :links="[
-        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
-        { label: '执行记录', path: '/rule/executions?source=scene', permission: 'rule:read' }
-      ]"
-    />
+    >
+      <template #actions>
+        <ElButton v-if="allowed" type="primary" :icon="Plus" :disabled="busy" @click="create">
+          创建场景
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
     <ElCard v-if="!allowed" shadow="never"
-      ><ElAlert title="需要 OWNER 或 ADMIN 的规则管理权限" type="warning" :closable="false"
+      ><ElAlert
+        title="需要 OWNER 或 ADMIN 的规则管理权限"
+        type="warning"
+        :closable="false"
+        show-icon
     /></ElCard>
     <template v-else>
-      <div class="console-toolbar console-page-actions"
-        ><ElButton type="primary" :icon="Plus" :disabled="busy" @click="create"
-          >创建场景</ElButton
-        ></div
-      >
       <ElCard class="console-list-filter" shadow="never"
         ><ConsoleFilterBar
           :items="[
@@ -91,17 +93,17 @@
         {{ selected.activeVersionId ?? '无' }}</p
       >
       <ElForm label-position="top">
-        <ElFormItem label="名称"
+        <ElFormItem class="scene-form-field" label="名称"
           ><ElInput v-model="form.name" aria-label="场景名称" maxlength="128" :disabled="busy"
         /></ElFormItem>
-        <ElFormItem label="说明"
+        <ElFormItem class="scene-form-field" label="说明"
           ><ElInput
             v-model="form.description"
             aria-label="场景说明"
             maxlength="512"
             :disabled="busy"
         /></ElFormItem>
-        <h3 class="console-heading">条件（全部满足；为空时总是执行）</h3>
+        <ElDivider content-position="left">条件（全部满足；为空时总是执行）</ElDivider>
         <RuleNodeEditor
           :key="`conditions-${editorKey}`"
           v-model="conditions"
@@ -109,7 +111,7 @@
           :disabled="busy"
           @valid="conditionsValid = $event"
         />
-        <h3 class="console-heading">动作（按顺序受理）</h3>
+        <ElDivider content-position="left">动作（按顺序受理）</ElDivider>
         <RuleNodeEditor
           :key="editorKey"
           v-model="actions"
@@ -125,7 +127,7 @@
         >
       </ElForm>
       <template v-if="selected">
-        <h3 class="console-heading">不可变历史（最新版本在前）</h3>
+        <ElDivider content-position="left">不可变历史（最新版本在前）</ElDivider>
         <ElTable :data="versions" row-key="id"
           ><ElTableColumn show-overflow-tooltip prop="versionNumber" label="版本号" /><ElTableColumn
             show-overflow-tooltip
@@ -151,9 +153,9 @@
             >暂停场景</ElButton
           ><ElButton type="danger" :disabled="busy || !!pending" @click="remove">删除场景</ElButton>
         </div>
-        <h3 class="console-heading">手动执行</h3>
-        <p class="console-description"
-          >DISPATCHED 表示动作已受理，不等于送达。结果未知时请使用同键重试。</p
+        <ElDivider content-position="left">手动执行</ElDivider>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >DISPATCHED 表示动作已受理，不等于送达。结果未知时请使用同键重试。</ElAlert
         >
         <ElInput
           v-model="deviceKeyword"
@@ -196,7 +198,7 @@
         <pre data-testid="execution-result">{{ executionResult }}</pre>
         <RouterLink to="/rule/executions">查看执行记录及投递状态</RouterLink>
       </template>
-      <ElAlert v-if="error" :title="error" type="error" :closable="false" />
+      <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
     </ElDialog>
   </div>
 </template>
@@ -482,3 +484,15 @@
   )
   onBeforeUnmount(clear)
 </script>
+
+<style scoped lang="scss">
+  .scene-page :deep(.workspace-header > .console-actions) {
+    margin-bottom: 0;
+  }
+
+  .scene-form-field :deep(.el-form-item__label) {
+    height: 20px !important;
+    margin-bottom: 8px;
+    line-height: 20px !important;
+  }
+</style>

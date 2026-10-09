@@ -19,7 +19,7 @@ function render(primaryKnown = false) {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot/></button>'
         },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' },
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' },
         ElInput: {
           props: ['modelValue', 'type', 'readonly'],
           template: '<input :value="modelValue" :type="type" :readonly="readonly" />'

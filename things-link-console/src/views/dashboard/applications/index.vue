@@ -564,25 +564,25 @@
       @renamed="renamed"
     />
     <ConsoleWorkspaceHeader
+      project-style
       title="应用管理"
       description="组合已发布的看板版本，编辑应用草稿，再明确发布供终端用户使用。"
-      :links="[
-        { label: '看板开发', path: '/dashboard/designer', permission: 'dashboard_definition:read' },
-        { label: '终端用户与授权', path: '/project/end-users', permission: 'enduser:read' }
-      ]"
     />
-    <section class="console-editor-section" aria-label="应用开发流程">
-      <p class="console-description"
-        >开发步骤：创建看板并绑定设备 → 发布看板版本 → 加入应用草稿 →
-        发布应用。草稿保存与发布是两个独立操作。</p
-      >
-    </section>
+    <ElAlert
+      class="application-manager__notice"
+      aria-label="应用开发流程"
+      title="开发步骤：创建看板并绑定设备 → 发布看板版本 → 加入应用草稿 → 发布应用。草稿保存与发布是两个独立操作。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <el-alert
       v-if="deleteLocked"
       data-testid="application-delete-lock"
       title="删除结果待确认；编辑、保存和导航已暂停，请显式恢复原操作。"
       type="warning"
       :closable="false"
+      show-icon
     />
     <el-alert
       v-if="deleteResult"
@@ -590,12 +590,14 @@
       :title="deleteResult"
       type="info"
       :closable="false"
+      show-icon
     />
     <el-alert
       v-if="!canRead"
       title="请先选择项目并取得应用读取权限。"
       type="info"
       :closable="false"
+      show-icon
     />
     <el-alert
       v-if="pageError || state.error"
@@ -603,11 +605,18 @@
       :title="pageError || state.error"
       type="error"
       :closable="false"
+      show-icon
     />
-    <el-alert v-if="state.notice" :title="state.notice" type="success" :closable="false" />
+    <el-alert
+      v-if="state.notice"
+      :title="state.notice"
+      type="success"
+      :closable="false"
+      show-icon
+    />
     <template v-if="canRead">
       <section class="application-panel application-catalog" aria-label="应用目录">
-        <h3 class="console-heading">应用目录</h3>
+        <ElDivider content-position="left">应用目录</ElDivider>
         <div class="console-actions">
           <el-button
             data-testid="application-directory-refresh"
@@ -662,7 +671,7 @@
         />
       </section>
       <section v-if="canManage" class="application-panel" aria-label="创建应用">
-        <h3 class="console-heading">创建应用</h3>
+        <ElDivider content-position="left">创建应用</ElDivider>
         <label
           >管理名称
           <input
@@ -709,8 +718,12 @@
           class="console-description"
           >管理名称：{{ openedManagementName }}</p
         >
-        <h3 class="console-heading">应用草稿 · {{ state.content.displayName || '未命名应用' }}</h3>
-        <p class="console-description">选择固定的已发布看板版本，不会随看板草稿变化自动升级。</p>
+        <ElDivider content-position="left"
+          >应用草稿 · {{ state.content.displayName || '未命名应用' }}</ElDivider
+        >
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >选择固定的已发布看板版本，不会随看板草稿变化自动升级。</ElAlert
+        >
         <p class="console-description"
           >草稿修订 {{ state.revision }} · {{ state.dirty ? '未保存' : '已读取/保存' }}</p
         >
@@ -762,7 +775,9 @@
                 })
               "
           /></label>
-          <p class="console-description">宿主范围只是草稿设置，发布时服务端仍会验证实际兼容性。</p>
+          <ElAlert class="console-hint" type="info" show-icon :closable="false"
+            >宿主范围只是草稿设置，发布时服务端仍会验证实际兼容性。</ElAlert
+          >
           <ol
             ><li v-for="(item, index) in state.content.dashboardRefs" :key="item.dashboardId">
               <label
@@ -875,6 +890,22 @@
 <style scoped lang="scss">
   .application-manager {
     padding: 10px;
+
+    &__notice {
+      margin-bottom: 10px;
+
+      :deep(.el-alert__title) {
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 20px;
+      }
+      :deep(.el-alert__icon) {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+      }
+    }
+
     section {
       margin-block: 10px;
     }

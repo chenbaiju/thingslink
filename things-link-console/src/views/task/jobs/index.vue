@@ -7,24 +7,24 @@
 <template>
   <div class="console-page task-jobs console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="任务调度"
       description="管理一次性与周期设备命令，查看每个任务的调度状态和执行记录。"
-      :links="[
-        { label: '自动化', path: '/rule/automations', permission: 'rule:manage' },
-        { label: '执行记录', path: '/rule/executions', permission: 'rule:read' }
-      ]"
-    />
-    <div class="task-jobs__header console-toolbar console-page-actions">
-      <ElButton v-if="hasAuth('task:manage')" type="primary" :icon="Plus" @click="openCreate">
-        创建任务
-      </ElButton>
-    </div>
+    >
+      <template #actions>
+        <ElButton v-if="hasAuth('task:manage')" type="primary" :icon="Plus" @click="openCreate">
+          创建任务
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
 
-    <ElAlert class="task-jobs__notice" type="info" :closable="false" show-icon>
-      <template #title>调度与历史的时区口径</template>
-      周期 cron 使用项目时区“{{ projectTimezone || '加载中' }}”解释，服务端保存下一次 UTC
-      触发时刻。修改设备组或设备状态不会改写已经创建的执行记录。
-    </ElAlert>
+    <ElAlert
+      class="task-jobs__notice"
+      :title="`周期任务按项目时区 ${projectTimezone || '加载中'} 解释，触发时刻保存为 UTC；设备组或设备状态变化不改写既有执行记录。`"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="jobs" row-key="id">
@@ -105,10 +105,11 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog task-form-dialog"
       v-model="formVisible"
       :title="editing ? '编辑任务' : '创建任务'"
       width="760px"
+      top="5vh"
       destroy-on-close
     >
       <ElForm ref="formRef" :model="form" :rules="rules" label-position="top">
@@ -125,29 +126,39 @@
         </ElFormItem>
 
         <ElDivider content-position="left">调度</ElDivider>
-        <ElFormItem label="调度类型" prop="scheduleType">
-          <ElRadioGroup v-model="form.scheduleType" @change="resetSchedule">
-            <ElRadioButton value="ONCE">一次性</ElRadioButton>
-            <ElRadioButton value="CRON">周期</ElRadioButton>
-          </ElRadioGroup>
-        </ElFormItem>
-        <ElFormItem v-if="form.scheduleType === 'ONCE'" label="执行时刻" prop="runAt">
-          <ElDatePicker
-            v-model="form.runAt"
-            type="datetime"
-            class="task-form-control"
-            placeholder="请选择执行时刻"
-          />
-          <div class="form-help"
-            >提交时会转换为 RFC3339 UTC；请按当前浏览器显示的本地时间选择。</div
-          >
-        </ElFormItem>
-        <ElFormItem v-else label="Cron 表达式（Spring 六字段）" prop="cronExpression">
-          <ElInput v-model.trim="form.cronExpression" placeholder="0 0 9 * * *" maxlength="128" />
-          <div class="form-help">
-            依次为秒、分、时、日、月、星期；后端按项目时区 {{ projectTimezone || '—' }} 解释。
-          </div>
-        </ElFormItem>
+        <div class="task-form-grid">
+          <ElFormItem label="调度类型" prop="scheduleType">
+            <ElRadioGroup v-model="form.scheduleType" @change="resetSchedule">
+              <ElRadioButton value="ONCE">一次性</ElRadioButton>
+              <ElRadioButton value="CRON">周期</ElRadioButton>
+            </ElRadioGroup>
+          </ElFormItem>
+          <ElFormItem v-if="form.scheduleType === 'ONCE'" label="执行时刻" prop="runAt">
+            <ElDatePicker
+              v-model="form.runAt"
+              type="datetime"
+              class="task-form-control"
+              placeholder="请选择执行时刻"
+            />
+            <ElAlert
+              class="task-form-help"
+              title="按浏览器本地时间选择，提交时转换为 UTC。"
+              type="info"
+              :closable="false"
+              show-icon
+            />
+          </ElFormItem>
+          <ElFormItem v-else label="Cron 表达式（Spring 六字段）" prop="cronExpression">
+            <ElInput v-model.trim="form.cronExpression" placeholder="0 0 9 * * *" maxlength="128" />
+            <ElAlert
+              class="task-form-help"
+              :title="`依次为秒、分、时、日、月、星期；按项目时区 ${projectTimezone || '—'} 解释。`"
+              type="info"
+              :closable="false"
+              show-icon
+            />
+          </ElFormItem>
+        </div>
 
         <ElDivider content-position="left">目标与命令</ElDivider>
         <ElFormItem label="目标范围" prop="targetType">
@@ -170,7 +181,13 @@
               :value="group.id ?? ''"
             />
           </ElSelect>
-          <div class="form-help">动态组会在每次创建执行时按当时事实冻结匹配设备。</div>
+          <ElAlert
+            class="task-form-help"
+            title="动态组按每次执行创建时的设备事实冻结匹配结果。"
+            type="info"
+            :closable="false"
+            show-icon
+          />
         </ElFormItem>
         <ElFormItem label="命令标识" prop="commandKey">
           <ElInput v-model.trim="form.commandKey" maxlength="64" placeholder="reboot" />
@@ -179,11 +196,17 @@
           <ElInput
             v-model="form.inputText"
             type="textarea"
-            :rows="5"
+            :rows="4"
             placeholder="{}"
             class="task-form__json"
           />
-          <div class="form-help">只校验 JSON 格式；命令参数结构仍由服务端按目标设备类型校验。</div>
+          <ElAlert
+            class="task-form-help"
+            title="页面校验 JSON 格式，服务端按目标设备类型校验命令参数。"
+            type="info"
+            :closable="false"
+            show-icon
+          />
         </ElFormItem>
       </ElForm>
       <template #footer>
@@ -580,21 +603,8 @@
   .task-jobs {
     padding: 10px;
 
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
+    :deep(.workspace-header > .console-actions) {
+      margin-bottom: 0;
     }
 
     &__notice {
@@ -608,8 +618,7 @@
 
   .task-form-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 150px;
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .task-form-control {
@@ -620,10 +629,23 @@
     font-family: var(--art-font-family-mono, monospace);
   }
 
-  .form-help {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--art-text-gray-600);
+  .task-form-help {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  :is(.task-jobs__notice, .task-form-help) {
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
   }
 
   .task-executions__notice {
@@ -633,19 +655,34 @@
   @media screen and (width <= 640px) {
     .task-jobs {
       padding: 16px;
+    }
+  }
+</style>
 
-      &__header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      &__header .el-button {
-        align-self: flex-start;
-      }
+<style lang="scss">
+  .task-form-dialog {
+    .el-dialog__body {
+      max-height: calc(90dvh - 140px);
+      padding-right: 6px;
+      overflow-y: auto;
     }
 
-    .task-form-grid {
-      grid-template-columns: 1fr;
+    .el-form-item__label {
+      height: 20px !important;
+      margin-bottom: 8px;
+      line-height: 20px !important;
+    }
+
+    .el-form-item__content {
+      min-width: 0;
+    }
+
+    .el-divider {
+      margin: 14px 0 20px;
+    }
+
+    .el-date-editor {
+      width: 100% !important;
     }
   }
 </style>

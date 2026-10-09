@@ -12,22 +12,26 @@
   而未选项目时没有任何项目角色），所以正常进不到这里；真进来了就提示去选一个。
 -->
 <template>
-  <div class="console-page project-members console-page--single-panel">
+  <div class="console-page project-members">
     <ConsoleWorkspaceHeader
+      project-style
       title="项目成员与邀请"
       description="管理共同开发此项目的成员和邀请。应用终端用户使用独立账号与授权。"
       :links="[
         { label: '项目列表', path: '/project/list' },
         { label: '终端用户', path: '/project/end-users', permission: 'enduser:read' }
       ]"
-    />
-    <div class="project-members__header console-toolbar console-page-actions">
+    >
+      <template #leading-actions>
+        <ElButton v-if="canInvite" type="primary" :icon="Plus" @click="openInviteDialog">
+          {{ $t('member.add') }}
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
+    <div v-if="canLeave" class="project-members__header console-toolbar console-page-actions">
       <div class="project-members__actions console-actions">
         <ElButton v-if="canLeave" type="danger" plain :loading="leaving" @click="confirmLeave">
           {{ $t('member.leave') }}
-        </ElButton>
-        <ElButton v-if="canInvite" type="primary" :icon="Plus" @click="openInviteDialog">
-          {{ $t('member.add') }}
         </ElButton>
       </div>
     </div>
@@ -41,8 +45,8 @@
       :title="$t('member.noProject')"
     />
 
-    <ElCard v-else shadow="never" class="console-table-panel console-page__main-panel">
-      <ElTable v-loading="loading" :data="members" row-key="accountId">
+    <ElCard v-else shadow="never" class="console-table-panel project-members__list">
+      <ElTable v-loading="loading" :data="members" row-key="accountId" :height="420">
         <ElTableColumn :label="$t('member.column.user')" min-width="220">
           <template #default="{ row }">
             <div class="project-members__user">
@@ -114,6 +118,7 @@
       v-if="projectId && canInvite"
       ref="invitationList"
       :project-id="projectId"
+      :table-height="420"
     />
 
     <ElDialog
@@ -469,6 +474,14 @@
 <style lang="scss" scoped>
   .project-members {
     padding: 10px;
+
+    :deep(.workspace-header > .console-actions > nav) {
+      margin-bottom: 0;
+    }
+
+    &__list :deep(.el-table__inner-wrapper::before) {
+      display: none;
+    }
 
     &__header {
       display: flex;

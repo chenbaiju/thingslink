@@ -14,7 +14,7 @@
       title="邀请不会立即添加成员。收件人完成邮箱验证并明确接受后才会加入项目。"
     />
     <ElAlert v-if="failed" type="error" :closable="false" title="邀请读取失败，请刷新重试" />
-    <ElTable v-loading="loading" :data="rows" row-key="id" :height="projectId ? undefined : '100%'">
+    <ElTable v-loading="loading" :data="rows" row-key="id" :height="tableHeight">
       <ElTableColumn prop="projectName" label="项目" min-width="150" />
       <ElTableColumn prop="targetEmail" label="收件邮箱" min-width="210" />
       <ElTableColumn prop="role" label="角色" width="110" />
@@ -54,10 +54,6 @@
         />
       </template>
     </ElTable>
-    <div v-if="projectId" class="console-page-actions">
-      <ElButton :disabled="loading || !nextCursor" @click="load(nextCursor)">下一页</ElButton>
-      <ElButton :disabled="loading || !onLaterPage" @click="load()">回到第一页</ElButton>
-    </div>
   </ElCard>
 </template>
 
@@ -75,14 +71,14 @@
     type ProjectInvitation
   } from '@/api/project-invitations'
 
-  const props = defineProps<{ projectId?: string }>()
+  const props = withDefaults(defineProps<{ projectId?: string; tableHeight?: number | string }>(), {
+    tableHeight: 420
+  })
   const user = useUserStore()
   const rows = ref<ProjectInvitation[]>([])
   const loading = ref(false)
   const failed = ref(false)
   const acting = ref('')
-  const nextCursor = ref<string>()
-  const onLaterPage = ref(false)
   let epoch = 0
   let controller: AbortController | undefined
   const states: Record<string, string> = {
@@ -98,39 +94,34 @@
     FAILED: '投递失败，请重发'
   }
 
-  async function load(cursor?: string) {
+  async function load() {
     const run = ++epoch
     controller?.abort()
     controller = new AbortController()
+    const signal = controller.signal
+    const project = props.projectId
     rows.value = []
     failed.value = false
-    nextCursor.value = undefined
     loading.value = true
-    onLaterPage.value = !!cursor
     try {
-      if (props.projectId) {
-        const page = await fetchProjectInvitations(props.projectId, cursor, controller.signal)
+      const invitations = new Map<string, ProjectInvitation>()
+      const seenCursors = new Set<string>()
+      let cursor: string | undefined
+      // 沿用服务端有界游标，一次加载自动取完全部页后再呈现完整列表。
+      do {
+        const page = project
+          ? await fetchProjectInvitations(project, cursor, signal)
+          : await fetchMyProjectInvitations(cursor, signal)
         if (run !== epoch) return
         if (!Array.isArray(page.items)) throw new Error('不完整的邀请响应')
-        rows.value = page.items
-        nextCursor.value = page.nextCursor ?? undefined
-      } else {
-        const invitations = new Map<string, ProjectInvitation>()
-        const seenCursors = new Set<string>()
-        let inboxCursor: string | undefined
-        do {
-          const page = await fetchMyProjectInvitations(inboxCursor, controller.signal)
-          if (run !== epoch) return
-          if (!Array.isArray(page.items)) throw new Error('不完整的邀请响应')
-          for (const invitation of page.items) invitations.set(invitation.id, invitation)
-          inboxCursor = page.nextCursor || undefined
-          if (inboxCursor) {
-            if (seenCursors.has(inboxCursor)) throw new Error('邀请分页游标重复')
-            seenCursors.add(inboxCursor)
-          }
-        } while (inboxCursor)
-        rows.value = [...invitations.values()]
-      }
+        for (const invitation of page.items) invitations.set(invitation.id, invitation)
+        cursor = page.nextCursor || undefined
+        if (cursor) {
+          if (seenCursors.has(cursor)) throw new Error('邀请分页游标重复')
+          seenCursors.add(cursor)
+        }
+      } while (cursor)
+      rows.value = [...invitations.values()]
     } catch {
       if (run === epoch) failed.value = true
     } finally {
@@ -183,6 +174,10 @@
 </script>
 
 <style scoped lang="scss">
+  .project-invitations :deep(.el-table__inner-wrapper::before) {
+    display: none;
+  }
+
   .project-invitations__notice {
     margin-bottom: 10px;
   }

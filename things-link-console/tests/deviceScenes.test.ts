@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, reactive } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ElTabs, ElTabPane } from 'element-plus'
 const api = vi.hoisted(() => ({ fetchDeviceScenes: vi.fn() }))
 vi.mock('@/api/device-scenes', () => api)
 const user = reactive({ info: { userId: 'actor', tenantId: 'home' } })
@@ -56,18 +57,27 @@ function page(canManage = true) {
   wrapper = mount(DeviceScenes, {
     props: { projectId: 'project-a', deviceId: 'device-a', canManage },
     global: {
+      components: { ElTabs, ElTabPane },
       directives: { loading: () => {} },
       stubs: {
         ElButton: button,
         ElTable: table,
         ElTableColumn: true,
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })
 }
 async function click(label: string) {
+  if (['项目场景候选', '执行历史'].includes(label)) {
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((tab) => tab.text() === label)!
+      .trigger('click')
+    await flushPromises()
+    return
+  }
   await wrapper
     .findAll('button')
     .find((b) => b.text() === label)!
@@ -92,7 +102,8 @@ describe('设备场景', () => {
     expect(wrapper.text()).toContain('第 2 页')
     await click('上一页')
     expect(api.fetchDeviceScenes.mock.calls[2][3]).toBeUndefined()
-    await click('刷新场景')
+    await click('执行历史')
+    await click('项目场景候选')
     expect(wrapper.text()).toContain('第 1 页')
     expect(wrapper.text()).toContain('项目场景候选未绑定此设备')
   })
@@ -137,7 +148,8 @@ describe('设备场景', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('场景读取失败')
     api.fetchDeviceScenes.mockResolvedValue({ items: [] })
-    await click('刷新场景')
+    await click('执行历史')
+    await click('项目场景候选')
     expect(wrapper.text()).toContain('暂无当前发布的项目场景候选')
     expect(wrapper.text()).not.toContain('场景读取失败')
   })
@@ -181,7 +193,7 @@ describe('设备场景', () => {
     expect(wrapper.text()).toContain('动作意图受理及设备动作记录数均不代表设备物理执行成功')
     api.fetchDeviceScenes.mockResolvedValue({ items: [] })
     await click('项目场景候选')
-    expect(wrapper.text()).toContain('第 1 页')
+    expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)
     expect(api.fetchDeviceScenes.mock.calls.at(-1)?.[3]).toBeUndefined()
   })
   it('非管理者仅请求历史，管理权限撤回后取消配置读取', async () => {
@@ -189,7 +201,7 @@ describe('设备场景', () => {
     page(false)
     await flushPromises()
     expect(api.fetchDeviceScenes.mock.calls[0][2]).toBe('history')
-    expect(wrapper.findAll('button').some((b) => b.text() === '项目场景候选')).toBe(false)
+    expect(wrapper.findAll('[role="tab"]').map((tab) => tab.text())).toEqual(['执行历史'])
     await wrapper.setProps({ canManage: true })
     await flushPromises()
     let finish!: (v: unknown) => void
@@ -211,4 +223,25 @@ describe('设备场景', () => {
     expect(wrapper.text()).toContain('execution-1')
     expect(api.fetchDeviceScenes.mock.calls.at(-1)![2]).toBe('history')
   })
+})
+
+it('空列表隐藏分页，刷新取得数据后恢复分页', async () => {
+  api.fetchDeviceScenes.mockResolvedValue({ items: [], nextCursor: null })
+  page()
+  await flushPromises()
+  expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)
+  api.fetchDeviceScenes.mockResolvedValue({ items: [item], nextCursor: null })
+  await click('执行历史')
+  await click('项目场景候选')
+  expect(wrapper.find('.device-detail-pagination').exists()).toBe(true)
+})
+
+it('切换入口采用标签样式且没有刷新入口', async () => {
+  page()
+  await flushPromises()
+  expect(wrapper.findAll('[role="tab"]').map((tab) => tab.text())).toEqual([
+    '项目场景候选',
+    '执行历史'
+  ])
+  expect(wrapper.text()).not.toContain('刷新场景')
 })

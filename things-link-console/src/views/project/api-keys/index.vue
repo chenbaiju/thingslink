@@ -1,22 +1,26 @@
 <template>
   <div class="console-page api-keys-page console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="API Key"
       description="为系统集成签发、轮换和撤销密钥。明文仅在签发时展示，请及时保存。"
-      :links="[
-        { label: 'Webhook', path: '/project/webhooks', permission: 'integration:manage' },
-        { label: '用量与项目设置', path: '/project/settings', permission: 'quota:read' }
-      ]"
-    />
-    <div v-if="allowed" class="console-toolbar console-page-actions">
-      <ElButton type="primary" :icon="Plus" :disabled="busy || !!pending" @click="openForm()">
-        签发 Key
-      </ElButton>
-    </div>
+    >
+      <template #actions>
+        <ElButton
+          v-if="allowed"
+          type="primary"
+          :icon="Plus"
+          :disabled="busy || !!pending"
+          @click="openForm()"
+        >
+          签发 Key
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
     <ElCard class="console-page__main-panel">
-      <ElAlert v-if="!allowed" title="请选择有集成管理权限的项目" :closable="false" />
+      <ElAlert v-if="!allowed" title="请选择有集成管理权限的项目" :closable="false" show-icon />
       <template v-else>
-        <ElAlert v-if="error" :title="error" type="error" :closable="false" />
+        <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
         <ElTable :data="items" row-key="id" v-loading="busy">
           <ElTableColumn show-overflow-tooltip prop="name" label="名称" />
           <ElTableColumn show-overflow-tooltip prop="id" label="Key ID" min-width="280" />
@@ -50,10 +54,14 @@
         </ElTable>
         <ElButton v-if="next" :disabled="busy" @click="load(true)">加载更多</ElButton>
         <section class="recovery">
-          <h3 class="console-heading">查询原操作</h3>
-          <p class="console-description"
-            >响应丢失时先查询原操作，避免重复发钥。查询只返回元数据；秘密丢失后请明确轮换或撤销。</p
-          >
+          <ElDivider content-position="left">查询原操作</ElDivider>
+          <ElAlert
+            class="recovery__notice"
+            type="info"
+            show-icon
+            :closable="false"
+            title="响应丢失时先查询原操作，避免重复发钥。查询只返回元数据；秘密丢失后请明确轮换或撤销。"
+          />
           <p class="console-description" v-if="pending"
             >待确认操作：<code data-testid="pending-operation">{{ pending }}</code></p
           >
@@ -74,6 +82,7 @@
             data-testid="recovered-key"
             :closable="false"
             :title="`已确认：${recovered.name}（${recovered.status}），Key ID：${recovered.id}。查询不恢复秘密。`"
+            show-icon
           />
         </section>
       </template>
@@ -84,16 +93,17 @@
       :title="target ? '轮换 API Key' : '签发 API Key'"
       :close-on-click-modal="false"
     >
-      <p class="console-description" v-if="target"
-        >成功后旧 Key 立即撤销，旧 Key 的命令结果不会转移给新 Key。</p
+      <ElAlert v-if="target" class="console-hint" type="warning" show-icon :closable="false"
+        >成功后旧 Key 立即撤销，旧 Key 的命令结果不会转移给新 Key。</ElAlert
       >
       <ElAlert
         v-if="pending && !busy"
         title="操作结果尚未确认。请关闭填写窗口，在页面查询原操作结果。"
         type="warning"
         :closable="false"
+        show-icon
       />
-      <ElAlert v-if="error" :title="error" type="error" :closable="false" />
+      <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
       <ElForm label-position="top" @submit.prevent="save">
         <ElFormItem label="名称"
           ><ElInput v-model="name" aria-label="Key 名称" maxlength="80" :disabled="busy"
@@ -105,22 +115,30 @@
             ><ElCheckbox value="alarm:read">alarm:read</ElCheckbox>
           </ElCheckboxGroup></ElFormItem
         >
-        <ElFormItem label="来源 IP/CIDR，每行一个"
+        <ElFormItem label="来源 IP/CIDR"
           ><ElInput
             v-model="cidrs"
             type="textarea"
             aria-label="来源 IP/CIDR"
             :disabled="busy"
             placeholder="例如 203.0.113.10/32；不能使用主机名"
-        /></ElFormItem>
-        <ElFormItem label="到期时间（本地时区，最长366天）"
-          ><ElInput v-model="expires" type="datetime-local" aria-label="到期时间" :disabled="busy"
-        /></ElFormItem>
-        <div class="console-actions">
+          /><p class="form-help">每行一个 IP 或 CIDR，不能使用主机名。</p></ElFormItem
+        >
+        <ElFormItem label="到期时间"
+          ><ElInput
+            v-model="expires"
+            type="datetime-local"
+            aria-label="到期时间"
+            :disabled="busy"
+          /><p class="form-help">按本地时区填写，最长 366 天。</p></ElFormItem
+        >
+      </ElForm>
+      <template #footer>
+        <div class="console-actions console-dialog-actions">
           <ElButton type="primary" :disabled="busy || !!pending" @click="save">确认签发</ElButton>
           <ElButton :disabled="busy" @click="formVisible = false">关闭填写窗口</ElButton>
         </div>
-      </ElForm>
+      </template>
     </ElDialog>
     <ElDialog
       class="console-dialog"
@@ -129,11 +147,11 @@
       :close-on-click-modal="false"
       @close="clearSecret"
     >
-      <p class="console-description"
-        >请妥善保存到服务端秘密管理配置，关闭后无法再次查看。不要发送给其他人或写入代码仓库。</p
+      <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+        >请妥善保存到服务端秘密管理配置，关闭后无法再次查看。不要发送给其他人或写入代码仓库。</ElAlert
       >
       <ElInput :model-value="secret" readonly aria-label="完整 API Key" />
-      <ElButton @click="clearSecret">已保存，关闭</ElButton>
+      <template #footer><ElButton @click="clearSecret">已保存，关闭</ElButton></template>
     </ElDialog>
   </div>
 </template>
@@ -327,6 +345,18 @@
 <style scoped>
   .recovery {
     margin-top: 10px;
+  }
+  .recovery__notice {
+    margin-bottom: 10px;
+  }
+  .recovery__notice :deep(.el-alert__title) {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+  .recovery__notice :deep(.el-alert__icon) {
+    width: 14px;
+    font-size: 14px;
   }
   .recovery .el-input {
     max-width: 400px;

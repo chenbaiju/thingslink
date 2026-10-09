@@ -29,6 +29,7 @@
       <p v-if="description" class="console-description">{{ description }}</p>
     </div>
     <div class="console-actions">
+      <slot name="leading-actions" />
       <nav v-if="visibleLinks.length" class="console-actions" :aria-label="`${title}关联入口`">
         <ElButton v-for="link in visibleLinks" :key="link.path" @click="router.push(link.path)">
           {{ link.label }}

@@ -1,6 +1,7 @@
 <template>
   <div class="console-page">
     <ConsoleWorkspaceHeader
+      project-style
       title="自部署授权 · 待审申请"
       description="接收现场申请与查询待审队列；登记不会自动审核或签发。"
       :links="[
@@ -13,11 +14,21 @@
         type="info"
         :closable="false"
         title="这里只接收申请并查看待审队列。声明的租户尚未核验，登记不代表审核、签发或现场激活。"
+        show-icon
       />
-      <ElAlert v-if="error" class="spacing" type="warning" :closable="false" :title="error" />
+      <ElAlert
+        v-if="error"
+        class="spacing"
+        type="warning"
+        :closable="false"
+        :title="error"
+        show-icon
+      />
       <section class="spacing">
-        <h4>导入申请</h4>
-        <p>选择 jagonzn 现场导出的 .tcshreq 文件；不会上传部署私钥目录。</p>
+        <ElDivider content-position="left">导入申请</ElDivider>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
+          >选择 jagonzn 现场导出的 .tcshreq 文件；不会上传部署私钥目录。</ElAlert
+        >
         <input
           data-testid="enrollment-file"
           type="file"
@@ -47,7 +58,7 @@
         </div>
       </section>
       <section class="spacing">
-        <h4>待审队列</h4>
+        <ElDivider content-position="left">待审队列</ElDivider>
         <ElButton :disabled="busy" @click="loadPage(0)">刷新第一页</ElButton>
         <ElTable :data="rows" data-testid="pending-enrollment-table" class="spacing">
           <ElTableColumn prop="requestId" label="申请 ID" min-width="280" />

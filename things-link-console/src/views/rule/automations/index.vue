@@ -1,13 +1,16 @@
 <template>
-  <div class="console-page">
+  <div class="console-page automation-page">
     <ConsoleWorkspaceHeader
+      project-style
       title="自动化"
       description="选择设备与触发条件，编排动作；保存草稿后再明确启用。"
-      :links="[
-        { label: '消息规则', path: '/rule/messages', permission: 'rule:manage' },
-        { label: '执行记录', path: '/rule/executions?source=automation', permission: 'rule:read' }
-      ]"
-    />
+    >
+      <template #actions>
+        <ElButton v-if="allowed" type="primary" :icon="Plus" :disabled="busy" @click="create">
+          创建自动化
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
     <section v-if="sourceRequested" class="console-editor-section" aria-label="来源设备">
       <p v-if="sourceLoading" role="status">正在核对来源设备…</p>
       <template v-else-if="sourceDevice">
@@ -18,19 +21,18 @@
         >
       </template>
       <template v-else-if="sourceError">
-        <ElAlert :title="sourceError" type="warning" :closable="false" />
+        <ElAlert :title="sourceError" type="warning" :closable="false" show-icon />
         <ElButton @click="reloadSource">重试来源设备</ElButton>
       </template>
     </section>
     <ElCard v-if="!allowed" shadow="never"
-      ><ElAlert title="需要 OWNER 或 ADMIN 的规则管理权限" type="warning" :closable="false"
+      ><ElAlert
+        title="需要 OWNER 或 ADMIN 的规则管理权限"
+        type="warning"
+        :closable="false"
+        show-icon
     /></ElCard>
     <template v-else>
-      <div class="console-toolbar console-page-actions"
-        ><ElButton type="primary" :icon="Plus" :disabled="busy" @click="create"
-          >创建自动化</ElButton
-        ></div
-      >
       <ElCard class="console-list-filter" shadow="never"
         ><ConsoleFilterBar
           :items="[
@@ -73,10 +75,10 @@
             prop="activeVersionId"
             label="活动版本"
           />
-          <ElTableColumn label="下次执行"
+          <ElTableColumn show-overflow-tooltip label="下次执行"
             ><template #default="{ row }">{{ nextDescription(row) }}</template></ElTableColumn
           >
-          <ElTableColumn label="更新时间"
+          <ElTableColumn show-overflow-tooltip label="更新时间"
             ><template #default="{ row }">{{
               row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'
             }}</template></ElTableColumn
@@ -108,10 +110,10 @@
         {{ selected.activeVersionId ?? '无' }}</p
       >
       <ElForm label-position="top">
-        <ElFormItem label="名称"
+        <ElFormItem class="automation-form-field" label="名称"
           ><ElInput v-model="form.name" aria-label="自动化名称" maxlength="128" :disabled="busy"
         /></ElFormItem>
-        <ElFormItem label="说明"
+        <ElFormItem class="automation-form-field" label="说明"
           ><ElInput
             v-model="form.description"
             aria-label="自动化说明"
@@ -134,8 +136,8 @@
               :disabled="busy"
             />
           </ElFormItem>
-          <p class="console-description"
-            >必须为未来时间；已受理或已过期版本不能再次发布，请保存新的未来版本。</p
+          <ElAlert class="console-hint" type="warning" show-icon :closable="false"
+            >必须为未来时间；已受理或已过期版本不能再次发布，请保存新的未来版本。</ElAlert
           >
         </template>
         <template v-if="form.triggerType === 'CRON'">
@@ -150,9 +152,9 @@
               :disabled="busy"
             />
           </ElFormItem>
-          <p class="console-description"
+          <ElAlert class="console-hint" type="info" show-icon :closable="false"
             >时区随版本冻结。恢复不补暂停期间；停机只补一个已持久化的发生点。夏令时缺失时间跳过，重复时间按两个
-            UTC 发生点执行。</p
+            UTC 发生点执行。</ElAlert
           >
         </template>
         <ElFormItem
@@ -164,7 +166,7 @@
         <p class="console-description" v-if="selected" data-testid="automation-next-fire"
           >下次执行：{{ nextDescription(selected) }}</p
         >
-        <h3 class="console-heading">目标设备</h3>
+        <ElDivider content-position="left">目标设备</ElDivider>
         <ElInput
           v-model="deviceKeyword"
           aria-label="搜索设备"
@@ -188,11 +190,18 @@
         <ElButton v-if="deviceNext" :disabled="busy" @click="searchDevices(true)"
           >更多设备</ElButton
         >
-        <p class="console-description" v-if="form.triggerType === 'PROPERTY_REPORTED'"
-          >每次属性事件独立求值，持续为真可能重复执行。</p
-        >
-        <p class="console-description">属性设置仅支持 MQTT；其他协议会拒绝整组动作。</p>
-        <h3 class="console-heading">条件（全部满足；为空时总是执行）</h3>
+        <ElAlert
+          class="automation-form-notice"
+          :title="
+            (form.triggerType === 'PROPERTY_REPORTED'
+              ? '每次属性上报独立判断，条件持续成立可能重复执行；'
+              : '') + '属性设置仅支持 MQTT，其他协议将拒绝整组动作。'
+          "
+          type="info"
+          :closable="false"
+          show-icon
+        />
+        <ElDivider content-position="left">条件（全部满足；为空时总是执行）</ElDivider>
         <RuleNodeEditor
           :key="`conditions-${editorKey}`"
           v-model="conditions"
@@ -200,7 +209,7 @@
           :disabled="busy"
           @valid="conditionsValid = $event"
         />
-        <h3 class="console-heading">动作（按顺序受理）</h3>
+        <ElDivider content-position="left">动作（按顺序受理）</ElDivider>
         <RuleNodeEditor
           :key="editorKey"
           v-model="actions"
@@ -216,7 +225,7 @@
         >
       </ElForm>
       <template v-if="selected">
-        <h3 class="console-heading">不可变历史（最新版本在前）</h3>
+        <ElDivider content-position="left">不可变历史（最新版本在前）</ElDivider>
         <ElTable :data="versions" row-key="id"
           ><ElTableColumn show-overflow-tooltip prop="versionNumber" label="版本号" /><ElTableColumn
             show-overflow-tooltip
@@ -244,7 +253,7 @@
         </div>
         <RouterLink to="/rule/executions">查看执行记录及投递状态</RouterLink>
       </template>
-      <ElAlert v-if="error" :title="error" type="error" :closable="false" />
+      <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
     </ElDialog>
   </div>
 </template>
@@ -337,7 +346,21 @@
     if (!row.nextFireAt) return '暂无未来计划（草稿、暂停或已结束）'
     const value = new Date(row.nextFireAt),
       zone = row.scheduleTimezone || 'UTC'
-    return `${value.toISOString()} · ${value.toLocaleString('zh-CN', { timeZone: zone })} (${zone})`
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat('zh-CN', {
+        timeZone: zone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23'
+      })
+        .formatToParts(value)
+        .map(({ type, value }) => [type, value])
+    )
+    return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`
   }
   function triggerConfig(): AutomationWrite['triggerConfig'] {
     if (form.triggerType === 'PROPERTY_REPORTED') return { deviceId: deviceId.value }
@@ -588,3 +611,31 @@
   )
   onBeforeUnmount(clear)
 </script>
+
+<style scoped lang="scss">
+  .automation-page :deep(.workspace-header > .console-actions) {
+    margin-bottom: 0;
+  }
+
+  .automation-form-field :deep(.el-form-item__label) {
+    height: 20px !important;
+    margin-bottom: 8px;
+    line-height: 20px !important;
+  }
+
+  .automation-form-notice {
+    margin: 10px 0;
+
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+  }
+</style>

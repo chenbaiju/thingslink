@@ -1,15 +1,17 @@
 <template>
   <div class="console-page topology console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="网关与拓扑"
       description="查看网关、子设备及当前绑定关系。"
       :links="[{ label: '设备与接入', path: '/device/list', permission: 'device:read' }]"
-    />
-    <div class="topology__header console-toolbar console-page-actions">
-      <ElButton v-if="hasAuth('device:update')" type="primary" :icon="Plus" @click="openBind">
-        绑定子设备
-      </ElButton>
-    </div>
+    >
+      <template #leading-actions>
+        <ElButton v-if="hasAuth('device:update')" type="primary" :icon="Plus" @click="openBind">
+          绑定子设备
+        </ElButton>
+      </template>
+    </ConsoleWorkspaceHeader>
 
     <ElCard class="console-table-panel console-page__main-panel" shadow="never">
       <ElTable
@@ -316,12 +318,8 @@
 <style lang="scss" scoped>
   .topology {
     padding: 10px;
-    &__header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
+    :deep(.workspace-header .console-actions) {
+      margin-bottom: 0;
     }
     &__table {
       width: 100%;

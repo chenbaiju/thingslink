@@ -68,7 +68,7 @@ function page() {
     global: {
       stubs: {
         ElButton: { template: '<button><slot /></button>' },
-        ElAlert: { props: ['title'], template: '<p>{{ title }}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{ title }}<slot /></p>' }
       }
     }
   })

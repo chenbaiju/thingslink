@@ -4,9 +4,13 @@
       ><h4>通知投递记录</h4
       ><ElButton :disabled="loading" @click="refresh">刷新投递记录</ElButton></div
     >
-    <p
-      >记录是服务端投递意图与执行状态，执行成功不代表收件人或供应商已确认送达。目标已脱敏；此处不提供重发操作。</p
-    >
+    <ElAlert
+      class="alarm-notification-deliveries__notice"
+      title="记录是服务端投递意图与执行状态，执行成功不代表收件人或供应商已确认送达。目标已脱敏；此处不提供重发操作。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <ElAlert
       v-if="failed"
       title="投递记录读取失败，请刷新；不能据此判断没有投递。"
@@ -173,3 +177,20 @@
     request?.abort()
   })
 </script>
+
+<style scoped lang="scss">
+  .alarm-notification-deliveries__notice {
+    margin-bottom: 10px;
+
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+  }
+</style>

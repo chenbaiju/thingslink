@@ -59,7 +59,7 @@
         </div>
       </dl>
     </ElCard>
-    <ProjectInvitations />
+    <ProjectInvitations :table-height="520" />
   </div>
 </template>
 
@@ -83,8 +83,9 @@
   .user-center-page {
     display: flex;
     flex-direction: column;
-    height: var(--art-full-height);
+    height: auto;
     padding: 10px;
+    padding-bottom: 10px !important;
 
     > :not(.project-invitations) {
       flex-shrink: 0;
@@ -92,9 +93,8 @@
 
     :deep(.project-invitations) {
       display: flex;
-      flex: 1;
+      flex: 1 0 auto;
       flex-direction: column;
-      min-height: 320px;
 
       .el-card__header {
         flex-shrink: 0;
@@ -107,13 +107,10 @@
         min-height: 0;
       }
 
+      .el-table,
       .console-description,
       .el-alert {
         flex-shrink: 0;
-      }
-
-      .el-table__inner-wrapper::before {
-        display: none;
       }
     }
 

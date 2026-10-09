@@ -1,7 +1,9 @@
 <template>
   <section class="console-fragment console-editor-section" aria-label="草稿设备数据预览">
-    <h3 class="console-heading">草稿数据预览</h3>
-    <p class="console-description">文字选择即时预览；设备数据可刷新，不代表已发布内容。</p>
+    <ElDivider content-position="left">草稿数据预览</ElDivider>
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >文字选择即时预览；设备数据可刷新，不代表已发布内容。</ElAlert
+    >
     <DesignerTextPreview
       :schema="schema"
       :page-id="pageId"
@@ -62,7 +64,7 @@
         }}</option>
       </select>
     </label>
-    <el-alert v-if="error" :title="error" type="error" :closable="false" />
+    <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon />
     <p v-if="!busy && !rows.length && !error">尚未读取当前页设备数据。</p>
     <div
       v-for="row in rows.filter((item) => !item.selector)"

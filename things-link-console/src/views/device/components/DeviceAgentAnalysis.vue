@@ -1,14 +1,16 @@
 <template>
   <section class="agent-analysis" data-testid="agent-analysis">
-    <h4>模型分析</h4>
-    <p class="console-description"
-      >模型分析须先取得受审状态。项目 Key 已启用也不代表可以发起分析。</p
-    >
+    <ElDivider content-position="left">模型分析</ElDivider>
+    <ElAlert type="info" :closable="false" show-icon>
+      先选择证据属性并查看模型状态；Key 启用不代表分析可用，须经审核并手动确认。
+      <template v-if="allowed">{{ selectionLabel }} {{ !error ? statusLabel : '' }}</template>
+    </ElAlert>
     <ElAlert
       v-if="!allowed"
       type="info"
       :closable="false"
       title="仅当前项目的所有者、管理员和操作员可查看模型状态；查看者可继续读取事实证据。"
+      show-icon
     />
     <template v-else>
       <div class="console-toolbar">
@@ -24,12 +26,7 @@
       <ElCheckbox v-model="consented" :disabled="!admitted || parentBusy || busy">
         我确认本次使用项目 Key 分析，可能产生费用；等待失败或取消不代表未扣费，不会自动重试。
       </ElCheckbox>
-      <p>{{ selectionLabel }}</p>
-      <ElAlert v-if="error" type="error" :closable="false" :title="error" />
-      <p v-else>{{ statusLabel }}</p>
-      <p class="console-description">
-        选择问题不会发送设备数据。模型结果仅本次显示，刷新后不能恢复正文。事实记录和报告仍需手动生成。
-      </p>
+      <ElAlert v-if="error" type="error" :closable="false" :title="error" show-icon />
       <AnalysisResultPanel :run="result" />
       <AnalysisRecoveryPanel
         :project-id="projectId"
@@ -99,11 +96,11 @@
   const selectionLabel = computed(() =>
     props.modelVersionId && props.propertyKeys.length
       ? `已选择 ${props.propertyKeys.length} 个属性；分析开放后将由服务端重新读取证据。`
-      : '可先加载属性目录并选择证据属性。'
+      : ''
   )
   const statusLabel = computed(() => {
     if (busy.value) return '正在读取模型状态…'
-    if (!availability.value) return '尚未读取模型状态；不会自动发起分析。'
+    if (!availability.value) return ''
     if (admitted.value) return '当前条件允许发起分析；不保证余额或供应商在线，提交时将再次核对。'
     if (availability.value.reason === 'PROJECT_MODEL_CONFIGURATION_DISABLED')
       return '项目模型配置尚未启用，请联系项目管理员。'

@@ -1,16 +1,17 @@
 <template>
   <div class="console-page alarm-page console-page--single-panel">
     <ConsoleWorkspaceHeader
+      project-style
       title="告警历史"
       description="查看异常设备，确认或清除告警，并从单条告警追踪通知投递。"
-      :links="[
-        { label: '告警规则', path: '/alarm/rules', permission: 'alarm:read' },
-        { label: '通知组', path: '/alarm/notification-groups', permission: 'alarm:read' }
-      ]"
     />
-    <ElAlert class="alarm-page__notice" type="info" :closable="false" show-icon>
-      已清除告警不会删除。设备再次异常时会创建新一代实例，不会复活旧事故。
-    </ElAlert>
+    <ElAlert
+      class="alarm-page__notice"
+      title="已清除告警不会删除。设备再次异常时会创建新一代实例，不会复活旧事故。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="items" row-key="id">
@@ -93,7 +94,13 @@
 
     <ElDrawer v-model="eventsVisible" title="告警事件时间线" size="680px" destroy-on-close>
       <div class="alarm-events__toolbar">
-        <span>摘要与事件分别读取；外部操作后可刷新查看。</span>
+        <ElAlert
+          class="alarm-events__notice"
+          title="摘要与事件分别读取；外部操作后可刷新查看。"
+          type="info"
+          :closable="false"
+          show-icon
+        />
         <ElButton :loading="detailLoading || eventsLoading" @click="refreshDetails">
           刷新详情
         </ElButton>
@@ -457,24 +464,19 @@
   .alarm-page {
     padding: 10px;
 
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
-    }
-
     &__notice {
       margin-bottom: 10px;
+
+      :deep(.el-alert__title) {
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 20px;
+      }
+      :deep(.el-alert__icon) {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+      }
     }
     &__more {
       display: flex;
@@ -490,6 +492,27 @@
     justify-content: space-between;
     margin-bottom: 12px;
     color: var(--art-text-gray-500);
+
+    > .alarm-events__notice {
+      margin: 0;
+    }
+    > .el-button {
+      flex-shrink: 0;
+    }
+  }
+  .alarm-events__notice {
+    min-width: 0;
+
+    :deep(.el-alert__title) {
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 20px;
+    }
+    :deep(.el-alert__icon) {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
   }
   .alarm-events__summary {
     margin-bottom: 10px;

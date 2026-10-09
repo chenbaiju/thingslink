@@ -1,19 +1,28 @@
 <template>
   <ElCard v-if="readable" shadow="never" class="knowledge-panel" data-testid="project-knowledge">
     <template #header><h4 class="console-heading">受控项目知识</h4></template>
-    <p class="console-description"
-      >管理员逐次批准的项目共用资料；个人排查记录仍仅本人可见。这里只做本地字面检索，不调用模型、不发送外部服务。</p
-    >
-    <ElAlert v-if="error" type="error" :closable="false" :title="error" />
-    <p v-if="notice">{{ notice }}</p>
+    <ElAlert
+      type="info"
+      show-icon
+      :closable="false"
+      title="管理员逐次批准的项目共用资料；个人排查记录仍仅本人可见。这里只做本地字面检索，不调用模型、不发送外部服务。"
+    />
+    <ElAlert v-if="error" type="error" :closable="false" show-icon :title="error" />
+    <ElAlert v-if="notice" type="info" show-icon :closable="false" :title="notice" />
     <div class="console-toolbar">
       <ElButton :disabled="busy" @click="refresh">刷新批准资料</ElButton>
       <ElButton v-if="manager" :disabled="!writable" @click="newSource">准备新来源</ElButton>
     </div>
-    <p v-if="loaded && !rows.length">当前项目尚无批准资料。</p>
-    <ul v-if="rows.length">
+    <ElAlert
+      v-if="loaded && !rows.length"
+      type="info"
+      show-icon
+      :closable="false"
+      title="当前项目尚无批准资料。"
+    />
+    <ul v-if="rows.length" class="knowledge-panel__sources">
       <li v-for="row in rows" :key="row.id">
-        {{ row.sourceKey }}（版本 {{ row.versionNumber }}，{{ row.createdAt }}）
+        <span>{{ row.sourceKey }}（版本 {{ row.versionNumber }}，{{ row.createdAt }}）</span>
         <ElButton :disabled="busy" @click="open(row)">查看当前正文</ElButton>
       </li>
     </ul>
@@ -25,47 +34,73 @@
       >
     </template>
     <template v-if="manager">
-      <p class="console-description"
-        >最多100个来源，每来源20个版本；正文需人工筛选脱敏。项目归档或状态未知时不能发布。替换前先查看当前正文，提交结果不明时先刷新核对。</p
-      >
-      <ElInput
-        v-model="sourceKey"
-        :disabled="!writable || !!detail"
-        maxlength="64"
-        aria-label="知识来源标识"
-        placeholder="来源标识，如 pump_guide"
+      <ElAlert
+        type="info"
+        show-icon
+        :closable="false"
+        title="最多100个来源，每来源20个版本；正文需人工筛选脱敏。项目归档或状态未知时不能发布。替换前先查看当前正文，提交结果不明时先刷新核对。"
       />
-      <ElInput
-        v-model="content"
-        type="textarea"
-        :rows="6"
-        :disabled="!writable"
-        aria-label="批准知识正文"
-        placeholder="已筛选脱敏的纯文本正文"
-      />
-      <p>规范正文：{{ contentBytes }} / 16384 UTF-8字节</p>
-      <ElCheckbox v-model="approved" :disabled="!writable"
-        >我已筛选脱敏，并批准本项目全部当前成员读取本次正文</ElCheckbox
-      >
-      <ElButton type="primary" :disabled="!canPublish" @click="publish">发布项目共享版本</ElButton>
+      <ElDivider content-position="left">发布项目共享版本</ElDivider>
+      <ElForm label-position="top" @submit.prevent>
+        <ElFormItem label="知识来源标识">
+          <ElInput
+            v-model="sourceKey"
+            :disabled="!writable || !!detail"
+            maxlength="64"
+            aria-label="知识来源标识"
+            placeholder="来源标识，如 pump_guide"
+          />
+        </ElFormItem>
+        <ElFormItem label="批准知识正文">
+          <ElInput
+            v-model="content"
+            type="textarea"
+            :rows="6"
+            :disabled="!writable"
+            aria-label="批准知识正文"
+            placeholder="已筛选脱敏的纯文本正文"
+          />
+        </ElFormItem>
+      </ElForm>
+      <p class="knowledge-panel__metadata">规范正文：{{ contentBytes }} / 16384 UTF-8字节</p>
+      <div class="knowledge-panel__approval">
+        <ElCheckbox v-model="approved" :disabled="!writable"
+          >我已筛选脱敏，并批准本项目全部当前成员读取本次正文</ElCheckbox
+        >
+        <ElButton type="primary" :disabled="!canPublish" @click="publish"
+          >发布项目共享版本</ElButton
+        >
+      </div>
     </template>
-    <ElInput
-      v-model="keywords"
-      type="textarea"
-      :rows="2"
-      :disabled="busy"
-      aria-label="知识字面关键词"
-      placeholder="每行一个字面关键词，1至5个，各2至32字"
-    />
-    <ElButton :disabled="!canSearch" @click="search">手动本地检索</ElButton>
+    <ElDivider content-position="left">本地字面检索</ElDivider>
+    <ElForm label-position="top" @submit.prevent>
+      <ElFormItem label="字面关键词">
+        <ElInput
+          v-model="keywords"
+          type="textarea"
+          :rows="2"
+          :disabled="busy"
+          aria-label="知识字面关键词"
+          placeholder="每行一个字面关键词，1至5个，各2至32字"
+        />
+      </ElFormItem>
+    </ElForm>
+    <div class="console-toolbar">
+      <ElButton :disabled="!canSearch" @click="search">手动本地检索</ElButton>
+    </div>
     <template v-if="result">
-      <p>{{
-        result.state === 'NO_SOURCES'
-          ? '无批准资料，不能给出知识依据。'
-          : result.state === 'NO_MATCH'
-            ? '没有字面命中，不能推断设备正常。'
-            : '以下为字面原文依据，可能矛盾或过时，不是诊断结论。'
-      }}</p>
+      <ElAlert
+        type="info"
+        show-icon
+        :closable="false"
+        :title="
+          result.state === 'NO_SOURCES'
+            ? '无批准资料，不能给出知识依据。'
+            : result.state === 'NO_MATCH'
+              ? '没有字面命中，不能推断设备正常。'
+              : '以下为字面原文依据，可能矛盾或过时，不是诊断结论。'
+        "
+      />
       <article v-for="hit in result.hits" :key="hit.source.id">
         <p>{{ hit.source.sourceKey }} / 版本 {{ hit.source.versionNumber }}：{{ hit.source.id }}</p>
         <p
@@ -383,7 +418,45 @@
 </script>
 <style scoped lang="scss">
   .knowledge-panel {
+    margin-bottom: 10px;
     overflow-wrap: anywhere;
+  }
+  .knowledge-panel__sources {
+    padding: 0;
+    list-style: none;
+    li {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+    }
+    span {
+      min-width: 0;
+    }
+    .el-button {
+      flex-shrink: 0;
+    }
+  }
+  .knowledge-panel__approval {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    :deep(.el-checkbox) {
+      height: auto;
+      white-space: normal;
+    }
+    :deep(.el-checkbox__label) {
+      line-height: 20px;
+      white-space: normal;
+    }
+  }
+  .knowledge-panel__metadata {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--art-text-gray-500);
   }
   .knowledge-panel__text {
     overflow-wrap: anywhere;

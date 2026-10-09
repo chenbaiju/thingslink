@@ -55,6 +55,7 @@ async function fixture(canManage = true) {
     props: { projectId, dashboardId, available: true, canManage },
     global: {
       stubs: {
+        ElDivider: { template: '<div><slot /></div>' },
         ElButton: {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot /></button>'
@@ -63,7 +64,7 @@ async function fixture(canManage = true) {
           props: ['modelValue'],
           template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>'
         },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })

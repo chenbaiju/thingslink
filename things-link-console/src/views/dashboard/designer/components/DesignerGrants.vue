@@ -17,14 +17,14 @@
     :close-on-click-modal="false"
     @close="closeDialog"
   >
-    <p class="console-description"
-      >本操作仅允许选定项目用户读取当前看板，不创建用户、不修改项目角色，也不授予设备访问或匿名分享能力。</p
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >本操作仅允许选定项目用户读取当前看板，不创建用户、不修改项目角色，也不授予设备访问或匿名分享能力。</ElAlert
     >
-    <p class="console-description"
-      >实际运行还须应用包含该看板、用户角色有效并满足设备授权；单独授予READ不保证完整运行可用。</p
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >实际运行还须应用包含该看板、用户角色有效并满足设备授权；单独授予READ不保证完整运行可用。</ElAlert
     >
-    <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" />
-    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" />
+    <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" show-icon />
+    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" show-icon />
     <template v-if="!fixedUser">
       <el-button
         data-testid="grants-refresh-users"
@@ -54,13 +54,13 @@
       >
     </template>
     <section v-if="state.selectedUser">
-      <h4 class="console-heading"
+      <ElDivider content-position="left"
         >目标用户：{{ state.selectedUser.displayName || state.selectedUser.username }}（{{
           state.selectedUser.username
-        }}）</h4
+        }}）</ElDivider
       >
-      <p class="console-description" v-if="!activeUser"
-        >用户或项目角色非有效状态，仅查看历史，不允许授予或撤销。</p
+      <ElAlert v-if="!activeUser" class="console-hint" type="info" show-icon :closable="false"
+        >用户或项目角色非有效状态，仅查看历史，不允许授予或撤销。</ElAlert
       >
       <el-button data-testid="grants-refresh" :disabled="!usable || busy" @click="grants.refresh()"
         >刷新授权记录</el-button
@@ -75,8 +75,13 @@
         当前记录：{{ state.grant.status === 'ACTIVE' ? '已授予读取权限' : '已撤销读取权限' }} · 修订
         {{ state.grant.revision }}
       </p>
-      <p class="console-description" v-if="state.missingEligible"
-        >未读到可确认的授权事实。可明确尝试首次授予，服务端仍会核对用户、角色及看板。</p
+      <ElAlert
+        v-if="state.missingEligible"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >未读到可确认的授权事实。可明确尝试首次授予，服务端仍会核对用户、角色及看板。</ElAlert
       >
       <div class="console-actions">
         <el-button
@@ -96,11 +101,16 @@
     </section>
     <section v-if="state.pending">
       <p class="console-description">待恢复原用户：{{ state.pending.intent.appUserId }}</p>
-      <p class="console-description" v-if="state.pending.status === 'UNKNOWN'"
-        >原操作结果未知；读取当前事实不能证明原操作从未执行，不会自动换用新操作。</p
+      <ElAlert
+        v-if="state.pending.status === 'UNKNOWN'"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >原操作结果未知；读取当前事实不能证明原操作从未执行，不会自动换用新操作。</ElAlert
       >
-      <p class="console-description" v-else
-        >原操作已有完成记录，仍需成功读取当前事实；不能把读取失败理解为未授权。</p
+      <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
+        >原操作已有完成记录，仍需成功读取当前事实；不能把读取失败理解为未授权。</ElAlert
       >
       <div class="console-actions">
         <el-button

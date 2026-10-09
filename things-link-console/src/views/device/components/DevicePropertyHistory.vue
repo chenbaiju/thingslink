@@ -1,7 +1,13 @@
 <template>
-  <section aria-label="原始属性历史" data-testid="device-property-history">
-    <p>按上报时的类型、物模型版本和采集时刻展示原始属性值，数值曲线仍可在设备属性页查看。</p>
-    <ElForm inline @submit.prevent="model.refresh()">
+  <section
+    class="device-detail-list"
+    aria-label="原始属性历史"
+    data-testid="device-property-history"
+  >
+    <ElAlert type="info" :closable="false" show-icon
+      >按上报时的类型、物模型版本和采集时刻展示原始属性值，数值曲线仍可在设备属性页查看。</ElAlert
+    >
+    <ElForm inline class="device-history-filter" @submit.prevent="model.refresh()">
       <ElFormItem label="属性键"
         ><ElInput v-model="model.filters.propertyKey" aria-label="历史属性键"
       /></ElFormItem>
@@ -22,13 +28,13 @@
       >
       <ElButton :disabled="model.loading" @click="reset">清除筛选</ElButton>
     </ElForm>
-    <p>查询范围受当前套餐可读历史窗口限制；每页最多 20 条。</p>
     <ElAlert
       v-if="model.error"
       data-testid="device-property-history-error"
       :title="model.error"
       type="error"
       :closable="false"
+      show-icon
     />
     <ElTable
       v-loading="model.loading"
@@ -59,15 +65,21 @@
           "
       /></template>
     </ElTable>
-    <ElButton
-      data-testid="device-property-history-next"
-      :disabled="model.loading || !!model.error || !model.nextCursor"
-      @click="model.next()"
-      >下一页</ElButton
-    >
+    <DeviceDetailPagination
+      v-if="model.items.length > 0"
+      :page-index="model.pageIndex"
+      :loading="model.loading"
+      :failed="!!model.error"
+      :has-next="!!model.nextCursor"
+      aria-label="原始属性历史分页"
+      next-test-id="device-property-history-next"
+      @previous="model.previous()"
+      @next="model.next()"
+    />
   </section>
 </template>
 <script setup lang="ts">
+  import DeviceDetailPagination from './DeviceDetailPagination.vue'
   import { onBeforeUnmount, reactive, watch } from 'vue'
   import { fetchDevicePropertyHistory } from '@/api/device-property-history'
   import {

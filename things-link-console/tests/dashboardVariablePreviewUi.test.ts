@@ -205,7 +205,9 @@ describe('共享运行选择与完整表格', () => {
     await flushPromises()
     expect(wrapper.text()).not.toContain('敏感旧值')
     for (const selector of selectors) expect(selector.findAll('input')).toHaveLength(0)
-    expect(wrapper.find('el-alert-stub').attributes('title')).toContain('读取权限已变化')
+    expect(wrapper.find('el-alert-stub[type="error"]').attributes('title')).toContain(
+      '读取权限已变化'
+    )
     wrapper.unmount()
   })
   it('相同选择器id的Schema换代清上一份目录，迟到目录不能回填', async () => {

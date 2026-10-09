@@ -1,0 +1,113 @@
+.ota-firmware-feedback .el-alert {
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 20px;
+
+  .el-alert__title,
+  .el-alert__description {
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 20px;
+  }
+
+  .el-alert__icon {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+  }
+}
+
+.ota-firmware-feedback {
+  .ota-baseline-type-field {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    label {
+      flex-shrink: 0;
+      font-size: 13px;
+      color: var(--el-text-color-regular);
+    }
+    .el-select {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+  .ota-registration-revision {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    background: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
+  }
+
+  .ota-registration-revision__value {
+    min-width: 28px;
+    padding: 2px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+    color: var(--el-color-primary);
+    text-align: center;
+    background: var(--el-color-primary-light-9);
+    border-radius: 4px;
+  }
+
+  .ota-trust-import-form .el-form-item__label {
+    justify-content: flex-start;
+  }
+
+  .ota-trust-import-file {
+    max-width: 100%;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+
+    &::file-selector-button {
+      height: 32px;
+      padding: 0 12px;
+      margin-right: 10px;
+      font-size: 12px;
+      color: var(--el-color-primary);
+      cursor: pointer;
+      background: var(--el-color-primary-light-9);
+      border: 1px solid var(--el-color-primary-light-5);
+      border-radius: 4px;
+    }
+
+    &:disabled::file-selector-button {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+
+  .ota-metadata-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+
+    .el-button + .el-button {
+      margin-left: 0;
+    }
+  }
+
+  .ota-metadata-filter {
+    label {
+      flex-shrink: 0;
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--el-text-color-regular);
+      white-space: nowrap;
+    }
+
+    .el-select {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}

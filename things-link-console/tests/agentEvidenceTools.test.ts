@@ -87,7 +87,7 @@ async function page(role = 'VIEWER') {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot /></button>'
         },
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' },
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' },
         ElTable: { props: ['data'], template: '<pre>{{JSON.stringify(data)}}</pre>' },
         ElTableColumn: true
       }

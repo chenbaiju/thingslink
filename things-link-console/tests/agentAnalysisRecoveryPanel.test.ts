@@ -67,7 +67,7 @@ function page() {
       stubs: {
         ElButton: button,
         ElCheckbox: checkbox,
-        ElAlert: { props: ['title'], template: '<p>{{title}}</p>' }
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot /></p>' }
       }
     }
   })
@@ -122,6 +122,23 @@ it('只手动查询原键，不展示本地请求信息，不自动清除或生�
   expect(storage.getItem('unrelated')).toBe('keep')
   expect(panel!.text()).toContain('没有发起新的分析')
   expect(readAnalysisCallByKey).toHaveBeenCalledTimes(1)
+})
+it('无本地意图时合并空状态提示，不显示核对区块或发起请求', () => {
+  storage.removeItem(storageKey)
+  page()
+  expect(panel!.text()).toContain('暂无待核对调用')
+  expect(panel!.text()).toContain('刷新后无法恢复')
+  expect(panel!.text()).not.toContain('原分析调用核对')
+  expect(panel!.findAll('button')).toHaveLength(0)
+  expect(readAnalysisCallByKey).not.toHaveBeenCalled()
+})
+it('本地意图无法读取时保留核对提醒，不显示无待处理调用', () => {
+  storage.setItem(storageKey, '{invalid')
+  page()
+  expect(panel!.text()).toContain('本地分析意图暂时无法核对')
+  expect(panel!.text()).toContain('原分析调用核对')
+  expect(panel!.text()).not.toContain('暂无待核对调用')
+  expect(readAnalysisCallByKey).not.toHaveBeenCalled()
 })
 it('未知状态在执行窗口内禁止处置，到期后手动核对才显示确认', async () => {
   vi.mocked(readAnalysisCallByKey).mockResolvedValue({ ...result(), status: 'UNKNOWN' } as never)
