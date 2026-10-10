@@ -75,7 +75,7 @@ class AppPushTokenServiceTests {
     void firstRegistrationCreatesEncryptedActiveFact() {
         when(repository.findForUpdate(tenantId, appUserId, installationId)).thenReturn(Optional.empty());
 
-        service.register(tenantId, projectId, appUserId, installationId, AppPushToken.Provider.HUAWEI, "plain-secret");
+        service.register(tenantId, projectId, appUserId, installationId, AppPushToken.Provider.MOCK, "plain-secret");
 
         ArgumentCaptor<AppPushToken> token = ArgumentCaptor.forClass(AppPushToken.class);
         verify(cipher).encrypt(token.capture(), org.mockito.ArgumentMatchers.eq("plain-secret"));
@@ -99,17 +99,17 @@ class AppPushTokenServiceTests {
         UUID stableId = UUID.randomUUID();
         Instant createdAt = NOW.minusSeconds(3600);
         AppPushToken existing = new AppPushToken(
-                stableId, tenantId, appUserId, installationId, AppPushToken.Provider.XIAOMI,
+                stableId, tenantId, appUserId, installationId, AppPushToken.Provider.MOCK,
                 AppPushToken.Status.REVOKED, createdAt, NOW.minusSeconds(60), NOW.minusSeconds(60));
         when(repository.findForUpdate(tenantId, appUserId, installationId)).thenReturn(Optional.of(existing));
 
-        service.register(tenantId, projectId, appUserId, installationId, AppPushToken.Provider.OPPO, "rotated-secret");
+        service.register(tenantId, projectId, appUserId, installationId, AppPushToken.Provider.MOCK, "rotated-secret");
 
         ArgumentCaptor<AppPushToken> token = ArgumentCaptor.forClass(AppPushToken.class);
         verify(repository).activate(token.capture(), org.mockito.ArgumentMatchers.eq(encrypted));
         assertThat(token.getValue().id()).isEqualTo(stableId);
         assertThat(token.getValue().createdAt()).isEqualTo(createdAt);
-        assertThat(token.getValue().provider()).isEqualTo(AppPushToken.Provider.OPPO);
+        assertThat(token.getValue().provider()).isEqualTo(AppPushToken.Provider.MOCK);
         assertThat(token.getValue().status()).isEqualTo(AppPushToken.Status.ACTIVE);
         assertThat(token.getValue().revokedAt()).isNull();
         verify(repository, never()).insert(any(), any());
@@ -122,7 +122,7 @@ class AppPushTokenServiceTests {
         when(repository.insert(any(), any())).thenReturn(0);
 
         assertThatThrownBy(() -> service.register(
-                tenantId, projectId, appUserId, installationId, AppPushToken.Provider.VIVO, "secret"))
+                tenantId, projectId, appUserId, installationId, AppPushToken.Provider.MOCK, "secret"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("PUSH 安装实例注册未写入唯一事实");
     }
@@ -146,7 +146,7 @@ class AppPushTokenServiceTests {
         doThrow(failure).when(projectWriteGuard).requireWritable(tenantId, projectId);
 
         assertThatThrownBy(() -> service.register(tenantId, projectId, appUserId, installationId,
-                AppPushToken.Provider.HUAWEI, "plain-secret")).isSameAs(failure);
+                AppPushToken.Provider.MOCK, "plain-secret")).isSameAs(failure);
 
         verifyNoInteractions(repository, cipher);
     }
@@ -171,7 +171,7 @@ class AppPushTokenServiceTests {
         doThrow(failure).when(projectWriteGuard).requireWritable(tenantId, projectId);
 
         assertThatThrownBy(() -> service.register(tenantId, projectId, appUserId, installationId,
-                AppPushToken.Provider.HUAWEI, "plain-secret")).isSameAs(failure);
+                AppPushToken.Provider.MOCK, "plain-secret")).isSameAs(failure);
 
         verifyNoInteractions(repository, cipher);
     }

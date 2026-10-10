@@ -17,7 +17,12 @@ import java.time.Instant;
 public record AppIssuedSession(
         AppAccessToken accessToken,
         String refreshToken,
-        Instant refreshExpiresAt) {
+        Instant refreshExpiresAt, AppSessionIdentity identity) {
+
+    /** 兼容内部旧测试与适配器；缺少身份的会话不能注册安装。 */
+    public AppIssuedSession(AppAccessToken accessToken, String refreshToken, Instant refreshExpiresAt) {
+        this(accessToken, refreshToken, refreshExpiresAt, null);
+    }
 
     /**
      * 屏蔽两类令牌明文。

@@ -4,6 +4,16 @@
     class="device-capability console-fragment"
     :class="{ 'device-detail-list': kind === 'ota' }"
   >
+    <div v-if="kind === 'alarms'" class="console-toolbar">
+      <ElSwitch v-model="monitoring" active-text="持续监测告警" />
+      <span class="console-description">{{
+        pageIndex > 0 ? '翻页时暂停自动刷新' : '每5秒刷新'
+      }}</span>
+      <span v-if="observedAt" class="console-description"
+        >最近读取：{{ formatTime(observedAt) }}</span
+      >
+      <ElButton :loading="loading" @click="refresh">刷新告警</ElButton>
+    </div>
     <div v-if="$slots.actions" class="device-capability__header">
       <slot name="actions" />
       <ElAlert type="info" :closable="false" show-icon>{{ descriptions[kind] }}</ElAlert>
@@ -103,6 +113,9 @@
   let cursors: (string | undefined)[] = [undefined]
   const nextCursor = ref<string>()
   const hasMore = ref(false)
+  const monitoring = ref(true)
+  const observedAt = ref('')
+  let monitorTimer: ReturnType<typeof setInterval> | undefined
   let generation = 0
   let readScope: DesignerReadScope | undefined
 
@@ -275,6 +288,7 @@
       }
       if (current()) {
         loaded.value = true
+        observedAt.value = new Date().toISOString()
       }
     } catch (cause) {
       if (current()) error.value = cause instanceof Error ? cause.message : '读取失败，请重试'
@@ -296,7 +310,20 @@
     if (!loading.value && pageIndex.value > 0) void load(pageIndex.value - 1)
   }
   watch(() => [props.projectId, props.device.id, props.kind], refresh, { immediate: true })
+  onMounted(() => {
+    monitorTimer = setInterval(() => {
+      if (
+        props.kind === 'alarms' &&
+        monitoring.value &&
+        pageIndex.value === 0 &&
+        !loading.value &&
+        document.visibilityState === 'visible'
+      )
+        void load(0)
+    }, 5000)
+  })
   onUnmounted(() => {
+    clearInterval(monitorTimer)
     generation += 1
     readScope?.close()
   })

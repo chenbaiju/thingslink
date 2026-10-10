@@ -106,6 +106,15 @@ class EndUserProvisioningServiceTests {
                 .isEqualTo(CommonErrorCode.INVALID_PARAMETER);
     }
 
+    @Test
+    void excessiveUtf8PasswordIsRejectedBeforeHashOrCreate() {
+        assertThatThrownBy(() -> service.provision(projectId,"alice","密".repeat(25),null))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException)e).errorCode()).isEqualTo(CommonErrorCode.INVALID_PARAMETER);
+        verify(passwordEncoder, org.mockito.Mockito.never()).encode(any());
+        verify(appUserRepository, org.mockito.Mockito.never()).create(any());
+    }
+
     /** 空白用户名拒绝。 */
     @Test
     void blankUsernameIsRejected() {

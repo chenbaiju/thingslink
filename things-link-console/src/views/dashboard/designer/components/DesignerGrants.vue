@@ -1,7 +1,7 @@
 <template>
   <el-button
     class="console-fragment"
-    v-if="canManage"
+    v-if="canManage && !hideTrigger"
     data-testid="grants-open"
     :disabled="!available"
     @click="openDialog"
@@ -17,6 +17,7 @@
     :close-on-click-modal="false"
     @close="closeDialog"
   >
+    <slot name="context" />
     <ElAlert class="console-hint" type="info" show-icon :closable="false"
       >本操作仅允许选定项目用户读取当前看板，不创建用户、不修改项目角色，也不授予设备访问或匿名分享能力。</ElAlert
     >
@@ -62,19 +63,18 @@
       <ElAlert v-if="!activeUser" class="console-hint" type="info" show-icon :closable="false"
         >用户或项目角色非有效状态，仅查看历史，不允许授予或撤销。</ElAlert
       >
-      <el-button data-testid="grants-refresh" :disabled="!usable || busy" @click="grants.refresh()"
-        >刷新授权记录</el-button
-      >
-      <p
-        class="console-description"
+      <div
+        class="designer-grants__status"
         v-if="state.grant"
         data-testid="grants-status"
         :data-status="state.grant.status"
         :data-revision="state.grant.revision"
       >
-        当前记录：{{ state.grant.status === 'ACTIVE' ? '已授予读取权限' : '已撤销读取权限' }} · 修订
-        {{ state.grant.revision }}
-      </p>
+        <ElTag size="small" :type="state.grant.status === 'ACTIVE' ? 'success' : 'info'">
+          {{ state.grant.status === 'ACTIVE' ? '已授予读取权限' : '已撤销读取权限' }}
+        </ElTag>
+        <span>修订版本：{{ state.grant.revision }}</span>
+      </div>
       <ElAlert
         v-if="state.missingEligible"
         class="console-hint"
@@ -150,8 +150,9 @@
       canManage: boolean
       fixedUser?: GrantUser
       writable?: boolean
+      hideTrigger?: boolean
     }>(),
-    { writable: true }
+    { writable: true, hideTrigger: false }
   )
   const emit = defineEmits<{ changed: [] }>()
   const user = useUserStore(),
@@ -226,6 +227,7 @@
     opened.value = true
     void openTarget()
   }
+  defineExpose({ openDialog })
   function closeDialog() {
     opened.value = false
     epoch++
@@ -320,3 +322,17 @@
     }
   }
 </script>
+
+<style scoped lang="scss">
+  .designer-grants__status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-block: 12px;
+    > span:not(.el-tag) {
+      font-size: 12px;
+      color: var(--el-text-color-secondary);
+    }
+  }
+</style>

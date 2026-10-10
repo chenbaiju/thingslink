@@ -60,6 +60,9 @@ public class AppJwtTokenIssuer implements AppTokenIssuer {
                 .claim(CLAIM_PROJECT_ID, principal.projectId().toString())
                 // 项目删除会单调递增代次；恢复后只接受新签发的当前代次凭据（ADR0073）。
                 .claim(CLAIM_PROJECT_GENERATION, principal.projectGeneration())
+                .claims(values -> {
+                    if (principal.sessionId() != null) values.put("sid", principal.sessionId().toString());
+                })
                 .build();
 
         String value = jwtEncoder

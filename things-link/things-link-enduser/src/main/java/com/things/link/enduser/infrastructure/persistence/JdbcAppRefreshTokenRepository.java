@@ -31,7 +31,8 @@ public class JdbcAppRefreshTokenRepository implements AppRefreshTokenRepository 
             rs.getTimestamp("issued_at").toInstant(),
             rs.getTimestamp("expires_at").toInstant(),
             Optional.ofNullable(rs.getTimestamp("revoked_at")).map(Timestamp::toInstant).orElse(null),
-            rs.getObject("replaced_by", UUID.class));
+            rs.getObject("replaced_by", UUID.class),
+            Optional.ofNullable(rs.getObject("session_group_id", UUID.class)).orElse(rs.getObject("family_id", UUID.class)));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -44,12 +45,12 @@ public class JdbcAppRefreshTokenRepository implements AppRefreshTokenRepository 
         jdbcTemplate.update("""
                         INSERT INTO app_refresh_token
                             (id, app_user_id, tenant_id, project_id, project_generation,
-                             token_hash, family_id, issued_at, expires_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                             token_hash, family_id, issued_at, expires_at, session_group_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                 token.id(), token.appUserId(), token.tenantId(), token.projectId(),
                 token.projectGeneration(), tokenHash, token.familyId(),
-                Timestamp.from(token.issuedAt()), Timestamp.from(token.expiresAt()));
+                Timestamp.from(token.issuedAt()), Timestamp.from(token.expiresAt()), token.sessionGroupId());
     }
 
     @Override

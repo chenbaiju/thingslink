@@ -621,4 +621,15 @@ public class DeviceIngestionService {
                                          UUID targetDeviceId, String targetDeviceKey,
                                          UUID connectionDeviceId, String connectionDeviceKey) {
     }
+    /**
+     * 原摄入事务首次成功CURRENT报文才调用；不改变影子、在线或计量。
+     * @param tenantId 已验证设备租户
+     * @param projectId 已验证设备项目
+     * @param deviceId 已验证设备
+     * @param receivedAt 可信平台接收时刻
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void recordAcceptedDataReport(UUID tenantId, UUID projectId, UUID deviceId, Instant receivedAt) {
+        deviceRepository.recordDataReport(tenantId, projectId, deviceId, receivedAt);
+    }
 }

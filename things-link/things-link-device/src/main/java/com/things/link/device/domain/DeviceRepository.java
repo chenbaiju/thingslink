@@ -2,12 +2,23 @@ package com.things.link.device.domain;
 
 import com.things.link.shared.page.CursorPage;
 
+import java.time.Instant;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /** 设备实例仓储端口。 */
 public interface DeviceRepository {
+    /**
+     * 单调登记首次成功CURRENT数据上报，未来接收时间钳至数据库时刻。
+     * @param tenantId 可信设备租户
+     * @param projectId 可信设备项目
+     * @param deviceId 设备标识
+     * @param receivedAt 平台接收时刻，不能传设备端occurredAt
+     */
+    void recordDataReport(UUID tenantId, UUID projectId, UUID deviceId, Instant receivedAt);
+
     /** 用既有组谓词批量判定同一设备；最多100个当前项目组，不展开组中全部设备。 */
     java.util.Set<UUID> matchingGroups(UUID projectId, UUID deviceId, java.util.List<DeviceGroup> groups);
 

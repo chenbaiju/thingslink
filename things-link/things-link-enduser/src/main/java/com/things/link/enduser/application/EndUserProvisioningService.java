@@ -47,8 +47,6 @@ import java.util.UUID;
 @Service
 public class EndUserProvisioningService {
 
-    /** 口令最短长度。与控制台 {@code PasswordPolicy} 分开：终端用户口令策略独立演进。 */
-    private static final int MIN_PASSWORD_LENGTH = 8;
 
     private final ProjectService projectService;
     private final AppUserRepository appUserRepository;
@@ -110,10 +108,7 @@ public class EndUserProvisioningService {
         tenantTransactionLocalRlsScope.establish(owningTenantId);
 
         String normalizedUsername = normalizeUsername(username);
-        if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
-            throw new BusinessException(CommonErrorCode.INVALID_PARAMETER,
-                    "口令长度不足 " + MIN_PASSWORD_LENGTH + " 位");
-        }
+        AppPasswordPolicy.validate(password);
 
         appUserRepository.lockTenantCapacity(owningTenantId);
         // 同名仍保持既有唯一冲突，不把重复请求误报成额度耗尽。

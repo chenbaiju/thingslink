@@ -128,6 +128,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectId}/end-users/{appUserId}/notification-contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取终端用户接收号码
+         * @description 仅当前项目OWNER/ADMIN可读，ARCHIVED保留读取；不展示共享账号在其他项目的号码。
+         */
+        get: operations["getEndUserNotificationContact"];
+        /**
+         * 更新终端用户接收号码
+         * @description 仅OWNER/ADMIN在ACTIVE项目写入；用户锁内按expectedRevision进行CAS，旧版本60062，不产生真实电话或短信。
+         */
+        put: operations["updateEndUserNotificationContact"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectId}/end-users/{appUserId}/dashboard-grants/{dashboardId}": {
         parameters: {
             query?: never;
@@ -715,9 +739,53 @@ export interface paths {
         get?: never;
         /**
          * 注册或轮换 PUSH 安装实例
-         * @description 同一 installationId 原位轮换厂商 token；token 受 AES-256-GCM 保护且响应不回显。
+         * @description 仅test/development保留MOCK原位轮换；真实provider必须使用push-installations会话关联资源，旧入口拒绝为60067/503。
          */
         put: operations["register"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/app/push-installations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 注册或轮换会话关联安装
+         * @description 期望版本为非负十进制字符串，首次为0；CAS冲突60065/409。配置未启用60067/503；token不回显。
+         */
+        put: operations["registerAppPushInstallation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/app/account/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取本人通知偏好
+         * @description 偏好覆盖同一终端账号全部已授权项目；缺行默认App告警开启，项目只读仍可查询。
+         */
+        get: operations["getAppNotificationPreferences"];
+        /**
+         * 更新本人通知偏好
+         * @description 以expectedRevision进行账号级CAS，项目许可和用户锁内复验；关闭影响后续受众与发送前授权，不撤回已发送消息。
+         */
+        put: operations["updateAppNotificationPreferences"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3751,6 +3819,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/app/auth/switch-project": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 切换本人项目
+         * @description 同时要求当前App Bearer和对应refreshToken；事务内复核源目标项目与本人角色，原子撤销旧族并签发新族。结果未知不得自动重放，需重新登录。目标不可见60064/404，刷新失效60007/401。
+         */
+        post: operations["switchAppProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/app/auth/refresh": {
         parameters: {
             query?: never;
@@ -6315,6 +6403,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/app/push-installations/{installationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取本人安装关联摘要
+         * @description 读取同一终端账号的最新安装版本；无记录60066/404，失效绑定返回REVOKED；不含厂商token。
+         */
+        get: operations["getAppPushInstallation"];
+        put?: never;
+        post?: never;
+        /**
+         * 按版本撤销本人安装关联
+         * @description If-Match必须为带双引号的十进制版本；仅此安全撤销允许冻结项目，不允许恢复或注册。
+         */
+        delete: operations["revokeAppPushInstallation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/app/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 发现本人项目
+         * @description 仅当前租户本人有效角色，每次最多扫描100个项目；空页可有nextCursor，limit为1至100，默认20。平台导航未配置返回60063/503。
+         */
+        get: operations["listAppAuthorizedProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/app/devices": {
         parameters: {
             query?: never;
@@ -6324,7 +6456,7 @@ export interface paths {
         };
         /**
          * 设备列表
-         * @description 列出当前终端用户在令牌项目下已授权（有效绑定）的设备，按创建时间降序游标分页。解绑后立即不可见。
+         * @description 列出当前终端用户在令牌项目下已授权（有效绑定）的设备，按创建时间降序游标分页。解绑后立即不可见；可按名称/标识字面搜索与连接状态筛选。
          */
         get: operations["list_20"];
         put?: never;
@@ -6455,6 +6587,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/app/devices/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 授权设备统计
+         * @description 按当前有效项目角色与设备绑定聚合；不使用Console全项目概要或设备端时钟。
+         */
+        get: operations["getAppDeviceStatistics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/app/devices/catalog": {
         parameters: {
             query?: never;
@@ -6527,6 +6679,86 @@ export interface paths {
          * @description 使用App access Bearer重验当前应用版本、看板运行状态与READ grant交集。
          */
         get: operations["getCurrentWebAppApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/app/alarms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * App告警历史
+         * @description 独立于看板，按首次异常时间倒序；时间区间[from,to)，不影响通知偏好。
+         */
+        get: operations["getAppAlarms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/app/alarms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * App告警详情
+         * @description 读取当前绑定且未删除设备的单项告警事实；不存在或失权统一不可见，不提供确认或解除操作。
+         */
+        get: operations["getAppAlarm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/app/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取本人账户资料
+         * @description 沿当前App身份复验用户与项目角色；项目归档可读但不可改密，不接受前端指定其他用户。
+         */
+        get: operations["getAppAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/app/account/notification-channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取本人通知渠道
+         * @description 只读本人当前项目接收配置，电话短信尚未接入，当前均不可用；没有客户端编辑入口或虚构额度。
+         */
+        get: operations["getAppNotificationChannels"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6815,46 +7047,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/actuator": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 查询运维入口索引
-         * @description 由框架列举当前运维端点链接；不增加端点暴露，不代表链接对当前身份可用。
-         */
-        get: operations["management_get__actuator"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/actuator/prometheus": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 抓取运行指标
-         * @description 由框架按协商媒体类型输出 Prometheus 指标；只供受保护的内部抓取，不用于业务数据查询。
-         */
-        get: operations["management_get__actuator_prometheus"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/actuator/health": {
         parameters: {
             query?: never;
@@ -6887,6 +7079,46 @@ export interface paths {
          * @description 由框架计算聚合或指定组件的健康状态，降级时可返回503；详细信息沿当前健康可见性配置。
          */
         get: operations["management_get__actuator_health__componentPath_"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actuator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询运维入口索引
+         * @description 由框架列举当前运维端点链接；不增加端点暴露，不代表链接对当前身份可用。
+         */
+        get: operations["management_get__actuator"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actuator/prometheus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 抓取运行指标
+         * @description 由框架按协商媒体类型输出 Prometheus 指标；只供受保护的内部抓取，不用于业务数据查询。
+         */
+        get: operations["management_get__actuator_prometheus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7073,13 +7305,12 @@ export interface components {
             updatedAt: string;
         };
         JsonNode: {
-            container?: boolean;
+            floatingPointNumber?: boolean;
+            binary?: boolean;
             missingNode?: boolean;
             boolean?: boolean;
+            integralNumber?: boolean;
             string?: boolean;
-            pojo?: boolean;
-            int?: boolean;
-            long?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
             valueNode?: boolean;
@@ -7091,13 +7322,14 @@ export interface components {
             bigInteger?: boolean;
             /** @deprecated */
             textual?: boolean;
-            binary?: boolean;
+            pojo?: boolean;
+            int?: boolean;
+            long?: boolean;
+            float?: boolean;
+            container?: boolean;
             null?: boolean;
             array?: boolean;
             empty?: boolean;
-            float?: boolean;
-            integralNumber?: boolean;
-            floatingPointNumber?: boolean;
             embeddedValue?: boolean;
         };
         /** @description 批量设备任务保存请求 */
@@ -7229,6 +7461,37 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        /** @description 项目终端用户接收号码更新 */
+        UpdateEndUserNotificationContactRequest: {
+            /** @description 电话接收号码，+开头及7至15位数字；null清除 */
+            voiceNumber: string | null;
+            /** @description 短信接收号码，+开头及7至15位数字；null清除 */
+            smsNumber: string | null;
+            /**
+             * @description 当前版本字符串
+             * @example 0
+             */
+            expectedRevision: string;
+        };
+        ApiError: {
+            /** Format: int32 */
+            code?: number;
+            message?: string;
+            traceId?: string;
+            details?: string[];
+        };
+        /** @description 项目终端用户接收号码与版本 */
+        EndUserNotificationContactResponse: {
+            /** @description 电话接收号码，未配置为空 */
+            voiceNumber: string | null;
+            /** @description 短信接收号码，未配置为空 */
+            smsNumber: string | null;
+            /**
+             * @description 当前版本字符串
+             * @example 0
+             */
+            revision: string;
+        };
         /** @description 终端用户看板授权更新请求 */
         UpdateAppUserDashboardGrantRequest: {
             /** @example 0 */
@@ -7254,13 +7517,6 @@ export interface components {
             updatedAt: string;
             /** Format: date-time */
             revokedAt: string | null;
-        };
-        ApiError: {
-            /** Format: int32 */
-            code?: number;
-            message?: string;
-            traceId?: string;
-            details?: string[];
         };
         UpdateDeviceRequest: {
             /** Format: uuid */
@@ -7863,6 +8119,56 @@ export interface components {
             /** @enum {string} */
             provider: "HUAWEI" | "XIAOMI" | "OPPO" | "VIVO" | "APNS" | "MOCK";
             token?: string;
+        };
+        /** @description 安装注册正文，不含账号或会话归属 */
+        RegisterAppPushInstallationRequest: {
+            /** Format: uuid */
+            installationId: string;
+            /** Format: uuid */
+            registrationId: string;
+            channelConfigurationId?: string;
+            providerToken?: string;
+            expectedRevision?: string;
+        };
+        /** @description 本人推送安装关联摘要，不包含任何token */
+        AppPushInstallationSummary: {
+            /** Format: uuid */
+            installationId?: string;
+            /** Format: uuid */
+            bindingId?: string;
+            /** Format: uuid */
+            sessionGroupId?: string;
+            revision?: string;
+            /** Format: uuid */
+            registrationId?: string;
+            channelConfigurationId?: string;
+            status?: string;
+            /** Format: date-time */
+            leaseExpiresAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        /** @description 本人App告警偏好更新 */
+        UpdateAppNotificationPreferenceRequest: {
+            /** @description 目标App告警偏好 */
+            appPushEnabled: boolean;
+            /**
+             * @description 当前版本，非负十进制字符串
+             * @example 0
+             */
+            expectedRevision: string;
+        };
+        /** @description 本人App告警偏好与当前可编辑性 */
+        AppNotificationPreferenceResponse: {
+            /** @description 同账号全部已授权项目App告警偏好 */
+            appPushEnabled: boolean;
+            /**
+             * @description 当前版本字符串
+             * @example 0
+             */
+            revision: string;
+            /** @description 当前入口是否允许编辑 */
+            editable: boolean;
         };
         ConnectionQualification: {
             /** Format: int32 */
@@ -8895,7 +9201,7 @@ export interface components {
              */
             username?: string;
             /**
-             * @description 初始口令
+             * @description 初始口令，8至128字符且UTF-8不超过72字节
              * @example correct-horse-battery-staple
              */
             password?: string;
@@ -10074,10 +10380,77 @@ export interface components {
             password: string;
             browserEpoch: string;
         };
-        /** @description App 刷新 / 注销请求 */
-        AppRefreshRequest: {
-            /** @description 刷新令牌（存客户端安全存储） */
-            refreshToken?: string;
+        /** @description App项目换签请求 */
+        AppProjectSwitchRequest: {
+            /** @description 当前源项目刷新凭据 */
+            refreshToken: string;
+            /**
+             * Format: uuid
+             * @description 目标定位，不授予权限
+             */
+            targetProjectId: string;
+        };
+        /** @description App目标项目会话与可信入口 */
+        AppProjectSwitchResponse: {
+            /**
+             * Format: uuid
+             * @description 稳定平台实例
+             */
+            backendInstanceId: string;
+            /**
+             * Format: uuid
+             * @description 已认证租户
+             */
+            tenantId: string;
+            /**
+             * Format: uuid
+             * @description 已认证本人
+             */
+            appUserId: string;
+            /**
+             * Format: uuid
+             * @description 目标项目
+             */
+            projectId: string;
+            /** @description 可信目标入口键 */
+            projectKey: string;
+            /** @description 目标名称 */
+            projectName: string;
+            /** @description 目标令牌对，不得写日志 */
+            session: components["schemas"]["AppSessionResponse"];
+        };
+        /** @description 已签发会话的可信身份；平台实例未配置时不具备推送接入资格 */
+        AppSessionIdentity: {
+            /**
+             * Format: uuid
+             * @description 稳定平台实例，未配置时为空
+             */
+            backendInstanceId?: string | null;
+            /**
+             * Format: uuid
+             * @description 可信租户
+             */
+            tenantId?: string;
+            /**
+             * Format: uuid
+             * @description 终端用户
+             */
+            appUserId?: string;
+            /**
+             * Format: uuid
+             * @description 当前项目
+             */
+            projectId?: string;
+            /**
+             * Format: uuid
+             * @description 当前刷新族，与JWT的sid一致
+             */
+            sessionId?: string;
+            /**
+             * Format: uuid
+             * @description 跨项目换签保持的登录会话组
+             */
+            sessionGroupId?: string;
         };
         /** @description App 会话响应 */
         AppSessionResponse: {
@@ -10097,12 +10470,19 @@ export interface components {
              * @example 2026-09-01T09:15:00Z
              */
             refreshExpiresAt?: string;
+            /** @description 服务器签发的会话关联，安装绑定不可自报身份 */
+            identity?: components["schemas"]["AppSessionIdentity"];
+        };
+        /** @description App 刷新 / 注销请求 */
+        AppRefreshRequest: {
+            /** @description 刷新令牌（存客户端安全存储） */
+            refreshToken?: string;
         };
         /** @description App 改密请求 */
         AppChangePasswordRequest: {
             /** @description 原口令 */
             oldPassword?: string;
-            /** @description 新口令（最短 8 位） */
+            /** @description 新口令（8至128字符，UTF-8不超过72字节） */
             newPassword?: string;
         };
         /** @description App 登录请求 */
@@ -12544,6 +12924,47 @@ export interface components {
             /** @description 当前选中的项目 ID；未选择时为 null */
             currentProjectId?: string;
         };
+        /** @description 本人当前有效授权的项目候选 */
+        AppAuthorizedProject: {
+            /**
+             * Format: uuid
+             * @description 项目标识
+             */
+            id: string;
+            /** @description 可信项目入口键 */
+            projectKey: string;
+            /** @description 项目名称 */
+            name: string;
+            /** @description 本人当前角色，仅用于展示 */
+            role: string;
+        };
+        /** @description 本人项目有界扫描页及可信身份 */
+        AppAuthorizedProjectPage: {
+            /**
+             * Format: uuid
+             * @description 稳定平台实例
+             */
+            backendInstanceId: string;
+            /**
+             * Format: uuid
+             * @description 已认证租户
+             */
+            tenantId: string;
+            /**
+             * Format: uuid
+             * @description 已认证本人
+             */
+            appUserId: string;
+            /**
+             * Format: uuid
+             * @description 当前源项目
+             */
+            projectId: string;
+            /** @description 本页授权候选，可为空 */
+            items: components["schemas"]["AppAuthorizedProject"][];
+            /** @description 不透明的下一页游标；末页为null */
+            nextCursor?: string | null;
+        };
         /** @description App 设备 */
         AppDeviceResponse: {
             /** @description 设备 ID */
@@ -12565,6 +12986,10 @@ export interface components {
             lastOnlineAt?: string;
             /** @description 创建时刻（RFC3339 UTC） */
             createdAt?: string;
+            /** @description 当前设备类型名称，可空 */
+            deviceTypeName?: string;
+            /** @description 最近有效数据接收时刻（RFC3339 UTC），历史未知为空 */
+            lastDataReportAt?: string;
         };
         CursorPageAppDeviceResponse: {
             items?: components["schemas"]["AppDeviceResponse"][];
@@ -12657,6 +13082,31 @@ export interface components {
             outputSchema: string | null;
             /** Format: int32 */
             timeoutSeconds: number;
+        };
+        /** @description App授权设备四统计；不含未绑定或已删除设备 */
+        AppDeviceStatisticsResponse: {
+            /**
+             * Format: int64
+             * @description 授权设备总数
+             */
+            total?: number;
+            /**
+             * Format: int64
+             * @description 当前ONLINE设备数
+             */
+            online?: number;
+            /**
+             * Format: int64
+             * @description 接收时刻严格晚于asOf前24小时的首次有效CURRENT属性或事件设备数；历史未知不回填
+             */
+            active24h?: number;
+            /**
+             * Format: int64
+             * @description 存在ACTIVE条件告警的设备数，确认状态不影响，按设备去重
+             */
+            alarming?: number;
+            /** @description 数据库统计时刻，RFC3339 UTC */
+            asOf?: string;
         };
         WebAppDeviceCatalogItem: {
             /** Format: uuid */
@@ -12764,6 +13214,82 @@ export interface components {
             /** Format: uuid */
             entryDashboardId: string | null;
             dashboards: components["schemas"]["PublishedDashboardReferenceResponse"][];
+        };
+        /** @description App公共告警 */
+        AppAlarmResponse: {
+            /** @description 告警事故标识 */
+            id?: string;
+            /** @description 来源设备标识 */
+            deviceId?: string;
+            /** @description 当前设备名称 */
+            deviceName?: string;
+            /** @description 设备标识 */
+            deviceKey?: string;
+            /** @description 告警类型文本 */
+            alarmType?: string;
+            /** @description 严重程度 */
+            severity?: string;
+            /** @description 条件状态：ACTIVE或CLEARED */
+            conditionState?: string;
+            /** @description 确认状态，与解除状态不同 */
+            ackState?: string;
+            /** @description 首次异常时间，排序和时间筛选依据 */
+            firstConditionAt?: string;
+            /**
+             * Format: date-time
+             * @description 实际触发时间，未知为空
+             */
+            activatedAt?: string | null;
+            /**
+             * Format: date-time
+             * @description 解除时间，可空
+             */
+            clearedAt?: string | null;
+            /**
+             * Format: date-time
+             * @description 确认时间，可空
+             */
+            acknowledgedAt?: string | null;
+            /** @description 最近相关数据接收时间 */
+            lastReceivedAt?: string;
+        };
+        CursorPageAppAlarmResponse: {
+            items?: components["schemas"]["AppAlarmResponse"][];
+            /** @description 不透明的下一页游标；末页为null */
+            nextCursor?: string | null;
+            hasMore?: boolean;
+        };
+        /** @description App本人账户资料 */
+        AppAccountResponse: {
+            /**
+             * Format: uuid
+             * @description 终端用户标识
+             */
+            id: string;
+            /** @description 用户名 */
+            username: string;
+            /** @description 显示名称 */
+            displayName: string | null;
+            /**
+             * Format: date-time
+             * @description 创建时刻
+             */
+            createdAt: string;
+            /** @description 当前项目角色 */
+            projectRole: string;
+            /** @description 当前项目允许改密，提交时仍复验 */
+            passwordChangeAllowed: boolean;
+        };
+        /** @description 本人当前项目电话短信配置与渠道状态 */
+        AppNotificationChannelResponse: {
+            /** @description 当前项目电话接收号码，未配置为空 */
+            voiceNumber: string | null;
+            /** @description 当前项目短信接收号码，未配置为空 */
+            smsNumber: string | null;
+            /** @description 电话渠道已接入；当前固定false */
+            voiceAvailable: boolean;
+            /** @description 短信渠道已接入；当前固定false */
+            smsAvailable: boolean;
         };
         OpenDeviceModel: {
             /** Format: uuid */
@@ -13453,6 +13979,136 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getEndUserNotificationContact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 接口path参数「projectId」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                projectId: string;
+                /** @description 接口path参数「appUserId」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                appUserId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 当前项目接收配置 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndUserNotificationContactResponse"];
+                };
+            };
+            /** @description 未认证 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 管理权限不足 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目或目标不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateEndUserNotificationContact: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                /** @description 接口path参数「projectId」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                projectId: string;
+                /** @description 接口path参数「appUserId」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                appUserId: string;
+            };
+            cookie?: never;
+        };
+        /** @description 更新终端用户接收号码的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEndUserNotificationContactRequest"];
+            };
+        };
+        responses: {
+            /** @description 接收配置已保存或未变化 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndUserNotificationContactResponse"];
+                };
+            };
+            /** @description 参数不合法 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 未认证 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 权限不足或项目只读 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目或目标不可见 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 配置版本或公共幂等冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
             };
         };
     };
@@ -15128,6 +15784,142 @@ export interface operations {
             };
             /** @description App 访问令牌无效（60009） */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    registerAppPushInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 注册或轮换会话关联安装的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterAppPushInstallationRequest"];
+            };
+        };
+        responses: {
+            /** @description 安装注册成功，返回权威版本与随机回执 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppPushInstallationSummary"];
+                };
+            };
+            /** @description 安装版本或会话归属冲突，必须先读回，错误码60065 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 平台实例或推送配置不可用，错误码60063或60067 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAppNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 本人通知偏好 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppNotificationPreferenceResponse"];
+                };
+            };
+            /** @description App身份或角色失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateAppNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文 */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 更新本人通知偏好的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAppNotificationPreferenceRequest"];
+            };
+        };
+        responses: {
+            /** @description 偏好已更新或确认未变化 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppNotificationPreferenceResponse"];
+                };
+            };
+            /** @description 参数不合法 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description App身份或角色失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 项目只读 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 偏好版本已变化（60061） */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22833,6 +23625,76 @@ export interface operations {
             };
         };
     };
+    switchAppProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description 切换本人项目的请求数据；结构、必填字段和校验边界见请求 Schema */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppProjectSwitchRequest"];
+            };
+        };
+        responses: {
+            /** @description 成功返回本人项目页或目标会话 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppProjectSwitchResponse"];
+                };
+            };
+            /** @description 参数或游标无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前身份或刷新凭据无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 目标项目不存在或未授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 超过适用配额或速率限制 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 导航未配置或依赖不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     refresh_1: {
         parameters: {
             query?: never;
@@ -28451,6 +29313,132 @@ export interface operations {
             };
         };
     };
+    getAppPushInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 接口path参数「installationId」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                installationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 本人安装当前摘要 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppPushInstallationSummary"];
+                };
+            };
+            /** @description 本人无该安装记录，错误码60066 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    revokeAppPushInstallation: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 接口header参数「If-Match」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                "If-Match": string;
+            };
+            path: {
+                /** @description 接口path参数「installationId」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                installationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 精确绑定已撤销或已处于撤销状态 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listAppAuthorizedProjects: {
+        parameters: {
+            query?: {
+                /** @description 接口query参数「cursor」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                cursor?: string;
+                /** @description 接口query参数「limit」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 成功返回本人项目页或目标会话 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppAuthorizedProjectPage"];
+                };
+            };
+            /** @description 参数或游标无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 当前身份或刷新凭据无效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 目标项目不存在或未授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 超过适用配额或速率限制 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 导航未配置或依赖不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     list_20: {
         parameters: {
             query?: {
@@ -28458,6 +29446,10 @@ export interface operations {
                 cursor?: string;
                 /** @description 单页数量 */
                 limit?: number;
+                /** @description 名称/设备标识字面子串 */
+                q?: string;
+                /** @description 连接状态 */
+                status?: string;
             };
             header?: never;
             path?: never;
@@ -28820,6 +29812,35 @@ export interface operations {
             };
         };
     };
+    getAppDeviceStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 授权设备统计 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppDeviceStatisticsResponse"];
+                };
+            };
+            /** @description App令牌或项目角色失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listWebAppDeviceCatalog: {
         parameters: {
             query: {
@@ -29102,6 +30123,167 @@ export interface operations {
                 headers: {
                     /** @description 禁止缓存系统错误 */
                     "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAppAlarms: {
+        parameters: {
+            query?: {
+                /** @description 接口query参数「deviceId」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                deviceId?: string;
+                /** @description 接口query参数「severity」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                severity?: string;
+                /** @description 接口query参数「conditionState」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                conditionState?: string;
+                /** @description 接口query参数「from」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                from?: string;
+                /** @description 接口query参数「to」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                to?: string;
+                /** @description 接口query参数「cursor」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                cursor?: string;
+                /** @description 接口query参数「limit」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 授权告警事实 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CursorPageAppAlarmResponse"];
+                };
+            };
+            /** @description 筛选或游标不合法 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description App身份或项目角色失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAppAlarm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 接口path参数「id」；含义见接口说明，类型、必填性和边界见参数 Schema */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 授权告警事实 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppAlarmResponse"];
+                };
+            };
+            /** @description 筛选或游标不合法 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description App身份或项目角色失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description 告警不存在或未授权（60060） */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAppAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 本人账户资料 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppAccountResponse"];
+                };
+            };
+            /** @description App身份或角色失效 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAppNotificationChannels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 本人通知接收配置与不可用渠道状态 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppNotificationChannelResponse"];
+                };
+            };
+            /** @description App身份或角色失效 */
+            401: {
+                headers: {
                     [name: string]: unknown;
                 };
                 content: {
@@ -30031,84 +31213,6 @@ export interface operations {
             };
         };
     };
-    management_get__actuator: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 返回运维链接索引 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/vnd.spring-boot.actuator.v3+json": {
-                        [key: string]: unknown;
-                    };
-                    "application/vnd.spring-boot.actuator.v2+json": {
-                        [key: string]: unknown;
-                    };
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description 运维索引要求平台认证，身份未通过 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description 当前身份不能访问运维索引 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    management_get__actuator_prometheus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 指标抓取成功；正文为协商的指标文本 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain;version=0.0.4;charset=utf-8": string;
-                    "application/openmetrics-text;version=1.0.0;charset=utf-8": string;
-                    "application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited": string;
-                };
-            };
-            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     management_get__actuator_health: {
         parameters: {
             query?: never;
@@ -30213,6 +31317,84 @@ export interface operations {
                         [key: string]: unknown;
                     };
                 };
+            };
+        };
+    };
+    management_get__actuator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 返回运维链接索引 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.spring-boot.actuator.v3+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/vnd.spring-boot.actuator.v2+json": {
+                        [key: string]: unknown;
+                    };
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description 运维索引要求平台认证，身份未通过 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 当前身份不能访问运维索引 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    management_get__actuator_prometheus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 指标抓取成功；正文为协商的指标文本 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain;version=0.0.4;charset=utf-8": string;
+                    "application/openmetrics-text;version=1.0.0;charset=utf-8": string;
+                    "application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited": string;
+                };
+            };
+            /** @description 运维资源、组件或路径不存在；不保证平台 ApiError 结构 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

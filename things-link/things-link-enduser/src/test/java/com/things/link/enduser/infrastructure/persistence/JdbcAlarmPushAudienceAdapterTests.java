@@ -51,7 +51,7 @@ class JdbcAlarmPushAudienceAdapterTests {
         audiences = List.of(new PushAudience(UUID.randomUUID(), UUID.randomUUID()),
                 new PushAudience(UUID.randomUUID(), UUID.randomUUID()));
         when(jdbcTemplate.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<PushAudience>>any(),
-                eq(tenantId), eq(projectId), eq(deviceId))).thenReturn(audiences);
+                org.mockito.ArgumentMatchers.any(String[].class), eq(tenantId), eq(projectId), eq(deviceId))).thenReturn(audiences);
     }
 
     /** 确定无写许可时返回空受众，不能先读取用户/关系/安装再丢弃结果。 */
@@ -74,7 +74,7 @@ class JdbcAlarmPushAudienceAdapterTests {
         InOrder order = inOrder(lifecycleAccessService, jdbcTemplate);
         order.verify(lifecycleAccessService).lockActiveForWrite(tenantId, projectId);
         order.verify(jdbcTemplate).query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<PushAudience>>any(),
-                eq(tenantId), eq(projectId), eq(deviceId));
+                org.mockito.ArgumentMatchers.any(String[].class), eq(tenantId), eq(projectId), eq(deviceId));
     }
 
     /** 项目SQL锁超时必须原样向调用事务传播，不得当作空受众或继续查询App事实。 */

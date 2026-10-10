@@ -1,10 +1,6 @@
 <template>
   <section class="end-user-devices">
     <ElDivider content-position="left">当前用户的设备关系</ElDivider>
-    <div class="console-actions"
-      ><ElButton :disabled="loading || busy" @click="refresh">刷新设备关系</ElButton></div
-    >
-    <p class="console-metadata">用户 ID：{{ appUserId }}</p>
     <ElAlert class="console-hint" type="info" show-icon :closable="false"
       >项目角色不代表设备授权；关闭关系后不会因恢复项目角色而自动恢复。</ElAlert
     >
@@ -29,7 +25,7 @@
         ><ElEmpty
           :description="
             failed
-              ? '设备关系读取失败，请刷新'
+              ? '设备关系读取失败，请重新进入页面'
               : loading
                 ? '正在读取关系'
                 : '此用户在本项目暂无设备关系'
@@ -116,7 +112,7 @@
           notice.value =
             error instanceof HttpError && !error.outcomeUnknown
               ? `解绑未成功：${error.message}`
-              : '解绑结果未知，先刷新当前关系核对；不会自动重试。'
+              : '解绑结果未知，请核对重新读取的关系；不会自动重试。'
       }
       if (epoch === identity) await refresh()
     } finally {

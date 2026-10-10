@@ -108,6 +108,8 @@ public class IdempotencyFilter extends OncePerRequestFilter {
             domainRoute("POST", "^/api/v1/app/device-shares$"),
             domainRoute("POST", "^/api/v1/app/device-transfers$"),
             domainRoute("DELETE", "^/api/v1/app/devices/[^/]+/binding$"),
+            domainRoute("PUT", "^/api/v1/app/push-installations$"),
+            domainRoute("DELETE", "^/api/v1/app/push-installations/[^/]+$"),
             domainRoute("PUT", "^/api/v1/app/push-tokens$"),
             domainRoute("DELETE", "^/api/v1/app/push-tokens/[^/]+$"),
             // OTA创建具备持久领域恢复映射，取消等其他写仍保留公共完成墓碑。
@@ -331,7 +333,8 @@ public class IdempotencyFilter extends OncePerRequestFilter {
                 "/api/v1/auth/project-invitation/register").contains(path)) return false;
         // ADR0107身份操作必须实际检查Cookie代次，不允许通用墓碑先返回或缓存凭据请求。
         if ("POST".equals(request.getMethod()) && Set.of("/api/v1/app/browser-auth/login",
-                "/api/v1/app/browser-auth/refresh", "/api/v1/app/browser-auth/logout").contains(path)) return false;
+                "/api/v1/app/browser-auth/refresh", "/api/v1/app/browser-auth/logout",
+                "/api/v1/app/auth/switch-project").contains(path)) return false;
         if (!GUARDED_METHODS.contains(request.getMethod()) || !StringUtils.hasText(key)) {
             return false;
         }

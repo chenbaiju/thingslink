@@ -22,6 +22,8 @@ public class AppPushTokenService {
 
     /** token 合理上限，与 API DTO 一致，避免绕过 Controller 时写入无界密文。 */
     private static final int MAX_TOKEN_LENGTH = 4096;
+    @Autowired
+    private org.springframework.core.env.Environment environment;
 
     /** 安装实例仓储。 */
     private final AppPushTokenRepository repository;
@@ -77,6 +79,9 @@ public class AppPushTokenService {
         // ADR 0064 决策 2/4：先持项目许可，再沿安装advisory与行锁注册，冻结不能轮换或恢复共用安装。
         projectWriteGuard.requireWritable(tenantId, projectId);
         requireArguments(tenantId, appUserId, installationId, provider, plainToken);
+        if (provider != AppPushToken.Provider.MOCK || (environment != null
+                && (!environment.matchesProfiles("test", "development") || environment.matchesProfiles("prod", "production"))))
+            throw new com.things.link.shared.error.BusinessException(com.things.link.enduser.domain.EndUserErrorCode.PUSH_INSTALLATION_UNAVAILABLE);
         repository.lockRegistration(tenantId, appUserId, installationId);
         Instant now = clock.instant();
         boolean[] created = {false};

@@ -1,0 +1,15 @@
+{
+  "bearssl": {
+    "repository": "https://www.bearssl.org/git/BearSSL",
+    "commit": "7bea48e5e850ab4cafbe68d3765cdaba13a86d6f",
+    "license": "MIT",
+    "profile": "TLS1.2 ECDHE-ECDSA P-256 AES-128-GCM SHA-256",
+    "automaticRandomSources": false,
+    "automaticSystemTime": false
+  },
+  "board": "JG-M01_NET_V0.4 / AT32F415CBT7 / CH395 UART",
+  "compiler": "ARMCC 5.06 update 6 build 750",
+  "flash": {"start": "0x08002000", "maximumBytes": 55296},
+  "ram": {"start": "0x20000000", "maximumBytes": 32768},
+  "qualification": "experimental-status-only; no production credential persistence or lock control"
+}

@@ -22,9 +22,9 @@ public record AppChangePasswordRequest(
         @Size(max = 128, message = "口令长度不能超过 128")
         String oldPassword,
 
-        // 最短长度由应用服务校验（MIN_PASSWORD_LENGTH=8，与预置账号一致），
+        // 长度由共享新口令策略校验（与预置账号一致，含UTF-8字节上限），
         // 这里只挡超长输入（bcrypt 计算成本随长度增长的防御上限）
-        @Schema(description = "新口令（最短 8 位）")
+        @Schema(description = "新口令（8至128字符，UTF-8不超过72字节）")
         @NotBlank(message = "新口令不能为空")
         @Size(max = 128, message = "口令长度不能超过 128")
         String newPassword) {

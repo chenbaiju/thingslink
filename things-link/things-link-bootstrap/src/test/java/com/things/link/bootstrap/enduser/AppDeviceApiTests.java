@@ -76,6 +76,7 @@ class AppDeviceApiTests extends AbstractIntegrationTest {
 
     /** 本用例插入的租户。 */
     private final Set<UUID> tenantIds = new LinkedHashSet<>();
+    private final Set<UUID> statisticsAccounts = new LinkedHashSet<>();
     /** 项目 → 归属租户。 */
     private final Map<UUID, UUID> projectTenants = new LinkedHashMap<>();
 
@@ -147,6 +148,8 @@ class AppDeviceApiTests extends AbstractIntegrationTest {
                     // current_setting 策略的 DELETE 会报 "variable not found in subplan
                     // target list"（与 S7/S8/S9 一致，均不回删时序点）。该表无外键指向
                     // sys_project，遗留行随本用例唯一 projectId 成为孤儿，不影响后续用例。
+                    jdbcTemplate.update("DELETE FROM alarm_instance WHERE project_id = ?", pid);
+                    jdbcTemplate.update("DELETE FROM alarm_rule WHERE project_id = ?", pid);
                     jdbcTemplate.update("DELETE FROM dev_shadow WHERE project_id = ?", pid);
                     jdbcTemplate.update("DELETE FROM dev_device WHERE project_id = ?", pid);
                     jdbcTemplate.update("DELETE FROM dev_command_definition WHERE project_id = ?", pid);
@@ -170,12 +173,191 @@ class AppDeviceApiTests extends AbstractIntegrationTest {
             for (UUID pid : projectTenants.keySet()) {
                 jdbcTemplate.update("DELETE FROM sys_project WHERE id = ?", pid);
             }
+            for (UUID account : statisticsAccounts) jdbcTemplate.update("DELETE FROM sys_account WHERE id=?", account);
             for (UUID tid : tenantIds) {
                 jdbcTemplate.update("DELETE FROM sys_tenant WHERE id = ?", tid);
             }
         } finally {
             TenantContext.clear();
         }
+    }
+
+    @Test
+    void statisticsUseAuthorizedDevicesAndDistinctActiveAlarms() throws Exception {
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try {
+            jdbcTemplate.update("UPDATE dev_device SET status='OFFLINE' WHERE project_id=?", projectId);
+            jdbcTemplate.update("UPDATE dev_device SET status='ONLINE',last_data_report_at=now()-interval '1 hour' WHERE id IN (?,?)",
+                    devicePrimary, deviceUnbound);
+            jdbcTemplate.update("UPDATE dev_device SET last_data_report_at=now()-interval '25 hours' WHERE id=?", deviceMember);
+            statisticsAlarm(devicePrimary, "ACTIVE");
+            statisticsAlarm(devicePrimary, "ACTIVE");
+            statisticsAlarm(deviceMember, "PENDING");
+            statisticsAlarm(deviceUnbound, "ACTIVE");
+        } finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/devices/statistics").header("Authorization", "Bearer " + login("alice")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(3))
+                .andExpect(jsonPath("$.online").value(1)).andExpect(jsonPath("$.active24h").value(1))
+                .andExpect(jsonPath("$.alarming").value(1)).andExpect(jsonPath("$.asOf").isString());
+    }
+
+    @Test
+    void statisticsExcludeClosedAndDeletedDevicesAndRejectLostRole() throws Exception {
+        String token = login("alice");
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try {
+            jdbcTemplate.update("UPDATE app_user_device SET status='CLOSED' WHERE app_user_id=? AND device_id=?",
+                    userPrimary, deviceMember);
+            jdbcTemplate.update("UPDATE dev_device SET deleted_at=now() WHERE id=?", deviceReadOnly);
+        } finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/devices/statistics").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1));
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try { jdbcTemplate.update("UPDATE app_user_role SET status='DISABLED' WHERE app_user_id=?", userPrimary); }
+        finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/devices/statistics").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/app/devices/statistics").header("Authorization", "Bearer " + consoleToken()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void emptyStatisticsHaveRealZeroAndProjectionRemainsRlsReadOnly() throws Exception {
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try { jdbcTemplate.update("UPDATE app_user_device SET status='CLOSED' WHERE app_user_id=?", userObserver); }
+        finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/devices/statistics").header("Authorization", "Bearer " + login("bob")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0))
+                .andExpect(jsonPath("$.online").value(0)).andExpect(jsonPath("$.active24h").value(0))
+                .andExpect(jsonPath("$.alarming").value(0));
+        for (String view : java.util.List.of("dev_device_app_v1", "alarm_app_active_device_v1", "alarm_app_history_v1")) {
+            assertThat(jdbcTemplate.queryForObject("SELECT 'security_invoker=true'=ANY(reloptions) FROM pg_class WHERE oid=?::regclass",
+                    Boolean.class, view)).isTrue();
+            assertThat(jdbcTemplate.queryForObject("SELECT has_table_privilege('thingslink_app',?,'UPDATE')", Boolean.class, view)).isFalse();
+        }
+        TenantContext.set(new TenantScope(tenantId, otherProjectId, Uuid7.generate()));
+        try {
+            assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM dev_device_app_v1 WHERE project_id=?", Long.class, projectId)).isZero();
+            assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM alarm_app_history_v1 WHERE project_id=?", Long.class, projectId)).isZero();
+        } finally { TenantContext.clear(); }
+    }
+
+    @Test
+    void statisticsDistinguishActivityWindowAndAcknowledgedAlarm() throws Exception {
+        UUID actor = Uuid7.generate();
+        jdbcTemplate.update("INSERT INTO sys_account(id,email,password_hash,display_name) VALUES (?,?,'{noop}unused','统计确认账号')",
+                actor, actor + "@example.test");
+        statisticsAccounts.add(actor);
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try {
+            jdbcTemplate.update("UPDATE dev_device SET last_data_report_at=now()-interval '24 hours' WHERE id=?", devicePrimary);
+            jdbcTemplate.update("UPDATE dev_device SET last_data_report_at=now()-interval '23 hours 59 minutes' WHERE id=?", deviceMember);
+            jdbcTemplate.update("UPDATE dev_device SET last_data_report_at=now()+interval '1 day' WHERE id=?", deviceReadOnly);
+            statisticsAlarm(devicePrimary, "ACTIVE");
+            jdbcTemplate.update("UPDATE alarm_instance SET ack_state='ACKNOWLEDGED',acknowledged_at=now(),acknowledged_by=? WHERE project_id=?",
+                    actor, projectId);
+        } finally { TenantContext.clear(); }
+        String token = login("alice");
+        mockMvc.perform(get("/api/v1/app/devices/statistics").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.active24h").value(1))
+                .andExpect(jsonPath("$.alarming").value(1));
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try { jdbcTemplate.update("UPDATE alarm_instance SET condition_state='CLEARED',cleared_at=now(),clear_reason='AUTO_RECOVERY' WHERE project_id=?", projectId); }
+        finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/devices/statistics").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.alarming").value(0));
+    }
+
+    private UUID statisticsAlarm(UUID device, String condition) {
+        UUID rule = Uuid7.generate();
+        UUID alarm = Uuid7.generate();
+        jdbcTemplate.update("""
+                INSERT INTO alarm_rule(id,tenant_id,project_id,name,alarm_type,originator_id,property_key,
+                    trigger_operator,trigger_threshold,clear_operator,clear_threshold,severity)
+                VALUES (?,?,?,?,'TEMPERATURE',?,'temperature','GT',30,'LT',25,'MAJOR')
+                """, rule, tenantId, projectId, "App统计规则-" + rule, device);
+        jdbcTemplate.update("""
+                INSERT INTO alarm_instance(id,tenant_id,project_id,rule_id,originator_type,originator_id,
+                    alarm_type,severity,condition_state,first_condition_at,activated_at,last_received_at,last_value)
+                VALUES (?,?,?,?,'DEVICE',?,'TEMPERATURE','MAJOR',?,now(),
+                    CASE WHEN ?='ACTIVE' THEN now() ELSE NULL END,now(),31)
+                """, alarm, tenantId, projectId, rule, device, condition, condition);
+        return alarm;
+    }
+
+    @Test
+    void alarmHistoryFiltersBeforePagingAndBindsSignedCursor() throws Exception {
+        UUID first, second;
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try {
+            first = statisticsAlarm(devicePrimary, "ACTIVE");
+            second = statisticsAlarm(deviceReadOnly, "ACTIVE");
+            statisticsAlarm(deviceUnbound, "ACTIVE");
+            statisticsAlarm(deviceMember, "PENDING");
+            UUID recovered = statisticsAlarm(deviceMember, "PENDING");
+            jdbcTemplate.update("UPDATE alarm_instance SET condition_state='CLEARED',cleared_at=now(),clear_reason='AUTO_RECOVERY' WHERE id=?", recovered);
+            jdbcTemplate.update("UPDATE alarm_instance SET first_condition_at='2026-10-02T00:00:00Z',activated_at='2026-10-02T00:01:00Z' WHERE id=?", first);
+            jdbcTemplate.update("UPDATE alarm_instance SET first_condition_at='2026-10-01T00:00:00Z',activated_at='2026-10-01T00:01:00Z',condition_state='CLEARED',cleared_at=now(),clear_reason='AUTO_RECOVERY' WHERE id=?", second);
+        } finally { TenantContext.clear(); }
+        String token = login("alice");
+        var response = mockMvc.perform(get("/api/v1/app/alarms").param("limit","1").header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(first.toString()))
+                .andExpect(jsonPath("$.hasMore").value(true)).andReturn();
+        String cursor = objectMapper.readTree(response.getResponse().getContentAsString()).get("nextCursor").asText();
+        mockMvc.perform(get("/api/v1/app/alarms").param("limit","1").param("cursor",cursor).header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(second.toString()))
+                .andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.hasMore").value(false));
+        for (String bad : new String[]{cursor+"x","bad"})
+            mockMvc.perform(get("/api/v1/app/alarms").param("limit","1").param("cursor",bad).header("Authorization","Bearer "+token)).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/app/alarms").param("limit","1").param("cursor",cursor).param("severity","INFO").header("Authorization","Bearer "+token)).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/app/alarms").param("limit","1").param("cursor",cursor).header("Authorization","Bearer "+login("bob"))).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/app/alarms").param("deviceId",deviceReadOnly.toString()).param("conditionState","CLEARED").param("severity","MAJOR")
+                        .param("from","2026-10-01T00:00:00Z").param("to","2026-10-02T00:00:00Z").header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.items[0].id").value(second.toString()));
+        mockMvc.perform(get("/api/v1/app/alarms").param("from","2026-10-02T00:00:00Z").param("to","2026-10-03T00:00:00Z").header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(1));
+        mockMvc.perform(get("/api/v1/app/alarms").param("deviceId",deviceOtherProject.toString()).header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+    }
+
+    @Test
+    void alarmDetailRechecksBindingsAndDoesNotLeakPrivateFields() throws Exception {
+        UUID visible, pending, unbound;
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try {
+            visible=statisticsAlarm(deviceReadOnly,"ACTIVE");
+            pending=statisticsAlarm(devicePrimary,"PENDING");
+            unbound=statisticsAlarm(deviceUnbound,"ACTIVE");
+        } finally { TenantContext.clear(); }
+        String token=login("alice");
+        mockMvc.perform(get("/api/v1/app/alarms/"+visible).header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.deviceId").value(deviceReadOnly.toString()))
+                .andExpect(jsonPath("$.conditionState").value("ACTIVE")).andExpect(jsonPath("$.ackState").value("UNACKNOWLEDGED"))
+                .andExpect(jsonPath("$.ruleId").doesNotExist()).andExpect(jsonPath("$.lastValue").doesNotExist())
+                .andExpect(jsonPath("$.tenantId").doesNotExist()).andExpect(jsonPath("$.acknowledgedBy").doesNotExist());
+        for (UUID id : new UUID[]{pending,unbound,Uuid7.generate()})
+            mockMvc.perform(get("/api/v1/app/alarms/"+id).header("Authorization","Bearer "+token))
+                    .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value(60060));
+        mockMvc.perform(get("/api/v1/app/alarms/"+visible).header("Authorization","Bearer "+login("bob"))).andExpect(status().isNotFound());
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try { jdbcTemplate.update("UPDATE app_user_device SET status='CLOSED' WHERE device_id=? AND app_user_id=?",deviceReadOnly,userPrimary); }
+        finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/alarms/"+visible).header("Authorization","Bearer "+token)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/app/alarms").header("Authorization","Bearer "+token)).andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+        mockMvc.perform(get("/api/v1/app/alarms").header("Authorization","Bearer "+consoleToken())).andExpect(status().isUnauthorized());
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try { jdbcTemplate.update("UPDATE app_user_role SET status='DISABLED' WHERE app_user_id=?",userPrimary); }
+        finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/alarms").header("Authorization","Bearer "+token)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void alarmHistoryRejectsInvalidWindowsAndEnums() throws Exception {
+        String token=login("alice");
+        for (var param : Map.of("limit","51","severity","URGENT","conditionState","PENDING","from","2026-10-01T00:00:00Z","cursor","x".repeat(2049)).entrySet())
+            mockMvc.perform(get("/api/v1/app/alarms").param(param.getKey(),param.getValue()).header("Authorization","Bearer "+token)).andExpect(status().isBadRequest());
+        for (String end : new String[]{"2026-01-01T00:00:00Z","2028-01-01T00:00:00Z"})
+            mockMvc.perform(get("/api/v1/app/alarms").param("from","2026-01-01T00:00:00Z").param("to",end).header("Authorization","Bearer "+token)).andExpect(status().isBadRequest());
     }
 
     // ---------------------------------------------------------------- 列表与分页
@@ -226,6 +408,60 @@ class AppDeviceApiTests extends AbstractIntegrationTest {
         JsonNode secondBody = objectMapper.readTree(second.getResponse().getContentAsString());
         assertThat(secondBody.get("items").size()).isEqualTo(1);
         assertThat(secondBody.get("hasMore").asBoolean()).isFalse();
+    }
+
+    @Test
+    void deviceSearchFiltersBeforePaginationAndUsesLiteralWildcards() throws Exception {
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try {
+            jdbcTemplate.update("UPDATE dev_device SET name='公共灯',status='ONLINE' WHERE id IN (?,?)", devicePrimary, deviceMember);
+            jdbcTemplate.update("UPDATE dev_device SET name='公共灯',status='OFFLINE' WHERE id=?", deviceReadOnly);
+            jdbcTemplate.update("UPDATE dev_device SET name='未授权公共灯',status='ONLINE' WHERE id=?", deviceUnbound);
+        } finally { TenantContext.clear(); }
+        String token = login("alice");
+        var first = mockMvc.perform(get("/api/v1/app/devices").param("q", "公共灯").param("status", "ONLINE").param("limit", "1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.hasMore").value(true)).andReturn();
+        var firstBody = objectMapper.readTree(first.getResponse().getContentAsString());
+        var second = mockMvc.perform(get("/api/v1/app/devices").param("q", "公共灯").param("status", "ONLINE").param("limit", "1")
+                        .param("cursor", firstBody.path("nextCursor").asText()).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.hasMore").value(false)).andReturn();
+        assertThat(objectMapper.readTree(second.getResponse().getContentAsString()).path("items").get(0).path("id").asText())
+                .isNotEqualTo(firstBody.path("items").get(0).path("id").asText());
+        for (String literal : java.util.List.of("%", "_", "!")) {
+            mockMvc.perform(get("/api/v1/app/devices").param("q", literal).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+        }
+        mockMvc.perform(get("/api/v1/app/devices").param("status", "BAD").header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/app/devices").param("q", "x".repeat(101)).header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/app/devices").param("cursor", "invalid").header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void publicDetailExposesReportIndependentlyOfOnlineAndRejectsRevokedBinding() throws Exception {
+        Instant report = Instant.parse("2026-10-09T10:00:00Z");
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try {
+            jdbcTemplate.update("UPDATE dev_device SET last_data_report_at=?,last_online_at=NULL WHERE id=?",
+                    Timestamp.from(report), deviceReadOnly);
+        } finally { TenantContext.clear(); }
+        String token = login("alice");
+        mockMvc.perform(get("/api/v1/app/devices/" + deviceReadOnly).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.deviceTypeName").isString())
+                .andExpect(jsonPath("$.lastDataReportAt").value(report.toString()))
+                .andExpect(jsonPath("$.lastOnlineAt").isEmpty());
+        TenantContext.set(new TenantScope(tenantId, projectId, Uuid7.generate()));
+        try { jdbcTemplate.update("UPDATE app_user_device SET status='CLOSED' WHERE app_user_id=? AND device_id=?", userPrimary, deviceReadOnly); }
+        finally { TenantContext.clear(); }
+        mockMvc.perform(get("/api/v1/app/devices/" + deviceReadOnly).header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/app/devices").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(2));
     }
 
     /** App权限链保留超过JS安全整数的PG序号，历史未知来源不借用当前绑定。 */

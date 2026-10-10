@@ -92,6 +92,9 @@
     "name" : "EMQX ACL 回调",
     "description" : "EMQX HTTP ACL 回调端点，校验设备对特定 Topic 的发布/订阅权限"
   }, {
+    "name" : "App 安装推送",
+    "description" : "本人会话关联的推送安装生命周期"
+  }, {
     "name" : "设备凭据",
     "description" : "管理设备的 MQTT 连接认证凭据，密钥仅在创建时一次性明文返回"
   }, {
@@ -109,6 +112,9 @@
   }, {
     "name" : "OTA 发布物",
     "description" : "管理端读取与短期下载票据"
+  }, {
+    "name" : "App 公共告警",
+    "description" : "当前授权设备的独立告警历史与只读详情"
   }, {
     "name" : "模型探针",
     "description" : "冻结授权范围内的单次合成计数验证"
@@ -182,8 +188,14 @@
     "name" : "OTA 类型基线",
     "description" : "读取和更新类型升级基线"
   }, {
+    "name" : "App 账户设置",
+    "description" : "终端用户本人的账户公开资料与设置"
+  }, {
     "name" : "Agent 项目知识",
     "description" : "管理员批准的项目资料、不可变版本及本地关键词引用，不调用模型"
+  }, {
+    "name" : "App 项目导航",
+    "description" : "本人项目发现及受控跨项目换签"
   }, {
     "name" : "匿名看板分享",
     "description" : "独立capability的只读精确版本入口"
@@ -316,6 +328,9 @@
   }, {
     "name" : "设备遥测",
     "description" : "查询设备属性历史数据点，使用键集游标分页"
+  }, {
+    "name" : "终端用户接收号码",
+    "description" : "项目管理员维护当前项目终端用户电话与短信接收配置"
   }, {
     "name" : "匿名看板分享数据",
     "description" : "冻结变量scope与实际Schema绑定限制的只读数据"
@@ -1177,6 +1192,187 @@
             "description" : "请求成功，无响应正文"
           }
         }
+      }
+    },
+    "/api/v1/projects/{projectId}/end-users/{appUserId}/notification-contact" : {
+      "get" : {
+        "tags" : [ "终端用户接收号码" ],
+        "summary" : "读取终端用户接收号码",
+        "description" : "仅当前项目OWNER/ADMIN可读，ARCHIVED保留读取；不展示共享账号在其他项目的号码。",
+        "operationId" : "getEndUserNotificationContact",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "description" : "接口path参数「projectId」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "appUserId",
+          "in" : "path",
+          "description" : "接口path参数「appUserId」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "当前项目接收配置",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EndUserNotificationContactResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "未认证",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "管理权限不足",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "项目或目标不可见",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "consoleAccessBearer" : [ ]
+        } ]
+      },
+      "put" : {
+        "tags" : [ "终端用户接收号码" ],
+        "summary" : "更新终端用户接收号码",
+        "description" : "仅OWNER/ADMIN在ACTIVE项目写入；用户锁内按expectedRevision进行CAS，旧版本60062，不产生真实电话或短信。",
+        "operationId" : "updateEndUserNotificationContact",
+        "parameters" : [ {
+          "name" : "projectId",
+          "in" : "path",
+          "description" : "接口path参数「projectId」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "appUserId",
+          "in" : "path",
+          "description" : "接口path参数「appUserId」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "Idempotency-Key",
+          "in" : "header",
+          "description" : "可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "更新终端用户接收号码的请求数据；结构、必填字段和校验边界见请求 Schema",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateEndUserNotificationContactRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "接收配置已保存或未变化",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EndUserNotificationContactResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "参数不合法",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "未认证",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "权限不足或项目只读",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "项目或目标不可见",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "配置版本或公共幂等冲突",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "consoleAccessBearer" : [ ]
+        } ]
       }
     },
     "/api/v1/projects/{projectId}/end-users/{appUserId}/dashboard-grants/{dashboardId}" : {
@@ -3878,7 +4074,7 @@
       "put" : {
         "tags" : [ "App 推送令牌" ],
         "summary" : "注册或轮换 PUSH 安装实例",
-        "description" : "同一 installationId 原位轮换厂商 token；token 受 AES-256-GCM 保护且响应不回显。",
+        "description" : "仅test/development保留MOCK原位轮换；真实provider必须使用push-installations会话关联资源，旧入口拒绝为60067/503。",
         "operationId" : "register",
         "requestBody" : {
           "description" : "注册或轮换 PUSH 安装实例的请求数据；结构、必填字段和校验边界见请求 Schema",
@@ -3916,6 +4112,174 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/app/push-installations" : {
+      "put" : {
+        "tags" : [ "App 安装推送" ],
+        "summary" : "注册或轮换会话关联安装",
+        "description" : "期望版本为非负十进制字符串，首次为0；CAS冲突60065/409。配置未启用60067/503；token不回显。",
+        "operationId" : "registerAppPushInstallation",
+        "requestBody" : {
+          "description" : "注册或轮换会话关联安装的请求数据；结构、必填字段和校验边界见请求 Schema",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterAppPushInstallationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "安装注册成功，返回权威版本与随机回执",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppPushInstallationSummary"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "安装版本或会话归属冲突，必须先读回，错误码60065",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "平台实例或推送配置不可用，错误码60063或60067",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/app/account/notification-preferences" : {
+      "get" : {
+        "tags" : [ "App 账户设置" ],
+        "summary" : "读取本人通知偏好",
+        "description" : "偏好覆盖同一终端账号全部已授权项目；缺行默认App告警开启，项目只读仍可查询。",
+        "operationId" : "getAppNotificationPreferences",
+        "responses" : {
+          "200" : {
+            "description" : "本人通知偏好",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppNotificationPreferenceResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "App身份或角色失效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      },
+      "put" : {
+        "tags" : [ "App 账户设置" ],
+        "summary" : "更新本人通知偏好",
+        "description" : "以expectedRevision进行账号级CAS，项目许可和用户锁内复验；关闭影响后续受众与发送前授权，不撤回已发送消息。",
+        "operationId" : "updateAppNotificationPreferences",
+        "parameters" : [ {
+          "name" : "Idempotency-Key",
+          "in" : "header",
+          "description" : "可选业务写幂等键；按当前身份和接口合同处理，不保证重放成功正文",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "更新本人通知偏好的请求数据；结构、必填字段和校验边界见请求 Schema",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateAppNotificationPreferenceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "偏好已更新或确认未变化",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppNotificationPreferenceResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "参数不合法",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "App身份或角色失效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "项目只读",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "偏好版本已变化（60061）",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
       }
     },
     "/simulations/stop" : {
@@ -4099,6 +4463,16 @@
               }
             }
           },
+          "409" : {
+            "description" : "同一业务消息标识与首次载荷冲突",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
           "429" : {
             "description" : "认证或业务预算超限",
             "headers" : {
@@ -4118,48 +4492,8 @@
               }
             }
           },
-          "409" : {
-            "description" : "同一业务消息标识与首次载荷冲突",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "载荷格式或字段无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "设备凭据缺失或无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "413" : {
-            "description" : "请求正文超过允许体积",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "403" : {
-            "description" : "设备未开通该协议或项目当前不接受设备写入",
+          "503" : {
+            "description" : "可靠接管或依赖暂不可用",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4178,8 +4512,38 @@
               }
             }
           },
-          "503" : {
-            "description" : "可靠接管或依赖暂不可用",
+          "403" : {
+            "description" : "设备未开通该协议或项目当前不接受设备写入",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "413" : {
+            "description" : "请求正文超过允许体积",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "设备凭据缺失或无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "载荷格式或字段无效",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4224,6 +4588,16 @@
               }
             }
           },
+          "409" : {
+            "description" : "同一业务消息标识与首次载荷冲突",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
           "429" : {
             "description" : "认证或业务预算超限",
             "headers" : {
@@ -4243,48 +4617,8 @@
               }
             }
           },
-          "409" : {
-            "description" : "同一业务消息标识与首次载荷冲突",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "载荷格式或字段无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "设备凭据缺失或无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "413" : {
-            "description" : "请求正文超过允许体积",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "403" : {
-            "description" : "设备未开通该协议或项目当前不接受设备写入",
+          "503" : {
+            "description" : "可靠接管或依赖暂不可用",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4303,8 +4637,38 @@
               }
             }
           },
-          "503" : {
-            "description" : "可靠接管或依赖暂不可用",
+          "403" : {
+            "description" : "设备未开通该协议或项目当前不接受设备写入",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "413" : {
+            "description" : "请求正文超过允许体积",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "设备凭据缺失或无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "载荷格式或字段无效",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4378,28 +4742,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "载荷格式或字段无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "设备凭据缺失或无效",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DeviceHttpError"
-                }
-              }
-            }
-          },
-          "413" : {
-            "description" : "请求正文超过允许体积",
+          "503" : {
+            "description" : "可靠接管或依赖暂不可用",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -4418,8 +4762,28 @@
               }
             }
           },
-          "503" : {
-            "description" : "可靠接管或依赖暂不可用",
+          "413" : {
+            "description" : "请求正文超过允许体积",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "设备凭据缺失或无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeviceHttpError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "载荷格式或字段无效",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -7191,8 +7555,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "80004权限不足",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -7209,8 +7573,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "403" : {
+            "description" : "80004权限不足",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -14935,8 +15299,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "80004权限不足",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -14953,8 +15317,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "403" : {
+            "description" : "80004权限不足",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16020,6 +16384,90 @@
         }
       }
     },
+    "/api/v1/app/auth/switch-project" : {
+      "post" : {
+        "tags" : [ "App 项目导航" ],
+        "summary" : "切换本人项目",
+        "description" : "同时要求当前App Bearer和对应refreshToken；事务内复核源目标项目与本人角色，原子撤销旧族并签发新族。结果未知不得自动重放，需重新登录。目标不可见60064/404，刷新失效60007/401。",
+        "operationId" : "switchAppProject",
+        "requestBody" : {
+          "description" : "切换本人项目的请求数据；结构、必填字段和校验边界见请求 Schema",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AppProjectSwitchRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "成功返回本人项目页或目标会话",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppProjectSwitchResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "参数或游标无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "当前身份或刷新凭据无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "目标项目不存在或未授权",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "超过适用配额或速率限制",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "导航未配置或依赖不可用",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
     "/api/v1/app/auth/refresh" : {
       "post" : {
         "tags" : [ "App 认证" ],
@@ -16501,8 +16949,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "80004权限不足",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16519,8 +16967,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "403" : {
+            "description" : "80004权限不足",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16616,26 +17064,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16670,8 +17100,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16688,8 +17118,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16724,8 +17172,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16784,26 +17232,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16838,8 +17268,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16856,8 +17286,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16892,8 +17340,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -16952,26 +17400,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -17006,8 +17436,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -17024,8 +17454,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -17060,8 +17508,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -25489,11 +25937,178 @@
         }
       }
     },
+    "/api/v1/app/push-installations/{installationId}" : {
+      "get" : {
+        "tags" : [ "App 安装推送" ],
+        "summary" : "读取本人安装关联摘要",
+        "description" : "读取同一终端账号的最新安装版本；无记录60066/404，失效绑定返回REVOKED；不含厂商token。",
+        "operationId" : "getAppPushInstallation",
+        "parameters" : [ {
+          "name" : "installationId",
+          "in" : "path",
+          "description" : "接口path参数「installationId」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "本人安装当前摘要",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppPushInstallationSummary"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "本人无该安装记录，错误码60066",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "App 安装推送" ],
+        "summary" : "按版本撤销本人安装关联",
+        "description" : "If-Match必须为带双引号的十进制版本；仅此安全撤销允许冻结项目，不允许恢复或注册。",
+        "operationId" : "revokeAppPushInstallation",
+        "parameters" : [ {
+          "name" : "installationId",
+          "in" : "path",
+          "description" : "接口path参数「installationId」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "If-Match",
+          "in" : "header",
+          "description" : "接口header参数「If-Match」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "精确绑定已撤销或已处于撤销状态"
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/app/projects" : {
+      "get" : {
+        "tags" : [ "App 项目导航" ],
+        "summary" : "发现本人项目",
+        "description" : "仅当前租户本人有效角色，每次最多扫描100个项目；空页可有nextCursor，limit为1至100，默认20。平台导航未配置返回60063/503。",
+        "operationId" : "listAppAuthorizedProjects",
+        "parameters" : [ {
+          "name" : "cursor",
+          "in" : "query",
+          "description" : "接口query参数「cursor」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "接口query参数「limit」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "成功返回本人项目页或目标会话",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppAuthorizedProjectPage"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "参数或游标无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "当前身份或刷新凭据无效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "目标项目不存在或未授权",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "超过适用配额或速率限制",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "导航未配置或依赖不可用",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
     "/api/v1/app/devices" : {
       "get" : {
         "tags" : [ "App 设备" ],
         "summary" : "设备列表",
-        "description" : "列出当前终端用户在令牌项目下已授权（有效绑定）的设备，按创建时间降序游标分页。解绑后立即不可见。",
+        "description" : "列出当前终端用户在令牌项目下已授权（有效绑定）的设备，按创建时间降序游标分页。解绑后立即不可见；可按名称/标识字面搜索与连接状态筛选。",
         "operationId" : "list_20",
         "parameters" : [ {
           "name" : "cursor",
@@ -25501,7 +26116,9 @@
           "description" : "上一页游标",
           "required" : false,
           "schema" : {
-            "type" : "string"
+            "type" : "string",
+            "maxLength" : 512,
+            "minLength" : 0
           }
         }, {
           "name" : "limit",
@@ -25514,6 +26131,25 @@
             "default" : 50,
             "maximum" : 200,
             "minimum" : 1
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "description" : "名称/设备标识字面子串",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "description" : "连接状态",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "pattern" : "INACTIVE|ONLINE|OFFLINE"
           }
         } ],
         "responses" : {
@@ -26098,6 +26734,36 @@
         }
       }
     },
+    "/api/v1/app/devices/statistics" : {
+      "get" : {
+        "tags" : [ "App 设备" ],
+        "summary" : "授权设备统计",
+        "description" : "按当前有效项目角色与设备绑定聚合；不使用Console全项目概要或设备端时钟。",
+        "operationId" : "getAppDeviceStatistics",
+        "responses" : {
+          "200" : {
+            "description" : "授权设备统计",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppDeviceStatisticsResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "App令牌或项目角色失效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/app/devices/catalog" : {
       "get" : {
         "tags" : [ "WebApp 运行数据" ],
@@ -26642,6 +27308,244 @@
         } ]
       }
     },
+    "/api/v1/app/alarms" : {
+      "get" : {
+        "tags" : [ "App 公共告警" ],
+        "summary" : "App告警历史",
+        "description" : "独立于看板，按首次异常时间倒序；时间区间[from,to)，不影响通知偏好。",
+        "operationId" : "getAppAlarms",
+        "parameters" : [ {
+          "name" : "deviceId",
+          "in" : "query",
+          "description" : "接口query参数「deviceId」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "severity",
+          "in" : "query",
+          "description" : "接口query参数「severity」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "conditionState",
+          "in" : "query",
+          "description" : "接口query参数「conditionState」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "from",
+          "in" : "query",
+          "description" : "接口query参数「from」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "to",
+          "in" : "query",
+          "description" : "接口query参数「to」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "cursor",
+          "in" : "query",
+          "description" : "接口query参数「cursor」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 2048,
+            "minLength" : 0
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "接口query参数「limit」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20,
+            "maximum" : 50,
+            "minimum" : 1
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "授权告警事实",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CursorPageAppAlarmResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "筛选或游标不合法",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "App身份或项目角色失效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/app/alarms/{id}" : {
+      "get" : {
+        "tags" : [ "App 公共告警" ],
+        "summary" : "App告警详情",
+        "description" : "读取当前绑定且未删除设备的单项告警事实；不存在或失权统一不可见，不提供确认或解除操作。",
+        "operationId" : "getAppAlarm",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "接口path参数「id」；含义见接口说明，类型、必填性和边界见参数 Schema",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "授权告警事实",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppAlarmResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "告警不存在或未授权（60060）",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "筛选或游标不合法",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "App身份或项目角色失效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/app/account" : {
+      "get" : {
+        "tags" : [ "App 账户设置" ],
+        "summary" : "读取本人账户资料",
+        "description" : "沿当前App身份复验用户与项目角色；项目归档可读但不可改密，不接受前端指定其他用户。",
+        "operationId" : "getAppAccount",
+        "responses" : {
+          "200" : {
+            "description" : "本人账户资料",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppAccountResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "App身份或角色失效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/app/account/notification-channels" : {
+      "get" : {
+        "tags" : [ "App 账户设置" ],
+        "summary" : "读取本人通知渠道",
+        "description" : "只读本人当前项目接收配置，电话短信尚未接入，当前均不可用；没有客户端编辑入口或虚构额度。",
+        "operationId" : "getAppNotificationChannels",
+        "responses" : {
+          "200" : {
+            "description" : "本人通知接收配置与不可用渠道状态",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppNotificationChannelResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "App身份或角色失效",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "appAccessBearer" : [ ]
+        } ]
+      }
+    },
     "/api/open/v1/models/{versionId}" : {
       "get" : {
         "tags" : [ "公开设备读取" ],
@@ -26676,26 +27580,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26730,8 +27616,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26748,8 +27634,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26784,8 +27688,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26858,26 +27762,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26912,8 +27798,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26930,8 +27816,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -26966,8 +27870,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27024,26 +27928,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27078,8 +27964,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27096,8 +27982,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27132,8 +28036,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27258,8 +28162,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27294,8 +28198,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "500" : {
+            "description" : "90000内部故障",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27312,8 +28216,8 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27348,8 +28252,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27432,26 +28336,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27486,8 +28372,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27504,8 +28390,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27540,8 +28444,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27624,26 +28528,8 @@
               }
             }
           },
-          "500" : {
-            "description" : "90000内部故障",
-            "headers" : {
-              "Cache-Control" : {
-                "description" : "所有响应禁止缓存",
-                "schema" : {
-                  "const" : "no-store"
-                }
-              }
-            },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503" : {
-            "description" : "80002未启用",
+          "401" : {
+            "description" : "80003凭据无效",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27678,8 +28564,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "80003凭据无效",
+          "503" : {
+            "description" : "80002未启用",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27696,8 +28582,26 @@
               }
             }
           },
-          "429" : {
-            "description" : "10029共享限流",
+          "500" : {
+            "description" : "90000内部故障",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "所有响应禁止缓存",
+                "schema" : {
+                  "const" : "no-store"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "资源不存在",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -27732,8 +28636,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "资源不存在",
+          "429" : {
+            "description" : "10029共享限流",
             "headers" : {
               "Cache-Control" : {
                 "description" : "所有响应禁止缓存",
@@ -28132,86 +29036,6 @@
         }
       }
     },
-    "/actuator" : {
-      "get" : {
-        "tags" : [ "运行健康与指标" ],
-        "summary" : "查询运维入口索引",
-        "description" : "由框架列举当前运维端点链接；不增加端点暴露，不代表链接对当前身份可用。",
-        "operationId" : "management_get__actuator",
-        "responses" : {
-          "200" : {
-            "description" : "返回运维链接索引",
-            "content" : {
-              "application/vnd.spring-boot.actuator.v3+json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              },
-              "application/json" : {
-                "schema" : {
-                  "additionalProperties" : true
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "运维资源、组件或路径不存在；不保证平台 ApiError 结构"
-          },
-          "401" : {
-            "description" : "运维索引要求平台认证，身份未通过"
-          },
-          "403" : {
-            "description" : "当前身份不能访问运维索引"
-          }
-        },
-        "security" : [ {
-          "consoleAccessBearer" : [ ]
-        } ],
-        "x-deployment-role" : "management",
-        "x-spring-path-pattern" : "/actuator"
-      }
-    },
-    "/actuator/prometheus" : {
-      "get" : {
-        "tags" : [ "运行健康与指标" ],
-        "summary" : "抓取运行指标",
-        "description" : "由框架按协商媒体类型输出 Prometheus 指标；只供受保护的内部抓取，不用于业务数据查询。",
-        "operationId" : "management_get__actuator_prometheus",
-        "responses" : {
-          "200" : {
-            "description" : "指标抓取成功；正文为协商的指标文本",
-            "content" : {
-              "text/plain;version=0.0.4;charset=utf-8" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              },
-              "application/openmetrics-text;version=1.0.0;charset=utf-8" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              },
-              "application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "运维资源、组件或路径不存在；不保证平台 ApiError 结构"
-          }
-        },
-        "security" : [ ],
-        "x-deployment-role" : "management",
-        "x-spring-path-pattern" : "/actuator/prometheus"
-      }
-    },
     "/actuator/health" : {
       "get" : {
         "tags" : [ "运行健康与指标" ],
@@ -28331,6 +29155,86 @@
         "security" : [ ],
         "x-deployment-role" : "management",
         "x-spring-path-pattern" : "/actuator/health/**"
+      }
+    },
+    "/actuator" : {
+      "get" : {
+        "tags" : [ "运行健康与指标" ],
+        "summary" : "查询运维入口索引",
+        "description" : "由框架列举当前运维端点链接；不增加端点暴露，不代表链接对当前身份可用。",
+        "operationId" : "management_get__actuator",
+        "responses" : {
+          "200" : {
+            "description" : "返回运维链接索引",
+            "content" : {
+              "application/vnd.spring-boot.actuator.v3+json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              },
+              "application/vnd.spring-boot.actuator.v2+json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              },
+              "application/json" : {
+                "schema" : {
+                  "additionalProperties" : true
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "运维资源、组件或路径不存在；不保证平台 ApiError 结构"
+          },
+          "401" : {
+            "description" : "运维索引要求平台认证，身份未通过"
+          },
+          "403" : {
+            "description" : "当前身份不能访问运维索引"
+          }
+        },
+        "security" : [ {
+          "consoleAccessBearer" : [ ]
+        } ],
+        "x-deployment-role" : "management",
+        "x-spring-path-pattern" : "/actuator"
+      }
+    },
+    "/actuator/prometheus" : {
+      "get" : {
+        "tags" : [ "运行健康与指标" ],
+        "summary" : "抓取运行指标",
+        "description" : "由框架按协商媒体类型输出 Prometheus 指标；只供受保护的内部抓取，不用于业务数据查询。",
+        "operationId" : "management_get__actuator_prometheus",
+        "responses" : {
+          "200" : {
+            "description" : "指标抓取成功；正文为协商的指标文本",
+            "content" : {
+              "text/plain;version=0.0.4;charset=utf-8" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "application/openmetrics-text;version=1.0.0;charset=utf-8" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "运维资源、组件或路径不存在；不保证平台 ApiError 结构"
+          }
+        },
+        "security" : [ ],
+        "x-deployment-role" : "management",
+        "x-spring-path-pattern" : "/actuator/prometheus"
       }
     },
     "/ws/shares/{shareId}/properties" : {
@@ -28839,7 +29743,10 @@
       "JsonNode" : {
         "type" : "object",
         "properties" : {
-          "container" : {
+          "floatingPointNumber" : {
+            "type" : "boolean"
+          },
+          "binary" : {
             "type" : "boolean"
           },
           "missingNode" : {
@@ -28848,16 +29755,10 @@
           "boolean" : {
             "type" : "boolean"
           },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
           "string" : {
-            "type" : "boolean"
-          },
-          "pojo" : {
-            "type" : "boolean"
-          },
-          "int" : {
-            "type" : "boolean"
-          },
-          "long" : {
             "type" : "boolean"
           },
           "nodeType" : {
@@ -28889,7 +29790,19 @@
             "type" : "boolean",
             "deprecated" : true
           },
-          "binary" : {
+          "pojo" : {
+            "type" : "boolean"
+          },
+          "int" : {
+            "type" : "boolean"
+          },
+          "long" : {
+            "type" : "boolean"
+          },
+          "float" : {
+            "type" : "boolean"
+          },
+          "container" : {
             "type" : "boolean"
           },
           "null" : {
@@ -28899,15 +29812,6 @@
             "type" : "boolean"
           },
           "empty" : {
-            "type" : "boolean"
-          },
-          "float" : {
-            "type" : "boolean"
-          },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
-          "floatingPointNumber" : {
             "type" : "boolean"
           },
           "embeddedValue" : {
@@ -29254,6 +30158,67 @@
           }
         }
       },
+      "UpdateEndUserNotificationContactRequest" : {
+        "type" : "object",
+        "description" : "项目终端用户接收号码更新",
+        "properties" : {
+          "voiceNumber" : {
+            "type" : [ "string", "null" ],
+            "description" : "电话接收号码，+开头及7至15位数字；null清除"
+          },
+          "smsNumber" : {
+            "type" : [ "string", "null" ],
+            "description" : "短信接收号码，+开头及7至15位数字；null清除"
+          },
+          "expectedRevision" : {
+            "type" : "string",
+            "description" : "当前版本字符串",
+            "example" : 0
+          }
+        },
+        "required" : [ "expectedRevision", "smsNumber", "voiceNumber" ]
+      },
+      "ApiError" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "traceId" : {
+            "type" : "string"
+          },
+          "details" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "EndUserNotificationContactResponse" : {
+        "type" : "object",
+        "description" : "项目终端用户接收号码与版本",
+        "properties" : {
+          "voiceNumber" : {
+            "type" : [ "string", "null" ],
+            "description" : "电话接收号码，未配置为空"
+          },
+          "smsNumber" : {
+            "type" : [ "string", "null" ],
+            "description" : "短信接收号码，未配置为空"
+          },
+          "revision" : {
+            "type" : "string",
+            "description" : "当前版本字符串",
+            "example" : 0
+          }
+        },
+        "required" : [ "revision", "smsNumber", "voiceNumber" ]
+      },
       "UpdateAppUserDashboardGrantRequest" : {
         "type" : "object",
         "description" : "终端用户看板授权更新请求",
@@ -29307,27 +30272,6 @@
           }
         },
         "required" : [ "appUserId", "createdAt", "dashboardId", "permission", "revision", "revokedAt", "status", "updatedAt" ]
-      },
-      "ApiError" : {
-        "type" : "object",
-        "properties" : {
-          "code" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "message" : {
-            "type" : "string"
-          },
-          "traceId" : {
-            "type" : "string"
-          },
-          "details" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        }
       },
       "UpdateDeviceRequest" : {
         "type" : "object",
@@ -30919,6 +31863,111 @@
           }
         },
         "required" : [ "installationId", "provider" ]
+      },
+      "RegisterAppPushInstallationRequest" : {
+        "type" : "object",
+        "description" : "安装注册正文，不含账号或会话归属",
+        "properties" : {
+          "installationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "registrationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "channelConfigurationId" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "minLength" : 0
+          },
+          "providerToken" : {
+            "type" : "string",
+            "maxLength" : 4096,
+            "minLength" : 0
+          },
+          "expectedRevision" : {
+            "type" : "string",
+            "minLength" : 1,
+            "pattern" : "0|[1-9][0-9]{0,18}"
+          }
+        },
+        "required" : [ "installationId", "registrationId" ]
+      },
+      "AppPushInstallationSummary" : {
+        "type" : "object",
+        "description" : "本人推送安装关联摘要，不包含任何token",
+        "properties" : {
+          "installationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "bindingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "sessionGroupId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "revision" : {
+            "type" : "string"
+          },
+          "registrationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "channelConfigurationId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "leaseExpiresAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "UpdateAppNotificationPreferenceRequest" : {
+        "type" : "object",
+        "description" : "本人App告警偏好更新",
+        "properties" : {
+          "appPushEnabled" : {
+            "type" : "boolean",
+            "description" : "目标App告警偏好"
+          },
+          "expectedRevision" : {
+            "type" : "string",
+            "description" : "当前版本，非负十进制字符串",
+            "example" : 0
+          }
+        },
+        "required" : [ "appPushEnabled", "expectedRevision" ]
+      },
+      "AppNotificationPreferenceResponse" : {
+        "type" : "object",
+        "description" : "本人App告警偏好与当前可编辑性",
+        "properties" : {
+          "appPushEnabled" : {
+            "type" : "boolean",
+            "description" : "同账号全部已授权项目App告警偏好"
+          },
+          "revision" : {
+            "type" : "string",
+            "description" : "当前版本字符串",
+            "example" : 0
+          },
+          "editable" : {
+            "type" : "boolean",
+            "description" : "当前入口是否允许编辑"
+          }
+        },
+        "required" : [ "appPushEnabled", "editable", "revision" ]
       },
       "ConnectionQualification" : {
         "type" : "object",
@@ -33649,7 +34698,7 @@
           },
           "password" : {
             "type" : "string",
-            "description" : "初始口令",
+            "description" : "初始口令，8至128字符且UTF-8不超过72字节",
             "example" : "correct-horse-battery-staple",
             "minLength" : 1
           },
@@ -36778,13 +37827,96 @@
         },
         "required" : [ "browserEpoch", "password", "projectKey", "username" ]
       },
-      "AppRefreshRequest" : {
+      "AppProjectSwitchRequest" : {
         "type" : "object",
-        "description" : "App 刷新 / 注销请求",
+        "description" : "App项目换签请求",
         "properties" : {
           "refreshToken" : {
             "type" : "string",
-            "description" : "刷新令牌（存客户端安全存储）"
+            "description" : "当前源项目刷新凭据",
+            "maxLength" : 4096,
+            "minLength" : 0
+          },
+          "targetProjectId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "目标定位，不授予权限"
+          }
+        },
+        "required" : [ "refreshToken", "targetProjectId" ]
+      },
+      "AppProjectSwitchResponse" : {
+        "type" : "object",
+        "description" : "App目标项目会话与可信入口",
+        "properties" : {
+          "backendInstanceId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "稳定平台实例"
+          },
+          "tenantId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "已认证租户"
+          },
+          "appUserId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "已认证本人"
+          },
+          "projectId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "目标项目"
+          },
+          "projectKey" : {
+            "type" : "string",
+            "description" : "可信目标入口键"
+          },
+          "projectName" : {
+            "type" : "string",
+            "description" : "目标名称"
+          },
+          "session" : {
+            "$ref" : "#/components/schemas/AppSessionResponse",
+            "description" : "目标令牌对，不得写日志"
+          }
+        },
+        "required" : [ "appUserId", "backendInstanceId", "projectId", "projectKey", "projectName", "session", "tenantId" ]
+      },
+      "AppSessionIdentity" : {
+        "type" : "object",
+        "description" : "已签发会话的可信身份；平台实例未配置时不具备推送接入资格",
+        "properties" : {
+          "backendInstanceId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid",
+            "description" : "稳定平台实例，未配置时为空"
+          },
+          "tenantId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "可信租户"
+          },
+          "appUserId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "终端用户"
+          },
+          "projectId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "当前项目"
+          },
+          "sessionId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "当前刷新族，与JWT的sid一致"
+          },
+          "sessionGroupId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "跨项目换签保持的登录会话组"
           }
         }
       },
@@ -36811,6 +37943,20 @@
             "format" : "date-time",
             "description" : "刷新令牌过期时刻（RFC3339 UTC）",
             "example" : "2026-09-01T09:15:00Z"
+          },
+          "identity" : {
+            "$ref" : "#/components/schemas/AppSessionIdentity",
+            "description" : "服务器签发的会话关联，安装绑定不可自报身份"
+          }
+        }
+      },
+      "AppRefreshRequest" : {
+        "type" : "object",
+        "description" : "App 刷新 / 注销请求",
+        "properties" : {
+          "refreshToken" : {
+            "type" : "string",
+            "description" : "刷新令牌（存客户端安全存储）"
           }
         }
       },
@@ -36826,7 +37972,7 @@
           },
           "newPassword" : {
             "type" : "string",
-            "description" : "新口令（最短 8 位）",
+            "description" : "新口令（8至128字符，UTF-8不超过72字节）",
             "maxLength" : 128,
             "minLength" : 0
           }
@@ -42487,6 +43633,68 @@
           }
         }
       },
+      "AppAuthorizedProject" : {
+        "type" : "object",
+        "description" : "本人当前有效授权的项目候选",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "项目标识"
+          },
+          "projectKey" : {
+            "type" : "string",
+            "description" : "可信项目入口键"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "项目名称"
+          },
+          "role" : {
+            "type" : "string",
+            "description" : "本人当前角色，仅用于展示"
+          }
+        },
+        "required" : [ "id", "name", "projectKey", "role" ]
+      },
+      "AppAuthorizedProjectPage" : {
+        "type" : "object",
+        "description" : "本人项目有界扫描页及可信身份",
+        "properties" : {
+          "backendInstanceId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "稳定平台实例"
+          },
+          "tenantId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "已认证租户"
+          },
+          "appUserId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "已认证本人"
+          },
+          "projectId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "当前源项目"
+          },
+          "items" : {
+            "type" : "array",
+            "description" : "本页授权候选，可为空",
+            "items" : {
+              "$ref" : "#/components/schemas/AppAuthorizedProject"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ],
+            "description" : "不透明的下一页游标；末页为null"
+          }
+        },
+        "required" : [ "appUserId", "backendInstanceId", "items", "projectId", "tenantId" ]
+      },
       "AppDeviceResponse" : {
         "type" : "object",
         "description" : "App 设备",
@@ -42523,6 +43731,14 @@
           "createdAt" : {
             "type" : "string",
             "description" : "创建时刻（RFC3339 UTC）"
+          },
+          "deviceTypeName" : {
+            "type" : "string",
+            "description" : "当前设备类型名称，可空"
+          },
+          "lastDataReportAt" : {
+            "type" : "string",
+            "description" : "最近有效数据接收时刻（RFC3339 UTC），历史未知为空"
           }
         }
       },
@@ -42712,6 +43928,36 @@
           }
         },
         "required" : [ "commandKey", "description", "inputSchema", "name", "outputSchema", "timeoutSeconds" ]
+      },
+      "AppDeviceStatisticsResponse" : {
+        "type" : "object",
+        "description" : "App授权设备四统计；不含未绑定或已删除设备",
+        "properties" : {
+          "total" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "授权设备总数"
+          },
+          "online" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "当前ONLINE设备数"
+          },
+          "active24h" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "接收时刻严格晚于asOf前24小时的首次有效CURRENT属性或事件设备数；历史未知不回填"
+          },
+          "alarming" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "存在ACTIVE条件告警的设备数，确认状态不影响，按设备去重"
+          },
+          "asOf" : {
+            "type" : "string",
+            "description" : "数据库统计时刻，RFC3339 UTC"
+          }
+        }
       },
       "WebAppDeviceCatalogItem" : {
         "type" : "object",
@@ -43005,6 +44251,141 @@
           }
         },
         "required" : [ "application", "applicationFormatVersion", "applicationVersionId", "applicationVersionNumber", "dashboards", "entryDashboardId", "hostCompatibility", "identity", "publicationRevision" ]
+      },
+      "AppAlarmResponse" : {
+        "type" : "object",
+        "description" : "App公共告警",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "告警事故标识"
+          },
+          "deviceId" : {
+            "type" : "string",
+            "description" : "来源设备标识"
+          },
+          "deviceName" : {
+            "type" : "string",
+            "description" : "当前设备名称"
+          },
+          "deviceKey" : {
+            "type" : "string",
+            "description" : "设备标识"
+          },
+          "alarmType" : {
+            "type" : "string",
+            "description" : "告警类型文本"
+          },
+          "severity" : {
+            "type" : "string",
+            "description" : "严重程度"
+          },
+          "conditionState" : {
+            "type" : "string",
+            "description" : "条件状态：ACTIVE或CLEARED"
+          },
+          "ackState" : {
+            "type" : "string",
+            "description" : "确认状态，与解除状态不同"
+          },
+          "firstConditionAt" : {
+            "type" : "string",
+            "description" : "首次异常时间，排序和时间筛选依据"
+          },
+          "activatedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "实际触发时间，未知为空"
+          },
+          "clearedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "解除时间，可空"
+          },
+          "acknowledgedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "确认时间，可空"
+          },
+          "lastReceivedAt" : {
+            "type" : "string",
+            "description" : "最近相关数据接收时间"
+          }
+        }
+      },
+      "CursorPageAppAlarmResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AppAlarmResponse"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ],
+            "description" : "不透明的下一页游标；末页为null"
+          },
+          "hasMore" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "AppAccountResponse" : {
+        "type" : "object",
+        "description" : "App本人账户资料",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "终端用户标识"
+          },
+          "username" : {
+            "type" : "string",
+            "description" : "用户名"
+          },
+          "displayName" : {
+            "type" : [ "string", "null" ],
+            "description" : "显示名称"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "创建时刻"
+          },
+          "projectRole" : {
+            "type" : "string",
+            "description" : "当前项目角色"
+          },
+          "passwordChangeAllowed" : {
+            "type" : "boolean",
+            "description" : "当前项目允许改密，提交时仍复验"
+          }
+        },
+        "required" : [ "createdAt", "displayName", "id", "passwordChangeAllowed", "projectRole", "username" ]
+      },
+      "AppNotificationChannelResponse" : {
+        "type" : "object",
+        "description" : "本人当前项目电话短信配置与渠道状态",
+        "properties" : {
+          "voiceNumber" : {
+            "type" : [ "string", "null" ],
+            "description" : "当前项目电话接收号码，未配置为空"
+          },
+          "smsNumber" : {
+            "type" : [ "string", "null" ],
+            "description" : "当前项目短信接收号码，未配置为空"
+          },
+          "voiceAvailable" : {
+            "type" : "boolean",
+            "description" : "电话渠道已接入；当前固定false"
+          },
+          "smsAvailable" : {
+            "type" : "boolean",
+            "description" : "短信渠道已接入；当前固定false"
+          }
+        },
+        "required" : [ "smsAvailable", "smsNumber", "voiceAvailable", "voiceNumber" ]
       },
       "OpenDeviceModel" : {
         "type" : "object",

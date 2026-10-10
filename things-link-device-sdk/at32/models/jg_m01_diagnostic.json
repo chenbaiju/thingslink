@@ -1,0 +1,11 @@
+{
+  "commands": [{
+    "commandKey": "readDoorState",
+    "name": "读取门磁状态",
+    "description": "只读诊断；SUCCESS仅表示成功读取，未知状态FAILED/STATE_UNAVAILABLE，不驱动锁具",
+    "inputSchema": "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}",
+    "outputSchema": "{\"type\":\"object\",\"properties\":{\"doorOpen\":{\"type\":\"boolean\"}},\"required\":[\"doorOpen\"],\"additionalProperties\":false}",
+    "timeoutSeconds": 10,
+    "sortOrder": 0
+  }]
+}

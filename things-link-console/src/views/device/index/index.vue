@@ -576,6 +576,13 @@
                 >刷新状态</ElButton
               >
             </div>
+            <ElAlert
+              v-if="selectedCommandDefinition?.description"
+              :title="selectedCommandDefinition.description"
+              type="info"
+              :closable="false"
+              show-icon
+            />
             <ElInput
               v-model="commandInput"
               type="textarea"
@@ -591,6 +598,12 @@
                 {{ lastCommand.maxAttempts ?? 0 }}</ElDescriptionsItem
               >
               <ElDescriptionsItem label="命令 ID">{{ lastCommand.id }}</ElDescriptionsItem>
+              <ElDescriptionsItem v-if="lastCommand.output" label="设备返回结果" :span="3">
+                <pre>{{ JSON.stringify(lastCommand.output, null, 2) }}</pre>
+              </ElDescriptionsItem>
+              <ElDescriptionsItem v-if="lastCommand.failureCode" label="失败代码" :span="3">{{
+                lastCommand.failureCode
+              }}</ElDescriptionsItem>
               <ElDescriptionsItem v-if="lastCommand.failureMessage" label="失败原因" :span="3">{{
                 lastCommand.failureMessage
               }}</ElDescriptionsItem>
@@ -945,6 +958,9 @@
   })
   // 命令 POST 的响应可能在后端受理后丢失；同一用户意图重试必须复用原键，成功或明确拒绝后才释放。
   const commandSubmission = new IdempotentSubmission()
+  const selectedCommandDefinition = computed(() =>
+    commandDefinitions.value.find((definition) => definition.commandKey === commandKey.value)
+  )
   const { deviceTypes, deviceTypesLoading, loadDeviceTypes, onDeviceTypePopupScroll } =
     usePagedDeviceCatalog(projectId)
   const deviceGroups = ref<DeviceGroupResponse[]>([])

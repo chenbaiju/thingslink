@@ -1,6 +1,7 @@
 package com.things.link.enduser.application;
 
-import com.things.link.device.application.AppDevice;
+import com.things.link.enduser.domain.AppDeviceDetails;
+import com.things.link.enduser.domain.AppDeviceReadRepository;
 import com.things.link.device.application.AppDeviceDataPlaneService;
 import com.things.link.enduser.domain.AppUserDevice;
 import com.things.link.enduser.domain.AppUserDeviceRepository;
@@ -17,14 +18,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.dao.QueryTimeoutException;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,6 +52,7 @@ class AppDeviceAccessServiceTests {
     /** 生命周期门禁单独验证分类，本类钉住门禁必须先于原授权及命令副作用。 */
     private AppProjectWriteGuard projectWriteGuard;
     private AppDeviceAccessService service;
+    private AppDeviceReadRepository deviceReads;
 
     private UUID tenantId;
     private UUID projectId;
@@ -68,8 +68,9 @@ class AppDeviceAccessServiceTests {
         deviceDataPlane = mock(AppDeviceDataPlaneService.class);
         telemetryDataPlane = mock(AppTelemetryDataPlaneService.class);
         projectWriteGuard = mock(AppProjectWriteGuard.class);
+        deviceReads = mock(AppDeviceReadRepository.class);
         service = new AppDeviceAccessService(roleRepository, bindingRepository, deviceDataPlane, telemetryDataPlane,
-                projectWriteGuard);
+                projectWriteGuard, deviceReads);
 
         tenantId = UUID.randomUUID();
         projectId = UUID.randomUUID();
@@ -113,17 +114,17 @@ class AppDeviceAccessServiceTests {
         when(roleRepository.findByProjectAndUser(projectId, appUserId))
                 .thenReturn(Optional.of(role(AppUserRole.Status.DISABLED)));
 
-        assertErrorCode(60009, () -> service.detail(projectId, appUserId, deviceId));
+        assertErrorCode(60009, () -> service.detail(tenantId, projectId, appUserId, deviceId));
         // 角色闸被拒后不得触碰设备绑定与数据面端口
-        verifyNoInteractions(bindingRepository, deviceDataPlane, telemetryDataPlane);
+        verifyNoInteractions(bindingRepository, deviceDataPlane, telemetryDataPlane, deviceReads);
     }
 
     @Test
     void missingRoleDeniesRead() {
         when(roleRepository.findByProjectAndUser(projectId, appUserId)).thenReturn(Optional.empty());
 
-        assertErrorCode(60009, () -> service.list(projectId, appUserId, null, 20));
-        verifyNoInteractions(bindingRepository, deviceDataPlane, telemetryDataPlane);
+        assertErrorCode(60009, () -> service.list(tenantId, projectId, appUserId, null, 20, null, null));
+        verifyNoInteractions(bindingRepository, deviceDataPlane, telemetryDataPlane, deviceReads);
     }
 
     // ---------------------------------------------------------------- 读：任意关系角色可读
@@ -133,11 +134,11 @@ class AppDeviceAccessServiceTests {
         activeRole();
         when(bindingRepository.findByProjectAndUser(projectId, appUserId))
                 .thenReturn(List.of(binding(deviceId, AppUserDevice.RelationRole.READ_ONLY)));
-        when(deviceDataPlane.detail(projectId, deviceId)).thenReturn(Optional.of(device()));
+        when(deviceReads.detail(tenantId, projectId, appUserId, deviceId)).thenReturn(Optional.of(device()));
         when(telemetryDataPlane.history(eq(projectId), eq(deviceId), any(), any(), any(), any(), any()))
                 .thenReturn(new AppPropertyHistory("RAW", "RAW", "AVG", List.of()));
 
-        assertThat(service.detail(projectId, appUserId, deviceId)).isNotNull();
+        assertThat(service.detail(tenantId, projectId, appUserId, deviceId)).isNotNull();
         assertThat(service.history(projectId, appUserId, deviceId, "temperature",
                 Instant.now().minusSeconds(60), Instant.now(), "RAW", "AVG")).isNotNull();
     }
@@ -213,7 +214,7 @@ class AppDeviceAccessServiceTests {
         when(bindingRepository.findByProjectAndUser(projectId, appUserId))
                 .thenReturn(List.of(binding(otherDeviceId, AppUserDevice.RelationRole.PRIMARY)));
 
-        assertErrorCode(60010, () -> service.detail(projectId, appUserId, deviceId));
+        assertErrorCode(60010, () -> service.detail(tenantId, projectId, appUserId, deviceId));
         verifyNoInteractions(deviceDataPlane, telemetryDataPlane);
     }
 
@@ -224,7 +225,7 @@ class AppDeviceAccessServiceTests {
                 .thenReturn(List.of(new AppUserDevice(UUID.randomUUID(), tenantId, projectId, appUserId,
                         deviceId, AppUserDevice.RelationRole.PRIMARY, AppUserDevice.Status.CLOSED, Instant.now())));
 
-        assertErrorCode(60010, () -> service.detail(projectId, appUserId, deviceId));
+        assertErrorCode(60010, () -> service.detail(tenantId, projectId, appUserId, deviceId));
     }
 
     @Test
@@ -232,33 +233,21 @@ class AppDeviceAccessServiceTests {
         activeRole();
         when(bindingRepository.findByProjectAndUser(projectId, appUserId))
                 .thenReturn(List.of(binding(deviceId, AppUserDevice.RelationRole.PRIMARY)));
-        when(deviceDataPlane.detail(projectId, deviceId)).thenReturn(Optional.empty());
+        when(deviceReads.detail(tenantId, projectId, appUserId, deviceId)).thenReturn(Optional.empty());
 
-        assertErrorCode(60010, () -> service.detail(projectId, appUserId, deviceId));
+        assertErrorCode(60010, () -> service.detail(tenantId, projectId, appUserId, deviceId));
     }
 
     // ---------------------------------------------------------------- 列表只传绑定设备
 
     @Test
-    void listOnlyPassesActiveBoundDeviceIds() {
+    void listPassesTrustedScopeAndFiltersWithoutExpandingBindings() {
         activeRole();
-        UUID closedDeviceId = UUID.randomUUID();
-        when(bindingRepository.findByProjectAndUser(projectId, appUserId))
-                .thenReturn(List.of(
-                        binding(deviceId, AppUserDevice.RelationRole.PRIMARY),
-                        binding(otherDeviceId, AppUserDevice.RelationRole.MEMBER),
-                        new AppUserDevice(UUID.randomUUID(), tenantId, projectId, appUserId,
-                                closedDeviceId, AppUserDevice.RelationRole.READ_ONLY,
-                                AppUserDevice.Status.CLOSED, Instant.now())));
-        when(deviceDataPlane.list(projectId, Set.of(deviceId, otherDeviceId), null, 20))
+        when(deviceReads.list(tenantId, projectId, appUserId, null, 20, "灯", "ONLINE"))
                 .thenReturn(CursorPage.last(List.of()));
-
-        service.list(projectId, appUserId, null, 20);
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Set<UUID>> captor = ArgumentCaptor.forClass(Set.class);
-        verify(deviceDataPlane).list(eq(projectId), captor.capture(), eq((String) null), eq(20));
-        assertThat(captor.getValue()).containsExactlyInAnyOrder(deviceId, otherDeviceId);
+        service.list(tenantId, projectId, appUserId, null, 20, "灯", "ONLINE");
+        verify(deviceReads).list(tenantId, projectId, appUserId, null, 20, "灯", "ONLINE");
+        verifyNoInteractions(bindingRepository, deviceDataPlane);
     }
 
     // ---------------------------------------------------------------- 夹具
@@ -281,8 +270,8 @@ class AppDeviceAccessServiceTests {
                 relationRole, AppUserDevice.Status.ACTIVE, Instant.now());
     }
 
-    private AppDevice device() {
-        return new AppDevice(deviceId, "dev-1", "设备", null, "ONLINE", null, Instant.now(), Instant.now());
+    private AppDeviceDetails device() {
+        return new AppDeviceDetails(deviceId, "dev-1", "设备", null, "ONLINE", null, Instant.now(), Instant.now(), "通用类型", null);
     }
 
     private void assertErrorCode(int expectedCode, Runnable action) {

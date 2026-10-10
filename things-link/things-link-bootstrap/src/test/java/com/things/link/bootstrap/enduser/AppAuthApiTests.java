@@ -36,6 +36,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -309,6 +310,60 @@ class AppAuthApiTests extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.code").value(60008));
     }
 
+    @Test
+    void accountReadsOnlyCurrentUserAndArchivedProjectIsReadOnly() throws Exception {
+        seedStandardUser();
+        Tokens tokens = tokensOf(mockMvc.perform(login(PASSWORD)).andExpect(status().isOk()).andReturn());
+        mockMvc.perform(get("/api/v1/app/account").param("appUserId",UUID.randomUUID().toString())
+                        .header("Authorization","Bearer "+tokens.accessToken()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.username").value("alice"))
+                .andExpect(jsonPath("$.projectRole").value("APP_ADMIN"))
+                .andExpect(jsonPath("$.passwordChangeAllowed").value(true))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist())
+                .andExpect(jsonPath("$.tenantId").doesNotExist());
+        jdbcTemplate.update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?",projectId);
+        mockMvc.perform(get("/api/v1/app/account").header("Authorization","Bearer "+tokens.accessToken()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.passwordChangeAllowed").value(false));
+        mockMvc.perform(post("/api/v1/app/auth/password").header("Authorization","Bearer "+tokens.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(toJson(Map.of("oldPassword",PASSWORD,"newPassword","updated-password"))))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value(60022));
+        mockMvc.perform(get("/api/v1/app/account")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void accountRechecksRoleAndLockedUser() throws Exception {
+        seedStandardUser();
+        Tokens tokens=tokensOf(mockMvc.perform(login(PASSWORD)).andExpect(status().isOk()).andReturn());
+        TenantContext.set(new TenantScope(tenantId,projectId,Uuid7.generate()));
+        try {jdbcTemplate.update("UPDATE app_user_role SET status='DISABLED' WHERE app_user_id=?",userId);}
+        finally {TenantContext.clear();}
+        mockMvc.perform(get("/api/v1/app/account").header("Authorization","Bearer "+tokens.accessToken()))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value(60009));
+        TenantContext.set(new TenantScope(tenantId,projectId,Uuid7.generate()));
+        try {
+            jdbcTemplate.update("UPDATE app_user_role SET status='ACTIVE',role='OBSERVER' WHERE app_user_id=?",userId);
+        } finally {TenantContext.clear();}
+        mockMvc.perform(get("/api/v1/app/account").header("Authorization","Bearer "+tokens.accessToken()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.projectRole").value("OBSERVER"));
+        TenantContext.set(new TenantScope(tenantId,projectId,Uuid7.generate()));
+        try {jdbcTemplate.update("UPDATE app_user SET status='LOCKED' WHERE id=?",userId);}
+        finally {TenantContext.clear();}
+        mockMvc.perform(get("/api/v1/app/account").header("Authorization","Bearer "+tokens.accessToken()))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value(60009));
+    }
+
+    @Test
+    void excessiveUtf8PasswordIsBadRequestAndDoesNotRevokeSession() throws Exception {
+        seedStandardUser();
+        Tokens tokens=tokensOf(mockMvc.perform(login(PASSWORD)).andExpect(status().isOk()).andReturn());
+        mockMvc.perform(post("/api/v1/app/auth/password").header("Authorization","Bearer "+tokens.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(toJson(Map.of("oldPassword",PASSWORD,"newPassword","密".repeat(25)))))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value(10001));
+        mockMvc.perform(refresh(tokens.refreshToken())).andExpect(status().isOk());
+        mockMvc.perform(login(PASSWORD)).andExpect(status().isOk());
+    }
+
     // ---------------------------------------------------------------- 双令牌互斥
 
     @Test
@@ -420,6 +475,95 @@ class AppAuthApiTests extends AbstractIntegrationTest {
                 .build();
         return consoleJwtEncoder.encode(JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+    }
+
+
+    @Test
+    void notificationPreferenceSharesOnlySameAccountAndRequiresCurrentRevision() throws Exception {
+        seedStandardUser();
+        var tokenA = tokensOf(mockMvc.perform(login(PASSWORD)).andExpect(status().isOk()).andReturn()).accessToken();
+        String keyB = uniqueProjectKey();
+        UUID projectB = newProject(tenantId, keyB);
+        addRole(tenantId, projectB, userId);
+        var tokenB = tokensOf(mockMvc.perform(post("/api/v1/app/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(Map.of("projectKey",keyB,"username","alice","password",PASSWORD))))
+                .andExpect(status().isOk()).andReturn()).accessToken();
+        String path = "/api/v1/app/account/notification-preferences";
+        mockMvc.perform(get(path).header("Authorization","Bearer "+tokenA)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.appPushEnabled").value(true)).andExpect(jsonPath("$.revision").value("0"));
+        mockMvc.perform(put(path).header("Authorization","Bearer "+tokenA).contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(Map.of("appPushEnabled",false,"expectedRevision","0"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.revision").value("1"));
+        mockMvc.perform(get(path).header("Authorization","Bearer "+tokenB)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.appPushEnabled").value(false)).andExpect(jsonPath("$.revision").value("1"));
+        mockMvc.perform(put(path).header("Authorization","Bearer "+tokenB).contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(Map.of("appPushEnabled",true,"expectedRevision","0"))))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value(60061));
+        mockMvc.perform(put(path).header("Authorization","Bearer "+tokenB).contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(Map.of("appPushEnabled",false,"expectedRevision","1"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.revision").value("1"));
+        UUID other = newUser(tenantId,"bob",PASSWORD,"ACTIVE"); addRole(tenantId,projectId,other);
+        var otherToken = tokensOf(mockMvc.perform(post("/api/v1/app/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(Map.of("projectKey",projectKey,"username","bob","password",PASSWORD))))
+                .andExpect(status().isOk()).andReturn()).accessToken();
+        mockMvc.perform(get(path).param("appUserId",userId.toString()).header("Authorization","Bearer "+otherToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.appPushEnabled").value(true));
+        TenantContext.clear();
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM app_notification_preference", Long.class)).isZero();
+        UUID alien = newTenant("另一个租户");
+        TenantContext.set(new TenantScope(alien,null,Uuid7.generate()));
+        try { assertThat(jdbcTemplate.update("UPDATE app_notification_preference SET app_push_enabled=true WHERE app_user_id=?", userId)).isZero(); }
+        finally { TenantContext.clear(); }
+        jdbcTemplate.update("UPDATE sys_project SET status='ARCHIVED' WHERE id=?",projectId);
+        mockMvc.perform(get(path).header("Authorization","Bearer "+tokenA)).andExpect(status().isOk()).andExpect(jsonPath("$.editable").value(false));
+        mockMvc.perform(put(path).header("Authorization","Bearer "+tokenA).contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(Map.of("appPushEnabled",true,"expectedRevision","1"))))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value(60022));
+    }
+
+    @Test
+    void simultaneousPreferenceWritesHaveOneWinner() throws Exception {
+        seedStandardUser();
+        var token=tokensOf(mockMvc.perform(login(PASSWORD)).andExpect(status().isOk()).andReturn()).accessToken();
+        var start=new java.util.concurrent.CountDownLatch(1);
+        try (var executor=java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            java.util.concurrent.Callable<Integer> attempt=() -> {
+                start.await();
+                return mockMvc.perform(put("/api/v1/app/account/notification-preferences")
+                        .header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON)
+                        .content(toJson(Map.of("appPushEnabled",false,"expectedRevision","0"))))
+                        .andReturn().getResponse().getStatus();
+            };
+            var first=executor.submit(attempt);var second=executor.submit(attempt);start.countDown();
+            assertThat(java.util.List.of(first.get(10,java.util.concurrent.TimeUnit.SECONDS),second.get(10,java.util.concurrent.TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(200,409);
+        }
+        mockMvc.perform(get("/api/v1/app/account/notification-preferences").header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.revision").value("1"));
+    }
+
+    @Test
+    void notificationPreferenceRejectsMalformedEnvelopeAndStaleRole() throws Exception {
+        seedStandardUser();
+        var token = tokensOf(mockMvc.perform(login(PASSWORD)).andExpect(status().isOk()).andReturn()).accessToken();
+        String path = "/api/v1/app/account/notification-preferences";
+        for (String body : java.util.List.of("{}", "{\"appPushEnabled\":\"false\",\"expectedRevision\":\"0\"}",
+                "{\"appPushEnabled\":false,\"expectedRevision\":0}", "{\"appPushEnabled\":false,\"expectedRevision\":\"-1\"}",
+                "{\"appPushEnabled\":false,\"expectedRevision\":\"9223372036854775808\"}",
+                "{\"appPushEnabled\":false,\"expectedRevision\":\"0\",\"smsEnabled\":true}",
+                "{\"appPushEnabled\":false,\"appPushEnabled\":true,\"expectedRevision\":\"0\"}",
+                "{\"appPushEnabled\":false,\"expectedRevision\":\"0\"} {}")) {
+            mockMvc.perform(put(path).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        mockMvc.perform(get(path).header("Authorization","Bearer "+token)).andExpect(status().isOk()).andExpect(jsonPath("$.revision").value("0"));
+        TenantContext.set(new TenantScope(tenantId,projectId,Uuid7.generate()));
+        try { jdbcTemplate.update("UPDATE app_user_role SET status='DISABLED' WHERE project_id=? AND app_user_id=?",projectId,userId); }
+        finally { TenantContext.clear(); }
+        mockMvc.perform(get(path).header("Authorization","Bearer "+token)).andExpect(status().isUnauthorized());
+        mockMvc.perform(put(path).header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(Map.of("appPushEnabled",false,"expectedRevision","0"))))
+                .andExpect(status().isUnauthorized());
     }
 
     // ---------------------------------------------------------------- 请求助手

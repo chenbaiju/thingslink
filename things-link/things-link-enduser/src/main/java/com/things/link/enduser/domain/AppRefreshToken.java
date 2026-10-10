@@ -32,7 +32,16 @@ public record AppRefreshToken(
         Instant issuedAt,
         Instant expiresAt,
         Instant revokedAt,
-        UUID replacedBy) {
+        UUID replacedBy,
+        UUID sessionGroupId) {
+
+    /** 兼容旧调用，新登录以刷新族作为会话组。 */
+    public AppRefreshToken(UUID id, UUID appUserId, UUID tenantId, UUID projectId,
+            long projectGeneration, UUID familyId, Instant issuedAt, Instant expiresAt,
+            Instant revokedAt, UUID replacedBy) {
+        this(id, appUserId, tenantId, projectId, projectGeneration, familyId, issuedAt,
+                expiresAt, revokedAt, replacedBy, familyId);
+    }
 
     /** 持久会话代次必须非负；负值会破坏项目删除的单调撤销边界。 */
     public AppRefreshToken {
@@ -54,18 +63,9 @@ public record AppRefreshToken(
      * @param revokedAt 撤销时刻
      * @param replacedBy 后继令牌ID
      */
-    public AppRefreshToken(
-            UUID id,
-            UUID appUserId,
-            UUID tenantId,
-            UUID projectId,
-            UUID familyId,
-            Instant issuedAt,
-            Instant expiresAt,
-            Instant revokedAt,
-            UUID replacedBy) {
-        this(id, appUserId, tenantId, projectId, 0L, familyId,
-                issuedAt, expiresAt, revokedAt, replacedBy);
+    public AppRefreshToken(UUID id, UUID appUserId, UUID tenantId, UUID projectId,
+            UUID familyId, Instant issuedAt, Instant expiresAt, Instant revokedAt, UUID replacedBy) {
+        this(id, appUserId, tenantId, projectId, 0L, familyId, issuedAt, expiresAt, revokedAt, replacedBy, familyId);
     }
 
     /**

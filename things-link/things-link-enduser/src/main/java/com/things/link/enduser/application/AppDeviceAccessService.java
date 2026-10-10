@@ -1,7 +1,8 @@
 package com.things.link.enduser.application;
 
 import com.things.link.device.application.AppCurrentValue;
-import com.things.link.device.application.AppDevice;
+import com.things.link.enduser.domain.AppDeviceDetails;
+import com.things.link.enduser.domain.AppDeviceReadRepository;
 import com.things.link.device.application.AppDeviceDataPlaneService;
 import com.things.link.enduser.domain.AppUserDevice;
 import com.things.link.enduser.domain.AppUserDeviceRepository;
@@ -20,9 +21,7 @@ import tools.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * App 设备数据面授权编排（S11-2b）。
@@ -48,6 +47,7 @@ import java.util.stream.Collectors;
 @Service
 public class AppDeviceAccessService {
 
+    private final AppDeviceReadRepository deviceReads;
     private final AppUserRoleRepository roleRepository;
     private final AppUserDeviceRepository deviceBindingRepository;
     private final AppDeviceDataPlaneService deviceDataPlane;
@@ -57,12 +57,14 @@ public class AppDeviceAccessService {
 
     /** @param roleRepository 项目角色仓储 @param deviceBindingRepository 设备绑定仓储
      *  @param deviceDataPlane 设备数据面端口 @param telemetryDataPlane 遥测数据面端口
-     *  @param projectWriteGuard 原业务事务中的项目生命周期写许可 */
+     *  @param projectWriteGuard 原业务事务中的项目生命周期写许可
+     *  @param deviceReads 授权设备的有界公开投影查询 */
     public AppDeviceAccessService(AppUserRoleRepository roleRepository,
                                   AppUserDeviceRepository deviceBindingRepository,
                                   AppDeviceDataPlaneService deviceDataPlane,
                                   AppTelemetryDataPlaneService telemetryDataPlane,
-                                  AppProjectWriteGuard projectWriteGuard) {
+                                  AppProjectWriteGuard projectWriteGuard, AppDeviceReadRepository deviceReads) {
+        this.deviceReads = deviceReads;
         this.roleRepository = roleRepository;
         this.deviceBindingRepository = deviceBindingRepository;
         this.deviceDataPlane = deviceDataPlane;
@@ -75,30 +77,32 @@ public class AppDeviceAccessService {
      *
      * @param projectId 项目 ID（取自令牌）
      * @param appUserId 终端用户 ID
+     * @param tenantId 可信令牌租户
+     * @param query 名称或设备键字面子串
+     * @param status 连接状态，可空
      * @param cursor    上一页游标；null 表示首页
      * @param limit     单页数量
      * @return 一页设备投影（只含有效绑定设备）
      */
     @Transactional(readOnly = true)
-    public CursorPage<AppDevice> list(UUID projectId, UUID appUserId, String cursor, int limit) {
+    public CursorPage<AppDeviceDetails> list(UUID tenantId, UUID projectId, UUID appUserId, String cursor, int limit, String query, String status) {
         requireActiveRole(projectId, appUserId);
-        Set<UUID> bound = boundDeviceIds(projectId, appUserId);
-        return deviceDataPlane.list(projectId, bound, cursor, limit);
+        return deviceReads.list(tenantId, projectId, appUserId, cursor, limit, query, status);
     }
 
     /**
      * 单设备详情。
      *
+     * @param tenantId 可信令牌租户
      * @param projectId 项目 ID
      * @param appUserId 终端用户 ID
      * @param deviceId 设备 ID
      * @return 设备投影
      */
     @Transactional(readOnly = true)
-    public AppDevice detail(UUID projectId, UUID appUserId, UUID deviceId) {
+    public AppDeviceDetails detail(UUID tenantId, UUID projectId, UUID appUserId, UUID deviceId) {
         requireActiveRole(projectId, appUserId);
-        requireBoundDevice(projectId, appUserId, deviceId);
-        return deviceDataPlane.detail(projectId, deviceId).orElseThrow(AppDeviceAccessService::notFound);
+        return deviceReads.detail(tenantId, projectId, appUserId, deviceId).orElseThrow(AppDeviceAccessService::notFound);
     }
 
     /**
@@ -199,14 +203,6 @@ public class AppDeviceAccessService {
         if (role.status() != AppUserRole.Status.ACTIVE) {
             throw new BusinessException(EndUserErrorCode.END_USER_ACCESS_INVALID);
         }
-    }
-
-    /** 当前终端用户在本项目中所有有效绑定的设备 ID 集合。 */
-    private Set<UUID> boundDeviceIds(UUID projectId, UUID appUserId) {
-        return deviceBindingRepository.findByProjectAndUser(projectId, appUserId).stream()
-                .filter(binding -> binding.status() == AppUserDevice.Status.ACTIVE)
-                .map(AppUserDevice::deviceId)
-                .collect(Collectors.toUnmodifiableSet());
     }
 
     /**

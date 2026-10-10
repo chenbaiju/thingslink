@@ -186,7 +186,7 @@ class AppSessionServiceTests {
         order.verify(transactionLocalRlsScope).establish(tenantId, projectId);
         order.verify(appUserRepository).findByIdAndTenant(tenantId, appUserId);
         order.verify(refreshTokenRepository).save(any(), any());
-        order.verify(tokenIssuer).issue(eq(new AppAuthenticatedPrincipal(tenantId, projectId, appUserId, 0L)));
+        order.verify(tokenIssuer).issue(eq(new AppAuthenticatedPrincipal(tenantId, projectId, appUserId, 0L, existing.familyId())));
         order.verify(refreshTokenRepository).markRotated(eq(tokenId), any(UUID.class));
         verifyNoInteractions(tenantTransactionLocalRlsScope);
     }
@@ -214,7 +214,7 @@ class AppSessionServiceTests {
         when(lifecycle.lockActiveForWrite(tenantId, projectId)).thenReturn(true);
         when(lifecycle.snapshot(tenantId, projectId)).thenReturn(new ProjectAccessPolicy(true, true, 7L));
         AppAuthenticatedPrincipal qualified = new AppAuthenticatedPrincipal(tenantId, projectId, appUserId, 7L);
-        when(tokenIssuer.issue(qualified)).thenReturn(new AppAccessToken("new-login", Instant.now()));
+        when(tokenIssuer.issue(any())).thenReturn(new AppAccessToken("new-login", Instant.now()));
 
         AppIssuedSession result = service.issueForLogin(principal);
 
@@ -226,7 +226,8 @@ class AppSessionServiceTests {
         order.verify(appUserRepository).lockByIdAndTenant(tenantId, appUserId);
         order.verify(lifecycle).snapshot(tenantId, projectId);
         order.verify(refreshTokenRepository).save(any(), any());
-        order.verify(tokenIssuer).issue(qualified);
+        order.verify(tokenIssuer).issue(new AppAuthenticatedPrincipal(tenantId, projectId, appUserId, 7L, result.identity().sessionId()));
+        assertThat(result.identity().sessionGroupId()).isEqualTo(result.identity().sessionId());
         ArgumentCaptor<AppRefreshToken> saved = ArgumentCaptor.forClass(AppRefreshToken.class);
         verify(refreshTokenRepository).save(saved.capture(), any());
         assertThat(saved.getValue().projectGeneration()).isEqualTo(7L);

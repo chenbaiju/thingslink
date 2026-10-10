@@ -129,11 +129,12 @@ public class QuotaRestRateLimitFilter extends OncePerRequestFilter {
         RestQuotaRateLimitMetrics.RequestKind kind = DashboardDataRequestPaths.isConsolePostRead(request.getMethod(),
                 request.getRequestURI().substring(request.getContextPath().length()))
                 ? RestQuotaRateLimitMetrics.RequestKind.READ : requestKind(request.getMethod());
-        // 仅冻结的规则/场景、产品凭据、信任包导入和类型基线登记写入口：归档不能先被日计量的ACTIVE查询伪装为429。
+        // 仅冻结的规则/场景、产品凭据、信任包导入、类型基线和接收号码写入口：归档不能先被日计量的ACTIVE查询伪装为429。
         if (managementLifecycle != null && (isRuleManagementWrite(request, tenantScope.projectId())
                 || isProductCredentialWrite(request, tenantScope.projectId())
                 || isOtaTrustImportWrite(request, tenantScope.projectId())
-                || isOtaTypeBaselineRegistrationWrite(request, tenantScope.projectId()))) {
+                || isOtaTypeBaselineRegistrationWrite(request, tenantScope.projectId())
+                || isNotificationContactWrite(request, tenantScope.projectId()))) {
             try { managementLifecycle.requireWritableAccountSnapshot(tenantScope.accountId(), tenantScope.projectId()); }
             catch (com.things.link.shared.error.BusinessException failure) {
                 response.setStatus(failure.errorCode().httpStatus());
@@ -147,6 +148,15 @@ public class QuotaRestRateLimitFilter extends OncePerRequestFilter {
         var decision=engine.admit(tenantScope.accountId(),tenantScope.projectId(),null,null,kind);
         if(decision.allowed()){filterChain.doFilter(request,response);return;}
         writeTooManyRequests(response,decision.retryAfterSeconds());
+    }
+
+    /** 接收号码修改仅匹配当前项目的精确PUT路径，生命周期预检不豁免正常计量。 */
+    static boolean isNotificationContactWrite(HttpServletRequest request, UUID projectId) {
+        if (!"PUT".equals(request.getMethod())) return false;
+        String prefix = "/api/v1/projects/" + projectId + "/end-users/";
+        String path = applicationPath(request);
+        return path.startsWith(prefix) && path.substring(prefix.length()).matches(
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/notification-contact");
     }
 
     /** 精确方法与选中项目绑定，不拦截恢复项目、GET或未知路由。 */

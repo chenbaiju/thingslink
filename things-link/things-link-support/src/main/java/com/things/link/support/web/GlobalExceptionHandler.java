@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -126,6 +127,18 @@ public class GlobalExceptionHandler {
         log.warn("请求的路径不存在: {}", e.getMessage());
         return build(CommonErrorCode.RESOURCE_NOT_FOUND,
                 CommonErrorCode.RESOURCE_NOT_FOUND.defaultMessage(), List.of());
+    }
+
+    /**
+     * 将已存在路径的错误请求方法返回为405，避免只读接口被误报为服务故障。
+     * @param e 不支持的方法异常
+     * @return 包含允许方法及统一错误体的响应
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        var code = CommonErrorCode.METHOD_NOT_ALLOWED;
+        return ResponseEntity.status(code.httpStatus()).headers(e.getHeaders())
+                .body(new ApiError(code.code(), code.defaultMessage(), TraceContext.current(), List.of()));
     }
 
     /**

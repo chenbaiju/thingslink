@@ -1,6 +1,7 @@
 package com.things.link.telemetry.application;
 
 import com.things.link.device.application.DeviceEventIngestionContext;
+import com.things.link.device.application.DeviceIngestionContext;
 import com.things.link.device.application.DeviceIngestionService;
 import com.things.link.project.application.ProjectDailyQuotaDecisionService;
 import com.things.link.project.application.ProjectLifecycleAccessService;
@@ -26,7 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** ADR0235：事件只有发生历史副作用，Inbox、额度、发生事实及脱敏日志共同提交。 */
+/** 事件的Inbox、额度、发生事实及脱敏日志共同提交；CURRENT首次受理同步更新设备上报活跃投影，不驱动影子或告警。 */
 @Service
 public class EventIngestionService {
     /** 同一原事务的数据库访问器。 */ private final JdbcTemplate jdbc;
@@ -134,6 +135,10 @@ public class EventIngestionService {
         logs.log(new DeviceMessageLogCommand(message.projectId(), message.deviceId(), message.messageId(),
                 message.protocol(), DeviceMessageLog.Direction.UP, null, safe, message.rawBytes(), null,
                 message.occurredAt(), message.receivedAt(), message.traceId(), "EVENT"));
+        if (context.eligibility() == DeviceIngestionContext.Eligibility.CURRENT) {
+            devices.recordAcceptedDataReport(message.tenantId(), message.projectId(),
+                    message.deviceId(), message.receivedAt());
+        }
         return true;
     }
 

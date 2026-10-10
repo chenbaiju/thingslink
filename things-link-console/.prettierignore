@@ -7,3 +7,18 @@ src/types/api/
 
 # 锁文件归 pnpm 所有，格式由 pnpm 生成；prettier 重排会与 pnpm 交替改写并产生巨大 diff
 pnpm-lock.yaml
+
+# 缓存、构建/测试输出和摘要绑定证据不参与源码格式化
+.auto-import.json
+src/types/import/
+.playwright-browsers/
+.e2e-evidence/
+logs/
+test-results/
+playwright-report/
+manifest/
+.idea/
+dist-ssr/
+
+# 上游历史与已退役脚本按原内容归档，不由格式工具批量改写
+docs/upstream/

@@ -446,6 +446,93 @@ class OpenApiSpecTests extends AbstractIntegrationTest {
                 .containsExactly("OBSERVED", "SIMULATED", "NONE");
     }
 
+    @Test void appProjectNavigationRequiresAppBearerAndNeverPromisesCredentialReplay() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        var paths=spec.path("paths");
+        for(var operation:List.of(paths.path("/api/v1/app/projects").path("get"),paths.path("/api/v1/app/auth/switch-project").path("post"))) {
+            assertThat(operation.path("security").toString()).contains("appAccessBearer");
+            assertThat(operation.path("parameters").toString()).doesNotContain("Idempotency-Key");
+            assertThat(operation.path("responses").has("200")).isTrue();
+        }
+        var request=spec.path("components").path("schemas").path("AppProjectSwitchRequest");
+        assertThat(request.path("required").valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("refreshToken","targetProjectId");
+        assertThat(request.path("properties").has("tenantId")).isFalse();
+        assertThat(request.path("properties").has("appUserId")).isFalse();
+    }
+
+    @Test void appAlarmHistoryHasIndependentReadContract() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        for (String path:List.of("/api/v1/app/alarms", "/api/v1/app/alarms/{id}")) {
+            var operation=spec.path("paths").path(path).path("get");
+            assertThat(operation.path("security").toString()).contains("appAccessBearer");
+            assertThat(operation.path("responses").path("200").path("content").path("application/json").path("schema").has("$ref")).isTrue();
+            assertThat(operation.path("parameters").toString()).doesNotContain("X-App-Version", "X-Dashboard-Version");
+        }
+        var properties=spec.path("components").path("schemas").path("AppAlarmResponse").path("properties");
+        assertThat(properties.has("ruleId")).isFalse();
+        for (String field:List.of("activatedAt", "clearedAt", "acknowledgedAt"))
+            assertThat(properties.path(field).path("type").valueStream().map(JsonNode::asString).toList()).containsExactlyInAnyOrder("string", "null");
+    }
+
+    @Test void appAccountIsIndependentAndDoesNotExposeCredentials() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        var operation=spec.path("paths").path("/api/v1/app/account").path("get");
+        assertThat(operation.path("operationId").asString()).isEqualTo("getAppAccount");
+        assertThat(operation.path("security").toString()).contains("appAccessBearer");
+        assertThat(operation.path("responses").path("200").path("content").path("application/json").path("schema").path("$ref").asString()).isEqualTo("#/components/schemas/AppAccountResponse");
+        var fields=spec.path("components").path("schemas").path("AppAccountResponse").path("properties");
+        assertThat(fields.propertyNames()).containsExactlyInAnyOrder("id","username","displayName","createdAt","projectRole","passwordChangeAllowed");
+    }
+
+    @Test void appNotificationPreferenceKeepsIdentityOutOfWritableBody() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        var path=spec.path("paths").path("/api/v1/app/account/notification-preferences");
+        for(String method:List.of("get","put")) {
+            var op=path.path(method);
+            assertThat(op.path("security").toString()).contains("appAccessBearer");
+            assertThat(op.path("responses").path("200").path("content").path("application/json").path("schema").path("$ref").asString()).isEqualTo("#/components/schemas/AppNotificationPreferenceResponse");
+        }
+        var schema=spec.path("components").path("schemas").path("UpdateAppNotificationPreferenceRequest");
+        assertThat(schema.path("properties").propertyNames()).containsExactlyInAnyOrder("appPushEnabled","expectedRevision");
+        assertThat(schema.path("properties").path("expectedRevision").path("type").asString()).isEqualTo("string");
+        assertThat(path.path("put").path("responses").has("409")).isTrue();
+    }
+
+    @Test void notificationContactsSeparateConsoleWriteAndAppRead() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        var console=spec.path("paths").path("/api/v1/projects/{projectId}/end-users/{appUserId}/notification-contact");
+        for(String method:List.of("get","put")) assertThat(console.path(method).path("security").toString()).contains("consoleAccessBearer");
+        assertThat(console.path("put").path("responses").has("409")).isTrue();
+        var app=spec.path("paths").path("/api/v1/app/account/notification-channels");
+        assertThat(app.has("put")).isFalse();
+        assertThat(app.path("get").path("security").toString()).contains("appAccessBearer");
+        var schemas=spec.path("components").path("schemas");
+        assertThat(schemas.path("UpdateEndUserNotificationContactRequest").path("properties").propertyNames())
+                .containsExactlyInAnyOrder("voiceNumber","smsNumber","expectedRevision");
+        assertThat(schemas.path("UpdateEndUserNotificationContactRequest").path("properties").path("expectedRevision").path("type").asString()).isEqualTo("string");
+        assertThat(schemas.path("AppNotificationChannelResponse").path("properties").propertyNames())
+                .containsExactlyInAnyOrder("voiceNumber","smsNumber","voiceAvailable","smsAvailable");
+    }
+
+    @Test void pushInstallationsExposeCasReceiptAndServerIdentity() throws Exception {
+        var spec=PRETTY.readTree(fetchSpec());
+        var put=spec.path("paths").path("/api/v1/app/push-installations").path("put");
+        assertThat(put.path("operationId").asString()).isEqualTo("registerAppPushInstallation");
+        var item=spec.path("paths").path("/api/v1/app/push-installations/{installationId}");
+        assertThat(item.path("get").path("operationId").asString()).isEqualTo("getAppPushInstallation");
+        assertThat(item.path("delete").path("operationId").asString()).isEqualTo("revokeAppPushInstallation");
+        assertThat(spec.path("components").path("schemas").path("AppSessionIdentity").path("properties").path("backendInstanceId").path("type").toString()).contains("null");
+        assertThat(put.path("security").toString()).contains("appAccessBearer");
+        assertThat(put.path("parameters").toString()).doesNotContain("Idempotency-Key");
+        var schemas=spec.path("components").path("schemas");
+        var fields=schemas.path("RegisterAppPushInstallationRequest").path("properties");
+        assertThat(fields.propertyNames()).containsExactlyInAnyOrder("installationId","registrationId","channelConfigurationId","providerToken","expectedRevision");
+        assertThat(fields.path("expectedRevision").path("type").asString()).isEqualTo("string");
+        assertThat(schemas.path("AppPushInstallationSummary").path("properties").propertyNames()).doesNotContain("providerToken","tokenDigest","tokenCipher");
+        assertThat(schemas.path("AppSessionResponse").path("properties").has("identity")).isTrue();
+        assertThat(spec.path("paths").path("/api/v1/app/push-installations/{installationId}").path("delete").path("responses").has("204")).isTrue();
+    }
+
     /** 全局守卫必须能发现头、错误和分页的真实结构破坏。 */
     @Test void globalStructureRejectsMissingHeadersWrongErrorsAndBrokenPages() throws Exception {
         var good = PRETTY.readTree(fetchSpec());

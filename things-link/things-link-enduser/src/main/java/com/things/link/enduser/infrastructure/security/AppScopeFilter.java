@@ -101,6 +101,12 @@ public class AppScopeFilter extends OncePerRequestFilter {
             writeError(response, EndUserErrorCode.END_USER_ACCESS_INVALID);
             return;
         }
+        // ADR0236窄安全撤销例外：只给新资源精确UUID路径建立可信范围，业务写入仍走原门禁。
+        if ("DELETE".equals(request.getMethod()) && path.matches("/api/v1/app/push-installations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
+            RlsScopeContext.set(identity.orElseThrow().scope());
+            filterChain.doFilter(request, response);
+            return;
+        }
         ProjectAccessPolicy policy;
         try {
             AppProjectIdentity authenticated = identity.orElseThrow();

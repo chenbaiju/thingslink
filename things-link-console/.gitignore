@@ -20,7 +20,7 @@ target-contract-*.log
 # G2 每个候选/场景独立原始证据；只通过校验器导出受控 ZIP，禁止提交 JAR、trace 或凭据截图。
 .e2e-evidence/
 
-# 独立仓库不继承平台根忽略规则，显式排除本机文件和日志。
+# Console 是平台普通目录；本目录显式排除本机文件、日志和运行材料。
 .idea/
 logs/
 *.log

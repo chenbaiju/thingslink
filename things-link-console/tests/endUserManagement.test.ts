@@ -25,7 +25,10 @@ function render() {
   page = mount(Page, {
     global: {
       stubs: {
+        ElTag: { template: '<span><slot/></span>' },
+        ElDivider: { template: '<div role="separator"><slot/></div>' },
         EndUserDevices: true,
+        EndUserNotificationContact: true,
         EndUserDashboardGrants: true,
         ElCard: { template: '<section><slot/></section>' },
         ElForm: { template: '<form><slot/></form>' },
@@ -100,11 +103,11 @@ it('distinguishes an empty directory from a failed read and clears previous rows
   await flushPromises()
   expect(page.text()).toContain('尚无已分配')
   vi.mocked(api.fetchEndUsers).mockResolvedValue({ items: [assigned] })
-  await button('刷新目录').trigger('click')
+  state.user.info.currentProjectId = 'next'
   await flushPromises()
   expect(page.text()).toContain('alice')
   vi.mocked(api.fetchEndUsers).mockRejectedValue(new Error('offline'))
-  await button('刷新目录').trigger('click')
+  state.user.info.currentProjectId = 'third'
   await flushPromises()
   expect(page.text()).toContain('目录读取失败')
   expect(page.text()).not.toContain('alice')
@@ -141,7 +144,7 @@ it('recovers an uncertain provision by explicit exact lookup without repeating t
   expect(api.lookupEndUser).not.toHaveBeenCalled()
   await button('查找账号').trigger('click')
   await flushPromises()
-  expect(page.text()).toContain('当前账号：alice')
+  expect(page.get('.end-user-selection__identity strong').text()).toBe('alice')
   expect(api.provisionEndUser).toHaveBeenCalledTimes(1)
 })
 it('shows duplicate username rejection and allows exact lookup without password recovery', async () => {
@@ -167,7 +170,7 @@ it('requires confirmation to assign then reads the authoritative project role', 
   expect(state.confirm).toHaveBeenCalledTimes(1)
   expect(api.assignEndUserRole).toHaveBeenCalledExactlyOnceWith('p', 'a', 'OBSERVER')
   expect(api.lookupEndUser).toHaveBeenCalledTimes(2)
-  expect(page.text()).toContain('项目角色状态：ACTIVE')
+  expect(page.get('.end-user-selection__statuses').text()).toMatch(/项目角色状态\s*ACTIVE/)
 })
 it('unknown assignment reads facts without another write and retains actionable notice', async () => {
   vi.mocked(api.assignEndUserRole).mockRejectedValue(
@@ -181,7 +184,7 @@ it('unknown assignment reads facts without another write and retains actionable 
   await flushPromises()
   expect(page.text()).toContain('操作结果未知')
   expect(api.assignEndUserRole).toHaveBeenCalledTimes(1)
-  expect(page.text()).toContain('项目角色状态：ACTIVE')
+  expect(page.get('.end-user-selection__statuses').text()).toMatch(/项目角色状态\s*ACTIVE/)
 })
 it('suspends and restores only the selected project role and warns about closed bindings', async () => {
   vi.mocked(api.lookupEndUser).mockResolvedValue(assigned)
@@ -214,7 +217,7 @@ it('identity changes cancel an old confirmation and clear credentials before wri
   confirm('confirm')
   await flushPromises()
   expect(api.assignEndUserRole).not.toHaveBeenCalled()
-  expect(page.text()).not.toContain('当前账号：alice')
+  expect(page.find('.end-user-selection__identity').exists()).toBe(false)
 })
 it('rejects an old lookup response after identity epoch changes', async () => {
   let finish!: (value: any) => void
@@ -231,7 +234,7 @@ it('rejects an old lookup response after identity epoch changes', async () => {
   await flushPromises()
   finish(account)
   await flushPromises()
-  expect(page.text()).not.toContain('当前账号：alice')
+  expect(page.find('.end-user-selection__identity').exists()).toBe(false)
 })
 it('ARCHIVED remains readable but prevents provisioning and project role writes', async () => {
   vi.mocked(fetchProjects).mockResolvedValue([{ id: 'p', status: 'ARCHIVED' }])
@@ -268,9 +271,17 @@ it('changes only an existing project role via PATCH and rereads the selected ide
   vi.mocked(api.lookupEndUser).mockResolvedValue({ ...assigned, role: 'MAINTAINER' })
   await button('修改项目角色').trigger('click')
   await flushPromises()
+  expect(
+    page.findAll('option').map((option) => [option.attributes('value'), option.text()])
+  ).toEqual([
+    ['APP_ADMIN', '应用管理员（APP_ADMIN）'],
+    ['MAINTAINER', '维护者（MAINTAINER）'],
+    ['OPERATOR', '操作员（OPERATOR）'],
+    ['OBSERVER', '观察者（OBSERVER）']
+  ])
   expect(api.updateEndUserRole).toHaveBeenCalledExactlyOnceWith('p', 'a', 'MAINTAINER')
   expect(api.assignEndUserRole).not.toHaveBeenCalled()
-  expect(page.text()).toContain('本项目角色：MAINTAINER')
+  expect(page.get('.end-user-selection__statuses').text()).toMatch(/本项目角色\s*MAINTAINER/)
 })
 
 it('rejects a mismatched exact lookup identity instead of offering assignment to another account', async () => {

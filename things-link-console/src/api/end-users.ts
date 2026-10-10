@@ -69,3 +69,22 @@ export function issueDeviceClaimToken(projectId: string, deviceId: string) {
     showErrorMessage: false
   })
 }
+
+export type EndUserNotificationContact = components['schemas']['EndUserNotificationContactResponse']
+export function fetchEndUserNotificationContact(projectId: string, userId: string) {
+  return request.get<EndUserNotificationContact>({
+    url: `${base(projectId)}/${encodeURIComponent(userId)}/notification-contact`,
+    showErrorMessage: false
+  })
+}
+export function updateEndUserNotificationContact(
+  projectId: string,
+  userId: string,
+  body: components['schemas']['UpdateEndUserNotificationContactRequest']
+) {
+  return request.put<EndUserNotificationContact>({
+    url: `${base(projectId)}/${encodeURIComponent(userId)}/notification-contact`,
+    params: body,
+    showErrorMessage: false
+  })
+}

@@ -19,6 +19,9 @@ public enum CommonErrorCode implements ErrorCode {
     /** 请求的资源不存在。 */
     RESOURCE_NOT_FOUND(10004, "请求的资源不存在", 404),
 
+    /** 当前路径不支持请求方法。 */
+    METHOD_NOT_ALLOWED(10005, "请求方法不受支持", 405),
+
     /** 资源当前状态不允许该操作（例如已发布的设备类型不可改标识符）。 */
     RESOURCE_STATE_CONFLICT(10009, "资源当前状态不允许该操作", 409),
 

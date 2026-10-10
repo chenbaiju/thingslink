@@ -17,7 +17,6 @@
     "lint:stylelint": "stylelint  \"**/*.{css,scss,vue}\" --fix",
     "lint:lint-staged": "lint-staged",
     "commit": "git-cz",
-    "clean:dev": "tsx scripts/clean-dev.ts",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

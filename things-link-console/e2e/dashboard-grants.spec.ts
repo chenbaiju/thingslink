@@ -60,7 +60,12 @@ test('用户READ授权：真实App可见性、CAS竞争、原键恢复与停用�
     await change(page, 'revoke')
     expect((await conflict).status()).toBe(409)
     await expect(page.getByTestId('grants-grant')).toBeDisabled()
-    await page.getByTestId('grants-refresh').click()
+    await page
+      .getByTestId('grants-dialog')
+      .getByRole('button', { name: '关闭', exact: true })
+      .click()
+    await page.getByTestId('grants-open').click()
+    await page.getByRole('button', { name: `选择用户 ${username}`, exact: true }).click()
     await state(page, 'REVOKED', '2')
     expect(await probe(page)).toEqual({ current: 404, schema: 404 })
     await change(page, 'grant')

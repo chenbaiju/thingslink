@@ -221,6 +221,36 @@ class ProjectCleanupEndUserTests {
         assertThat(entity("app_push_token", f.push())).isEqualTo(pushBefore);
     }
 
+    /** 在本类隔离历史库执行新增迁移本体，验证501号码的500/1边界并恢复历史函数，旧候选不被追改。 */
+    @Test
+    void notificationContactsAreCleanedBeforeRolesWithoutTouchingNeighbor() throws IOException {
+        String tableMigration=new ClassPathResource("db/migration/enduser/V20261009_0150__app_project_notification_contact.sql").getContentAsString(StandardCharsets.UTF_8);
+        String cleanupMigration=new ClassPathResource("db/migration/enduser/V20261009_0160__app_notification_contact_cleanup.sql").getContentAsString(StandardCharsets.UTF_8);
+        String historicalCurrent=new ClassPathResource("db/migration/enduser/V20260906_0260__app_user_dashboard_cleanup.sql").getContentAsString(StandardCharsets.UTF_8);
+        owner.execute(tableMigration);owner.execute(cleanupMigration);
+        try {
+            Fixture f=fixture(false,null), other=fixture(true,f);
+            owner.update("INSERT INTO app_user(id,tenant_id,username,password_hash) SELECT gen_random_uuid(),?,'contact-cleanup-'||n,'hash' FROM generate_series(1,500) n",f.tenant());
+            owner.update("INSERT INTO app_user_role(id,tenant_id,project_id,app_user_id,role) SELECT gen_random_uuid(),tenant_id,?,id,'OBSERVER' FROM app_user WHERE tenant_id=?",f.project(),f.tenant());
+            owner.update("INSERT INTO app_project_notification_contact(tenant_id,project_id,app_user_id,voice_number,revision) SELECT tenant_id,?,id,'+8613800000001',1 FROM app_user WHERE tenant_id=?",f.project(),f.tenant());
+            owner.update("INSERT INTO app_project_notification_contact(tenant_id,project_id,app_user_id,sms_number,revision) VALUES(?,?,?,'+8613800000002',1)",other.tenant(),other.project(),other.user());
+            assertThat(batches.execute(enduserClaim()).orElseThrow()).isEqualTo(ProjectCleanupBatchResult.deleted(500));
+            assertThat(rows("app_project_notification_contact",f)).isEqualTo(1);
+            assertThat(rows("app_user_role",f)).isEqualTo(501);
+            assertThat(next()).isEqualTo(ProjectCleanupBatchResult.deleted(1));
+            assertThat(rows("app_project_notification_contact",f)).isZero();
+            assertThat(rows("app_project_notification_contact",other)).isEqualTo(1);
+            assertThat(next()).isEqualTo(ProjectCleanupBatchResult.deleted(500));
+            assertThat(next()).isEqualTo(ProjectCleanupBatchResult.deleted(1));
+            assertThat(next()).isEqualTo(ProjectCleanupBatchResult.done());
+            assertThat(owner.queryForObject("SELECT sms_number FROM app_project_notification_contact WHERE project_id=?",String.class,other.project())).isEqualTo("+8613800000002");
+            assertThat(owner.queryForObject("SELECT count(*) FROM app_user WHERE tenant_id=?",Long.class,f.tenant())).isEqualTo(501);
+        } finally {
+            owner.execute(historicalCurrent);
+            owner.execute("DROP TABLE app_project_notification_contact");
+        }
+    }
+
     /** 运行真实历史0500函数证明其先删角色并误报空域；finally恢复0260，不手写替代清理实现。 */
     @Test
     void historicalCleanupLeavesGrantsAndAdvancesBeforeDashboardForeignKeyIsReleased() throws IOException {

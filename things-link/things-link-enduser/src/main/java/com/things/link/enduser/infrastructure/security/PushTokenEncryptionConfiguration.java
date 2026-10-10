@@ -9,7 +9,7 @@ import org.springframework.core.env.Profiles;
 
 /** 装配 ADR 0051 的 PUSH token 加密边界。 */
 @Configuration
-@EnableConfigurationProperties(PushTokenEncryptionProperties.class)
+@EnableConfigurationProperties({PushTokenEncryptionProperties.class, com.things.link.enduser.application.PushInstallationConfiguration.class})
 public class PushTokenEncryptionConfiguration {
 
     /** 仓库公开的 32 字节开发 key；生产 profile 不能携带它，即使它不是 active key。 */

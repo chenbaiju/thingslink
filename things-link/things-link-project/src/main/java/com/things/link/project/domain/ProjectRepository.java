@@ -19,6 +19,9 @@ import java.util.UUID;
  */
 public interface ProjectRepository {
 
+    /** @param tenantId 可信租户 @param after 最后扫描ID，可空 @param limit 有界扫描数 @return 未删除ACTIVE候选，调用者仍须核验App角色 */
+    List<Project> scanActiveOwned(UUID tenantId, UUID after, int limit);
+
     /**
      * 创建项目。
      *

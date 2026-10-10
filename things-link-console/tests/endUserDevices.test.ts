@@ -147,7 +147,7 @@ it('failed or malformed reads clear relationships instead of presenting an empty
   render()
   await flushPromises()
   vi.mocked(api.fetchEndUserDevices).mockResolvedValue([{ ...binding, relationRole: 'OWNER' }])
-  await button('刷新设备关系').trigger('click')
+  await panel.setProps({ appUserId: 'b' })
   await flushPromises()
   expect(panel.text()).toContain('读取失败')
   expect(panel.text()).not.toContain('PRIMARY')

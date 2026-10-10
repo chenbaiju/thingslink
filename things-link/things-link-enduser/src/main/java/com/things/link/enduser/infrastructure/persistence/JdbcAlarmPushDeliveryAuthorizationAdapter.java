@@ -24,6 +24,9 @@ import java.util.UUID;
 public class JdbcAlarmPushDeliveryAuthorizationAdapter
         implements AlarmPushDeliveryAuthorizationPort {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.things.link.enduser.application.PushInstallationConfiguration installationConfiguration;
+
     /** 租户感知 JDBC；同时实施 tenant/project RLS。 */
     private final JdbcTemplate jdbcTemplate;
     /** 版本化 AES-256-GCM 解密端口。 */
@@ -62,6 +65,8 @@ public class JdbcAlarmPushDeliveryAuthorizationAdapter
                             ON u.tenant_id = t.tenant_id
                            AND u.id = t.app_user_id
                            AND u.status = 'ACTIVE'
+                   AND NOT EXISTS (SELECT 1 FROM app_notification_preference p
+                       WHERE p.tenant_id=u.tenant_id AND p.app_user_id=u.id AND NOT p.app_push_enabled)
                           JOIN app_user_role r
                             ON r.tenant_id = t.tenant_id
                            AND r.project_id = ?
@@ -76,8 +81,8 @@ public class JdbcAlarmPushDeliveryAuthorizationAdapter
                          WHERE t.tenant_id = ?
                            AND t.app_user_id = ?
                            AND t.id = ?
-                           AND t.status = 'ACTIVE'
-                        """,
+                           AND t.status = 'ACTIVE' AND (t.session_group_id IS NULL OR (t.channel_configuration_id || ':' || t.channel_identity) = ANY(?)) AND (%s)
+                        """.formatted(JdbcPushInstallationRepository.ELIGIBLE),
                         (resultSet, rowNumber) -> {
                             AppPushToken token = new AppPushToken(
                                     resultSet.getObject("id", UUID.class),
@@ -101,8 +106,17 @@ public class JdbcAlarmPushDeliveryAuthorizationAdapter
                         deviceId,
                         tenantId,
                         appUserId,
-                        pushTokenId)
+                        pushTokenId, channels())
                 .stream()
                 .findFirst();
+    }
+
+    /** 不把未配置或关闭的通道视为当前可发送资格；旧MOCK走明确兼容分支。 */
+    private String[] channels() {
+        if (installationConfiguration == null || installationConfiguration.channels() == null) return new String[0];
+        return installationConfiguration.channels().keySet().stream().filter(id -> {
+            try { installationConfiguration.requireChannel(id); return true; }
+            catch (com.things.link.shared.error.BusinessException unavailable) { return false; }
+        }).map(id -> id+":"+installationConfiguration.requireChannel(id).fingerprint()).toArray(String[]::new);
     }
 }

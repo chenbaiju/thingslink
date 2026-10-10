@@ -120,7 +120,8 @@ public final class GlobalStructureCustomizer implements OpenApiCustomizer {
         if (method.equals("PUT") && path.endsWith("/uploads/{sessionId}/content")) return false;
         if (Set.of("/api/v1/app/device-claims", "/api/v1/app/device-shares", "/api/v1/app/device-transfers",
                 "/api/v1/app/devices/{deviceId}/binding", "/api/v1/app/push-tokens",
-                "/api/v1/app/push-tokens/{installationId}").contains(path)) return false;
+                "/api/v1/app/push-tokens/{installationId}", "/api/v1/app/push-installations",
+                "/api/v1/app/push-installations/{installationId}").contains(path)) return false;
         return !method.equals("POST") || !Set.of(
                 "/api/v1/projects/{projectId}/assistant/fact-reports/collection",
                 "/api/v1/projects/{projectId}/assistant/knowledge/search",

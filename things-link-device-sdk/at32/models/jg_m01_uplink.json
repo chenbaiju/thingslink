@@ -1,0 +1,43 @@
+{
+  "properties": [
+    {"propertyKey":"online","name":"固件上线状态","accessType":"REPORT","dataType":"SWITCH","onLabel":"在线","offLabel":"离线","sortOrder":0},
+    {"propertyKey":"doorOpen","name":"门磁开启","accessType":"REPORT","dataType":"SWITCH","onLabel":"开","offLabel":"关","sortOrder":1},
+    {"propertyKey":"unlockCount","name":"锁控板开锁计数","accessType":"REPORT","dataType":"NUMBER","unit":"次","decimalPlaces":0,"minimumValue":0,"maximumValue":4294967295,"sortOrder":2},
+    {"propertyKey":"bleConnected","name":"记录时蓝牙连接","accessType":"REPORT","dataType":"SWITCH","onLabel":"连接","offLabel":"断开","sortOrder":3},
+    {"propertyKey":"abnormalOpenNotice","name":"异常开门发生信号","accessType":"REPORT","dataType":"NUMBER","decimalPlaces":0,"minimumValue":0,"maximumValue":1,"sortOrder":4},
+    {"propertyKey":"passwordTrialNotice","name":"密码试错告警发生信号","accessType":"REPORT","dataType":"NUMBER","decimalPlaces":0,"minimumValue":0,"maximumValue":1,"sortOrder":5}
+  ],
+  "events": [
+    {"eventKey":"doorChanged","name":"门磁变化","level":"INFO","sortOrder":0,"parameters":[
+      {"parameterKey":"sourceRecordId","name":"来源记录标识","dataType":"TEXT","required":true,"sortOrder":0},
+      {"parameterKey":"doorOpen","name":"记录时门磁开启","dataType":"SWITCH","required":true,"sortOrder":1},
+      {"parameterKey":"rawRecordType","name":"原记录类型","dataType":"NUMBER","required":false,"sortOrder":2},
+      {"parameterKey":"unlockCount","name":"锁控板开锁计数","dataType":"NUMBER","required":false,"sortOrder":3},
+      {"parameterKey":"bleConnected","name":"记录时蓝牙连接","dataType":"SWITCH","required":false,"sortOrder":4}
+    ]},
+    {"eventKey":"unlockRecord","name":"开锁记录","level":"INFO","sortOrder":1,"parameters":[
+      {"parameterKey":"sourceRecordId","name":"来源记录标识","dataType":"TEXT","required":true,"sortOrder":0},
+      {"parameterKey":"doorOpen","name":"记录时门磁开启","dataType":"SWITCH","required":true,"sortOrder":1},
+      {"parameterKey":"rawRecordType","name":"原记录类型","dataType":"NUMBER","required":true,"sortOrder":2},
+      {"parameterKey":"unlockCount","name":"锁控板开锁计数","dataType":"NUMBER","required":true,"sortOrder":3},
+      {"parameterKey":"bleConnected","name":"记录时蓝牙连接","dataType":"SWITCH","required":false,"sortOrder":4},
+      {"parameterKey":"method","name":"开锁方式","dataType":"ENUM","required":true,"enumOptions":["REMOTE","DYNAMIC_PASSWORD","LOCAL_PASSWORD","MF_CARD"],"sortOrder":5},
+      {"parameterKey":"passwordIndex","name":"密码编号","dataType":"NUMBER","required":false,"sortOrder":6},
+      {"parameterKey":"cardUid","name":"卡标识","dataType":"TEXT","required":false,"sortOrder":7}
+    ]},
+    {"eventKey":"abnormalOpen","name":"异常开门","level":"WARNING","sortOrder":2,"parameters":[
+      {"parameterKey":"sourceRecordId","name":"来源记录标识","dataType":"TEXT","required":true,"sortOrder":0},
+      {"parameterKey":"doorOpen","name":"记录时门磁开启","dataType":"SWITCH","required":true,"sortOrder":1},
+      {"parameterKey":"rawRecordType","name":"原记录类型","dataType":"NUMBER","required":true,"sortOrder":2},
+      {"parameterKey":"unlockCount","name":"锁控板开锁计数","dataType":"NUMBER","required":true,"sortOrder":3},
+      {"parameterKey":"bleConnected","name":"记录时蓝牙连接","dataType":"SWITCH","required":false,"sortOrder":4}
+    ]},
+    {"eventKey":"passwordTrialLimit","name":"密码试错5次","level":"WARNING","sortOrder":3,"parameters":[
+      {"parameterKey":"sourceRecordId","name":"来源记录标识","dataType":"TEXT","required":true,"sortOrder":0},
+      {"parameterKey":"doorOpen","name":"记录时门磁开启","dataType":"SWITCH","required":true,"sortOrder":1},
+      {"parameterKey":"rawRecordType","name":"原记录类型","dataType":"NUMBER","required":true,"sortOrder":2},
+      {"parameterKey":"unlockCount","name":"锁控板开锁计数","dataType":"NUMBER","required":true,"sortOrder":3},
+      {"parameterKey":"bleConnected","name":"记录时蓝牙连接","dataType":"SWITCH","required":false,"sortOrder":4}
+    ]}
+  ]
+}

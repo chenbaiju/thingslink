@@ -1,0 +1,4 @@
+#include "Generated.xcconfig"
+
+// 每位开发者的签名团队只保存在本机，不绑定共享工程的发行身份。
+#include? "LocalSigning.xcconfig"

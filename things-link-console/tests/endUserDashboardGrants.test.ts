@@ -32,12 +32,14 @@ const fact = {
   updatedAt: time,
   revokedAt: null
 }
+const openDialog = vi.fn()
 let panel: VueWrapper
 function render(allowWrite = true) {
   panel = mount(Panel, {
     props: { projectId, account, allowWrite },
     global: {
       stubs: {
+        ElTag: { template: '<span><slot /></span>' },
         ElDivider: { template: '<div role="separator"><slot /></div>' },
         ElButton: {
           props: ['disabled'],
@@ -45,9 +47,11 @@ function render(allowWrite = true) {
         },
         ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' },
         DesignerGrants: {
-          props: ['dashboardId', 'fixedUser', 'writable'],
+          name: 'DesignerGrants',
+          props: ['dashboardId', 'fixedUser', 'writable', 'hideTrigger'],
+          methods: { openDialog },
           template:
-            '<div data-testid="shared-grant" :data-user="fixedUser.id" :data-write="writable">{{dashboardId}}</div>'
+            '<div><slot name="context" /><div data-testid="shared-grant" :data-user="fixedUser.id" :data-write="writable">{{dashboardId}}</div></div>'
         }
       }
     }
@@ -74,10 +78,19 @@ afterEach(() => panel?.unmount())
 it('展示授权事实和无精度丢失的修订，固定用户复用单看板组件', async () => {
   render()
   await flushPromises()
-  expect(panel.text()).toContain('READ / ACTIVE · 修订 9007199254740993')
+  const row = panel.get('[data-dashboard-id]')
+  expect(row.text()).toContain('可选看板')
+  expect(row.text()).toContain('读取（READ）')
+  expect(row.text()).toContain('已授权（ACTIVE）')
+  expect(row.findAll('td')[3].text()).toBe('9007199254740993')
+  expect(row.text()).toContain('未撤销')
   await button('查看此看板授权').trigger('click')
   expect(panel.get('[data-testid="shared-grant"]').attributes('data-user')).toBe(appUserId)
   expect(panel.get('[data-testid="shared-grant"]').text()).toBe(dashboardId)
+  expect(panel.get('.end-user-dashboard-grants__selection').text()).toContain('可选看板')
+  expect(panel.get('.end-user-dashboard-grants__selection').text()).toContain('alice')
+  expect(openDialog).toHaveBeenCalledOnce()
+  expect(panel.findComponent({ name: 'DesignerGrants' }).props('hideTrigger')).toBe(true)
 })
 it('OPERATOR/VIEWER没有授权目录读取权限或入口', async () => {
   state.user.info.buttons = []
@@ -102,9 +115,10 @@ it('空目录与读取失败不同，错误响应不展示成无授权', async (
   vi.mocked(fetchUserDashboardGrants).mockResolvedValue({ items: [], hasMore: false })
   render()
   await flushPromises()
-  expect(panel.text()).toContain('当前页暂无授权记录')
+  expect(panel.findAll('[data-dashboard-id]')).toHaveLength(0)
+  expect(panel.text()).not.toContain('授权目录读取失败')
   vi.mocked(fetchUserDashboardGrants).mockRejectedValueOnce(new Error('failed'))
-  await button('刷新授权目录').trigger('click')
+  await panel.setProps({ projectId: 'next' })
   await flushPromises()
   expect(panel.text()).toContain('授权目录读取失败')
   expect(panel.text()).not.toContain('当前页暂无授权记录')
@@ -120,7 +134,7 @@ it.each([
   render()
   await flushPromises()
   expect(panel.text()).toContain('授权目录读取失败')
-  expect(panel.text()).not.toContain('修订')
+  expect(panel.findAll('[data-dashboard-id]')).toHaveLength(0)
 })
 it('20项游标前后页且刷新回第一页，不重复循环游标', async () => {
   vi.mocked(fetchUserDashboardGrants).mockResolvedValueOnce({
@@ -140,7 +154,8 @@ it('20项游标前后页且刷新回第一页，不重复循环游标', async ()
   await button('上一页授权').trigger('click')
   await flushPromises()
   expect(fetchUserDashboardGrants).toHaveBeenLastCalledWith(projectId, appUserId, undefined)
-  await button('刷新授权目录').trigger('click')
+  await button('查看此看板授权').trigger('click')
+  panel.findComponent({ name: 'DesignerGrants' }).vm.$emit('changed')
   await flushPromises()
   expect(panel.text()).toContain('第1页')
 })
@@ -154,14 +169,14 @@ it('换用户清除旧记录、目标及旧延迟响应', async () => {
       done = resolve
     })
   )
-  await button('刷新授权目录').trigger('click')
+  panel.findComponent({ name: 'DesignerGrants' }).vm.$emit('changed')
   vi.mocked(fetchUserDashboardGrants).mockResolvedValueOnce({ items: [], hasMore: false })
   await panel.setProps({ account: { ...account, id: otherId, username: 'bob' } })
   await flushPromises()
   done({ items: [fact], hasMore: false })
   await flushPromises()
   expect(panel.find('[data-testid="shared-grant"]').exists()).toBe(false)
-  expect(panel.text()).not.toContain('修订')
+  expect(panel.findAll('[data-dashboard-id]')).toHaveLength(0)
   expect(panel.text()).toContain('bob的看板')
 })
 it('权限收回清除旧目录和目标并停止读取', async () => {

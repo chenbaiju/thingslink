@@ -765,3 +765,41 @@ describe('受控类型基线登记单次发送与原意图恢复', () => {
     expect(user.accessToken).toBe('next-login')
   })
 })
+
+describe('接收号码修改单次发送', () => {
+  const url =
+    '/api/v1/projects/11111111-2222-4333-8444-555555555555/end-users/66666666-7777-4888-8999-aaaaaaaaaaaa/notification-contact' as const
+  it.each([401, 403, 429, 500, 503, 'network', 'timeout'])(
+    '%s不重发接收号码，不记录错误正文且保留身份',
+    async (kind) => {
+      const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+      axios.defaults.adapter = refresh
+      const adapter = vi.fn<AxiosAdapter>(async (config) => {
+        if (typeof kind !== 'number')
+          throw new AxiosError(
+            'PRIVATE_SECRET',
+            kind === 'timeout' ? 'ECONNABORTED' : 'ERR_NETWORK',
+            config
+          )
+        throw new AxiosError('PRIVATE_SECRET', 'ERR_BAD_RESPONSE', config, undefined, {
+          status: kind,
+          statusText: 'Failed',
+          headers: {},
+          config,
+          data: { code: kind, message: 'PRIVATE_SECRET', details: ['PRIVATE_SECRET'] }
+        })
+      })
+      const logout = vi.spyOn(user, 'logOut')
+      const result = await outcome(http.put({ url, adapter, showErrorMessage: false }))
+      expect(result).toBeInstanceOf(HttpError)
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(refresh).not.toHaveBeenCalled()
+      expect(logout).not.toHaveBeenCalled()
+      expect(user.accessToken).toBe('initial-token')
+      expect(JSON.stringify(result)).not.toContain('PRIVATE_SECRET')
+      expect(vi.mocked(showError).mock.calls.every(([, display]) => display === false)).toBe(true)
+      expect(JSON.stringify(vi.mocked(showError).mock.calls)).not.toContain('PRIVATE_SECRET')
+    }
+  )
+})

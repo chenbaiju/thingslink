@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size;
  * 独立用例，因为「创建账号」与「给账号项目角色」是两个可分别撤销的动作。
  *
  * @param username    租户内用户名，服务端规范化为 trim + 小写
- * @param password    初始口令，最短长度由应用服务校验（口令策略独立演进）
+ * @param password    初始口令，8至128字符且UTF-8不超过72字节
  * @param displayName 显示名称，可空
  */
 @Schema(description = "预置终端用户请求")
@@ -22,7 +22,7 @@ public record ProvisionEndUserRequest(
         @Size(max = 64, message = "用户名过长")
         String username,
 
-        @Schema(description = "初始口令", example = "correct-horse-battery-staple")
+        @Schema(description = "初始口令，8至128字符且UTF-8不超过72字节", example = "correct-horse-battery-staple")
         @NotBlank(message = "口令不能为空")
         String password,
 

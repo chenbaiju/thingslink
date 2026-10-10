@@ -1598,6 +1598,11 @@
     },
     {
       "method": "get",
+      "path": "/api/v1/app/devices/statistics",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
       "path": "/api/v1/app/devices/{deviceId}",
       "idempotency": "read"
     },
@@ -2075,6 +2080,71 @@
       "method": "get",
       "path": "/api/v1/projects/{projectId}/device-types/{id}",
       "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/alarms",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/alarms/{id}",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/account",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/account/notification-preferences",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/app/account/notification-preferences",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/account/notification-channels",
+      "idempotency": "read"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/notification-contact",
+      "idempotency": "read"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/projects/{projectId}/end-users/{appUserId}/notification-contact",
+      "idempotency": "optional-header"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/projects",
+      "idempotency": "read"
+    },
+    {
+      "method": "post",
+      "path": "/api/v1/app/auth/switch-project",
+      "idempotency": "authentication"
+    },
+    {
+      "method": "put",
+      "path": "/api/v1/app/push-installations",
+      "idempotency": "domain-identity"
+    },
+    {
+      "method": "get",
+      "path": "/api/v1/app/push-installations/{installationId}",
+      "idempotency": "read"
+    },
+    {
+      "method": "delete",
+      "path": "/api/v1/app/push-installations/{installationId}",
+      "idempotency": "domain-identity"
     }
   ],
   "pages": [
@@ -2329,6 +2399,14 @@
     {
       "name": "AssistantAlarmEvidence",
       "hasMore": true
+    },
+    {
+      "name": "CursorPageAppAlarmResponse",
+      "hasMore": true
+    },
+    {
+      "name": "AppAuthorizedProjectPage",
+      "hasMore": false
     }
   ]
 }

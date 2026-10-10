@@ -362,6 +362,16 @@ public class JdbcDeviceRepository implements DeviceRepository {
                 """, gatewayId, projectId, deviceId) == 1;
     }
 
+    /** 沿用接口定义的契约。{@inheritDoc} */
+    @Override
+    public void recordDataReport(UUID tenantId, UUID projectId, UUID deviceId, Instant receivedAt) {
+        jdbcTemplate.update("""
+                UPDATE dev_device SET last_data_report_at = GREATEST(last_data_report_at,
+                    LEAST(?::timestamptz, clock_timestamp()))
+                 WHERE tenant_id = ? AND project_id = ? AND id = ? AND deleted_at IS NULL
+                """, Timestamp.from(receivedAt), tenantId, projectId, deviceId);
+    }
+
     @Override public boolean setStatus(UUID projectId, UUID deviceId, Device.Status status, Instant lastOnlineAt) {
         return jdbcTemplate.update("""
                 UPDATE dev_device

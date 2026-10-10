@@ -30,7 +30,10 @@ public record AppSessionResponse(
         Instant accessExpiresAt,
 
         @Schema(description = "刷新令牌过期时刻（RFC3339 UTC）", example = "2026-09-01T09:15:00Z")
-        Instant refreshExpiresAt) {
+        Instant refreshExpiresAt,
+
+        @Schema(description = "服务器签发的会话关联，安装绑定不可自报身份")
+        com.things.link.enduser.application.AppSessionIdentity identity) {
 
     /**
      * 从应用层会话结果构造响应。
@@ -43,7 +46,7 @@ public record AppSessionResponse(
                 session.accessToken().value(),
                 session.refreshToken(),
                 session.accessToken().expiresAt(),
-                session.refreshExpiresAt());
+                session.refreshExpiresAt(), session.identity());
     }
 
     /**

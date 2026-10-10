@@ -76,7 +76,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
                         SELECT id, tenant_id, app_user_id, installation_id, provider, status,
                                created_at, updated_at, revoked_at
                           FROM app_push_token
-                         WHERE tenant_id = ? AND app_user_id = ? AND installation_id = ?
+                         WHERE session_group_id IS NULL AND tenant_id = ? AND app_user_id = ? AND installation_id = ?
                          FOR UPDATE
                         """, TOKEN_MAPPER, tenantId, appUserId, installationId).stream().findFirst();
     }
@@ -88,7 +88,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
                         UPDATE app_push_token
                            SET provider = ?, token_cipher = ?, token_nonce = ?, key_id = ?,
                                status = 'ACTIVE', updated_at = ?, revoked_at = NULL
-                         WHERE tenant_id = ? AND app_user_id = ? AND installation_id = ? AND id = ?
+                         WHERE session_group_id IS NULL AND tenant_id = ? AND app_user_id = ? AND installation_id = ? AND id = ?
                         """,
                 token.provider().name(), encrypted.cipherText(), encrypted.nonce(), encrypted.keyId(),
                 Timestamp.from(token.updatedAt()), token.tenantId(), token.appUserId(), token.installationId(), token.id());
@@ -100,7 +100,7 @@ public class JdbcAppPushTokenRepository implements AppPushTokenRepository {
         return jdbcTemplate.update("""
                         UPDATE app_push_token
                            SET status = 'REVOKED', updated_at = ?, revoked_at = ?
-                         WHERE tenant_id = ? AND app_user_id = ? AND installation_id = ?
+                         WHERE session_group_id IS NULL AND tenant_id = ? AND app_user_id = ? AND installation_id = ?
                            AND status = 'ACTIVE'
                         """, Timestamp.from(revokedAt), Timestamp.from(revokedAt),
                 tenantId, appUserId, installationId);

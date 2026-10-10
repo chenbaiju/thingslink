@@ -167,7 +167,28 @@ public enum EndUserErrorCode implements ErrorCode {
     APP_BROWSER_UNAVAILABLE(60057, "浏览器认证入口未启用", 503),
 
     /** S14-R4b：所属租户全部终端用户身份已达到有效套餐上限。 */
-    END_USER_QUOTA_EXCEEDED(60058, "终端用户数量已达套餐上限，请扩容后重试", 409);
+    END_USER_QUOTA_EXCEEDED(60058, "终端用户数量已达套餐上限，请扩容后重试", 409),
+
+    /** 告警不存在、当前设备失权、软删及跨项目统一不可见。 */
+    END_USER_ALARM_NOT_FOUND(60060, "告警不存在或未授权", 404),
+
+    /** 另一客户端已修改账号通知偏好，旧版本不得覆盖。 */
+    NOTIFICATION_PREFERENCE_CONFLICT(60061, "通知偏好已变化，请刷新后重试", 409),
+
+    /** 接收号码配置版本已变化，不覆盖其他项目管理员决定。 */
+    NOTIFICATION_CONTACT_CONFLICT(60062, "接收号码已变化，请刷新后重试", 409),
+
+    /** 平台实例标识未配置，不生成可混淆的默认导航身份。 */
+    NAVIGATION_UNAVAILABLE(60063, "平台项目导航暂不可用", 503),
+
+    /** 目标项目缺失、跨租户或失权统一拒绝。 */
+    NAVIGATION_PROJECT_UNAVAILABLE(60064, "项目不存在或未授权", 404),
+    /** 安装版本或登录代次已变化，需读回本人最新摘要。 */
+    PUSH_INSTALLATION_CONFLICT(60065, "推送安装关联已变化", 409),
+    /** 本人没有此安装的绑定事实。 */
+    PUSH_INSTALLATION_NOT_FOUND(60066, "推送安装关联不存在", 404),
+    /** 未配置通道或平台身份，不允许静默使用测试默认值。 */
+    PUSH_INSTALLATION_UNAVAILABLE(60067, "推送安装接入暂不可用", 503);
 
     private final int code;
     private final String defaultMessage;

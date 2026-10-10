@@ -19,7 +19,12 @@ public record AppAuthenticatedPrincipal(
         UUID tenantId,
         UUID projectId,
         UUID appUserId,
-        long projectGeneration) {
+        long projectGeneration, UUID sessionId) {
+
+    /** 兼容未签发会话的认证身份；推送写入不接受缺失sid的访问令牌。 */
+    public AppAuthenticatedPrincipal(UUID tenantId, UUID projectId, UUID appUserId, long projectGeneration) {
+        this(tenantId, projectId, appUserId, projectGeneration, null);
+    }
 
     /**
      * 兼容项目代次上线前的调用；旧会话按ADR0073解释为代次0。

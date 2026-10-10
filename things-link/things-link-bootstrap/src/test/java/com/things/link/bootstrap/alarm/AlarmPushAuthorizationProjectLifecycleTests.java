@@ -181,6 +181,20 @@ class AlarmPushAuthorizationProjectLifecycleTests extends AbstractIntegrationTes
         assertState("QUEUED", 0, null);
     }
 
+    /** 已提交的账号关闭偏好在原授权读取中生效，重新开启不改安装与设备关系。 */
+    @Test
+    void accountPreferenceSuppressesPushAndRestoresOnlyAfterEnabled() throws Exception {
+        try (Connection owner = ownerConnection()) {
+            execute(owner, "INSERT INTO app_notification_preference(tenant_id,app_user_id,app_push_enabled,revision) VALUES(?,?,false,1)", fixture.tenantId(), fixture.userId());
+        }
+        assertThat(directAuthorization(fixture.tenantId())).isEmpty();
+        assertNoDecryptionOrSend();
+        try (Connection owner = ownerConnection()) {
+            execute(owner, "UPDATE app_notification_preference SET app_push_enabled=true,revision=2 WHERE tenant_id=? AND app_user_id=?", fixture.tenantId(), fixture.userId());
+        }
+        assertThat(directAuthorization(fixture.tenantId())).isNotEmpty();
+    }
+
     /** 专库先于Spring普通单例与Flyway初始化，本类结束且Spring物理关闭后由OwnedTestContainers回收。 */
     private static String startIsolatedDatabase() {
         AUTHORIZATION_POSTGRES.start();

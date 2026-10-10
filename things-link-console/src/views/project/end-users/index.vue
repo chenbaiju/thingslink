@@ -24,7 +24,7 @@
           :closable="false"
           show-icon
         />
-        <ElForm label-position="top" @submit.prevent>
+        <ElForm class="end-user-provision" label-position="top" @submit.prevent>
           <ElFormItem label="精确用户名"
             ><ElInput
               v-model="form.username"
@@ -61,39 +61,64 @@
         </ElForm>
       </ElCard>
       <ElCard v-if="canManage && selected" class="end-user-selection" shadow="never">
-        <h4>当前账号：{{ selected.username }}（{{ selected.id }}）</h4>
-        <p
-          >账号状态：{{ selected.status }}；本项目角色：{{
-            selected.role || '尚未分配'
-          }}；项目角色状态：{{ selected.roleStatus || '尚未分配' }}</p
-        >
-        <ElSelect v-model="selectedRole" aria-label="目标项目角色" :disabled="busy || !writable">
-          <ElOption v-for="role in roles" :key="role" :label="role" :value="role" />
-        </ElSelect>
-        <ElButton
-          type="primary"
-          :disabled="busy || !writable || (!!selected.role && selected.role === selectedRole)"
-          @click="changeRole"
-          >{{ selected.role ? '修改项目角色' : '分配项目角色' }}</ElButton
-        >
-        <ElButton
-          v-if="selected.roleStatus === 'ACTIVE'"
-          :disabled="busy || !writable"
-          @click="changeStatus('suspend')"
-          >停用项目角色</ElButton
-        >
-        <ElButton
-          v-if="selected.roleStatus === 'DISABLED'"
-          :disabled="busy || !writable"
-          @click="changeStatus('restore')"
-          >恢复项目角色</ElButton
-        >
-        <ElAlert type="info" show-icon :closable="false"
+        <ElDivider content-position="left">当前账号</ElDivider>
+        <div class="end-user-selection__identity">
+          <strong>{{ selected.username }}</strong>
+          <span class="end-user-selection__id">用户 ID：{{ selected.id }}</span>
+        </div>
+        <div class="end-user-selection__statuses">
+          <span
+            >账号状态
+            <ElTag :type="selected.status === 'ACTIVE' ? 'success' : 'info'">{{
+              selected.status
+            }}</ElTag></span
+          >
+          <span
+            >本项目角色 <ElTag>{{ selected.role || '尚未分配' }}</ElTag></span
+          >
+          <span
+            >项目角色状态
+            <ElTag :type="selected.roleStatus === 'ACTIVE' ? 'success' : 'info'">{{
+              selected.roleStatus || '尚未分配'
+            }}</ElTag></span
+          >
+        </div>
+        <div class="end-user-selection__actions">
+          <label>目标项目角色</label>
+          <ElSelect v-model="selectedRole" aria-label="目标项目角色" :disabled="busy || !writable">
+            <ElOption v-for="role in roles" :key="role" :label="roleLabel(role)" :value="role" />
+          </ElSelect>
+          <ElButton
+            type="primary"
+            :disabled="busy || !writable || (!!selected.role && selected.role === selectedRole)"
+            @click="changeRole"
+            >{{ selected.role ? '修改项目角色' : '分配项目角色' }}</ElButton
+          >
+          <ElButton
+            v-if="selected.roleStatus === 'ACTIVE'"
+            :disabled="busy || !writable"
+            @click="changeStatus('suspend')"
+            >停用项目角色</ElButton
+          >
+          <ElButton
+            v-if="selected.roleStatus === 'DISABLED'"
+            :disabled="busy || !writable"
+            @click="changeStatus('restore')"
+            >恢复项目角色</ElButton
+          >
+        </div>
+        <ElAlert class="console-hint" type="info" show-icon :closable="false"
           >这些操作只影响本项目。恢复角色不会重新打开停用时关闭的设备关系。</ElAlert
         >
       </ElCard>
+      <ElCard v-if="canManage && selected?.role" shadow="never">
+        <EndUserNotificationContact
+          :project-id="projectId"
+          :app-user-id="selected.id || ''"
+          :allow-write="writable && !busy"
+        />
+      </ElCard>
       <ElCard v-if="selected" shadow="never">
-        <h4>{{ selected.username }}的设备关系</h4>
         <EndUserDevices
           :project-id="projectId"
           :app-user-id="selected.id || ''"
@@ -108,15 +133,14 @@
         />
       </ElCard>
       <ElCard shadow="never">
-        <div class="console-toolbar"
-          ><ElDivider content-position="left">本项目角色目录</ElDivider
-          ><ElButton :disabled="busy || loading" @click="refresh">刷新目录</ElButton></div
-        >
+        <ElDivider content-position="left">本项目角色目录</ElDivider>
         <ElTable v-loading="loading" :data="rows" row-key="id">
           <ElTableColumn prop="username" label="用户名" min-width="160" />
           <ElTableColumn prop="displayName" label="显示名称" min-width="160" />
           <ElTableColumn prop="status" label="账号状态" min-width="120" />
-          <ElTableColumn prop="role" label="项目角色" min-width="150" />
+          <ElTableColumn prop="role" label="项目角色" min-width="240" show-overflow-tooltip>
+            <template #default="{ row }">{{ roleLabel(row.role) }}</template>
+          </ElTableColumn>
           <ElTableColumn prop="roleStatus" label="项目角色状态" min-width="140" />
           <ElTableColumn label="操作" width="110"
             ><template #default="{ row }"
@@ -129,7 +153,7 @@
             ><ElEmpty
               :description="
                 failed
-                  ? '目录读取失败，请刷新'
+                  ? '目录读取失败，请重新进入页面'
                   : loading
                     ? '正在读取'
                     : '本项目尚无已分配角色的终端用户'
@@ -158,6 +182,7 @@
   import { ElMessageBox } from 'element-plus'
   import * as api from '@/api/end-users'
   import EndUserDevices from './EndUserDevices.vue'
+  import EndUserNotificationContact from './EndUserNotificationContact.vue'
   import EndUserDashboardGrants from './EndUserDashboardGrants.vue'
   import { fetchProjects } from '@/api/project'
   import { HttpError } from '@/utils/http/error'
@@ -169,6 +194,14 @@
   const projectStatus = ref<string>()
   const writable = computed(() => projectStatus.value === 'ACTIVE' && canManage.value)
   const roles = ['APP_ADMIN', 'MAINTAINER', 'OPERATOR', 'OBSERVER'] as const
+  const roleNames: Record<api.EndUserRole, string> = {
+    APP_ADMIN: '应用管理员',
+    MAINTAINER: '维护者',
+    OPERATOR: '操作员',
+    OBSERVER: '观察者'
+  }
+  const roleLabel = (role?: string | null) =>
+    role ? `${roleNames[role as api.EndUserRole] || '未知角色'}（${role}）` : '尚未分配'
   const selectedRole = ref<api.EndUserRole>('OBSERVER')
   const form = reactive({ username: '', displayName: '', password: '' })
   const rows = ref<api.EndUser[]>([]),
@@ -378,6 +411,65 @@
 </script>
 
 <style scoped lang="scss">
+  .end-user-provision {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 16px;
+    :deep(.el-form-item__label) {
+      height: auto;
+      margin-bottom: 6px;
+      line-height: 20px;
+    }
+    .console-actions {
+      grid-column: 1 / -1;
+    }
+  }
+  .end-user-selection__identity {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    align-items: baseline;
+    margin-bottom: 12px;
+    strong {
+      font-size: 16px;
+    }
+  }
+  .end-user-selection__id {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    overflow-wrap: anywhere;
+  }
+  .end-user-selection__statuses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    margin-bottom: 16px;
+    > span {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+  }
+  .end-user-selection__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    > .el-select {
+      width: 280px;
+      max-width: 100%;
+    }
+    > .el-button {
+      margin: 0;
+    }
+  }
+  @media (width <= 680px) {
+    .end-user-provision {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .project-end-users__pagination {
     box-sizing: border-box;
     display: flex;

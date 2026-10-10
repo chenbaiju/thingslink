@@ -56,6 +56,7 @@ async function fixture(canManage = true) {
     global: {
       stubs: {
         ElDivider: { template: '<div><slot /></div>' },
+        ElTag: { template: '<span class="el-tag"><slot /></span>' },
         ElButton: {
           props: ['disabled'],
           template: '<button :disabled="disabled"><slot /></button>'
@@ -82,6 +83,29 @@ async function select(wrapper: Awaited<ReturnType<typeof fixture>>) {
   await flushPromises()
 }
 describe('用户READ授权独立弹窗', () => {
+  it('列表直接打开固定用户弹窗，隐藏重复入口且打开动作只读取', async () => {
+    const wrapper = await fixture()
+    await wrapper.setProps({ fixedUser: user, hideTrigger: true })
+    expect(wrapper.find('[data-testid="grants-open"]').exists()).toBe(false)
+    expect(mocks.detail).not.toHaveBeenCalled()
+    wrapper.vm.openDialog()
+    await flushPromises()
+    expect(wrapper.get('[data-testid="grants-dialog"]').isVisible()).toBe(true)
+    expect(mocks.users).not.toHaveBeenCalled()
+    expect(mocks.detail).toHaveBeenCalledWith(projectId, appUserId, dashboardId)
+    expect(mocks.write).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="grants-refresh"]').exists()).toBe(false)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '关闭')!
+      .trigger('click')
+    expect(wrapper.find('[data-testid="grants-dialog"]').exists()).toBe(false)
+    wrapper.vm.openDialog()
+    await flushPromises()
+    expect(wrapper.get('[data-testid="grants-dialog"]').isVisible()).toBe(true)
+    expect(mocks.write).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
   it('按钮打开才查询，不把60025显示为确定未授权；确认首次授予0并显示真实记录', async () => {
     const wrapper = await fixture()
     expect(mocks.users).not.toHaveBeenCalled()
@@ -99,6 +123,8 @@ describe('用户READ授权独立弹窗', () => {
     )
     expect(mocks.write.mock.calls[0]?.[0].body).toEqual({ expectedRevision: '0', status: 'ACTIVE' })
     expect(wrapper.get('[data-testid="grants-status"]').attributes('data-status')).toBe('ACTIVE')
+    expect(wrapper.get('[data-testid="grants-status"]').text()).toContain('修订版本：1')
+    expect(mocks.detail).toHaveBeenCalledTimes(2)
     wrapper.unmount()
   })
   it('撤销先确认，状态非有效的用户只能读取历史', async () => {
@@ -116,6 +142,8 @@ describe('用户READ授权独立弹窗', () => {
       expect.objectContaining({ confirmButtonText: '撤销读取权限' })
     )
     expect(wrapper.get('[data-testid="grants-status"]').attributes('data-revision')).toBe('2')
+    expect(wrapper.get('[data-testid="grants-status"]').text()).toContain('已撤销读取权限')
+    expect(mocks.detail).toHaveBeenCalledTimes(2)
     mocks.users.mockResolvedValueOnce({
       items: [{ ...user, status: 'SUSPENDED' }],
       hasMore: false,

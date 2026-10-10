@@ -196,6 +196,21 @@ axiosInstance.interceptors.response.use(
       )
     }
 
+    // 接收号码写入即使401也不自动重放；由页面只读核对权威结果。
+    if (originalConfig && isSingleAttemptNotificationContact(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '接收号码保存未确认，请重新读取后核对。',
+          status === ApiStatus.unauthorized
+            ? ApiStatus.unauthorized
+            : Number.isSafeInteger(apiError?.code)
+              ? apiError!.code
+              : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
     // 产品注册秘密的生成/轮换没有幂等回查，任何失败都不能重发或传播不可信错误正文。
     if (originalConfig && isSingleAttemptProductCredential(originalConfig)) {
       return Promise.reject(
@@ -403,6 +418,7 @@ async function retryRequest<T>(
   retries: number = MAX_RETRIES
 ): Promise<T> {
   if (
+    isSingleAttemptNotificationContact(config) ||
     isSingleAttemptAnalysis(config) ||
     isSingleAttemptProductCredential(config) ||
     isSingleAttemptOtaDownload(config) ||
@@ -556,3 +572,13 @@ const api = {
 }
 
 export default api
+
+/** 仅号码PUT不重放；GET仍沿普通认证恢复流程。 */
+function isSingleAttemptNotificationContact(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'PUT' &&
+    /^\/api\/v1\/projects\/[^/?#]+\/end-users\/[^/?#]+\/notification-contact(?:[?#].*)?$/.test(
+      config.url ?? ''
+    )
+  )
+}

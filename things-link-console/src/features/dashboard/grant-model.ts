@@ -325,7 +325,7 @@ export function createDashboardGrants(ports: GrantPorts) {
         state.error = state.pending
           ? '当前授权事实不可读取，原操作仍需恢复；不能据此判断它未执行。'
           : '未能读取授权记录：可能尚无记录，也可能目标不可见。'
-      } else state.error = '授权记录读取失败，请明确重试。'
+      } else state.error = '授权记录读取失败，请关闭弹窗后重新打开。'
     } finally {
       if (epoch === generation && sequence === readSequence && matches(context)) {
         state.detailLoading = false
@@ -400,8 +400,8 @@ export function createDashboardGrants(ports: GrantPorts) {
         state.missingEligible = false
         state.error =
           failure.code === 60027
-            ? '授权已被其他操作更新，请明确刷新后再决定。'
-            : '授权操作被明确拒绝，请刷新并核对目标状态。'
+            ? '授权已被其他操作更新，请关闭弹窗后重新打开再决定。'
+            : '授权操作被明确拒绝，请关闭弹窗后重新打开并核对目标状态。'
       }
     } finally {
       if (epoch === generation && matches(context)) {

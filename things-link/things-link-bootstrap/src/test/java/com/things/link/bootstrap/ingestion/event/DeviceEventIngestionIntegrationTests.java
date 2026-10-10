@@ -370,9 +370,11 @@ class DeviceEventIngestionIntegrationTests extends AbstractIntegrationTest {
         TenantContext.set(new TenantScope(tenant, project, account));
         try { bindings.bind(project, device, nextVersion, Uuid7.generate(), TransitionType.UPGRADE, Instant.now()); }
         finally { TenantContext.clear(); }
+        Instant beforeOldReport = activity();
         assertThat(events.ingest(first)).isFalse();
         EventUplinkMessage lateOld = message(Uuid7.generate(), "empty", Map.of(), Instant.now().plusSeconds(1));
         assertThat(events.ingest(lateOld)).isTrue();
+        assertThat(activity()).isEqualTo(beforeOldReport);
         try (Connection owner = fixtureOwnerConnection()) {
             JdbcTemplate sql = new JdbcTemplate(new SingleConnectionDataSource(owner, true));
             assertThat(sql.queryForObject("SELECT thing_model_version_id FROM ts_device_event WHERE message_id=?",
@@ -412,6 +414,62 @@ class DeviceEventIngestionIntegrationTests extends AbstractIntegrationTest {
             sql.execute("SELECT purge_device_events(0,'{}'::jsonb)");
             assertThat(sql.queryForObject("SELECT count(*) FROM ts_device_event WHERE message_id=?", Long.class, expired.messageId())).isZero();
             assertThat(sql.queryForObject("SELECT count(*) FROM ts_device_event WHERE message_id=?", Long.class, fresh.messageId())).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void currentReportsUseReceptionTimeAndReplayDoesNotRefreshActivity() throws Exception {
+        Instant received = Instant.now().minusSeconds(60).truncatedTo(ChronoUnit.MICROS);
+        EventUplinkMessage first = message(Uuid7.generate(), "empty", Map.of(), received);
+        assertThat(events.ingest(first)).isTrue();
+        assertThat(activity()).isEqualTo(received);
+        EventUplinkMessage replay = new EventUplinkMessage(first.messageId(), tenant, project, device,
+                first.protocol(), first.eventKey(), first.modelVersion(), first.occurredAt(), Instant.now(),
+                "activity-replay", first.rawBytes(), first.params());
+        assertThat(events.ingest(replay)).isFalse();
+        assertThat(activity()).isEqualTo(received);
+        assertThat(events.ingest(message(Uuid7.generate(), "empty", Map.of(), received.minusSeconds(60)))).isTrue();
+        assertThat(activity()).isEqualTo(received);
+        Instant propertyReceived = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        var property = new StandardUplinkMessage(Uuid7.generate(), tenant, project, device, null,
+                TransportProtocol.MQTT, StandardUplinkMessage.Direction.UP, StandardUplinkMessage.Type.PROPERTY_REPORT,
+                "1.0.0", propertyReceived.minusSeconds(30), propertyReceived, "activity-property", 32,
+                Map.of("temperature", 22));
+        assertThat(properties.ingest(property)).isTrue();
+        assertThat(activity()).isEqualTo(propertyReceived);
+        assertThat(properties.ingest(property)).isFalse();
+        assertThat(activity()).isEqualTo(propertyReceived);
+    }
+
+    @Test
+    void futureReceptionCannotMakeActivityPermanent() throws Exception {
+        Instant before = Instant.now().minusSeconds(1);
+        Instant future = Instant.now().plusSeconds(3600);
+        var event = new EventUplinkMessage(Uuid7.generate(), tenant, project, device,
+                TransportProtocol.MQTT, "empty", "1.0.0", Instant.now(), future,
+                "activity-clock-skew", 128, Map.of());
+        assertThat(events.ingest(event)).isTrue();
+        assertThat(activity()).isAfter(before).isBeforeOrEqualTo(Instant.now()).isBefore(future);
+    }
+
+    @Test
+    void rolledBackOrRejectedReportsDoNotCreateActivity() throws Exception {
+        var event = message(Uuid7.generate(), "empty", Map.of(), Instant.now());
+        transactions.executeWithoutResult(status -> {
+            assertThat(events.ingest(event)).isTrue();
+            status.setRollbackOnly();
+        });
+        assertThat(activity()).isNull();
+        assertThat(count("ts_device_event")).isZero();
+        assertBusiness(() -> events.ingest(message(Uuid7.generate(), "alarm", Map.of(), Instant.now())), 30070);
+        assertThat(activity()).isNull();
+    }
+
+    private Instant activity() throws Exception {
+        try (Connection owner = fixtureOwnerConnection()) {
+            return new JdbcTemplate(new SingleConnectionDataSource(owner, true)).queryForObject(
+                    "SELECT last_data_report_at FROM dev_device WHERE id=?",
+                    (row, number) -> row.getTimestamp(1) == null ? null : row.getTimestamp(1).toInstant(), device);
         }
     }
 

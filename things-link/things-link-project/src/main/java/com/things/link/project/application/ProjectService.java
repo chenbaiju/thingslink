@@ -41,6 +41,29 @@ import java.util.UUID;
 @Service
 public class ProjectService {
 
+    /**
+     * 为已认证App身份提供租户内有界候选，不能直接当作已授权项目返回。
+     * @param tenantId 已认证租户 @param after 最后扫描ID @param limit 扫描上限，最多101
+     * @return 最小候选，调用者逐项目复核App角色
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<AppProjectCandidate> scanAppCandidates(UUID tenantId, UUID after, int limit) {
+        if (tenantId == null || limit < 1 || limit > 101) throw new IllegalArgumentException("项目扫描范围非法");
+        return projectRepository.scanActiveOwned(tenantId, after, limit).stream()
+                .map(p -> new AppProjectCandidate(p.id(), p.projectKey(), p.name())).toList();
+    }
+
+    /** @param tenantId 可信租户 @param projectId 定位项目 @return 同租户ACTIVE候选，调用者仍须核验App角色 */
+    @Transactional(readOnly = true)
+    public java.util.Optional<AppProjectCandidate> findAppCandidate(UUID tenantId, UUID projectId) {
+        return projectRepository.findById(projectId)
+                .filter(p->p.tenantId().equals(tenantId)&&p.status()==com.things.link.project.domain.Project.Status.ACTIVE)
+                .map(p->new AppProjectCandidate(p.id(),p.projectKey(),p.name()));
+    }
+
+    /** @param id 项目ID @param projectKey 项目入口键 @param name 项目名称 */
+    public record AppProjectCandidate(UUID id, String projectKey, String name) {}
+
     /** 大陆产品首期默认时区；客户端省略时区时仍得到确定的 cron 解释。 */
     public static final String DEFAULT_TIMEZONE = "Asia/Shanghai";
 

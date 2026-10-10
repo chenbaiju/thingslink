@@ -115,7 +115,7 @@ class QuotaRestRateLimitFilterTests {
 
     /** 两个受控OTA写入口通过生命周期预检后仍受日硬限、短窗和实际计量约束，不新增配额豁免。 */
     @ParameterizedTest
-    @CsvSource({"trust,normal", "trust,daily", "trust,window", "baseline,normal", "baseline,daily", "baseline,window"})
+    @CsvSource({"trust,normal", "trust,daily", "trust,window", "baseline,normal", "baseline,daily", "baseline,window", "contact,normal", "contact,daily", "contact,window"})
     void activeControlledOtaWritesStillUseOriginalQuotaAdmission(String route, String outcome) throws Exception {
         var lifecycle = mock(com.things.link.project.application.ProjectLifecycleAccessService.class);
         Fixture fixture = fixture(new RestQuotaPolicy(UUID.randomUUID(), 1L, 1L, 10L, 10L), lifecycle);
@@ -123,9 +123,9 @@ class QuotaRestRateLimitFilterTests {
         when(fixture.redis().execute(any(), anyList(), any(Object[].class))).thenReturn("window".equals(outcome) ? 0L : 1L);
         if ("daily".equals(outcome)) when(fixture.daily().decideTrustedProject(any(), any(), any()))
                 .thenReturn(com.things.link.project.application.QuotaStatus.HARD_LIMIT);
-        String suffix = "baseline".equals(route) ? "/ota/device-types/" + UUID.randomUUID() + "/baseline/registrations"
+        String suffix = "contact".equals(route) ? "/end-users/" + UUID.randomUUID() + "/notification-contact" : "baseline".equals(route) ? "/ota/device-types/" + UUID.randomUUID() + "/baseline/registrations"
                 : "/ota/trust-domains/release.domain/bundles";
-        MockHttpServletResponse response = invoke(fixture.filter(), "POST", "/api/v1/projects/" + scope.projectId() + suffix, scope);
+        MockHttpServletResponse response = invoke(fixture.filter(), "contact".equals(route) ? "PUT" : "POST", "/api/v1/projects/" + scope.projectId() + suffix, scope);
         verify(lifecycle).requireWritableAccountSnapshot(scope.accountId(), scope.projectId());
         verify(fixture.resolver()).resolve(scope.projectId());
         verify(fixture.daily()).decideTrustedProject(any(), any(), any());
@@ -137,6 +137,20 @@ class QuotaRestRateLimitFilterTests {
             assertThat(objectMapper.readTree(response.getContentAsString()).get("code").asInt()).isEqualTo(10029);
             verify(fixture.recorder(), org.mockito.Mockito.never()).record(any(), any(), any(), any(), any());
         }
+    }
+
+    @Test void notificationContactClassificationIsNarrow() {
+        UUID project = UUID.randomUUID();
+        String path = "/api/v1/projects/" + project + "/end-users/" + UUID.randomUUID() + "/notification-contact";
+        assertThat(QuotaRestRateLimitFilter.isNotificationContactWrite(new MockHttpServletRequest("PUT", path), project)).isTrue();
+        for (String method : List.of("GET", "POST", "DELETE", "HEAD"))
+            assertThat(QuotaRestRateLimitFilter.isNotificationContactWrite(new MockHttpServletRequest(method, path), project)).isFalse();
+        for (String suffix : List.of("/", "/extra", "s"))
+            assertThat(QuotaRestRateLimitFilter.isNotificationContactWrite(new MockHttpServletRequest("PUT", path + suffix), project)).isFalse();
+        assertThat(QuotaRestRateLimitFilter.isNotificationContactWrite(new MockHttpServletRequest("PUT", path), UUID.randomUUID())).isFalse();
+        var contextual = new MockHttpServletRequest("PUT", "/console" + path);
+        contextual.setContextPath("/console");
+        assertThat(QuotaRestRateLimitFilter.isNotificationContactWrite(contextual, project)).isTrue();
     }
 
     /** 每个测试清除 ThreadLocal，避免后续用例继承错误的项目范围。 */

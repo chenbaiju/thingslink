@@ -5,7 +5,6 @@ import com.things.link.enduser.domain.AppUser;
 import com.things.link.enduser.domain.AppUserRepository;
 import com.things.link.enduser.domain.EndUserErrorCode;
 import com.things.link.shared.error.BusinessException;
-import com.things.link.shared.error.CommonErrorCode;
 import com.things.link.support.tenant.TenantTransactionLocalRlsScope;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,8 +27,6 @@ import java.util.UUID;
 @Service
 public class AppPasswordService {
 
-    /** 口令最短长度，与预置账号 {@code EndUserProvisioningService} 保持一致。 */
-    private static final int MIN_PASSWORD_LENGTH = 8;
 
     /** 口令与改密时间的权威用户事实。 */
     private final AppUserRepository appUserRepository;
@@ -87,10 +84,7 @@ public class AppPasswordService {
             throw new BusinessException(EndUserErrorCode.END_USER_PASSWORD_INCORRECT);
         }
 
-        if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
-            throw new BusinessException(CommonErrorCode.INVALID_PARAMETER,
-                    "新口令长度不足 " + MIN_PASSWORD_LENGTH + " 位");
-        }
+        AppPasswordPolicy.validate(newPassword);
 
         String newHash = passwordEncoder.encode(newPassword);
         appUserRepository.updatePassword(tenantId, appUserId, newHash, Instant.now());

@@ -20,6 +20,9 @@ import java.util.UUID;
 @Component
 public class JdbcAlarmPushAudienceAdapter implements AlarmPushAudiencePort {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.things.link.enduser.application.PushInstallationConfiguration installationConfiguration;
+
     /** 租户感知 JDBC；由项目上下文数据源实施 RLS。 */
     private final JdbcTemplate jdbcTemplate;
     /** 公共项目端口在原告警事务持锁，拒绝只抑制本次PUSH受众，不撤销共用安装。 */
@@ -56,21 +59,33 @@ public class JdbcAlarmPushAudienceAdapter implements AlarmPushAudiencePort {
                     ON u.tenant_id = d.tenant_id
                    AND u.id = d.app_user_id
                    AND u.status = 'ACTIVE'
+                   AND NOT EXISTS (SELECT 1 FROM app_notification_preference p
+                       WHERE p.tenant_id=u.tenant_id AND p.app_user_id=u.id AND NOT p.app_push_enabled)
                   JOIN app_push_token t
                     ON t.tenant_id = d.tenant_id
                    AND t.app_user_id = d.app_user_id
-                   AND t.status = 'ACTIVE'
+                   AND t.status = 'ACTIVE' AND (t.session_group_id IS NULL OR (t.channel_configuration_id || ':' || t.channel_identity) = ANY(?)) AND (%s)
                  WHERE d.tenant_id = ?
                    AND d.project_id = ?
                    AND d.device_id = ?
                    AND d.status = 'ACTIVE'
                  ORDER BY d.app_user_id, t.id
-                """,
+                """.formatted(JdbcPushInstallationRepository.ELIGIBLE),
                 (resultSet, rowNumber) -> new PushAudience(
                         resultSet.getObject("app_user_id", UUID.class),
                         resultSet.getObject("push_token_id", UUID.class)),
+                channels(),
                 tenantId,
                 projectId,
                 deviceId);
+    }
+
+    /** 不把未配置或关闭的通道视为当前可发送资格；旧MOCK走明确兼容分支。 */
+    private String[] channels() {
+        if (installationConfiguration == null || installationConfiguration.channels() == null) return new String[0];
+        return installationConfiguration.channels().keySet().stream().filter(id -> {
+            try { installationConfiguration.requireChannel(id); return true; }
+            catch (com.things.link.shared.error.BusinessException unavailable) { return false; }
+        }).map(id -> id+":"+installationConfiguration.requireChannel(id).fingerprint()).toArray(String[]::new);
     }
 }

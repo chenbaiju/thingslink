@@ -252,6 +252,8 @@ public class PropertyIngestionService {
                 null, payloadSummary, message.rawBytes(), null,
                 message.occurredAt(), message.receivedAt(), message.traceId(), "PROPERTY_REPORT"));
         if (device.eligibility() == DeviceIngestionContext.Eligibility.CURRENT) {
+            deviceIngestionService.recordAcceptedDataReport(message.tenantId(), message.projectId(),
+                    message.deviceId(), message.receivedAt());
             recordUplinkVisibleAfterCommit(message.occurredAt());
         }
         return true;

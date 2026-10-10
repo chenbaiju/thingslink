@@ -60,7 +60,7 @@ class JdbcAlarmPushDeliveryAuthorizationAdapterTests {
         pushTokenId = UUID.randomUUID();
         target = new AuthorizedPushTarget("MOCK", "mock:success");
         when(jdbcTemplate.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<AuthorizedPushTarget>>any(),
-                eq(projectId), eq(deviceId), eq(tenantId), eq(appUserId), eq(pushTokenId)))
+                eq(projectId), eq(deviceId), eq(tenantId), eq(appUserId), eq(pushTokenId), org.mockito.ArgumentMatchers.any(String[].class)))
                 .thenReturn(List.of(target));
     }
 
@@ -85,7 +85,7 @@ class JdbcAlarmPushDeliveryAuthorizationAdapterTests {
         InOrder order = inOrder(lifecycleAccessService, jdbcTemplate);
         order.verify(lifecycleAccessService).lockActiveForWrite(tenantId, projectId);
         order.verify(jdbcTemplate).query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<AuthorizedPushTarget>>any(),
-                eq(projectId), eq(deviceId), eq(tenantId), eq(appUserId), eq(pushTokenId));
+                eq(projectId), eq(deviceId), eq(tenantId), eq(appUserId), eq(pushTokenId), org.mockito.ArgumentMatchers.any(String[].class));
     }
 
     /** 项目锁SQL超时必须原样交给既有投递重试逻辑，不能伪装成空授权终态。 */

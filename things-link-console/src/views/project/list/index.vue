@@ -68,7 +68,7 @@
           <ElTableColumn
             class-name="console-table-actions-cell"
             :label="$t('project.column.action')"
-            width="144"
+            width="180"
           >
             <template #default="{ row }">
               <div class="project-list__row-actions" @click.stop>
@@ -79,6 +79,13 @@
                   @click="enter(row)"
                   :label="row.id === currentProjectId ? $t('project.entered') : $t('project.enter')"
                   icon="ri:login-box-line"
+                />
+                <ConsoleTableAction
+                  type="primary"
+                  :disabled="!row.projectKey"
+                  @click="appEntryProject = row"
+                  label="App 接入"
+                  icon="ri:qr-code-line"
                 />
                 <template v-if="isOwner(row)">
                   <ConsoleTableAction
@@ -129,6 +136,7 @@
       </div>
     </section>
 
+    <AppProjectEntryDialog :project="appEntryProject" @close="appEntryProject = undefined" />
     <ElDialog
       class="console-dialog"
       v-model="editVisible"
@@ -160,6 +168,7 @@
 </template>
 
 <script setup lang="ts">
+  import AppProjectEntryDialog from './AppProjectEntryDialog.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { useI18n } from 'vue-i18n'
@@ -192,6 +201,7 @@
   const deletingId = ref('')
   const editVisible = ref(false)
   const projects = ref<ProjectResponse[]>([])
+  const appEntryProject = ref<ProjectResponse>()
   const editFormRef = ref<FormInstance>()
   const editTarget = ref<ProjectResponse>()
   const editForm = reactive({ name: '', region: '' })

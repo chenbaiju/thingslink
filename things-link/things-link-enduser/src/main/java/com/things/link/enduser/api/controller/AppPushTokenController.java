@@ -47,7 +47,7 @@ public class AppPushTokenController {
      */
     @PutMapping
     @Operation(summary = "注册或轮换 PUSH 安装实例",
-            description = "同一 installationId 原位轮换厂商 token；token 受 AES-256-GCM 保护且响应不回显。")
+            description = "仅test/development保留MOCK原位轮换；真实provider必须使用push-installations会话关联资源，旧入口拒绝为60067/503。")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "注册或轮换完成"),
             @ApiResponse(responseCode = "400", description = "安装实例、厂商或 token 不合法",

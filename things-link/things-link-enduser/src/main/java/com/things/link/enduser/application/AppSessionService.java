@@ -57,6 +57,9 @@ public class AppSessionService {
     /** 跨项目全会话撤销只需要可信租户轴，不伪造项目身份。 */
     private final TenantTransactionLocalRlsScope tenantTransactionLocalRlsScope;
     private final Duration refreshTokenTtl;
+    /** 未配置平台实例时登录仍可用，但安装注册必须拒绝。 */
+    @org.springframework.beans.factory.annotation.Value("${things-link.app-navigation.backend-instance-id:}")
+    private String backendInstanceId = "";
 
     /**
      * 用于在独立事务中执行「作废整族」。
@@ -67,6 +70,8 @@ public class AppSessionService {
      * 内层只更新撤销字段，不重复申请用户/项目锁，否则独立事务会等待外层形成自锁。
      */
     private final TransactionTemplate newTransaction;
+    /** 目标角色只读事务，不修改外层已建立的源项目RLS。 */
+    private final TransactionTemplate navigationRead;
 
     /**
      * @param refreshTokenRepository 刷新令牌与轮换族持久化
@@ -99,6 +104,9 @@ public class AppSessionService {
 
         this.newTransaction = new TransactionTemplate(transactionManager);
         this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        navigationRead=new TransactionTemplate(transactionManager);
+        navigationRead.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        navigationRead.setReadOnly(true);
     }
 
     /**
@@ -185,12 +193,57 @@ public class AppSessionService {
                 existing.appUserId(), existing.tenantId(), existing.projectId(),
                 existing.projectGeneration());
 
-        Issued issued = issue(principal, existing.familyId());
+        Issued issued = issue(principal, existing.familyId(), existing.sessionGroupId());
         if (refreshTokenRepository.markRotated(existing.id(), issued.tokenId()) != 1) {
             // 非预期并发/事实变更不得返回已签发结果；异常使本次refresh插入与全部原事务写入回滚。
             throw new IllegalStateException("持用户会话锁后刷新令牌条件轮换未命中唯一记录");
         }
         return issued.session();
+    }
+
+    /**
+     * 同一用户跨项目换签；两项目许可按固定顺序先取得，用户锁后重读令牌，旧族撤销与新族签发原子提交。
+     * @param rawToken 当前刷新凭据 @param tenant 已验签租户 @param source 已验签源项目 @param user 已验签本人 @param target 目标项目，仅为定位提示
+     * @return 目标项目会话；权限拒绝不消费源令牌，已轮换令牌重放仍撤销其族
+     */
+    @Transactional
+    public AppIssuedSession switchProject(String rawToken, UUID tenant, UUID source, UUID user, UUID target) {
+        if(rawToken==null||rawToken.isBlank()||rawToken.length()>4096||target==null)
+            throw new BusinessException(EndUserErrorCode.END_USER_REFRESH_INVALID);
+        byte[] hash=OpaqueToken.hash(rawToken);
+        var existing=refreshTokenRepository.findByHash(hash)
+                .orElseThrow(()->new BusinessException(EndUserErrorCode.END_USER_REFRESH_INVALID));
+        if(!existing.tenantId().equals(tenant)||!existing.projectId().equals(source)||!existing.appUserId().equals(user))
+            throw new BusinessException(EndUserErrorCode.END_USER_REFRESH_INVALID);
+        for(UUID project:java.util.stream.Stream.of(source,target).distinct().sorted(java.util.Comparator.comparing(UUID::toString)).toList()) {
+            boolean allowed=project.equals(source)
+                    ?lifecycleAccessService.lockActiveForWrite(tenant,project,existing.projectGeneration())
+                    :lifecycleAccessService.lockActiveForWrite(tenant,project);
+            if(!allowed)throw new BusinessException(project.equals(source)?EndUserErrorCode.END_USER_REFRESH_INVALID:EndUserErrorCode.NAVIGATION_PROJECT_UNAVAILABLE);
+        }
+        applyScope(tenant,source);
+        appUserRepository.lockByIdAndTenant(tenant,user)
+                .orElseThrow(()->new BusinessException(EndUserErrorCode.END_USER_REFRESH_INVALID));
+        existing=refreshTokenRepository.findByHash(hash)
+                .orElseThrow(()->new BusinessException(EndUserErrorCode.END_USER_REFRESH_INVALID));
+        if(existing.isRotated()) {
+            revokeFamilyInNewTransaction(existing.familyId(),Instant.now());
+            throw new BusinessException(EndUserErrorCode.END_USER_REFRESH_INVALID);
+        }
+        if(!existing.isUsable(Instant.now()))throw new BusinessException(EndUserErrorCode.END_USER_REFRESH_INVALID);
+        reverify(user,tenant,source,existing.projectGeneration());
+        // 外层只建立源项目RLS；用户锁已阻止角色写入，目标角色在独立只读范围复验，禁止同事务切换隔离域。
+        boolean targetAllowed=Boolean.TRUE.equals(navigationRead.execute(tx->{
+            applyScope(tenant,target);
+            return appUserRoleRepository.findByProjectAndUser(target,user)
+                    .filter(r->r.status()==AppUserRole.Status.ACTIVE).isPresent();
+        }));
+        if(!targetAllowed)
+            throw new BusinessException(EndUserErrorCode.NAVIGATION_PROJECT_UNAVAILABLE);
+        var policy=lifecycleAccessService.snapshot(tenant,target);
+        var result=issue(new AppAuthenticatedPrincipal(tenant,target,user,policy.lifecycleGeneration()),Uuid7.generate(),existing.sessionGroupId());
+        refreshTokenRepository.revokeFamily(existing.familyId(),Instant.now());
+        return result.session();
     }
 
     /**
@@ -256,6 +309,13 @@ public class AppSessionService {
     }
 
     private Issued issue(AppAuthenticatedPrincipal principal, UUID familyId) {
+        return issue(principal, familyId, familyId);
+    }
+
+    /** 跨项目换签保留会话组；sid始终指向当前刷新族，已结束的源族不能借组复活。 */
+    private Issued issue(AppAuthenticatedPrincipal principal, UUID familyId, UUID groupId) {
+        principal = new AppAuthenticatedPrincipal(principal.tenantId(), principal.projectId(),
+                principal.appUserId(), principal.projectGeneration(), familyId);
         String rawToken = OpaqueToken.generate();
         Instant now = Instant.now();
         Instant expiresAt = now.plus(refreshTokenTtl);
@@ -263,12 +323,14 @@ public class AppSessionService {
         AppRefreshToken record = new AppRefreshToken(
                 Uuid7.generate(), principal.appUserId(), principal.tenantId(),
                 principal.projectId(), principal.projectGeneration(), familyId,
-                now, expiresAt, null, null);
+                now, expiresAt, null, null, groupId);
 
         refreshTokenRepository.save(record, OpaqueToken.hash(rawToken));
 
         return new Issued(
-                new AppIssuedSession(tokenIssuer.issue(principal), rawToken, expiresAt),
+                new AppIssuedSession(tokenIssuer.issue(principal), rawToken, expiresAt,
+                        new AppSessionIdentity(backendInstanceId.isBlank() ? null : UUID.fromString(backendInstanceId),
+                                principal.tenantId(), principal.appUserId(), principal.projectId(), familyId, groupId)),
                 record.id());
     }
 

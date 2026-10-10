@@ -23,6 +23,19 @@ import java.util.UUID;
 @Repository
 public class JdbcProjectRepository implements ProjectRepository {
 
+    /** 租户限定候选扫描不授予App访问权限。 */
+    @Override
+    public List<Project> scanActiveOwned(UUID tenantId, UUID after, int limit) {
+        return jdbcTemplate.query("""
+                SELECT id,tenant_id,name,region,timezone,project_key,status,created_at,lifecycle_generation,description
+                FROM sys_project WHERE tenant_id=? AND status='ACTIVE' AND deleted_at IS NULL
+                AND (?::uuid IS NULL OR id>?::uuid) ORDER BY id LIMIT ?
+                """, (rs,n)->new Project(rs.getObject("id",UUID.class),rs.getObject("tenant_id",UUID.class),
+                rs.getString("name"),rs.getString("region"),rs.getString("timezone"),rs.getString("project_key"),
+                Project.Status.ACTIVE,rs.getTimestamp("created_at").toInstant(),rs.getLong("lifecycle_generation"),rs.getString("description")),
+                tenantId,after,after,limit);
+    }
+
     /**
      * 列前缀 {@code p.} 是必须的：查询里 project 与 project_member 都有
      * {@code id} / {@code created_at}，不加前缀取到的会是成员记录的值。

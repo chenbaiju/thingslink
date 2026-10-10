@@ -26,6 +26,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -170,12 +171,14 @@ public class AppDeviceController {
      * @param jwt 认证框架已解析的应用访问令牌
      * @param cursor 可选分页游标，继续读取上一页后的记录
      * @param limit 分页条数，具体边界由当前接口校验
+     * @param q 名称/设备标识字面子串，不影响全范围统计
+     * @param connectionStatus 连接状态，可空
      * @return 符合条件的记录页及后续分页游标
      */
     @GetMapping
     @Operation(summary = "设备列表",
             description = "列出当前终端用户在令牌项目下已授权（有效绑定）的设备，按创建时间降序游标分页。"
-                    + "解绑后立即不可见。")
+                    + "解绑后立即不可见；可按名称/标识字面搜索与连接状态筛选。")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "成功"),
             @ApiResponse(responseCode = "401", description = "访问令牌无效或角色已失效（60009）",
@@ -183,11 +186,14 @@ public class AppDeviceController {
     })
     public ResponseEntity<CursorPage<AppDeviceResponse>> list(
             @AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "上一页游标") @RequestParam(required = false) String cursor,
-            @Parameter(description = "单页数量") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+            @Parameter(description = "上一页游标") @RequestParam(required = false) @Size(max = 512) String cursor,
+            @Parameter(description = "单页数量") @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit,
+            @Parameter(description = "名称/设备标识字面子串") @RequestParam(required = false) @Size(max = 100) String q,
+            @Parameter(description = "连接状态") @RequestParam(name = "status", required = false)
+            @Pattern(regexp = "INACTIVE|ONLINE|OFFLINE") String connectionStatus) {
 
         return ResponseEntity.ok(accessService.list(
-                        AppJwtIdentity.projectId(jwt), AppJwtIdentity.appUserId(jwt), cursor, limit)
+                        AppJwtIdentity.tenantId(jwt), AppJwtIdentity.projectId(jwt), AppJwtIdentity.appUserId(jwt), cursor, limit, q, connectionStatus)
                 .map(AppDeviceResponse::from));
     }
 
@@ -213,7 +219,7 @@ public class AppDeviceController {
             @Parameter(description = "设备 ID") @PathVariable UUID deviceId) {
 
         return ResponseEntity.ok(AppDeviceResponse.from(accessService.detail(
-                AppJwtIdentity.projectId(jwt), AppJwtIdentity.appUserId(jwt), deviceId)));
+                AppJwtIdentity.tenantId(jwt), AppJwtIdentity.projectId(jwt), AppJwtIdentity.appUserId(jwt), deviceId)));
     }
 
     /**

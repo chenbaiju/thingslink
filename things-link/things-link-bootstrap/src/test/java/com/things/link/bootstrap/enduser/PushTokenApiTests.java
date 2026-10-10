@@ -121,19 +121,19 @@ class PushTokenApiTests extends AbstractIntegrationTest {
         UUID installationId = UUID.randomUUID();
         String accessToken = login("alice");
 
-        register(accessToken, installationId, "HUAWEI", "vendor-plain-one");
+        register(accessToken, installationId, "MOCK", "vendor-plain-one");
         PushRow first = row(aliceId, installationId);
         assertThat(first.status()).isEqualTo(AppPushToken.Status.ACTIVE);
-        assertThat(first.provider()).isEqualTo(AppPushToken.Provider.HUAWEI);
+        assertThat(first.provider()).isEqualTo(AppPushToken.Provider.MOCK);
         assertThat(first.nonce()).hasSize(12);
         assertThat(new String(first.cipherText(), StandardCharsets.UTF_8)).doesNotContain("vendor-plain-one");
         assertThat(decrypt(first)).isEqualTo("vendor-plain-one");
 
-        register(accessToken, installationId, "OPPO", "vendor-plain-two");
+        register(accessToken, installationId, "MOCK", "vendor-plain-two");
         PushRow rotated = row(aliceId, installationId);
         assertThat(rotated.id()).isEqualTo(first.id());
         assertThat(rotated.createdAt()).isEqualTo(first.createdAt());
-        assertThat(rotated.provider()).isEqualTo(AppPushToken.Provider.OPPO);
+        assertThat(rotated.provider()).isEqualTo(AppPushToken.Provider.MOCK);
         assertThat(rotated.cipherText()).isNotEqualTo(first.cipherText());
         assertThat(decrypt(rotated)).isEqualTo("vendor-plain-two");
         assertThat(count(aliceId, installationId)).isOne();
@@ -174,7 +174,7 @@ class PushTokenApiTests extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "installationId", installationId,
-                                "provider", "HUAWEI",
+                                "provider", "MOCK",
                                 "token", " "))))
                 .andExpect(status().isBadRequest());
 
@@ -186,7 +186,7 @@ class PushTokenApiTests extends AbstractIntegrationTest {
     @DisplayName("app_push_token 无租户上下文时 fail-closed")
     void pushTokenTableIsTenantIsolated() throws Exception {
         UUID installationId = UUID.randomUUID();
-        register(login("alice"), installationId, "VIVO", "isolated-secret");
+        register(login("alice"), installationId, "MOCK", "isolated-secret");
 
         TenantContext.clear();
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM app_push_token", Integer.class)).isZero();
@@ -201,9 +201,9 @@ class PushTokenApiTests extends AbstractIntegrationTest {
         CountDownLatch start = new CountDownLatch(1);
         try (var executor = Executors.newFixedThreadPool(2)) {
             Future<?> first = executor.submit(() -> concurrentRegister(
-                    installationId, AppPushToken.Provider.HUAWEI, "concurrent-one", ready, start));
+                    installationId, AppPushToken.Provider.MOCK, "concurrent-one", ready, start));
             Future<?> second = executor.submit(() -> concurrentRegister(
-                    installationId, AppPushToken.Provider.XIAOMI, "concurrent-two", ready, start));
+                    installationId, AppPushToken.Provider.MOCK, "concurrent-two", ready, start));
             ready.await();
             start.countDown();
             first.get();
@@ -213,7 +213,7 @@ class PushTokenApiTests extends AbstractIntegrationTest {
         PushRow stored = row(aliceId, installationId);
         assertThat(count(aliceId, installationId)).isOne();
         assertThat(decrypt(stored)).isIn("concurrent-one", "concurrent-two");
-        assertThat(stored.provider()).isIn(AppPushToken.Provider.HUAWEI, AppPushToken.Provider.XIAOMI);
+        assertThat(stored.provider()).isIn(AppPushToken.Provider.MOCK, AppPushToken.Provider.MOCK);
     }
 
     /** 执行注册并断言 204 空响应，禁止任何 token 形态回显。 */

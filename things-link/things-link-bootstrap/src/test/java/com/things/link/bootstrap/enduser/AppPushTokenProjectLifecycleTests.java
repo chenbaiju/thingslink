@@ -91,7 +91,7 @@ class AppPushTokenProjectLifecycleTests extends AbstractIntegrationTest {
     @BeforeEach
     void prepare() throws SQLException {
         seedFixture();
-        register(fixture.tenantId(), fixture.projectId(), fixture.otherUserId(), AppPushToken.Provider.HUAWEI, "other-user-token");
+        register(fixture.tenantId(), fixture.projectId(), fixture.otherUserId(), AppPushToken.Provider.MOCK, "other-user-token");
         otherFacts = installationFacts(fixture.otherUserId());
     }
 
@@ -100,27 +100,27 @@ class AppPushTokenProjectLifecycleTests extends AbstractIntegrationTest {
     void activeRegistrationRotationRevocationAndRecoveryPreserveStableIdentity() throws Exception {
         registerOriginal();
         PushRow first = row(fixture.userId());
-        assertEnvelope(first, AppPushToken.Provider.HUAWEI, OLD_TOKEN, AppPushToken.Status.ACTIVE);
-        register(fixture.tenantId(), fixture.projectId(), fixture.userId(), AppPushToken.Provider.OPPO, NEW_TOKEN);
+        assertEnvelope(first, AppPushToken.Provider.MOCK, OLD_TOKEN, AppPushToken.Status.ACTIVE);
+        register(fixture.tenantId(), fixture.projectId(), fixture.userId(), AppPushToken.Provider.MOCK, NEW_TOKEN);
         PushRow rotated = row(fixture.userId());
         assertStableIdentity(first, rotated);
         assertThat(rotated.nonce()).isNotEqualTo(first.nonce());
         assertThat(rotated.cipherText()).isNotEqualTo(first.cipherText());
-        assertEnvelope(rotated, AppPushToken.Provider.OPPO, NEW_TOKEN, AppPushToken.Status.ACTIVE);
+        assertEnvelope(rotated, AppPushToken.Provider.MOCK, NEW_TOKEN, AppPushToken.Status.ACTIVE);
         revoke(fixture.tenantId(), fixture.projectId(), fixture.userId());
         PushRow revoked = row(fixture.userId());
         assertStableIdentity(first, revoked);
-        assertEnvelope(revoked, AppPushToken.Provider.OPPO, NEW_TOKEN, AppPushToken.Status.REVOKED);
+        assertEnvelope(revoked, AppPushToken.Provider.MOCK, NEW_TOKEN, AppPushToken.Status.REVOKED);
         assertThat(revoked.cipherText()).isEqualTo(rotated.cipherText());
         assertThat(revoked.nonce()).isEqualTo(rotated.nonce());
         List<String> before = facts();
         revoke(fixture.tenantId(), fixture.projectId(), fixture.userId());
         assertThat(facts()).isEqualTo(before);
-        register(fixture.tenantId(), fixture.projectId(), fixture.userId(), AppPushToken.Provider.HUAWEI, OLD_TOKEN);
+        register(fixture.tenantId(), fixture.projectId(), fixture.userId(), AppPushToken.Provider.MOCK, OLD_TOKEN);
         PushRow recovered = row(fixture.userId());
         assertStableIdentity(first, recovered);
         assertThat(recovered.nonce()).isNotEqualTo(revoked.nonce());
-        assertEnvelope(recovered, AppPushToken.Provider.HUAWEI, OLD_TOKEN, AppPushToken.Status.ACTIVE);
+        assertEnvelope(recovered, AppPushToken.Provider.MOCK, OLD_TOKEN, AppPushToken.Status.ACTIVE);
         assertOtherUntouched();
         assertInvisibleWithoutScope();
     }
@@ -166,15 +166,15 @@ class AppPushTokenProjectLifecycleTests extends AbstractIntegrationTest {
         List<String> before = facts();
         applyDenial(denial);
         assertThat(facts()).isEqualTo(before);
-        register(fixture.tenantId(), fixture.secondProjectId(), fixture.userId(), AppPushToken.Provider.OPPO, NEW_TOKEN);
+        register(fixture.tenantId(), fixture.secondProjectId(), fixture.userId(), AppPushToken.Provider.MOCK, NEW_TOKEN);
         PushRow fromSecondProject = row(fixture.userId());
         assertStableIdentity(first, fromSecondProject);
-        assertEnvelope(fromSecondProject, AppPushToken.Provider.OPPO, NEW_TOKEN, AppPushToken.Status.ACTIVE);
+        assertEnvelope(fromSecondProject, AppPushToken.Provider.MOCK, NEW_TOKEN, AppPushToken.Status.ACTIVE);
         revoke(fixture.tenantId(), fixture.secondProjectId(), fixture.userId());
-        assertEnvelope(row(fixture.userId()), AppPushToken.Provider.OPPO, NEW_TOKEN, AppPushToken.Status.REVOKED);
-        register(fixture.tenantId(), fixture.secondProjectId(), fixture.userId(), AppPushToken.Provider.HUAWEI, OLD_TOKEN);
+        assertEnvelope(row(fixture.userId()), AppPushToken.Provider.MOCK, NEW_TOKEN, AppPushToken.Status.REVOKED);
+        register(fixture.tenantId(), fixture.secondProjectId(), fixture.userId(), AppPushToken.Provider.MOCK, OLD_TOKEN);
         assertStableIdentity(first, row(fixture.userId()));
-        assertEnvelope(row(fixture.userId()), AppPushToken.Provider.HUAWEI, OLD_TOKEN, AppPushToken.Status.ACTIVE);
+        assertEnvelope(row(fixture.userId()), AppPushToken.Provider.MOCK, OLD_TOKEN, AppPushToken.Status.ACTIVE);
         assertOtherUntouched();
     }
 
@@ -290,15 +290,15 @@ class AppPushTokenProjectLifecycleTests extends AbstractIntegrationTest {
         }
     }
 
-    /** 初始HUAWEI实例仅由真实加密服务落库。 */
+    /** 初始MOCK实例仅由真实加密服务落库。 */
     private void registerOriginal() {
-        register(fixture.tenantId(), fixture.projectId(), fixture.userId(), AppPushToken.Provider.HUAWEI, OLD_TOKEN);
+        register(fixture.tenantId(), fixture.projectId(), fixture.userId(), AppPushToken.Provider.MOCK, OLD_TOKEN);
     }
 
     /** ROTATE和RESTORE均通过同一公开register入口，REVOKE保持独立事务合同。 */
     private void invoke(Operation operation, UUID tenantId) {
         if (operation == Operation.REVOKE) revoke(tenantId, fixture.projectId(), fixture.userId());
-        else register(tenantId, fixture.projectId(), fixture.userId(), AppPushToken.Provider.OPPO, NEW_TOKEN);
+        else register(tenantId, fixture.projectId(), fixture.userId(), AppPushToken.Provider.MOCK, NEW_TOKEN);
     }
 
     /** 可信项目来自App请求；错误tenant场景仅破坏显式参数，保持正确RLS检查许可是否独立。 */
@@ -335,7 +335,7 @@ class AppPushTokenProjectLifecycleTests extends AbstractIntegrationTest {
             assertThat(TenantContext.current()).isEmpty();
             PushRow written = jdbcTemplate.queryForObject("SELECT * FROM app_push_token WHERE tenant_id = ? AND app_user_id = ? AND installation_id = ?",
                     (rows, index) -> mapRow(rows), fixture.tenantId(), fixture.userId(), fixture.installationId());
-            assertEnvelope(written, operation == Operation.REVOKE ? AppPushToken.Provider.HUAWEI : AppPushToken.Provider.OPPO,
+            assertEnvelope(written, operation == Operation.REVOKE ? AppPushToken.Provider.MOCK : AppPushToken.Provider.MOCK,
                     operation == Operation.REVOKE ? OLD_TOKEN : NEW_TOKEN,
                     operation == Operation.REVOKE ? AppPushToken.Status.REVOKED : AppPushToken.Status.ACTIVE);
             afterWrite.run();
@@ -451,7 +451,7 @@ class AppPushTokenProjectLifecycleTests extends AbstractIntegrationTest {
     /** 从独立owner检查提交后状态；原位变更不得替换身份或首次创建时间。 */
     private void assertSuccess(Operation operation) throws SQLException {
         PushRow current = row(fixture.userId());
-        assertEnvelope(current, operation == Operation.REVOKE ? AppPushToken.Provider.HUAWEI : AppPushToken.Provider.OPPO,
+        assertEnvelope(current, operation == Operation.REVOKE ? AppPushToken.Provider.MOCK : AppPushToken.Provider.MOCK,
                 operation == Operation.REVOKE ? OLD_TOKEN : NEW_TOKEN,
                 operation == Operation.REVOKE ? AppPushToken.Status.REVOKED : AppPushToken.Status.ACTIVE);
         if (original != null) assertStableIdentity(original, current);

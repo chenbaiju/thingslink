@@ -21,6 +21,12 @@ import java.util.UUID;
  */
 public final class AppJwtIdentity {
 
+    /** @param jwt 已验签JWT @return 当前刷新族；缺失或格式错误统一401，正文不可补充 */
+    public static UUID sessionId(Jwt jwt) {
+        try { return UUID.fromString(jwt.getClaimAsString("sid")); }
+        catch (IllegalArgumentException | NullPointerException e) { throw invalidProjectGeneration(); }
+    }
+
     private AppJwtIdentity() {
     }
 

@@ -105,12 +105,17 @@ class SourceArchitectureRulesTests {
         assertThat(violations).as("跨模块 SQL 表访问").isEmpty();
     }
 
-    /** ADR0106只允许单一目录仓储读取公开视图，不能借此读私有表或执行更新。 */
+    /** 公开投影仅放行精确消费者、视图与只读操作，不扩大私有领域表访问。 */
     private static boolean isCatalogReadProjection(String source, String table, String sqlMatch) {
-        return source.equals("things-link-enduser/src/main/java/com/things/link/enduser/"
-                + "infrastructure/persistence/JdbcAppUserDeviceRepository.java")
-                && table.equals("dev_device_runtime_catalog_v1")
-                && sqlMatch.matches("(?is)^(?:FROM|JOIN)\\s+.*");
+        if (!sqlMatch.matches("(?is)^(?:FROM|JOIN)\\s+.*")) return false;
+        String root = "things-link-enduser/src/main/java/com/things/link/enduser/infrastructure/persistence/";
+        return (source.equals(root + "JdbcAppUserDeviceRepository.java")
+                && table.equals("dev_device_runtime_catalog_v1"))
+                || (source.equals(root + "JdbcAppDeviceStatisticsRepository.java")
+                && java.util.Set.of("dev_device_app_v1", "alarm_app_active_device_v1").contains(table))
+                || (source.equals(root + "JdbcAppDeviceReadRepository.java") && table.equals("dev_device_app_v1"))
+                || (source.equals(root + "JdbcAppAlarmRepository.java")
+                && java.util.Set.of("dev_device_app_v1", "alarm_app_history_v1").contains(table));
     }
 
     /** 白名单明确限制文件、对象和操作三项，不能演变成跨域私有表通行证。 */
@@ -125,6 +130,22 @@ class SourceArchitectureRulesTests {
         assertThat(isCatalogReadProjection(consumer, "dev_device", "FROM dev_device")).isFalse();
         assertThat(isCatalogReadProjection("another/Repository.java", "dev_device_runtime_catalog_v1",
                 "JOIN dev_device_runtime_catalog_v1")).isFalse();
+        String statistics = consumer.replace("JdbcAppUserDeviceRepository.java", "JdbcAppDeviceStatisticsRepository.java");
+        for (String view : java.util.List.of("dev_device_app_v1", "alarm_app_active_device_v1")) {
+            assertThat(isCatalogReadProjection(statistics, view, "FROM " + view)).isTrue();
+            assertThat(isCatalogReadProjection(statistics, view, "UPDATE " + view)).isFalse();
+            assertThat(isCatalogReadProjection(consumer, view, "FROM " + view)).isFalse();
+        }
+        assertThat(isCatalogReadProjection(statistics, "dev_device", "FROM dev_device")).isFalse();
+        assertThat(isCatalogReadProjection(statistics, "alarm_instance", "FROM alarm_instance")).isFalse();
+        String devices = consumer.replace("JdbcAppUserDeviceRepository.java", "JdbcAppDeviceReadRepository.java");
+        assertThat(isCatalogReadProjection(devices, "dev_device_app_v1", "JOIN dev_device_app_v1")).isTrue();
+        assertThat(isCatalogReadProjection(devices, "dev_device_app_v1", "UPDATE dev_device_app_v1")).isFalse();
+        assertThat(isCatalogReadProjection(devices, "alarm_app_active_device_v1", "FROM alarm_app_active_device_v1")).isFalse();
+        String alarmReader = consumer.replace("JdbcAppUserDeviceRepository.java", "JdbcAppAlarmRepository.java");
+        assertThat(isCatalogReadProjection(alarmReader, "alarm_app_history_v1", "JOIN alarm_app_history_v1")).isTrue();
+        assertThat(isCatalogReadProjection(alarmReader, "alarm_app_history_v1", "UPDATE alarm_app_history_v1")).isFalse();
+        assertThat(isCatalogReadProjection(alarmReader, "alarm_instance", "FROM alarm_instance")).isFalse();
     }
 
     /** ADR0096的精确表族必须优先于app_通用前缀，且不能夺走enduser既有表。 */
